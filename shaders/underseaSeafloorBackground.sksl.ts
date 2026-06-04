@@ -15,6 +15,9 @@ uniform float waterDriftScale;
 uniform float waterDriftIntensity;
 uniform float waterDriftSpeed;
 uniform float waterDriftSharpness;
+uniform float waterDriftWaveAmp;
+uniform float waterDriftWaveFreq;
+uniform float waterDriftWaveSpeed;
 uniform shader tileTexture;
 
 const float DISTORTION_AMP = 8.0;
@@ -46,6 +49,17 @@ float caustics(vec2 coord, float t) {
 vec2 hash2(vec2 p) {
   p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
   return fract(sin(p) * 43758.5453);
+}
+
+vec2 warpVoronoiCoord(vec2 coord, float t) {
+  float a = waterDriftWaveAmp;
+  float f = waterDriftWaveFreq;
+  float s = waterDriftWaveSpeed;
+  float dx = sin(coord.y * f * 6.28 + t * s)       * a
+           + sin(coord.x * f * 3.14 + t * s * 0.7) * a * 0.5;
+  float dy = cos(coord.x * f * 6.28 + t * s * 0.8) * a
+           + cos(coord.y * f * 4.71 - t * s * 0.6) * a * 0.5;
+  return coord + vec2(dx, dy);
 }
 
 float waterDriftCaustics(vec2 coord, float t) {
@@ -88,7 +102,8 @@ half4 main(float2 fragCoord) {
   float2 tileCoord = warped * (tileScale / iResolution.x);
   half4 tex = tileTexture.eval(tileCoord * iResolution.x);
   tex.rgb *= half3(caustics(fragCoord, t));
-  float drift = waterDriftCaustics(fragCoord * (0.004 * waterDriftScale), t);
+  vec2 driftCoord = warpVoronoiCoord(fragCoord * (0.004 * waterDriftScale), t);
+  float drift = waterDriftCaustics(driftCoord, t);
   tex.rgb += half3(drift * waterDriftIntensity) * half3(0.9, 0.97, 1.0);
   tex.rgb *= half3(0.82, 0.93, 1.05);
   return tex;
@@ -116,4 +131,10 @@ export const underseaSeafloorUniformDefaults = {
   waterDriftSpeed: 1,
   /** WaterDrift border line width — higher = thinner veins. */
   waterDriftSharpness: 40,
+  /** WaterDrift wave distortion amplitude — higher = more bent lines. 0 = straight. */
+  waterDriftWaveAmp: 0.05,
+  /** WaterDrift wave ripple density — lower = long smooth curves, higher = tight wiggles. */
+  waterDriftWaveFreq: 2.0,
+  /** WaterDrift wave animation speed — independent of cell dance speed. */
+  waterDriftWaveSpeed: 0.6,
 } as const;
