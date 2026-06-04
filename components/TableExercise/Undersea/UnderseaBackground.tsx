@@ -14,6 +14,7 @@ import {
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import {
+  MAX_DRIFT_LAYERS,
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
@@ -26,6 +27,7 @@ const {
   causticPatchScale,
   causticBaseScale,
   causticRangeScale,
+  waterDriftCount,
   waterDriftScale,
   waterDriftIntensity,
   waterDriftSpeed,
@@ -37,6 +39,21 @@ const {
   waterDriftClusterFreq,
   waterDriftLineVariation,
 } = underseaSeafloorUniformDefaults;
+
+function padArray(arr: readonly number[], fill = 0): number[] {
+  return [...arr, ...Array(Math.max(0, MAX_DRIFT_LAYERS - arr.length)).fill(fill)];
+}
+
+const paddedWaterDriftScale = padArray(waterDriftScale);
+const paddedWaterDriftIntensity = padArray(waterDriftIntensity);
+const paddedWaterDriftSpeed = padArray(waterDriftSpeed);
+const paddedWaterDriftSharpness = padArray(waterDriftSharpness);
+const paddedWaterDriftWaveAmp = padArray(waterDriftWaveAmp);
+const paddedWaterDriftWaveFreq = padArray(waterDriftWaveFreq);
+const paddedWaterDriftWaveSpeed = padArray(waterDriftWaveSpeed);
+const paddedWaterDriftClusterAmp = padArray(waterDriftClusterAmp);
+const paddedWaterDriftClusterFreq = padArray(waterDriftClusterFreq);
+const paddedWaterDriftLineVariation = padArray(waterDriftLineVariation);
 
 function compileSeafloorEffect() {
   const effect = Skia.RuntimeEffect.Make(UNDERSEA_SEAFLOOR_BACKGROUND_SKSL);
@@ -62,16 +79,17 @@ export function UnderseaBackground() {
     causticPatchScale,
     causticBaseScale,
     causticRangeScale,
-    waterDriftScale,
-    waterDriftIntensity,
-    waterDriftSpeed,
-    waterDriftSharpness,
-    waterDriftWaveAmp,
-    waterDriftWaveFreq,
-    waterDriftWaveSpeed,
-    waterDriftClusterAmp,
-    waterDriftClusterFreq,
-    waterDriftLineVariation,
+    waterDriftCount,
+    waterDriftScale: paddedWaterDriftScale,
+    waterDriftIntensity: paddedWaterDriftIntensity,
+    waterDriftSpeed: paddedWaterDriftSpeed,
+    waterDriftSharpness: paddedWaterDriftSharpness,
+    waterDriftWaveAmp: paddedWaterDriftWaveAmp,
+    waterDriftWaveFreq: paddedWaterDriftWaveFreq,
+    waterDriftWaveSpeed: paddedWaterDriftWaveSpeed,
+    waterDriftClusterAmp: paddedWaterDriftClusterAmp,
+    waterDriftClusterFreq: paddedWaterDriftClusterFreq,
+    waterDriftLineVariation: paddedWaterDriftLineVariation,
   }));
 
   if (!image || width === 0 || height === 0) {
