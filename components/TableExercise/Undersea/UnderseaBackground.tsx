@@ -26,6 +26,10 @@ const {
   causticPatchScale,
   causticBaseScale,
   causticRangeScale,
+  waterDriftScale,
+  waterDriftIntensity,
+  waterDriftSpeed,
+  waterDriftSharpness,
 } = underseaSeafloorUniformDefaults;
 
 function compileSeafloorEffect() {
@@ -52,6 +56,10 @@ export function UnderseaBackground() {
     causticPatchScale,
     causticBaseScale,
     causticRangeScale,
+    waterDriftScale,
+    waterDriftIntensity,
+    waterDriftSpeed,
+    waterDriftSharpness,
   }));
 
   if (!image || width === 0 || height === 0) {
