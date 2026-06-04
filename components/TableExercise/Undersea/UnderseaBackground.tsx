@@ -33,6 +33,9 @@ const {
   waterDriftWaveAmp,
   waterDriftWaveFreq,
   waterDriftWaveSpeed,
+  waterDriftClusterAmp,
+  waterDriftClusterFreq,
+  waterDriftLineVariation,
 } = underseaSeafloorUniformDefaults;
 
 function compileSeafloorEffect() {
@@ -66,6 +69,9 @@ export function UnderseaBackground() {
     waterDriftWaveAmp,
     waterDriftWaveFreq,
     waterDriftWaveSpeed,
+    waterDriftClusterAmp,
+    waterDriftClusterFreq,
+    waterDriftLineVariation,
   }));
 
   if (!image || width === 0 || height === 0) {

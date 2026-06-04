@@ -18,6 +18,9 @@ uniform float waterDriftSharpness;
 uniform float waterDriftWaveAmp;
 uniform float waterDriftWaveFreq;
 uniform float waterDriftWaveSpeed;
+uniform float waterDriftClusterAmp;
+uniform float waterDriftClusterFreq;
+uniform float waterDriftLineVariation;
 uniform shader tileTexture;
 
 const float DISTORTION_AMP = 8.0;
@@ -51,6 +54,16 @@ vec2 hash2(vec2 p) {
   return fract(sin(p) * 43758.5453);
 }
 
+vec2 clusterWarp(vec2 coord) {
+  float a = waterDriftClusterAmp;
+  float f = waterDriftClusterFreq;
+  float wx = sin(coord.y * f + coord.x * f * 0.7) * a
+           + sin(coord.x * f * 1.3 - coord.y * f * 0.5) * a * 0.5;
+  float wy = cos(coord.x * f * 0.9 + coord.y * f * 1.1) * a
+           + cos(coord.y * f * 1.5 + coord.x * f * 0.3) * a * 0.5;
+  return coord + vec2(wx, wy);
+}
+
 vec2 warpVoronoiCoord(vec2 coord, float t) {
   float a = waterDriftWaveAmp;
   float f = waterDriftWaveFreq;
@@ -63,6 +76,7 @@ vec2 warpVoronoiCoord(vec2 coord, float t) {
 }
 
 float waterDriftCaustics(vec2 coord, float t) {
+  coord = clusterWarp(coord);
   vec2 g = floor(coord);
   vec2 f = fract(coord);
 
@@ -93,7 +107,9 @@ float waterDriftCaustics(vec2 coord, float t) {
     }
   }
 
-  return 1.0 - smoothstep(0.0, 0.6 / waterDriftSharpness, border);
+  float cellRand = hash2(g).x;
+  float edgeWidth = (0.6 / waterDriftSharpness) * mix(1.0 - waterDriftLineVariation * 0.6, 1.0 + waterDriftLineVariation * 0.6, cellRand);
+  return 1.0 - smoothstep(0.0, max(edgeWidth, 0.001), border);
 }
 
 half4 main(float2 fragCoord) {
@@ -124,17 +140,23 @@ export const underseaSeafloorUniformDefaults = {
   /** Caustic contrast / highlight strength (CAUSTIC_RANGE). */
   causticRangeScale: 1,
   /** WaterDrift voronoi cell density. */
-  waterDriftScale: 3.0,
+  waterDriftScale: 2.5,
   /** WaterDrift web brightness (additive). */
-  waterDriftIntensity: 0.5,
+  waterDriftIntensity: 0.06,
   /** WaterDrift in-place dance speed. */
-  waterDriftSpeed: 1,
+  waterDriftSpeed: 0.5,
   /** WaterDrift border line width — higher = thinner veins. */
-  waterDriftSharpness: 40,
+  waterDriftSharpness: 8,
   /** WaterDrift wave distortion amplitude — higher = more bent lines. 0 = straight. */
   waterDriftWaveAmp: 0.05,
   /** WaterDrift wave ripple density — lower = long smooth curves, higher = tight wiggles. */
   waterDriftWaveFreq: 2.0,
   /** WaterDrift wave animation speed — independent of cell dance speed. */
   waterDriftWaveSpeed: 0.6,
+  /** WaterDrift domain warp amplitude — higher = more variation in cell sizes/cluster density. */
+  waterDriftClusterAmp: 1.2,
+  /** WaterDrift domain warp frequency — lower = broader regions of dense/sparse cells. */
+  waterDriftClusterFreq: 0.05,
+  /** WaterDrift line thickness variation — 0 = uniform, 1 = high variation between thin and thick. */
+  waterDriftLineVariation: 1,
 } as const;
