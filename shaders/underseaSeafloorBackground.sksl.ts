@@ -146,7 +146,7 @@ half4 main(float2 fragCoord) {
 export const underseaSeafloorUniformDefaults = {
   tileScale: 3,
   /** Distortion displacement strength (DISTORTION_AMP). */
-  distortionAmpScale: 0.6,
+  distortionAmpScale: 1,
   /** Distortion wave density — higher = smaller ripples (DISTORTION_FREQ). */
   distortionFreqScale: 0.6,
   /** Caustic patch size — higher = smaller light/shadow patches (CAUSTIC_FREQ). */
@@ -158,7 +158,7 @@ export const underseaSeafloorUniformDefaults = {
   /** RGB multiplier for underwater color cast — lower R, higher B = bluer. */
   underwaterTint: [0.68, 0.84, 1.18] as const,
   /** Underwater tint intensity — 0 = no tint, 1 = full tint. */
-  underwaterTintStrength: 0.4,
+  underwaterTintStrength: 0.7,
   /** Vertical depth gradient when tint is active — 0 = uniform tint, 1 = bluer toward top. */
   underwaterDepthStrength: 3,
   /** Number of stacked waterDrift layers (max MAX_DRIFT_LAYERS). */
@@ -172,7 +172,7 @@ export const underseaSeafloorUniformDefaults = {
   /** WaterDrift border line width per layer — higher = thinner veins. */
   waterDriftSharpness: [40, 14, 10],
   /** WaterDrift wave distortion amplitude per layer — 0 = straight. */
-  waterDriftWaveAmp: [0.05, 0.12, 0.15],
+  waterDriftWaveAmp: [0.03, 0.05, 0.07],
   /** WaterDrift wave ripple density per layer. */
   waterDriftWaveFreq: [2.0, 0.8, 1.0],
   /** WaterDrift wave animation speed per layer. */
