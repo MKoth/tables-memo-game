@@ -28,6 +28,7 @@ uniform float waterDriftClusterAmp[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftClusterFreq[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftLineVariation[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftIntensityVariation[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftEdgeJunctionStrength[${MAX_DRIFT_LAYERS}];
 uniform shader tileTexture;
 
 const float DISTORTION_AMP = 8.0;
@@ -79,13 +80,14 @@ vec2 warpVoronoiCoord(vec2 coord, float t, float amp, float freq, float speed) {
 
 float waterDriftCaustics(vec2 coord, float t, float speed, float sharpness,
                          float lineVariation, float intensityVariation,
-                         float clusterAmp, float clusterFreq) {
+                         float edgeJunctionStrength, float clusterAmp, float clusterFreq) {
   coord = clusterWarp(coord, clusterAmp, clusterFreq);
   vec2 g = floor(coord);
   vec2 f = fract(coord);
 
   vec2 mr = vec2(0.0);
   float md = 8.0;
+  float md2 = 8.0;
   for (int y = -1; y <= 1; y++) {
     for (int x = -1; x <= 1; x++) {
       vec2 cell = vec2(float(x), float(y));
@@ -93,7 +95,8 @@ float waterDriftCaustics(vec2 coord, float t, float speed, float sharpness,
       vec2 o = cell + 0.5 + 0.4 * sin(t * speed + 6.2831 * rnd);
       vec2 r = o - f;
       float d = dot(r, r);
-      if (d < md) { md = d; mr = r; }
+      if (d < md) { md2 = md; md = d; mr = r; }
+      else if (d < md2) { md2 = d; }
     }
   }
 
@@ -116,7 +119,9 @@ float waterDriftCaustics(vec2 coord, float t, float speed, float sharpness,
   float edgeWidth = (0.6 / sharpness) * mix(1.0 - lineVariation * 0.6, 1.0 + lineVariation * 0.6, lineRand);
   float web = 1.0 - smoothstep(0.0, max(edgeWidth, 0.001), border);
   float intensityScale = mix(1.0 - intensityVariation * 0.6, 1.0 + intensityVariation * 0.6, intensityRand);
-  return web * intensityScale;
+  float junctionFactor = sqrt(md) / sqrt(md2);
+  float junctionScale = mix(1.0 - edgeJunctionStrength, 1.0, junctionFactor);
+  return web * intensityScale * junctionScale;
 }
 
 half4 main(float2 fragCoord) {
@@ -134,7 +139,7 @@ half4 main(float2 fragCoord) {
       waterDriftWaveAmp[i], waterDriftWaveFreq[i], waterDriftWaveSpeed[i]);
     float drift = waterDriftCaustics(waved, t,
       waterDriftSpeed[i], waterDriftSharpness[i], waterDriftLineVariation[i],
-      waterDriftIntensityVariation[i],
+      waterDriftIntensityVariation[i], waterDriftEdgeJunctionStrength[i],
       waterDriftClusterAmp[i], waterDriftClusterFreq[i]);
     tex.rgb += half3(drift * waterDriftIntensity[i]) * half3(0.9, 0.97, 1.0);
   }
@@ -191,5 +196,7 @@ export const underseaSeafloorUniformDefaults = {
   waterDriftLineVariation: [1.0, 0.5, 0.3],
   /** WaterDrift brightness variation per layer — 0 = uniform, 1 = ±60% around waterDriftIntensity. */
   waterDriftIntensityVariation: [0.5, 0.3, 0.2],
-  // waterDriftIntensityVariation: [0, 0, 0],
+  /** WaterDrift edge junction boost per layer — 0 = uniform, 1 = bright at vertices, dim at edge midpoints. */
+  waterDriftEdgeJunctionStrength: [0.8, 0.4, 0.3],
+  // waterDriftEdgeJunctionStrength: [0, 0, 0],
 } as const;
