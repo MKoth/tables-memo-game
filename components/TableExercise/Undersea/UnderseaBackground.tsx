@@ -19,7 +19,7 @@ import {
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
 
-const BLUR_SIGMA = 1.5;
+const BLUR_SIGMA = 2;
 const {
   tileScale,
   distortionAmpScale,
@@ -27,6 +27,9 @@ const {
   causticPatchScale,
   causticBaseScale,
   causticRangeScale,
+  underwaterTint,
+  underwaterTintStrength,
+  underwaterDepthStrength,
   waterDriftCount,
   waterDriftScale,
   waterDriftIntensity,
@@ -54,6 +57,7 @@ const paddedWaterDriftWaveSpeed = padArray(waterDriftWaveSpeed);
 const paddedWaterDriftClusterAmp = padArray(waterDriftClusterAmp);
 const paddedWaterDriftClusterFreq = padArray(waterDriftClusterFreq);
 const paddedWaterDriftLineVariation = padArray(waterDriftLineVariation);
+const underwaterTintUniform = [...underwaterTint] as [number, number, number];
 
 function compileSeafloorEffect() {
   const effect = Skia.RuntimeEffect.Make(UNDERSEA_SEAFLOOR_BACKGROUND_SKSL);
@@ -79,6 +83,9 @@ export function UnderseaBackground() {
     causticPatchScale,
     causticBaseScale,
     causticRangeScale,
+    underwaterTint: underwaterTintUniform,
+    underwaterTintStrength,
+    underwaterDepthStrength,
     waterDriftCount,
     waterDriftScale: paddedWaterDriftScale,
     waterDriftIntensity: paddedWaterDriftIntensity,

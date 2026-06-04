@@ -13,6 +13,9 @@ uniform float distortionFreqScale;
 uniform float causticPatchScale;
 uniform float causticBaseScale;
 uniform float causticRangeScale;
+uniform float3 underwaterTint;
+uniform float underwaterTintStrength;
+uniform float underwaterDepthStrength;
 uniform float waterDriftCount;
 uniform float waterDriftScale[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftIntensity[${MAX_DRIFT_LAYERS}];
@@ -130,7 +133,11 @@ half4 main(float2 fragCoord) {
     tex.rgb += half3(drift * waterDriftIntensity[i]) * half3(0.9, 0.97, 1.0);
   }
 
-  tex.rgb *= half3(0.82, 0.93, 1.05);
+  float depth = 1.0 - fragCoord.y / iResolution.y;
+  half3 tint = half3(underwaterTint);
+  half3 deepTint = half3(0.55, 0.78, 1.18);
+  half3 withDepth = mix(tint, deepTint, depth * underwaterDepthStrength);
+  tex.rgb *= mix(half3(1.0), withDepth, underwaterTintStrength);
   return tex;
 }
 `;
@@ -148,6 +155,12 @@ export const underseaSeafloorUniformDefaults = {
   causticBaseScale: 1,
   /** Caustic contrast / highlight strength (CAUSTIC_RANGE). */
   causticRangeScale: 1,
+  /** RGB multiplier for underwater color cast — lower R, higher B = bluer. */
+  underwaterTint: [0.68, 0.84, 1.18] as const,
+  /** Underwater tint intensity — 0 = no tint, 1 = full tint. */
+  underwaterTintStrength: 0.4,
+  /** Vertical depth gradient when tint is active — 0 = uniform tint, 1 = bluer toward top. */
+  underwaterDepthStrength: 3,
   /** Number of stacked waterDrift layers (max MAX_DRIFT_LAYERS). */
   waterDriftCount: 3,
   /** WaterDrift voronoi cell density per layer. */
