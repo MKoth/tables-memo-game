@@ -27,6 +27,7 @@ uniform float waterDriftWaveSpeed[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftClusterAmp[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftClusterFreq[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftLineVariation[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftIntensityVariation[${MAX_DRIFT_LAYERS}];
 uniform shader tileTexture;
 
 const float DISTORTION_AMP = 8.0;
@@ -77,7 +78,8 @@ vec2 warpVoronoiCoord(vec2 coord, float t, float amp, float freq, float speed) {
 }
 
 float waterDriftCaustics(vec2 coord, float t, float speed, float sharpness,
-                         float lineVariation, float clusterAmp, float clusterFreq) {
+                         float lineVariation, float intensityVariation,
+                         float clusterAmp, float clusterFreq) {
   coord = clusterWarp(coord, clusterAmp, clusterFreq);
   vec2 g = floor(coord);
   vec2 f = fract(coord);
@@ -109,9 +111,12 @@ float waterDriftCaustics(vec2 coord, float t, float speed, float sharpness,
     }
   }
 
-  float cellRand = hash2(g).x;
-  float edgeWidth = (0.6 / sharpness) * mix(1.0 - lineVariation * 0.6, 1.0 + lineVariation * 0.6, cellRand);
-  return 1.0 - smoothstep(0.0, max(edgeWidth, 0.001), border);
+  float lineRand = hash2(g).x;
+  float intensityRand = hash2(g).y;
+  float edgeWidth = (0.6 / sharpness) * mix(1.0 - lineVariation * 0.6, 1.0 + lineVariation * 0.6, lineRand);
+  float web = 1.0 - smoothstep(0.0, max(edgeWidth, 0.001), border);
+  float intensityScale = mix(1.0 - intensityVariation * 0.6, 1.0 + intensityVariation * 0.6, intensityRand);
+  return web * intensityScale;
 }
 
 half4 main(float2 fragCoord) {
@@ -129,6 +134,7 @@ half4 main(float2 fragCoord) {
       waterDriftWaveAmp[i], waterDriftWaveFreq[i], waterDriftWaveSpeed[i]);
     float drift = waterDriftCaustics(waved, t,
       waterDriftSpeed[i], waterDriftSharpness[i], waterDriftLineVariation[i],
+      waterDriftIntensityVariation[i],
       waterDriftClusterAmp[i], waterDriftClusterFreq[i]);
     tex.rgb += half3(drift * waterDriftIntensity[i]) * half3(0.9, 0.97, 1.0);
   }
@@ -166,9 +172,9 @@ export const underseaSeafloorUniformDefaults = {
   /** WaterDrift voronoi cell density per layer. */
   waterDriftScale: [2.0, 8.0, 10.0],
   /** WaterDrift web brightness (additive) per layer. */
-  waterDriftIntensity: [0.1, 0.1, 0.1],
+  waterDriftIntensity: [0.08, 0.08, 0.08],
   /** WaterDrift in-place dance speed per layer. */
-  waterDriftSpeed: [0.5, 0.8, 1.0],
+  waterDriftSpeed: [0.4, 0.6, 0.8],
   /** WaterDrift border line width per layer — higher = thinner veins. */
   waterDriftSharpness: [40, 14, 10],
   /** WaterDrift wave distortion amplitude per layer — 0 = straight. */
@@ -183,4 +189,7 @@ export const underseaSeafloorUniformDefaults = {
   waterDriftClusterFreq: [0.05, 0.30, 0.40],
   /** WaterDrift line thickness variation per layer — 0 = uniform. */
   waterDriftLineVariation: [1.0, 0.5, 0.3],
+  /** WaterDrift brightness variation per layer — 0 = uniform, 1 = ±60% around waterDriftIntensity. */
+  waterDriftIntensityVariation: [0.5, 0.3, 0.2],
+  // waterDriftIntensityVariation: [0, 0, 0],
 } as const;

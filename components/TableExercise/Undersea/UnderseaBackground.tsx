@@ -41,6 +41,7 @@ const {
   waterDriftClusterAmp,
   waterDriftClusterFreq,
   waterDriftLineVariation,
+  waterDriftIntensityVariation,
 } = underseaSeafloorUniformDefaults;
 
 function padArray(arr: readonly number[], fill = 0): number[] {
@@ -57,6 +58,7 @@ const paddedWaterDriftWaveSpeed = padArray(waterDriftWaveSpeed);
 const paddedWaterDriftClusterAmp = padArray(waterDriftClusterAmp);
 const paddedWaterDriftClusterFreq = padArray(waterDriftClusterFreq);
 const paddedWaterDriftLineVariation = padArray(waterDriftLineVariation);
+const paddedWaterDriftIntensityVariation = padArray(waterDriftIntensityVariation);
 const underwaterTintUniform = [...underwaterTint] as [number, number, number];
 
 function compileSeafloorEffect() {
@@ -97,6 +99,7 @@ export function UnderseaBackground() {
     waterDriftClusterAmp: paddedWaterDriftClusterAmp,
     waterDriftClusterFreq: paddedWaterDriftClusterFreq,
     waterDriftLineVariation: paddedWaterDriftLineVariation,
+    waterDriftIntensityVariation: paddedWaterDriftIntensityVariation,
   }));
 
   if (!image || width === 0 || height === 0) {
