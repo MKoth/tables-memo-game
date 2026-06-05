@@ -23,14 +23,45 @@ import { SeaweedInstance } from './SeaweedInstance';
 const BLUR_SIGMA = 1.5;
 const SEAWEED_BASE_WIDTH = 120;
 const SEAWEED_BASE_HEIGHT = 160;
-const SEAWEED_GROUND_OFFSET = 20;
+
+const SEAWEED_VARIANTS = {
+  1: require('../../../assets/seaweed1.png'),
+  2: require('../../../assets/seaweed2.png'),
+  3: require('../../../assets/seaweed3.png'),
+} as const;
+
+type SeaweedVariant = keyof typeof SEAWEED_VARIANTS;
 
 const SEAWEED_CONFIGS = [
   {
-    xRatio: 0.04,
-    scale: 1.0,
+    variant: 1 satisfies SeaweedVariant,
+    xRatio: 0.2,
+    yRatio: 0.2,
+    scale: 0.8,
     phase: 0.0,
-    currentAngle: 10,
+    currentAngle: 0.2,
+    waveAmplitude: 0.06,
+    waveFreq: 10,
+    waveSpeed: 2.0,
+  },
+  {
+    variant: 2 satisfies SeaweedVariant,
+    xRatio: 0.45,
+    yRatio: 0.45,
+    scale: 0.8,
+    phase: 1.0,
+    currentAngle: 0.2,
+    waveAmplitude: 0.06,
+    waveFreq: 10,
+    waveSpeed: 2.0,
+  },
+  {
+    variant: 3 satisfies SeaweedVariant,
+    xRatio: 0.7,
+    yRatio: 0.6,
+    scale: 0.8,
+    phase: 2.0,
+    currentAngle: 0.2,
     waveAmplitude: 0.06,
     waveFreq: 10,
     waveSpeed: 2.0,
@@ -110,7 +141,9 @@ const seafloorEffect = compileSeafloorEffect();
 export function UnderseaBackground() {
   const { width, height } = useWindowDimensions();
   const image = useImage(require('../../../assets/seafloor.png'));
-  const seaweedImage = useImage(require('../../../assets/seaweed1.png'));
+  const seaweed1 = useImage(SEAWEED_VARIANTS[1]);
+  const seaweed2 = useImage(SEAWEED_VARIANTS[2]);
+  const seaweed3 = useImage(SEAWEED_VARIANTS[3]);
   const clock = useClock();
 
   const uniforms = useDerivedValue(() => ({
@@ -143,9 +176,11 @@ export function UnderseaBackground() {
     waterDriftEdgeJunctionStrength: paddedWaterDriftEdgeJunctionStrength,
   }));
 
-  if (!image || !seaweedImage || width === 0 || height === 0) {
+  if (!image || !seaweed1 || !seaweed2 || !seaweed3 || width === 0 || height === 0) {
     return null;
   }
+
+  const seaweedImages = { 1: seaweed1, 2: seaweed2, 3: seaweed3 };
 
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
@@ -177,13 +212,14 @@ export function UnderseaBackground() {
         {SEAWEED_CONFIGS.map((config, index) => {
           const seaweedWidth = SEAWEED_BASE_WIDTH * config.scale;
           const seaweedHeight = SEAWEED_BASE_HEIGHT * config.scale;
+          const seaweedImage = seaweedImages[config.variant];
 
           return (
             <SeaweedInstance
               key={index}
               image={seaweedImage}
               x={config.xRatio * width}
-              y={height - seaweedHeight - SEAWEED_GROUND_OFFSET}
+              y={config.yRatio * height}
               width={seaweedWidth}
               height={seaweedHeight}
               currentAngle={config.currentAngle}
