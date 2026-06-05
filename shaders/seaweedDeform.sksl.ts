@@ -1,5 +1,5 @@
 /**
- * Top-down seaweed UV displacement: traveling wave along top/bottom edges.
+ * Top-down seaweed UV displacement with traveling wave and light beam overlay.
  */
 export const SEAWEED_DEFORM_SKSL = `
 uniform float iTime;
@@ -12,6 +12,12 @@ uniform float waveAmplitude;
 uniform float waveFreq;
 uniform float waveSpeed;
 uniform float phase;
+uniform float beamIntensity;
+uniform float beamSharpness;
+uniform float beamDistortion;
+uniform float beamSpeed;
+uniform float beamPhase;
+uniform float3 beamTint;
 uniform shader seaweedTexture;
 
 half4 main(float2 fragCoord) {
@@ -29,7 +35,29 @@ half4 main(float2 fragCoord) {
   vec2 dispPixels = dPerp * currentPerp * vec2(seaweedW, seaweedH);
   vec2 sampleCoord = fragCoord - dispPixels;
 
-  return seaweedTexture.eval(sampleCoord);
+  half4 color = seaweedTexture.eval(sampleCoord);
+
+  const float BEAM_MARGIN = 0.25;
+  const float BEAM_START = -0.5 - BEAM_MARGIN;
+  const float BEAM_END = 0.5 + BEAM_MARGIN;
+  const float TRAVEL_FRACTION = 0.8;
+
+  float cycle = fract(iTime * beamSpeed + beamPhase);
+  float beam = 0.0;
+
+  if (cycle <= TRAVEL_FRACTION) {
+    float t = cycle / TRAVEL_FRACTION;
+    float beamAlong = mix(BEAM_START, BEAM_END, t);
+    float distortion = beamDistortion * sin(perp * 12.0 + iTime * 2.0);
+    float dist = abs(along - beamAlong + distortion);
+    beam = exp(-dist * dist * beamSharpness);
+  }
+
+  half beamStrength = half(beam * beamIntensity * color.a);
+  half3 tint = half3(beamTint);
+  color.rgb = mix(color.rgb, color.rgb * tint, beamStrength);
+
+  return color;
 }
 `;
 
@@ -44,4 +72,16 @@ export const seaweedDeformUniformDefaults = {
   waveSpeed: 2,
   /** Phase offset so instances animate out of sync. */
   phase: 0,
+  /** Brightness of the traveling light beam — 0 = disabled. */
+  beamIntensity: 0.35,
+  /** Beam width — higher = thinner stripe (suggested range 20–200). */
+  beamSharpness: 60,
+  /** Waviness of the beam edge — 0 = straight line. */
+  beamDistortion: 0.015,
+  /** How fast the beam travels along the current direction. */
+  beamSpeed: 0.4,
+  /** Per-instance beam time offset. */
+  beamPhase: 0,
+  /** RGB multiplier for the beam — warm gold reads as sun rays. */
+  beamTint: [1.8, 1.8, 1.8] as const,
 } as const;

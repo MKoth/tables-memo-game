@@ -39,10 +39,16 @@ const SEAWEED_CONFIGS = [
     yRatio: 0.2,
     scale: 0.8,
     phase: 0.0,
-    currentAngle: 0.2,
+    currentAngle: 3.14,
     waveAmplitude: 0.06,
     waveFreq: 10,
     waveSpeed: 2.0,
+    beamIntensity: 0.13,
+    beamSharpness: 10,
+    beamDistortion: 0.02,
+    beamSpeed: 0.24,
+    beamPhase: 0.0,
+    beamTint: [2.8, 2.8, 2.8],
   },
   {
     variant: 2 satisfies SeaweedVariant,
@@ -50,10 +56,16 @@ const SEAWEED_CONFIGS = [
     yRatio: 0.45,
     scale: 0.8,
     phase: 1.0,
-    currentAngle: 0.2,
+    currentAngle: 3.14,
     waveAmplitude: 0.06,
     waveFreq: 10,
     waveSpeed: 2.0,
+    beamIntensity: 0.13,
+    beamSharpness: 10,
+    beamDistortion: 0.02,
+    beamSpeed: 0.24,
+    beamPhase: 1.2,
+    beamTint: [2.8, 2.8, 2.8],
   },
   {
     variant: 3 satisfies SeaweedVariant,
@@ -61,10 +73,16 @@ const SEAWEED_CONFIGS = [
     yRatio: 0.6,
     scale: 0.8,
     phase: 2.0,
-    currentAngle: 0.2,
+    currentAngle: 3.14,
     waveAmplitude: 0.06,
     waveFreq: 10,
     waveSpeed: 2.0,
+    beamIntensity: 0.13,
+    beamSharpness: 10,
+    beamDistortion: 0.02,
+    beamSpeed: 0.24,
+    beamPhase: 0.0,
+    beamTint: [2.8, 2.8, 2.8],
   },
 ] as const;
 const {
@@ -227,6 +245,12 @@ export function UnderseaBackground() {
               waveFreq={config.waveFreq}
               waveSpeed={config.waveSpeed}
               phase={config.phase}
+              beamIntensity={config.beamIntensity}
+              beamSharpness={config.beamSharpness}
+              beamDistortion={config.beamDistortion}
+              beamSpeed={config.beamSpeed}
+              beamPhase={config.beamPhase}
+              beamTint={config.beamTint}
               clock={clock}
             />
           );

@@ -9,7 +9,10 @@ import {
 } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import { SEAWEED_DEFORM_SKSL } from '../../../shaders/seaweedDeform.sksl';
+import {
+  SEAWEED_DEFORM_SKSL,
+  seaweedDeformUniformDefaults,
+} from '../../../shaders/seaweedDeform.sksl';
 
 function compileSeaweedEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(SEAWEED_DEFORM_SKSL);
@@ -32,6 +35,12 @@ export type SeaweedInstanceProps = {
   waveFreq: number;
   waveSpeed: number;
   phase: number;
+  beamIntensity?: number;
+  beamSharpness?: number;
+  beamDistortion?: number;
+  beamSpeed?: number;
+  beamPhase?: number;
+  beamTint?: readonly [number, number, number];
   clock: SharedValue<number>;
 };
 
@@ -46,8 +55,16 @@ export function SeaweedInstance({
   waveFreq,
   waveSpeed,
   phase,
+  beamIntensity = seaweedDeformUniformDefaults.beamIntensity,
+  beamSharpness = seaweedDeformUniformDefaults.beamSharpness,
+  beamDistortion = seaweedDeformUniformDefaults.beamDistortion,
+  beamSpeed = seaweedDeformUniformDefaults.beamSpeed,
+  beamPhase = seaweedDeformUniformDefaults.beamPhase,
+  beamTint = seaweedDeformUniformDefaults.beamTint,
   clock,
 }: SeaweedInstanceProps) {
+  const beamTintUniform = [...beamTint] as [number, number, number];
+
   const uniforms = useDerivedValue(() => ({
     iTime: clock.value / 1000,
     seaweedX: x,
@@ -59,6 +76,12 @@ export function SeaweedInstance({
     waveFreq,
     waveSpeed,
     phase,
+    beamIntensity,
+    beamSharpness,
+    beamDistortion,
+    beamSpeed,
+    beamPhase,
+    beamTint: beamTintUniform,
   }));
 
   return (
