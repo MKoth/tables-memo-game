@@ -19,21 +19,21 @@ import {
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
 
-const BLUR_SIGMA = 2;
+const BLUR_SIGMA = 1.5;
 const {
   tileScale,
   distortionAmpScale,
   distortionFreqScale,
-  causticPatchScale,
-  causticBaseScale,
-  causticRangeScale,
   underwaterTint,
   underwaterTintStrength,
   underwaterDepthStrength,
   waterDriftCount,
   waterDriftScale,
   waterDriftIntensity,
+  waterDriftTint,
   waterDriftSpeed,
+  waterDriftMoveAngle,
+  waterDriftMoveSpeed,
   waterDriftSharpness,
   waterDriftWaveAmp,
   waterDriftWaveFreq,
@@ -42,6 +42,7 @@ const {
   waterDriftClusterFreq,
   waterDriftLineVariation,
   waterDriftIntensityVariation,
+  waterDriftFrequencyVariation,
   waterDriftEdgeJunctionStrength,
 } = underseaSeafloorUniformDefaults;
 
@@ -49,9 +50,25 @@ function padArray(arr: readonly number[], fill = 0): number[] {
   return [...arr, ...Array(Math.max(0, MAX_DRIFT_LAYERS - arr.length)).fill(fill)];
 }
 
+function padTintChannel(
+  tints: readonly (readonly [number, number, number])[],
+  channel: 0 | 1 | 2,
+  fill = 1,
+): number[] {
+  return padArray(
+    tints.map((t) => t[channel]),
+    fill,
+  );
+}
+
 const paddedWaterDriftScale = padArray(waterDriftScale);
 const paddedWaterDriftIntensity = padArray(waterDriftIntensity);
+const paddedWaterDriftTintR = padTintChannel(waterDriftTint, 0);
+const paddedWaterDriftTintG = padTintChannel(waterDriftTint, 1);
+const paddedWaterDriftTintB = padTintChannel(waterDriftTint, 2);
 const paddedWaterDriftSpeed = padArray(waterDriftSpeed);
+const paddedWaterDriftMoveAngle = padArray(waterDriftMoveAngle);
+const paddedWaterDriftMoveSpeed = padArray(waterDriftMoveSpeed);
 const paddedWaterDriftSharpness = padArray(waterDriftSharpness);
 const paddedWaterDriftWaveAmp = padArray(waterDriftWaveAmp);
 const paddedWaterDriftWaveFreq = padArray(waterDriftWaveFreq);
@@ -60,6 +77,7 @@ const paddedWaterDriftClusterAmp = padArray(waterDriftClusterAmp);
 const paddedWaterDriftClusterFreq = padArray(waterDriftClusterFreq);
 const paddedWaterDriftLineVariation = padArray(waterDriftLineVariation);
 const paddedWaterDriftIntensityVariation = padArray(waterDriftIntensityVariation);
+const paddedWaterDriftFrequencyVariation = padArray(waterDriftFrequencyVariation);
 const paddedWaterDriftEdgeJunctionStrength = padArray(waterDriftEdgeJunctionStrength);
 const underwaterTintUniform = [...underwaterTint] as [number, number, number];
 
@@ -84,16 +102,18 @@ export function UnderseaBackground() {
     tileScale,
     distortionAmpScale,
     distortionFreqScale,
-    causticPatchScale,
-    causticBaseScale,
-    causticRangeScale,
     underwaterTint: underwaterTintUniform,
     underwaterTintStrength,
     underwaterDepthStrength,
     waterDriftCount,
     waterDriftScale: paddedWaterDriftScale,
     waterDriftIntensity: paddedWaterDriftIntensity,
+    waterDriftTintR: paddedWaterDriftTintR,
+    waterDriftTintG: paddedWaterDriftTintG,
+    waterDriftTintB: paddedWaterDriftTintB,
     waterDriftSpeed: paddedWaterDriftSpeed,
+    waterDriftMoveAngle: paddedWaterDriftMoveAngle,
+    waterDriftMoveSpeed: paddedWaterDriftMoveSpeed,
     waterDriftSharpness: paddedWaterDriftSharpness,
     waterDriftWaveAmp: paddedWaterDriftWaveAmp,
     waterDriftWaveFreq: paddedWaterDriftWaveFreq,
@@ -102,6 +122,7 @@ export function UnderseaBackground() {
     waterDriftClusterFreq: paddedWaterDriftClusterFreq,
     waterDriftLineVariation: paddedWaterDriftLineVariation,
     waterDriftIntensityVariation: paddedWaterDriftIntensityVariation,
+    waterDriftFrequencyVariation: paddedWaterDriftFrequencyVariation,
     waterDriftEdgeJunctionStrength: paddedWaterDriftEdgeJunctionStrength,
   }));
 

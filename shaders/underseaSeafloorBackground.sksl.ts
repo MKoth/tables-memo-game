@@ -1,6 +1,6 @@
 /**
  * Full-screen undersea seafloor: UV water distortion, tiled texture sample,
- * caustic light/shadow, waterDrift voronoi webs, and cool underwater tint.
+ * waterDrift voronoi webs, and cool underwater tint.
  */
 export const MAX_DRIFT_LAYERS = 4;
 
@@ -10,9 +10,6 @@ uniform float2 iResolution;
 uniform float tileScale;
 uniform float distortionAmpScale;
 uniform float distortionFreqScale;
-uniform float causticPatchScale;
-uniform float causticBaseScale;
-uniform float causticRangeScale;
 uniform float3 underwaterTint;
 uniform float underwaterTintStrength;
 uniform float underwaterDepthStrength;
@@ -28,14 +25,17 @@ uniform float waterDriftClusterAmp[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftClusterFreq[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftLineVariation[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftIntensityVariation[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftFrequencyVariation[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftEdgeJunctionStrength[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftTintR[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftTintG[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftTintB[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftMoveAngle[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftMoveSpeed[${MAX_DRIFT_LAYERS}];
 uniform shader tileTexture;
 
 const float DISTORTION_AMP = 8.0;
 const float DISTORTION_FREQ = 0.0055;
-const float CAUSTIC_FREQ = 0.005;
-const float CAUSTIC_BASE = 0.72;
-const float CAUSTIC_RANGE = 0.29;
 
 vec2 distortUV(vec2 coord, float t) {
   float amp = DISTORTION_AMP * distortionAmpScale;
@@ -45,16 +45,6 @@ vec2 distortUV(vec2 coord, float t) {
   float dy = cos(coord.x * f * 6.28 + t * 0.4) * amp
            + cos(coord.y * f * 3.5 - t * 0.6) * amp * 0.4;
   return coord + vec2(dx, dy);
-}
-
-float caustics(vec2 coord, float t) {
-  vec2 p = coord * (CAUSTIC_FREQ * causticPatchScale);
-  float w1 = sin(p.x * 3.1 + p.y * 1.7 + t * 0.9);
-  float w2 = sin(p.x * 1.9 - p.y * 4.2 + t * 0.7 + w1 * 1.5);
-  float w3 = sin((p.x + p.y) * 2.8 + t * 1.2 + w2 * 1.2);
-  float v = (w1 + w2 + w3) / 3.0;
-  return CAUSTIC_BASE * causticBaseScale
-       + (v + 1.0) * CAUSTIC_RANGE * causticRangeScale;
 }
 
 vec2 hash2(vec2 p) {
@@ -129,26 +119,34 @@ half4 main(float2 fragCoord) {
   float2 warped = distortUV(fragCoord, t);
   float2 tileCoord = warped * (tileScale / iResolution.x);
   half4 tex = tileTexture.eval(tileCoord * iResolution.x);
-  tex.rgb *= half3(caustics(fragCoord, t));
-
-  int layerCount = int(waterDriftCount);
-  for (int i = 0; i < ${MAX_DRIFT_LAYERS}; i++) {
-    if (i >= layerCount) { break; }
-    vec2 rawCoord = fragCoord * (0.004 * waterDriftScale[i]);
-    vec2 waved = warpVoronoiCoord(rawCoord, t,
-      waterDriftWaveAmp[i], waterDriftWaveFreq[i], waterDriftWaveSpeed[i]);
-    float drift = waterDriftCaustics(waved, t,
-      waterDriftSpeed[i], waterDriftSharpness[i], waterDriftLineVariation[i],
-      waterDriftIntensityVariation[i], waterDriftEdgeJunctionStrength[i],
-      waterDriftClusterAmp[i], waterDriftClusterFreq[i]);
-    tex.rgb += half3(drift * waterDriftIntensity[i]) * half3(0.9, 0.97, 1.0);
-  }
 
   float depth = 1.0 - fragCoord.y / iResolution.y;
   half3 tint = half3(underwaterTint);
   half3 deepTint = half3(0.55, 0.78, 1.18);
   half3 withDepth = mix(tint, deepTint, depth * underwaterDepthStrength);
   tex.rgb *= mix(half3(1.0), withDepth, underwaterTintStrength);
+
+  int layerCount = int(waterDriftCount);
+  for (int i = 0; i < ${MAX_DRIFT_LAYERS}; i++) {
+    if (i >= layerCount) { break; }
+    vec2 rawCoord = fragCoord * (0.004 * waterDriftScale[i]);
+    float moveRad = waterDriftMoveAngle[i] * 0.01745329252;
+    rawCoord -= vec2(cos(moveRad), sin(moveRad)) * t * waterDriftMoveSpeed[i];
+    float freqRand = hash2(floor(rawCoord) + vec2(17.3, 41.7)).x;
+    float localWaveFreq = waterDriftWaveFreq[i]
+      * mix(1.0 - waterDriftFrequencyVariation[i] * 0.6,
+            1.0 + waterDriftFrequencyVariation[i] * 0.6, freqRand);
+    vec2 waved = warpVoronoiCoord(rawCoord, t,
+      waterDriftWaveAmp[i], localWaveFreq, waterDriftWaveSpeed[i]);
+    float drift = waterDriftCaustics(waved, t,
+      waterDriftSpeed[i], waterDriftSharpness[i], waterDriftLineVariation[i],
+      waterDriftIntensityVariation[i], waterDriftEdgeJunctionStrength[i],
+      waterDriftClusterAmp[i], waterDriftClusterFreq[i]);
+    half beam = half(drift * waterDriftIntensity[i]);
+    half3 beamTint = half3(waterDriftTintR[i], waterDriftTintG[i], waterDriftTintB[i]);
+    tex.rgb = mix(tex.rgb, tex.rgb * beamTint, beam);
+  }
+
   return tex;
 }
 `;
@@ -160,12 +158,6 @@ export const underseaSeafloorUniformDefaults = {
   distortionAmpScale: 1,
   /** Distortion wave density — higher = smaller ripples (DISTORTION_FREQ). */
   distortionFreqScale: 0.6,
-  /** Caustic patch size — higher = smaller light/shadow patches (CAUSTIC_FREQ). */
-  causticPatchScale: 0.6,
-  /** Overall caustic brightness floor (CAUSTIC_BASE). */
-  causticBaseScale: 1,
-  /** Caustic contrast / highlight strength (CAUSTIC_RANGE). */
-  causticRangeScale: 1,
   /** RGB multiplier for underwater color cast — lower R, higher B = bluer. */
   underwaterTint: [0.68, 0.84, 1.18] as const,
   /** Underwater tint intensity — 0 = no tint, 1 = full tint. */
@@ -175,13 +167,23 @@ export const underseaSeafloorUniformDefaults = {
   /** Number of stacked waterDrift layers (max MAX_DRIFT_LAYERS). */
   waterDriftCount: 3,
   /** WaterDrift voronoi cell density per layer. */
-  waterDriftScale: [2.0, 8.0, 10.0],
-  /** WaterDrift web brightness (additive) per layer. */
-  waterDriftIntensity: [0.08, 0.08, 0.08],
+  waterDriftScale: [2.0, 4.0, 8.0],
+  /** WaterDrift beam strength per layer — 0 = none, 1 = full tint on edges. */
+  waterDriftIntensity: [0.2, 0.15, 0.1],
+  /** WaterDrift beam RGB multiplier per layer — warm gold reads as sun rays. */
+  waterDriftTint: [
+    [1.8, 1.8, 1.8],
+    [1.8, 1.8, 1.8],
+    [1.8, 1.8, 1.8],
+  ] as const,
   /** WaterDrift in-place dance speed per layer. */
-  waterDriftSpeed: [0.4, 0.6, 0.8],
+  waterDriftSpeed: [0.3, 1.0, 3.0],
+  /** WaterDrift scroll direction per layer — degrees, 0 = right, 90 = down. */
+  waterDriftMoveAngle: [160, 200, 220],
+  /** WaterDrift scroll speed per layer — 0 = stationary pattern. */
+  waterDriftMoveSpeed: [0.1, 0.3, 0.6],
   /** WaterDrift border line width per layer — higher = thinner veins. */
-  waterDriftSharpness: [40, 14, 10],
+  waterDriftSharpness: [3, 1, 0.5],
   /** WaterDrift wave distortion amplitude per layer — 0 = straight. */
   waterDriftWaveAmp: [0.03, 0.05, 0.07],
   /** WaterDrift wave ripple density per layer. */
@@ -193,9 +195,11 @@ export const underseaSeafloorUniformDefaults = {
   /** WaterDrift domain warp frequency per layer. */
   waterDriftClusterFreq: [0.05, 0.30, 0.40],
   /** WaterDrift line thickness variation per layer — 0 = uniform. */
-  waterDriftLineVariation: [1.0, 0.5, 0.3],
+  waterDriftLineVariation: [0.2, 0.5, 0.3],
   /** WaterDrift brightness variation per layer — 0 = uniform, 1 = ±60% around waterDriftIntensity. */
   waterDriftIntensityVariation: [0.5, 0.3, 0.2],
+  /** WaterDrift wave frequency variation per layer — 0 = uniform, 1 = ±60% around waterDriftWaveFreq. */
+  waterDriftFrequencyVariation: [0.5, 0.4, 0.3],
   /** WaterDrift edge junction boost per layer — 0 = uniform, 1 = bright at vertices, dim at edge midpoints. */
   waterDriftEdgeJunctionStrength: [0.8, 0.4, 0.3],
   // waterDriftEdgeJunctionStrength: [0, 0, 0],
