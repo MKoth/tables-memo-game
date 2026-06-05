@@ -18,8 +18,24 @@ import {
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
+import { SeaweedInstance } from './SeaweedInstance';
 
 const BLUR_SIGMA = 1.5;
+const SEAWEED_BASE_WIDTH = 120;
+const SEAWEED_BASE_HEIGHT = 160;
+const SEAWEED_GROUND_OFFSET = 20;
+
+const SEAWEED_CONFIGS = [
+  {
+    xRatio: 0.04,
+    scale: 1.0,
+    phase: 0.0,
+    currentAngle: 10,
+    waveAmplitude: 0.06,
+    waveFreq: 10,
+    waveSpeed: 2.0,
+  },
+] as const;
 const {
   tileScale,
   distortionAmpScale,
@@ -94,6 +110,7 @@ const seafloorEffect = compileSeafloorEffect();
 export function UnderseaBackground() {
   const { width, height } = useWindowDimensions();
   const image = useImage(require('../../../assets/seafloor.png'));
+  const seaweedImage = useImage(require('../../../assets/seaweed1.png'));
   const clock = useClock();
 
   const uniforms = useDerivedValue(() => ({
@@ -126,7 +143,7 @@ export function UnderseaBackground() {
     waterDriftEdgeJunctionStrength: paddedWaterDriftEdgeJunctionStrength,
   }));
 
-  if (!image || width === 0 || height === 0) {
+  if (!image || !seaweedImage || width === 0 || height === 0) {
     return null;
   }
 
@@ -150,6 +167,34 @@ export function UnderseaBackground() {
             />
           </Shader>
         </Fill>
+      </Group>
+      <Group
+        layer={
+          <Paint>
+            <Blur blur={BLUR_SIGMA} mode="decal" />
+          </Paint>
+        }>
+        {SEAWEED_CONFIGS.map((config, index) => {
+          const seaweedWidth = SEAWEED_BASE_WIDTH * config.scale;
+          const seaweedHeight = SEAWEED_BASE_HEIGHT * config.scale;
+
+          return (
+            <SeaweedInstance
+              key={index}
+              image={seaweedImage}
+              x={config.xRatio * width}
+              y={height - seaweedHeight - SEAWEED_GROUND_OFFSET}
+              width={seaweedWidth}
+              height={seaweedHeight}
+              currentAngle={config.currentAngle}
+              waveAmplitude={config.waveAmplitude}
+              waveFreq={config.waveFreq}
+              waveSpeed={config.waveSpeed}
+              phase={config.phase}
+              clock={clock}
+            />
+          );
+        })}
       </Group>
     </Canvas>
   );
