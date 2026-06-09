@@ -37,17 +37,20 @@ half4 main(float2 fragCoord) {
 
   half4 color = seaweedTexture.eval(sampleCoord);
 
-  const float BEAM_MARGIN = 0.25;
-  const float BEAM_START = -0.5 - BEAM_MARGIN;
-  const float BEAM_END = 0.5 + BEAM_MARGIN;
-  const float TRAVEL_FRACTION = 0.8;
+  // Margin scales with beam width and distortion so the stripe fully clears
+  // the image before looping — avoids visible snap at cycle boundaries.
+  const float TRAVEL_FRACTION = 0.75;
+  float beamHalfWidth = sqrt(4.605 / max(beamSharpness, 0.001));
+  float beamMargin = beamHalfWidth + abs(beamDistortion) * 4.0 + 0.1;
+  float beamStart = -0.5 - beamMargin;
+  float beamEnd = 0.5 + beamMargin;
 
   float cycle = fract(iTime * beamSpeed + beamPhase);
   float beam = 0.0;
 
   if (cycle <= TRAVEL_FRACTION) {
     float t = cycle / TRAVEL_FRACTION;
-    float beamAlong = mix(BEAM_START, BEAM_END, t);
+    float beamAlong = mix(beamStart, beamEnd, t);
     float distortion = beamDistortion * sin(perp * 12.0 + iTime * 2.0);
     float dist = abs(along - beamAlong + distortion);
     beam = exp(-dist * dist * beamSharpness);
