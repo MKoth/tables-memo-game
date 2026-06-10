@@ -37,6 +37,13 @@ const {
   voronoiClusterAmp,
   voronoiClusterFreq,
   voronoiTint,
+  beamAngle,
+  beamIntensity,
+  beamSharpness,
+  beamDistortion,
+  beamSpeed,
+  beamPhase,
+  beamTint,
 } = stoneUnderwaterDefaults;
 
 function padArray(arr: readonly number[], fill = 0): number[] {
@@ -72,6 +79,13 @@ export type StoneInstanceProps = {
   height: number;
   screenWidth: number;
   screenHeight: number;
+  beamAngle?: number;
+  beamIntensity?: number;
+  beamSharpness?: number;
+  beamDistortion?: number;
+  beamSpeed?: number;
+  beamPhase?: number;
+  beamTint?: readonly [number, number, number];
   clock: SharedValue<number>;
 };
 
@@ -83,8 +97,17 @@ export function StoneInstance({
   height,
   screenWidth,
   screenHeight,
+  beamAngle: beamAngleProp = beamAngle,
+  beamIntensity: beamIntensityProp = beamIntensity,
+  beamSharpness: beamSharpnessProp = beamSharpness,
+  beamDistortion: beamDistortionProp = beamDistortion,
+  beamSpeed: beamSpeedProp = beamSpeed,
+  beamPhase: beamPhaseProp = beamPhase,
+  beamTint: beamTintProp = beamTint,
   clock,
 }: StoneInstanceProps) {
+  const beamTintUniform = [...beamTintProp] as [number, number, number];
+
   const uniforms = useDerivedValue(() => ({
     iTime: clock.value / 1000,
     iResolution: [screenWidth, screenHeight] as [number, number],
@@ -105,6 +128,13 @@ export function StoneInstance({
     voronoiTintR: paddedVoronoiTintR,
     voronoiTintG: paddedVoronoiTintG,
     voronoiTintB: paddedVoronoiTintB,
+    beamAngle: beamAngleProp,
+    beamIntensity: beamIntensityProp,
+    beamSharpness: beamSharpnessProp,
+    beamDistortion: beamDistortionProp,
+    beamSpeed: beamSpeedProp,
+    beamPhase: beamPhaseProp,
+    beamTint: beamTintUniform,
   }));
 
   return (

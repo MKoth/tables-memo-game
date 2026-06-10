@@ -1,5 +1,5 @@
 /**
- * Stone sprites: underwater tint + quantized static voronoi caustics.
+ * Stone sprites: underwater tint + quantized static voronoi caustics + traveling light beam.
  * Cells are static per variant; floor(iTime * switchRate) snaps between hash-seeded patterns.
  */
 export const MAX_STONE_VORONOI_LAYERS = 4;
@@ -24,6 +24,13 @@ uniform float voronoiClusterFreq[${MAX_STONE_VORONOI_LAYERS}];
 uniform float voronoiTintR[${MAX_STONE_VORONOI_LAYERS}];
 uniform float voronoiTintG[${MAX_STONE_VORONOI_LAYERS}];
 uniform float voronoiTintB[${MAX_STONE_VORONOI_LAYERS}];
+uniform float beamAngle;
+uniform float beamIntensity;
+uniform float beamSharpness;
+uniform float beamDistortion;
+uniform float beamSpeed;
+uniform float beamPhase;
+uniform float3 beamTint;
 uniform shader stoneTexture;
 
 vec2 hash2(vec2 p) {
@@ -131,6 +138,32 @@ half4 main(float2 fragCoord) {
     color.rgb = mix(color.rgb, color.rgb * beamTint, beam);
   }
 
+  vec2 beamDir = vec2(cos(beamAngle), sin(beamAngle));
+  vec2 beamPerp = vec2(-sin(beamAngle), cos(beamAngle));
+  float along = dot(local - 0.5, beamDir);
+  float perp = dot(local - 0.5, beamPerp);
+
+  const float TRAVEL_FRACTION = 0.75;
+  float beamHalfWidth = sqrt(4.605 / max(beamSharpness, 0.001));
+  float beamMargin = beamHalfWidth + abs(beamDistortion) * 4.0 + 0.1;
+  float beamStart = -0.5 - beamMargin;
+  float beamEnd = 0.5 + beamMargin;
+
+  float cycle = fract(iTime * beamSpeed + beamPhase);
+  float travelBeam = 0.0;
+
+  if (cycle <= TRAVEL_FRACTION) {
+    float t = cycle / TRAVEL_FRACTION;
+    float beamAlong = mix(beamStart, beamEnd, t);
+    float distortion = beamDistortion * sin(perp * 12.0 + iTime * 2.0);
+    float dist = abs(along - beamAlong + distortion);
+    travelBeam = exp(-dist * dist * beamSharpness);
+  }
+
+  half travelBeamStrength = half(travelBeam * beamIntensity * color.a);
+  half3 travelBeamTint = half3(beamTint);
+  color.rgb = mix(color.rgb, color.rgb * travelBeamTint, travelBeamStrength);
+
   return color;
 }
 `;
@@ -162,4 +195,18 @@ export const stoneUnderwaterDefaults = {
     [1.8, 1.8, 1.8],
     [1.8, 1.8, 1.8],
   ] as const,
+  /** Traveling light beam direction in radians — 0 = right, PI/2 = down. */
+  beamAngle: Math.PI,
+  /** Brightness of the traveling light beam — 0 = disabled. */
+  beamIntensity: 0.13,
+  /** Beam width — higher = thinner stripe (suggested range 20–200). */
+  beamSharpness: 10,
+  /** Waviness of the beam edge — 0 = straight line. */
+  beamDistortion: 0.02,
+  /** How fast the beam travels along the beam direction. */
+  beamSpeed: 0.2,
+  /** Per-instance beam time offset. */
+  beamPhase: 0,
+  /** RGB multiplier for the traveling beam. */
+  beamTint: [2.8, 2.8, 2.8] as const,
 } as const;

@@ -46,15 +46,15 @@ const STONE_VARIANTS = {
 type StoneVariant = keyof typeof STONE_VARIANTS;
 
 const STONE_CONFIGS = [
-  { variant: 1 satisfies StoneVariant, xRatio: 0.06, yRatio: 0.13, scale: 1.75 },
-  { variant: 2 satisfies StoneVariant, xRatio: 0.46, yRatio: 0.1, scale: 1.95 },
-  { variant: 3 satisfies StoneVariant, xRatio: 0.28, yRatio: 0.32, scale: 1.4 },
-  { variant: 4 satisfies StoneVariant, xRatio: 0.38, yRatio: 0.56, scale: 1.7 },
-  { variant: 5 satisfies StoneVariant, xRatio: 0.5, yRatio: 0.42, scale: 1.8 },
-  { variant: 6 satisfies StoneVariant, xRatio: 0.1, yRatio: 0.7, scale: 1.7 },
-  { variant: 7 satisfies StoneVariant, xRatio: 0.72, yRatio: 0.79, scale: 1.9 },
-  { variant: 8 satisfies StoneVariant, xRatio: 0.66, yRatio: 0.24, scale: 1.85 },
-  { variant: 9 satisfies StoneVariant, xRatio: 0.3, yRatio: 0.81, scale: 1.75 },
+  { variant: 1 satisfies StoneVariant, xRatio: 0.06, yRatio: 0.13, scale: 1.75, stonePhase: 0.0 },
+  { variant: 2 satisfies StoneVariant, xRatio: 0.46, yRatio: 0.1, scale: 1.95, stonePhase: 0.5 },
+  { variant: 3 satisfies StoneVariant, xRatio: 0.28, yRatio: 0.32, scale: 1.4, stonePhase: 0.3 },
+  { variant: 4 satisfies StoneVariant, xRatio: 0.38, yRatio: 0.56, scale: 1.7, stonePhase: 0.7 },
+  { variant: 5 satisfies StoneVariant, xRatio: 0.5, yRatio: 0.42, scale: 1.8, stonePhase: 2.0 },
+  { variant: 6 satisfies StoneVariant, xRatio: 0.1, yRatio: 0.7, scale: 1.7, stonePhase: 0.0 },
+  { variant: 7 satisfies StoneVariant, xRatio: 0.64, yRatio: 0.73, scale: 2.2, stonePhase: 3.0 },
+  { variant: 8 satisfies StoneVariant, xRatio: 0.66, yRatio: 0.24, scale: 1.85, stonePhase: 1.0 },
+  { variant: 9 satisfies StoneVariant, xRatio: 0.3, yRatio: 0.81, scale: 1.75, stonePhase: 0.0 },
 ] as const;
 
 const SEAWEED_VARIANTS = {
