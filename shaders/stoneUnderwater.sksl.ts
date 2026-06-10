@@ -149,9 +149,9 @@ export const stoneUnderwaterDefaults = {
   /** Voronoi cell density per layer in stone-local UV space. */
   voronoiScale: [2.0, 5.0, 8.0],
   /** Caustic beam strength per layer — lighter than seafloor. */
-  voronoiIntensity: [0.15, 0.12, 0.08],
+  voronoiIntensity: [0.08, 0.07, 0.06],
   /** Border line width per layer — higher = thinner veins. */
-  voronoiSharpness: [2.5, 1.2, 0.6],
+  voronoiSharpness: [2.0, 1.2, 0.6],
   /** Domain warp amplitude per layer. */
   voronoiClusterAmp: [0.8, 0.5, 0.6],
   /** Domain warp frequency per layer. */

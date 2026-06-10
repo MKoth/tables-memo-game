@@ -177,7 +177,7 @@ export const underseaSeafloorUniformDefaults = {
   /** WaterDrift voronoi cell density per layer. */
   waterDriftScale: [2.0, 4.0, 8.0],
   /** WaterDrift beam strength per layer — 0 = none, 1 = full tint on edges. */
-  waterDriftIntensity: [0.2, 0.15, 0.1],
+  waterDriftIntensity: [0.2, 0.17, 0.12],
   /** WaterDrift beam RGB multiplier per layer — warm gold reads as sun rays. */
   waterDriftTint: [
     [1.8, 1.8, 1.8],
@@ -189,7 +189,7 @@ export const underseaSeafloorUniformDefaults = {
   /** WaterDrift scroll direction per layer — degrees, 0 = right, 90 = down. */
   waterDriftMoveAngle: [160, 200, 220],
   /** WaterDrift scroll speed per layer — 0 = stationary pattern. */
-  waterDriftMoveSpeed: [0.1, 0.3, 0.6],
+  waterDriftMoveSpeed: [0.16, 0.6, 1.2],
   /** WaterDrift border line width per layer — higher = thinner veins. */
   waterDriftSharpness: [3, 1, 0.5],
   /** WaterDrift wave distortion amplitude per layer — 0 = straight. */
