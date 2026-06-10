@@ -44,6 +44,9 @@ const {
   beamSpeed,
   beamPhase,
   beamTint,
+  shadowStrength,
+  shadowStart,
+  shadowEnd,
 } = stoneUnderwaterDefaults;
 
 function padArray(arr: readonly number[], fill = 0): number[] {
@@ -135,6 +138,9 @@ export function StoneInstance({
     beamSpeed: beamSpeedProp,
     beamPhase: beamPhaseProp,
     beamTint: beamTintUniform,
+    shadowStrength,
+    shadowStart,
+    shadowEnd,
   }));
 
   return (

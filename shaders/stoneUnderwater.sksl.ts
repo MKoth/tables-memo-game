@@ -31,6 +31,9 @@ uniform float beamDistortion;
 uniform float beamSpeed;
 uniform float beamPhase;
 uniform float3 beamTint;
+uniform float shadowStrength;
+uniform float shadowStart;
+uniform float shadowEnd;
 uniform shader stoneTexture;
 
 vec2 hash2(vec2 p) {
@@ -168,6 +171,9 @@ half4 main(float2 fragCoord) {
   half3 travelBeamTint = half3(beamTint);
   color.rgb = mix(color.rgb, color.rgb * travelBeamTint, travelBeamStrength);
 
+  float contactShadow = smoothstep(shadowStart, shadowEnd, local.y) * shadowStrength * color.a;
+  color.rgb *= half(1.0 - contactShadow);
+
   return color;
 }
 `;
@@ -213,4 +219,10 @@ export const stoneUnderwaterDefaults = {
   beamPhase: 0,
   /** RGB multiplier for the traveling beam. */
   beamTint: [2.8, 2.8, 2.8] as const,
+  /** Bottom contact shadow — darkens toward the base of the stone. */
+  shadowStrength: 0.4,
+  /** Local Y where the shadow gradient begins (0 = top, 1 = bottom). */
+  shadowStart: 0.55,
+  /** Local Y where the shadow reaches full strength. */
+  shadowEnd: 1.0,
 } as const;
