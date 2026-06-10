@@ -47,9 +47,9 @@ const STONE_CONFIGS = [
   { variant: 4 satisfies StoneVariant, xRatio: 0.38, yRatio: 0.56, scale: 1.7, stonePhase: 0.7 },
   { variant: 5 satisfies StoneVariant, xRatio: 0.5, yRatio: 0.40, scale: 1.8, stonePhase: 2.0 },
   { variant: 6 satisfies StoneVariant, xRatio: 0.26, yRatio: 0.47, scale: 1.7, stonePhase: 0.0 },
-  { variant: 7 satisfies StoneVariant, xRatio: 0.63, yRatio: 0.65, scale: 2.2, stonePhase: 3.0 },
+  { variant: 7 satisfies StoneVariant, xRatio: 0.63, yRatio: 0.50, scale: 2.2, stonePhase: 3.0 },
   { variant: 8 satisfies StoneVariant, xRatio: 0.36, yRatio: 0.20, scale: 1.85, stonePhase: 1.0 },
-  { variant: 9 satisfies StoneVariant, xRatio: 0.74, yRatio: 0.48, scale: 1.35, stonePhase: 0.0 },
+  { variant: 9 satisfies StoneVariant, xRatio: 0.74, yRatio: 0.65, scale: 1.35, stonePhase: 0.0 },
 ] as const;
 
 const SEAWEED_VARIANTS = {
