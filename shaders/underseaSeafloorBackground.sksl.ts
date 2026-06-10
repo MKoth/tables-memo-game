@@ -165,7 +165,7 @@ half4 main(float2 fragCoord) {
 
 /** Tweaking multipliers: 1 = shader defaults. Values >1 strengthen / shrink patches. */
 export const underseaSeafloorUniformDefaults = {
-  tileScale: 3,
+  tileScale: 2.4,
   /** RGB multiplier for underwater color cast — lower R, higher B = bluer. */
   underwaterTint: [0.68, 0.84, 1.18] as const,
   /** Underwater tint intensity — 0 = no tint, 1 = full tint. */
@@ -175,9 +175,9 @@ export const underseaSeafloorUniformDefaults = {
   /** Number of stacked waterDrift layers (max MAX_DRIFT_LAYERS). */
   waterDriftCount: 3,
   /** WaterDrift voronoi cell density per layer. */
-  waterDriftScale: [2.0, 4.0, 8.0],
+  waterDriftScale: [4.0, 6.0, 8.0],
   /** WaterDrift beam strength per layer — 0 = none, 1 = full tint on edges. */
-  waterDriftIntensity: [0.2, 0.17, 0.12],
+  waterDriftIntensity: [0.23, 0.18, 0.16],
   /** WaterDrift beam RGB multiplier per layer — warm gold reads as sun rays. */
   waterDriftTint: [
     [1.8, 1.8, 1.8],
