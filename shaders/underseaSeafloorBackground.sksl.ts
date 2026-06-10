@@ -1,5 +1,5 @@
 /**
- * Full-screen undersea seafloor: UV water distortion, tiled texture sample,
+ * Full-screen undersea seafloor: tiled texture sample,
  * waterDrift voronoi webs, and cool underwater tint.
  */
 export const MAX_DRIFT_LAYERS = 4;
@@ -8,8 +8,6 @@ export const UNDERSEA_SEAFLOOR_BACKGROUND_SKSL = `
 uniform float iTime;
 uniform float2 iResolution;
 uniform float tileScale;
-uniform float distortionAmpScale;
-uniform float distortionFreqScale;
 uniform float3 underwaterTint;
 uniform float underwaterTintStrength;
 uniform float underwaterDepthStrength;
@@ -34,19 +32,6 @@ uniform float waterDriftMoveX[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftMoveY[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftMoveSpeed[${MAX_DRIFT_LAYERS}];
 uniform shader tileTexture;
-
-const float DISTORTION_AMP = 8.0;
-const float DISTORTION_FREQ = 0.0055;
-
-vec2 distortUV(vec2 coord, float t) {
-  float amp = DISTORTION_AMP * distortionAmpScale;
-  float f = DISTORTION_FREQ * distortionFreqScale;
-  float dx = sin(coord.y * f * 6.28 + t * 0.5) * amp
-           + sin(coord.x * f * 4.0 + t * 0.3) * amp * 0.4;
-  float dy = cos(coord.x * f * 6.28 + t * 0.4) * amp
-           + cos(coord.y * f * 3.5 - t * 0.6) * amp * 0.4;
-  return coord + vec2(dx, dy);
-}
 
 vec2 hash2(vec2 p) {
   p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
@@ -145,8 +130,7 @@ float waterDriftCaustics(vec2 coord, float t, float speed, float sharpness,
 
 half4 main(float2 fragCoord) {
   float t = iTime;
-  float2 warped = distortUV(fragCoord, t);
-  float2 tileCoord = warped * (tileScale / iResolution.x);
+  float2 tileCoord = fragCoord * (tileScale / iResolution.x);
   half4 tex = tileTexture.eval(tileCoord * iResolution.x);
 
   float depth = 1.0 - fragCoord.y / iResolution.y;
@@ -182,10 +166,6 @@ half4 main(float2 fragCoord) {
 /** Tweaking multipliers: 1 = shader defaults. Values >1 strengthen / shrink patches. */
 export const underseaSeafloorUniformDefaults = {
   tileScale: 3,
-  /** Distortion displacement strength (DISTORTION_AMP). */
-  distortionAmpScale: 1,
-  /** Distortion wave density — higher = smaller ripples (DISTORTION_FREQ). */
-  distortionFreqScale: 0.6,
   /** RGB multiplier for underwater color cast — lower R, higher B = bluer. */
   underwaterTint: [0.68, 0.84, 1.18] as const,
   /** Underwater tint intensity — 0 = no tint, 1 = full tint. */

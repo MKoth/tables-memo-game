@@ -90,8 +90,6 @@ const SEAWEED_CONFIGS = [
 ] as const;
 const {
   tileScale,
-  distortionAmpScale,
-  distortionFreqScale,
   underwaterTint,
   underwaterTintStrength,
   underwaterDepthStrength,
@@ -179,8 +177,6 @@ export function UnderseaBackground() {
     iTime: clock.value / 1500,
     iResolution: [bgWidth, bgHeight] as [number, number],
     tileScale,
-    distortionAmpScale,
-    distortionFreqScale,
     underwaterTint: underwaterTintUniform,
     underwaterTintStrength,
     underwaterDepthStrength,
