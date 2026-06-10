@@ -19,13 +19,43 @@ import {
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
 import { SeaweedInstance } from './SeaweedInstance';
+import { StoneInstance } from './StoneInstance';
 
 const BACKGROUND_RES = 0.5;
 const BACKGROUND_BLUR_SIGMA = 1.0;
+const STONE_BLUR_SIGMA = 1.4;
 const SEAWEED_BLUR_SIGMA = 1.5;
 const DEG_TO_RAD = Math.PI / 180;
 const SEAWEED_BASE_WIDTH = 120;
 const SEAWEED_BASE_HEIGHT = 160;
+const STONE_BASE_WIDTH = 72;
+const STONE_BASE_HEIGHT = 56;
+
+const STONE_VARIANTS = {
+  1: require('../../../assets/stone1.png'),
+  2: require('../../../assets/stone2.png'),
+  3: require('../../../assets/stone3.png'),
+  4: require('../../../assets/stone4.png'),
+  5: require('../../../assets/stone5.png'),
+  6: require('../../../assets/stone6.png'),
+  7: require('../../../assets/stone7.png'),
+  8: require('../../../assets/stone8.png'),
+  9: require('../../../assets/stone9.png'),
+} as const;
+
+type StoneVariant = keyof typeof STONE_VARIANTS;
+
+const STONE_CONFIGS = [
+  { variant: 1 satisfies StoneVariant, xRatio: 0.06, yRatio: 0.13, scale: 1.75 },
+  { variant: 2 satisfies StoneVariant, xRatio: 0.46, yRatio: 0.1, scale: 1.95 },
+  { variant: 3 satisfies StoneVariant, xRatio: 0.28, yRatio: 0.32, scale: 1.4 },
+  { variant: 4 satisfies StoneVariant, xRatio: 0.38, yRatio: 0.56, scale: 1.7 },
+  { variant: 5 satisfies StoneVariant, xRatio: 0.5, yRatio: 0.42, scale: 1.8 },
+  { variant: 6 satisfies StoneVariant, xRatio: 0.1, yRatio: 0.7, scale: 1.7 },
+  { variant: 7 satisfies StoneVariant, xRatio: 0.72, yRatio: 0.79, scale: 1.9 },
+  { variant: 8 satisfies StoneVariant, xRatio: 0.66, yRatio: 0.24, scale: 1.85 },
+  { variant: 9 satisfies StoneVariant, xRatio: 0.3, yRatio: 0.81, scale: 1.75 },
+] as const;
 
 const SEAWEED_VARIANTS = {
   1: require('../../../assets/seaweed1.png'),
@@ -168,6 +198,15 @@ export function UnderseaBackground() {
   const seaweed1 = useImage(SEAWEED_VARIANTS[1]);
   const seaweed2 = useImage(SEAWEED_VARIANTS[2]);
   const seaweed3 = useImage(SEAWEED_VARIANTS[3]);
+  const stone1 = useImage(STONE_VARIANTS[1]);
+  const stone2 = useImage(STONE_VARIANTS[2]);
+  const stone3 = useImage(STONE_VARIANTS[3]);
+  const stone4 = useImage(STONE_VARIANTS[4]);
+  const stone5 = useImage(STONE_VARIANTS[5]);
+  const stone6 = useImage(STONE_VARIANTS[6]);
+  const stone7 = useImage(STONE_VARIANTS[7]);
+  const stone8 = useImage(STONE_VARIANTS[8]);
+  const stone9 = useImage(STONE_VARIANTS[9]);
   const clock = useClock();
 
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
@@ -202,11 +241,38 @@ export function UnderseaBackground() {
     waterDriftEdgeJunctionStrength: paddedWaterDriftEdgeJunctionStrength,
   }));
 
-  if (!image || !seaweed1 || !seaweed2 || !seaweed3 || width === 0 || height === 0) {
+  if (
+    !image ||
+    !seaweed1 ||
+    !seaweed2 ||
+    !seaweed3 ||
+    !stone1 ||
+    !stone2 ||
+    !stone3 ||
+    !stone4 ||
+    !stone5 ||
+    !stone6 ||
+    !stone7 ||
+    !stone8 ||
+    !stone9 ||
+    width === 0 ||
+    height === 0
+  ) {
     return null;
   }
 
   const seaweedImages = { 1: seaweed1, 2: seaweed2, 3: seaweed3 };
+  const stoneImages = {
+    1: stone1,
+    2: stone2,
+    3: stone3,
+    4: stone4,
+    5: stone5,
+    6: stone6,
+    7: stone7,
+    8: stone8,
+    9: stone9,
+  };
 
   return (
     <View style={styles.container} pointerEvents="none">
@@ -240,6 +306,32 @@ export function UnderseaBackground() {
         </Group>
       </Canvas>
       <Canvas style={styles.foregroundCanvas}>
+        <Group
+          layer={
+            <Paint>
+              <Blur blur={STONE_BLUR_SIGMA} mode="decal" />
+            </Paint>
+          }>
+          {STONE_CONFIGS.map((config, index) => {
+            const stoneWidth = STONE_BASE_WIDTH * config.scale;
+            const stoneHeight = STONE_BASE_HEIGHT * config.scale;
+            const stoneImage = stoneImages[config.variant];
+
+            return (
+              <StoneInstance
+                key={`stone-${index}`}
+                image={stoneImage}
+                x={config.xRatio * width}
+                y={config.yRatio * height}
+                width={stoneWidth}
+                height={stoneHeight}
+                screenWidth={width}
+                screenHeight={height}
+                clock={clock}
+              />
+            );
+          })}
+        </Group>
         <Group
           layer={
             <Paint>
