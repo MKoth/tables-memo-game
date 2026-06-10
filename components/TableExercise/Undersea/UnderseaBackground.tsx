@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import {
   Blur,
   Canvas,
@@ -20,7 +20,10 @@ import {
 } from '../../../shaders/underseaSeafloorBackground.sksl';
 import { SeaweedInstance } from './SeaweedInstance';
 
-const BLUR_SIGMA = 1.5;
+const BACKGROUND_RES = 0.5;
+const BACKGROUND_BLUR_SIGMA = 1.0;
+const SEAWEED_BLUR_SIGMA = 1.5;
+const DEG_TO_RAD = Math.PI / 180;
 const SEAWEED_BASE_WIDTH = 120;
 const SEAWEED_BASE_HEIGHT = 160;
 
@@ -132,7 +135,12 @@ const paddedWaterDriftTintR = padTintChannel(waterDriftTint, 0);
 const paddedWaterDriftTintG = padTintChannel(waterDriftTint, 1);
 const paddedWaterDriftTintB = padTintChannel(waterDriftTint, 2);
 const paddedWaterDriftSpeed = padArray(waterDriftSpeed);
-const paddedWaterDriftMoveAngle = padArray(waterDriftMoveAngle);
+const paddedWaterDriftMoveX = padArray(
+  waterDriftMoveAngle.map((angle) => Math.cos(angle * DEG_TO_RAD)),
+);
+const paddedWaterDriftMoveY = padArray(
+  waterDriftMoveAngle.map((angle) => Math.sin(angle * DEG_TO_RAD)),
+);
 const paddedWaterDriftMoveSpeed = padArray(waterDriftMoveSpeed);
 const paddedWaterDriftSharpness = padArray(waterDriftSharpness);
 const paddedWaterDriftWaveAmp = padArray(waterDriftWaveAmp);
@@ -164,9 +172,12 @@ export function UnderseaBackground() {
   const seaweed3 = useImage(SEAWEED_VARIANTS[3]);
   const clock = useClock();
 
+  const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
+  const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
+
   const uniforms = useDerivedValue(() => ({
     iTime: clock.value / 1500,
-    iResolution: [width, height] as [number, number],
+    iResolution: [bgWidth, bgHeight] as [number, number],
     tileScale,
     distortionAmpScale,
     distortionFreqScale,
@@ -180,7 +191,8 @@ export function UnderseaBackground() {
     waterDriftTintG: paddedWaterDriftTintG,
     waterDriftTintB: paddedWaterDriftTintB,
     waterDriftSpeed: paddedWaterDriftSpeed,
-    waterDriftMoveAngle: paddedWaterDriftMoveAngle,
+    waterDriftMoveX: paddedWaterDriftMoveX,
+    waterDriftMoveY: paddedWaterDriftMoveY,
     waterDriftMoveSpeed: paddedWaterDriftMoveSpeed,
     waterDriftSharpness: paddedWaterDriftSharpness,
     waterDriftWaveAmp: paddedWaterDriftWaveAmp,
@@ -201,67 +213,93 @@ export function UnderseaBackground() {
   const seaweedImages = { 1: seaweed1, 2: seaweed2, 3: seaweed3 };
 
   return (
-    <Canvas style={styles.canvas} pointerEvents="none">
-      <Group
-        layer={
-          <Paint>
-            <Blur blur={BLUR_SIGMA} mode="decal" />
-          </Paint>
-        }>
-        <Fill>
-          <Shader source={seafloorEffect} uniforms={uniforms}>
-            <ImageShader
-              image={image}
-              tx="repeat"
-              ty="repeat"
-              fit="none"
-              width={width}
-              height={height}
-            />
-          </Shader>
-        </Fill>
-      </Group>
-      <Group
-        layer={
-          <Paint>
-            <Blur blur={BLUR_SIGMA} mode="decal" />
-          </Paint>
-        }>
-        {SEAWEED_CONFIGS.map((config, index) => {
-          const seaweedWidth = SEAWEED_BASE_WIDTH * config.scale;
-          const seaweedHeight = SEAWEED_BASE_HEIGHT * config.scale;
-          const seaweedImage = seaweedImages[config.variant];
+    <View style={styles.container} pointerEvents="none">
+      <Canvas
+        style={[
+          styles.backgroundCanvas,
+          {
+            width: bgWidth,
+            height: bgHeight,
+            transform: [{ scale: 1 / BACKGROUND_RES }],
+          },
+        ]}>
+        <Group
+          layer={
+            <Paint>
+              <Blur blur={BACKGROUND_BLUR_SIGMA} mode="decal" />
+            </Paint>
+          }>
+          <Fill>
+            <Shader source={seafloorEffect} uniforms={uniforms}>
+              <ImageShader
+                image={image}
+                tx="repeat"
+                ty="repeat"
+                fit="none"
+                width={bgWidth}
+                height={bgHeight}
+              />
+            </Shader>
+          </Fill>
+        </Group>
+      </Canvas>
+      <Canvas style={styles.foregroundCanvas}>
+        <Group
+          layer={
+            <Paint>
+              <Blur blur={SEAWEED_BLUR_SIGMA} mode="decal" />
+            </Paint>
+          }>
+          {SEAWEED_CONFIGS.map((config, index) => {
+            const seaweedWidth = SEAWEED_BASE_WIDTH * config.scale;
+            const seaweedHeight = SEAWEED_BASE_HEIGHT * config.scale;
+            const seaweedImage = seaweedImages[config.variant];
 
-          return (
-            <SeaweedInstance
-              key={index}
-              image={seaweedImage}
-              x={config.xRatio * width}
-              y={config.yRatio * height}
-              width={seaweedWidth}
-              height={seaweedHeight}
-              currentAngle={config.currentAngle}
-              waveAmplitude={config.waveAmplitude}
-              waveFreq={config.waveFreq}
-              waveSpeed={config.waveSpeed}
-              phase={config.phase}
-              beamIntensity={config.beamIntensity}
-              beamSharpness={config.beamSharpness}
-              beamDistortion={config.beamDistortion}
-              beamSpeed={config.beamSpeed}
-              beamPhase={config.beamPhase}
-              beamTint={config.beamTint}
-              clock={clock}
-            />
-          );
-        })}
-      </Group>
-    </Canvas>
+            return (
+              <SeaweedInstance
+                key={index}
+                image={seaweedImage}
+                x={config.xRatio * width}
+                y={config.yRatio * height}
+                width={seaweedWidth}
+                height={seaweedHeight}
+                currentAngle={config.currentAngle}
+                waveAmplitude={config.waveAmplitude}
+                waveFreq={config.waveFreq}
+                waveSpeed={config.waveSpeed}
+                phase={config.phase}
+                beamIntensity={config.beamIntensity}
+                beamSharpness={config.beamSharpness}
+                beamDistortion={config.beamDistortion}
+                beamSpeed={config.beamSpeed}
+                beamPhase={config.beamPhase}
+                beamTint={config.beamTint}
+                clock={clock}
+              />
+            );
+          })}
+        </Group>
+      </Canvas>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  canvas: {
+  container: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  backgroundCanvas: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    transformOrigin: 'top left',
+  },
+  foregroundCanvas: {
     position: 'absolute',
     left: 0,
     right: 0,

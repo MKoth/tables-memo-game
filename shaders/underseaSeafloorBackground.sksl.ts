@@ -30,7 +30,8 @@ uniform float waterDriftEdgeJunctionStrength[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftTintR[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftTintG[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftTintB[${MAX_DRIFT_LAYERS}];
-uniform float waterDriftMoveAngle[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftMoveX[${MAX_DRIFT_LAYERS}];
+uniform float waterDriftMoveY[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftMoveSpeed[${MAX_DRIFT_LAYERS}];
 uniform shader tileTexture;
 
@@ -68,6 +69,26 @@ vec2 warpVoronoiCoord(vec2 coord, float t, float amp, float freq, float speed) {
   return coord + vec2(dx, dy);
 }
 
+vec2 voronoiCellOffset(vec2 g, vec2 f, vec2 cell, float t, float speed) {
+  vec2 rnd = hash2(g + cell);
+  vec2 o = cell + 0.5 + 0.4 * sin(t * speed + 6.2831 * rnd);
+  return o - f;
+}
+
+void updateVoronoiNearest(vec2 r, inout vec2 mr, inout float md, inout float md2) {
+  float d = dot(r, r);
+  if (d < md) { md2 = md; md = d; mr = r; }
+  else if (d < md2) { md2 = d; }
+}
+
+float voronoiBorderDist(vec2 mr, vec2 r) {
+  vec2 diff = r - mr;
+  if (dot(diff, diff) > 0.00001) {
+    return dot(0.5 * (mr + r), normalize(diff));
+  }
+  return 8.0;
+}
+
 float waterDriftCaustics(vec2 coord, float t, float speed, float sharpness,
                          float lineVariation, float intensityVariation,
                          float edgeJunctionStrength, float clusterAmp, float clusterFreq) {
@@ -78,34 +99,42 @@ float waterDriftCaustics(vec2 coord, float t, float speed, float sharpness,
   vec2 mr = vec2(0.0);
   float md = 8.0;
   float md2 = 8.0;
-  for (int y = -1; y <= 1; y++) {
-    for (int x = -1; x <= 1; x++) {
-      vec2 cell = vec2(float(x), float(y));
-      vec2 rnd = hash2(g + cell);
-      vec2 o = cell + 0.5 + 0.4 * sin(t * speed + 6.2831 * rnd);
-      vec2 r = o - f;
-      float d = dot(r, r);
-      if (d < md) { md2 = md; md = d; mr = r; }
-      else if (d < md2) { md2 = d; }
-    }
-  }
+  vec2 rs[9];
+  vec2 r;
+
+  r = voronoiCellOffset(g, f, vec2(-1.0, -1.0), t, speed);
+  rs[0] = r; updateVoronoiNearest(r, mr, md, md2);
+  r = voronoiCellOffset(g, f, vec2(0.0, -1.0), t, speed);
+  rs[1] = r; updateVoronoiNearest(r, mr, md, md2);
+  r = voronoiCellOffset(g, f, vec2(1.0, -1.0), t, speed);
+  rs[2] = r; updateVoronoiNearest(r, mr, md, md2);
+  r = voronoiCellOffset(g, f, vec2(-1.0, 0.0), t, speed);
+  rs[3] = r; updateVoronoiNearest(r, mr, md, md2);
+  r = voronoiCellOffset(g, f, vec2(0.0, 0.0), t, speed);
+  rs[4] = r; updateVoronoiNearest(r, mr, md, md2);
+  r = voronoiCellOffset(g, f, vec2(1.0, 0.0), t, speed);
+  rs[5] = r; updateVoronoiNearest(r, mr, md, md2);
+  r = voronoiCellOffset(g, f, vec2(-1.0, 1.0), t, speed);
+  rs[6] = r; updateVoronoiNearest(r, mr, md, md2);
+  r = voronoiCellOffset(g, f, vec2(0.0, 1.0), t, speed);
+  rs[7] = r; updateVoronoiNearest(r, mr, md, md2);
+  r = voronoiCellOffset(g, f, vec2(1.0, 1.0), t, speed);
+  rs[8] = r; updateVoronoiNearest(r, mr, md, md2);
 
   float border = 8.0;
-  for (int y = -2; y <= 2; y++) {
-    for (int x = -2; x <= 2; x++) {
-      vec2 cell = vec2(float(x), float(y));
-      vec2 rnd = hash2(g + cell);
-      vec2 o = cell + 0.5 + 0.4 * sin(t * speed + 6.2831 * rnd);
-      vec2 r = o - f;
-      vec2 diff = r - mr;
-      if (dot(diff, diff) > 0.00001) {
-        border = min(border, dot(0.5 * (mr + r), normalize(diff)));
-      }
-    }
-  }
+  border = min(border, voronoiBorderDist(mr, rs[0]));
+  border = min(border, voronoiBorderDist(mr, rs[1]));
+  border = min(border, voronoiBorderDist(mr, rs[2]));
+  border = min(border, voronoiBorderDist(mr, rs[3]));
+  border = min(border, voronoiBorderDist(mr, rs[4]));
+  border = min(border, voronoiBorderDist(mr, rs[5]));
+  border = min(border, voronoiBorderDist(mr, rs[6]));
+  border = min(border, voronoiBorderDist(mr, rs[7]));
+  border = min(border, voronoiBorderDist(mr, rs[8]));
 
-  float lineRand = hash2(g).x;
-  float intensityRand = hash2(g).y;
+  vec2 cellRand = hash2(g);
+  float lineRand = cellRand.x;
+  float intensityRand = cellRand.y;
   float edgeWidth = (0.6 / sharpness) * mix(1.0 - lineVariation * 0.6, 1.0 + lineVariation * 0.6, lineRand);
   float web = 1.0 - smoothstep(0.0, max(edgeWidth, 0.001), border);
   float intensityScale = mix(1.0 - intensityVariation * 0.6, 1.0 + intensityVariation * 0.6, intensityRand);
@@ -130,8 +159,7 @@ half4 main(float2 fragCoord) {
   for (int i = 0; i < ${MAX_DRIFT_LAYERS}; i++) {
     if (i >= layerCount) { break; }
     vec2 rawCoord = fragCoord * (0.004 * waterDriftScale[i]);
-    float moveRad = waterDriftMoveAngle[i] * 0.01745329252;
-    rawCoord -= vec2(cos(moveRad), sin(moveRad)) * t * waterDriftMoveSpeed[i];
+    rawCoord -= vec2(waterDriftMoveX[i], waterDriftMoveY[i]) * t * waterDriftMoveSpeed[i];
     float freqRand = hash2(floor(rawCoord) + vec2(17.3, 41.7)).x;
     float localWaveFreq = waterDriftWaveFreq[i]
       * mix(1.0 - waterDriftFrequencyVariation[i] * 0.6,
