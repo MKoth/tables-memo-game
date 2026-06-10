@@ -40,20 +40,24 @@ half4 main(float2 fragCoord) {
   // Margin scales with beam width and distortion so the stripe fully clears
   // the image before looping — avoids visible snap at cycle boundaries.
   const float TRAVEL_FRACTION = 0.75;
+  const float BEAM_PHASE_OFFSET = 0.5;
   float beamHalfWidth = sqrt(4.605 / max(beamSharpness, 0.001));
   float beamMargin = beamHalfWidth + abs(beamDistortion) * 4.0 + 0.1;
   float beamStart = -0.5 - beamMargin;
   float beamEnd = 0.5 + beamMargin;
 
-  float cycle = fract(iTime * beamSpeed + beamPhase);
+  float baseCycle = fract(iTime * beamSpeed + beamPhase);
   float beam = 0.0;
 
-  if (cycle <= TRAVEL_FRACTION) {
-    float t = cycle / TRAVEL_FRACTION;
-    float beamAlong = mix(beamStart, beamEnd, t);
-    float distortion = beamDistortion * sin(perp * 12.0 + iTime * 2.0);
-    float dist = abs(along - beamAlong + distortion);
-    beam = exp(-dist * dist * beamSharpness);
+  for (int b = 0; b < 2; b++) {
+    float cycle = fract(baseCycle + float(b) * BEAM_PHASE_OFFSET);
+    if (cycle <= TRAVEL_FRACTION) {
+      float t = cycle / TRAVEL_FRACTION;
+      float beamAlong = mix(beamStart, beamEnd, t);
+      float distortion = beamDistortion * sin(perp * 12.0 + iTime * 2.0 + float(b) * 1.7);
+      float dist = abs(along - beamAlong + distortion);
+      beam = max(beam, exp(-dist * dist * beamSharpness));
+    }
   }
 
   half beamStrength = half(beam * beamIntensity * color.a);

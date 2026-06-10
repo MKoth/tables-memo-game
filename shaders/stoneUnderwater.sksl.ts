@@ -144,20 +144,24 @@ half4 main(float2 fragCoord) {
   float perp = dot(local - 0.5, beamPerp);
 
   const float TRAVEL_FRACTION = 0.75;
+  const float BEAM_PHASE_OFFSET = 0.5;
   float beamHalfWidth = sqrt(4.605 / max(beamSharpness, 0.001));
   float beamMargin = beamHalfWidth + abs(beamDistortion) * 4.0 + 0.1;
   float beamStart = -0.5 - beamMargin;
   float beamEnd = 0.5 + beamMargin;
 
-  float cycle = fract(iTime * beamSpeed + beamPhase);
+  float baseCycle = fract(iTime * beamSpeed + beamPhase);
   float travelBeam = 0.0;
 
-  if (cycle <= TRAVEL_FRACTION) {
-    float t = cycle / TRAVEL_FRACTION;
-    float beamAlong = mix(beamStart, beamEnd, t);
-    float distortion = beamDistortion * sin(perp * 12.0 + iTime * 2.0);
-    float dist = abs(along - beamAlong + distortion);
-    travelBeam = exp(-dist * dist * beamSharpness);
+  for (int b = 0; b < 2; b++) {
+    float cycle = fract(baseCycle + float(b) * BEAM_PHASE_OFFSET);
+    if (cycle <= TRAVEL_FRACTION) {
+      float t = cycle / TRAVEL_FRACTION;
+      float beamAlong = mix(beamStart, beamEnd, t);
+      float distortion = beamDistortion * sin(perp * 12.0 + iTime * 2.0 + float(b) * 1.7);
+      float dist = abs(along - beamAlong + distortion);
+      travelBeam = max(travelBeam, exp(-dist * dist * beamSharpness));
+    }
   }
 
   half travelBeamStrength = half(travelBeam * beamIntensity * color.a);
