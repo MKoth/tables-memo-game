@@ -1,18 +1,16 @@
 import React from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import {
-  Blur,
   Canvas,
   Fill,
   Group,
   ImageShader,
-  Paint,
   Shader,
   Skia,
-  useClock,
   useImage,
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
+import { useThrottledClock } from '../../../hooks/useThrottledClock';
 import {
   MAX_DRIFT_LAYERS,
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
@@ -22,9 +20,6 @@ import { SeaweedInstance } from './SeaweedInstance';
 import { StoneInstance } from './StoneInstance';
 
 const BACKGROUND_RES = 0.5;
-const BACKGROUND_BLUR_SIGMA = 1.0;
-const STONE_BLUR_SIGMA = 1.4;
-const SEAWEED_BLUR_SIGMA = 1.5;
 const DEG_TO_RAD = Math.PI / 180;
 const SEAWEED_BASE_WIDTH = 120;
 const SEAWEED_BASE_HEIGHT = 160;
@@ -207,7 +202,7 @@ export function UnderseaBackground() {
   const stone7 = useImage(STONE_VARIANTS[7]);
   const stone8 = useImage(STONE_VARIANTS[8]);
   const stone9 = useImage(STONE_VARIANTS[9]);
-  const clock = useClock();
+  const clock = useThrottledClock(30);
 
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
   const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
@@ -285,33 +280,21 @@ export function UnderseaBackground() {
             transform: [{ scale: 1 / BACKGROUND_RES }],
           },
         ]}>
-        <Group
-          layer={
-            <Paint>
-              <Blur blur={BACKGROUND_BLUR_SIGMA} mode="decal" />
-            </Paint>
-          }>
-          <Fill>
-            <Shader source={seafloorEffect} uniforms={uniforms}>
-              <ImageShader
-                image={image}
-                tx="repeat"
-                ty="repeat"
-                fit="none"
-                width={bgWidth}
-                height={bgHeight}
-              />
-            </Shader>
-          </Fill>
-        </Group>
+        <Fill>
+          <Shader source={seafloorEffect} uniforms={uniforms}>
+            <ImageShader
+              image={image}
+              tx="repeat"
+              ty="repeat"
+              fit="none"
+              width={bgWidth}
+              height={bgHeight}
+            />
+          </Shader>
+        </Fill>
       </Canvas>
       <Canvas style={styles.foregroundCanvas}>
-        <Group
-          layer={
-            <Paint>
-              <Blur blur={STONE_BLUR_SIGMA} mode="decal" />
-            </Paint>
-          }>
+        <Group>
           {STONE_CONFIGS.map((config, index) => {
             const stoneWidth = STONE_BASE_WIDTH * config.scale;
             const stoneHeight = STONE_BASE_HEIGHT * config.scale;
@@ -332,12 +315,7 @@ export function UnderseaBackground() {
             );
           })}
         </Group>
-        <Group
-          layer={
-            <Paint>
-              <Blur blur={SEAWEED_BLUR_SIGMA} mode="decal" />
-            </Paint>
-          }>
+        <Group>
           {SEAWEED_CONFIGS.map((config, index) => {
             const seaweedWidth = SEAWEED_BASE_WIDTH * config.scale;
             const seaweedHeight = SEAWEED_BASE_HEIGHT * config.scale;

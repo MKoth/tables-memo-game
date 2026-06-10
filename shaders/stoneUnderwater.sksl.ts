@@ -119,6 +119,7 @@ float staticCaustics(vec2 coord, float variant, float sharpness,
 
 half4 main(float2 fragCoord) {
   half4 color = stoneTexture.eval(fragCoord);
+  if (color.a < 0.01) { return color; }
 
   float depth = 1.0 - fragCoord.y / iResolution.y;
   half3 tint = half3(underwaterTint);

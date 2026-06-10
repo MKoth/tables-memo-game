@@ -23,6 +23,13 @@ uniform shader seaweedTexture;
 half4 main(float2 fragCoord) {
   vec2 uv = (fragCoord - vec2(seaweedX, seaweedY)) / vec2(seaweedW, seaweedH);
 
+  // Fast path: skip wave + beam math for fully transparent pixels.
+  // Sample at the unwarped coord first; if empty, return immediately.
+  {
+    half4 earlyCheck = seaweedTexture.eval(fragCoord);
+    if (earlyCheck.a < 0.01) { return earlyCheck; }
+  }
+
   vec2 currentDir = vec2(cos(currentAngle), sin(currentAngle));
   vec2 currentPerp = vec2(-sin(currentAngle), cos(currentAngle));
   float along = dot(uv - 0.5, currentDir);
