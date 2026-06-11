@@ -16,6 +16,7 @@ import {
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
+import { KoiFishLayer } from './KoiFishLayer';
 import { SeaweedInstance } from './SeaweedInstance';
 import { StoneInstance } from './StoneInstance';
 
@@ -51,6 +52,11 @@ const STONE_CONFIGS = [
   { variant: 8 satisfies StoneVariant, xRatio: 0.36, yRatio: 0.20, scale: 1.85, stonePhase: 1.0 },
   { variant: 9 satisfies StoneVariant, xRatio: 0.74, yRatio: 0.65, scale: 1.35, stonePhase: 0.0 },
 ] as const;
+
+const KOI_VARIANTS = {
+  koi1: require('../../../assets/koi1.png'),
+  koi2: require('../../../assets/koi2.png'),
+} as const;
 
 const SEAWEED_VARIANTS = {
   1: require('../../../assets/seaweed1.png'),
@@ -202,6 +208,8 @@ export function UnderseaBackground() {
   const stone7 = useImage(STONE_VARIANTS[7]);
   const stone8 = useImage(STONE_VARIANTS[8]);
   const stone9 = useImage(STONE_VARIANTS[9]);
+  const koi1 = useImage(KOI_VARIANTS.koi1);
+  const koi2 = useImage(KOI_VARIANTS.koi2);
   const clock = useThrottledClock(30);
 
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
@@ -250,6 +258,8 @@ export function UnderseaBackground() {
     !stone7 ||
     !stone8 ||
     !stone9 ||
+    !koi1 ||
+    !koi2 ||
     width === 0 ||
     height === 0
   ) {
@@ -346,6 +356,12 @@ export function UnderseaBackground() {
           })}
         </Group>
       </Canvas>
+      <KoiFishLayer
+        width={width}
+        height={height}
+        images={{ koi1, koi2 }}
+        clock={clock}
+      />
     </View>
   );
 }

@@ -1,0 +1,111 @@
+import React from 'react';
+import {
+  ImageShader,
+  Rect,
+  Shader,
+  Skia,
+  type SkImage,
+  type SkRuntimeEffect,
+} from '@shopify/react-native-skia';
+import type { SharedValue } from 'react-native-reanimated';
+import { useDerivedValue } from 'react-native-reanimated';
+import {
+  KOI_FISH_DEFORM_SKSL,
+  koiFishDeformUniformDefaults,
+} from '../../../shaders/koiFishDeform.sksl';
+
+function compileKoiEffect(): SkRuntimeEffect {
+  const effect = Skia.RuntimeEffect.Make(KOI_FISH_DEFORM_SKSL);
+  if (!effect) {
+    throw new Error('Failed to compile koi fish deform shader');
+  }
+  return effect;
+}
+
+const koiEffect = compileKoiEffect();
+
+export type KoiFishState = {
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+  angle: SharedValue<number>;
+  amplitude: SharedValue<number>;
+};
+
+export type KoiTailFlexSettings = {
+  tailBendScale: number;
+  tailTipBendScale: number;
+  headBendScale: number;
+  swimSpeed: number;
+};
+
+export type KoiInstanceProps = {
+  image: SkImage;
+  swimZoneX: number;
+  swimZoneY: number;
+  swimZoneW: number;
+  swimZoneH: number;
+  fishW: number;
+  fishH: number;
+  sourceAngle?: number;
+  tailFlex: KoiTailFlexSettings;
+  phase: number;
+  state: KoiFishState;
+  clock: SharedValue<number>;
+};
+
+export function KoiInstance({
+  image,
+  swimZoneX,
+  swimZoneY,
+  swimZoneW,
+  swimZoneH,
+  fishW,
+  fishH,
+  sourceAngle = koiFishDeformUniformDefaults.sourceAngle,
+  tailFlex,
+  phase,
+  state,
+  clock,
+}: KoiInstanceProps) {
+  const imageWidth = image.width();
+  const imageHeight = image.height();
+
+  const uniforms = useDerivedValue(() => ({
+    iTime: clock.value / 1000,
+    swimZoneX,
+    swimZoneY,
+    swimZoneW,
+    swimZoneH,
+    fishX: state.x.value,
+    fishY: state.y.value,
+    fishW,
+    fishH,
+    fishAngle: state.angle.value,
+    sourceAngle,
+    waveAmplitude: state.amplitude.value,
+    tailBendScale: tailFlex.tailBendScale,
+    tailTipBendScale: tailFlex.tailTipBendScale,
+    headBendScale: tailFlex.headBendScale,
+    swimSpeed: tailFlex.swimSpeed,
+    phase,
+    imageWidth,
+    imageHeight,
+  }));
+
+  return (
+    <Rect x={swimZoneX} y={swimZoneY} width={swimZoneW} height={swimZoneH}>
+      <Shader source={koiEffect} uniforms={uniforms}>
+        <ImageShader
+          image={image}
+          x={0}
+          y={0}
+          width={imageWidth}
+          height={imageHeight}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
+      </Shader>
+    </Rect>
+  );
+}
