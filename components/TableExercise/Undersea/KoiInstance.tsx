@@ -29,6 +29,7 @@ export type KoiFishState = {
   y: SharedValue<number>;
   angle: SharedValue<number>;
   amplitude: SharedValue<number>;
+  turnArc: SharedValue<number>;
 };
 
 export type KoiTailFlexSettings = {
@@ -36,6 +37,11 @@ export type KoiTailFlexSettings = {
   tailTipBendScale: number;
   headBendScale: number;
   swimSpeed: number;
+};
+
+export type KoiTurnDistortSettings = {
+  squashGain: number;
+  bulgeGain: number;
 };
 
 export type KoiInstanceProps = {
@@ -48,6 +54,7 @@ export type KoiInstanceProps = {
   fishH: number;
   sourceAngle?: number;
   tailFlex: KoiTailFlexSettings;
+  turnDistort: KoiTurnDistortSettings;
   phase: number;
   state: KoiFishState;
   clock: SharedValue<number>;
@@ -63,6 +70,7 @@ export function KoiInstance({
   fishH,
   sourceAngle = koiFishDeformUniformDefaults.sourceAngle,
   tailFlex,
+  turnDistort,
   phase,
   state,
   clock,
@@ -70,7 +78,12 @@ export function KoiInstance({
   const imageWidth = image.width();
   const imageHeight = image.height();
 
-  const uniforms = useDerivedValue(() => ({
+  const uniforms = useDerivedValue(() => {
+    const turnT = Math.abs(state.turnArc.value);
+    const fishWAdj = fishW / (1 + turnT * turnDistort.squashGain);
+    const fishHAdj = fishH * (1 + turnT * turnDistort.bulgeGain);
+
+    return {
     iTime: clock.value / 1000,
     swimZoneX,
     swimZoneY,
@@ -78,8 +91,8 @@ export function KoiInstance({
     swimZoneH,
     fishX: state.x.value,
     fishY: state.y.value,
-    fishW,
-    fishH,
+    fishW: fishWAdj,
+    fishH: fishHAdj,
     fishAngle: state.angle.value,
     sourceAngle,
     waveAmplitude: state.amplitude.value,
@@ -88,9 +101,11 @@ export function KoiInstance({
     headBendScale: tailFlex.headBendScale,
     swimSpeed: tailFlex.swimSpeed,
     phase,
+    turnArc: state.turnArc.value,
     imageWidth,
     imageHeight,
-  }));
+  };
+  });
 
   return (
     <Rect x={swimZoneX} y={swimZoneY} width={swimZoneW} height={swimZoneH}>

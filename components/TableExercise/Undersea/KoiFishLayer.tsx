@@ -8,9 +8,9 @@ import { KOI_MAX_AMPLITUDE } from '../../../shaders/koiFishDeform.sksl';
 import { KoiInstance } from './KoiInstance';
 
 const KOI_BASE_LENGTH = 120;
-const KOI_BASE_THICKNESS = 48;
-const SWIM_ZONE_TOP_RATIO = 0.5;
-const SWIM_ZONE_MARGIN = 0.08;
+const KOI_BASE_THICKNESS = 38;
+const SWIM_ZONE_TOP_RATIO = 0.0;
+const SWIM_ZONE_MARGIN = 0.0;
 
 /** Number of koi fish in the swim zone. */
 export const KOI_COUNT = 5;
@@ -25,6 +25,12 @@ export const KOI_SETTINGS = {
   headBendScale: 0.35,
   swimSpeed: 6.5,
   baseSpeed: 130,
+  /** Turn body arc strength — scales angular velocity into shader bend (higher = tighter arc). */
+  turnArcGain: 0.28,
+  /** Shorten fish length per unit |turnArc| (counter stretch on turns). */
+  turnSquashGain: 0.2,
+  /** Widen fish thickness per unit |turnArc| (counter thinning on turns). */
+  turnBulgeGain: 0.2,
 } as const;
 
 const SWIMMING = 0;
@@ -32,9 +38,15 @@ const IDLE = 1;
 
 const AMPLITUDE_LERP = 3.5;
 const ANGLE_LERP = 2.5;
+const TURN_ARC_LERP = 3.5;
+/** Max body bend during turns — keeps shader shear within a fish-like range. */
+const TURN_ARC_MAX = 0.4;
+const WANDER_LERP = 0.6;
 const IDLE_DRAG = 1.8;
-const IDLE_SPEED_THRESHOLD = 4;
-const BOUNDARY_MARGIN_RATIO = 0.12;
+const IDLE_SPEED_THRESHOLD = 2;
+const BOUNDARY_MARGIN_RATIO = 0.18;
+/** Max turn offset when steering away from swim-zone edges (radians). */
+const BOUNDARY_TURN_OFFSET = Math.PI * 0.25;
 
 export type KoiImageKey = 'koi1' | 'koi2';
 
@@ -57,6 +69,9 @@ type FishRuntime = {
   angle: SharedValue<number>;
   speed: SharedValue<number>;
   amplitude: SharedValue<number>;
+  turnArc: SharedValue<number>;
+  prevAngle: SharedValue<number>;
+  wanderAngle: SharedValue<number>;
   state: SharedValue<number>;
   stateTimer: SharedValue<number>;
 };
@@ -113,13 +128,40 @@ function speedFromAmplitude(baseSpeed: number, amplitude: number): number {
   return baseSpeed * Math.max(0, ratio);
 }
 
+function updateTurnArc(fish: FishRuntime, dt: number): void {
+  'worklet';
+  const omega = normalizeAngle(fish.angle.value - fish.prevAngle.value) / dt;
+  fish.prevAngle.value = fish.angle.value;
+  const turnTarget = clamp(
+    -omega * fish.config.turnArcGain,
+    -TURN_ARC_MAX,
+    TURN_ARC_MAX,
+  );
+  fish.turnArc.value = lerp(
+    fish.turnArc.value,
+    turnTarget,
+    Math.min(1, TURN_ARC_LERP * dt),
+  );
+}
+
+function pickWanderAngle(currentAngle: number, phase: number): number {
+  'worklet';
+  const sign = Math.sin(phase * 3.7) > 0 ? 1 : -1;
+  const deviation = (0.35 + Math.abs(Math.sin(phase * 11.3)) * 0.8) * Math.PI * sign;
+  return currentAngle + deviation;
+}
+
 function updateFish(
   fish: FishRuntime,
   dt: number,
-  minX: number,
-  maxX: number,
-  minY: number,
-  maxY: number,
+  steerMinX: number,
+  steerMaxX: number,
+  steerMinY: number,
+  steerMaxY: number,
+  hardMinX: number,
+  hardMaxX: number,
+  hardMinY: number,
+  hardMaxY: number,
   centerX: number,
   centerY: number,
 ): void {
@@ -139,11 +181,25 @@ function updateFish(
     fish.x.value += Math.cos(fish.angle.value) * fish.speed.value * dt;
     fish.y.value += Math.sin(fish.angle.value) * fish.speed.value * dt;
 
-    if (fish.x.value < minX || fish.x.value > maxX || fish.y.value < minY || fish.y.value > maxY) {
+    const nearEdge =
+      fish.x.value < steerMinX ||
+      fish.x.value > steerMaxX ||
+      fish.y.value < steerMinY ||
+      fish.y.value > steerMaxY;
+
+    if (nearEdge) {
       const toCenter = Math.atan2(centerY - fish.y.value, centerX - fish.x.value);
-      fish.angle.value = lerpAngle(fish.angle.value, toCenter, Math.min(1, ANGLE_LERP * dt));
-      fish.x.value = clamp(fish.x.value, minX, maxX);
-      fish.y.value = clamp(fish.y.value, minY, maxY);
+      const offset = Math.sin(cfg.phase * 5.1) * BOUNDARY_TURN_OFFSET;
+      const turnTarget = toCenter + offset;
+      fish.angle.value = lerpAngle(fish.angle.value, turnTarget, Math.min(1, ANGLE_LERP * dt));
+      // Keep wander aligned so the open-water branch does not pull back toward the wall.
+      fish.wanderAngle.value = turnTarget;
+    } else {
+      fish.angle.value = lerpAngle(
+        fish.angle.value,
+        fish.wanderAngle.value,
+        Math.min(1, WANDER_LERP * dt),
+      );
     }
 
     fish.stateTimer.value -= dt;
@@ -151,28 +207,29 @@ function updateFish(
       fish.state.value = IDLE;
       fish.stateTimer.value = 1.5 + (cfg.phase % 2);
     }
-    return;
-  }
+  } else {
+    fish.amplitude.value = lerp(fish.amplitude.value, 0, Math.min(1, AMPLITUDE_LERP * dt));
+    fish.speed.value *= Math.max(0, 1 - IDLE_DRAG * dt);
 
-  fish.amplitude.value = lerp(fish.amplitude.value, 0, Math.min(1, AMPLITUDE_LERP * dt));
-  fish.speed.value *= Math.max(0, 1 - IDLE_DRAG * dt);
+    fish.x.value += Math.cos(fish.angle.value) * fish.speed.value * dt;
+    fish.y.value += Math.sin(fish.angle.value) * fish.speed.value * dt;
 
-  fish.x.value += Math.cos(fish.angle.value) * fish.speed.value * dt;
-  fish.y.value += Math.sin(fish.angle.value) * fish.speed.value * dt;
-  fish.x.value = clamp(fish.x.value, minX, maxX);
-  fish.y.value = clamp(fish.y.value, minY, maxY);
-
-  if (fish.speed.value < IDLE_SPEED_THRESHOLD) {
-    fish.stateTimer.value -= dt;
-    if (fish.stateTimer.value <= 0) {
-      fish.state.value = SWIMMING;
-      fish.stateTimer.value = 5 + (cfg.phase % 3);
-      fish.speed.value = speedFromAmplitude(cfg.baseSpeed, fish.amplitude.value);
+    if (fish.speed.value < IDLE_SPEED_THRESHOLD) {
+      fish.stateTimer.value -= dt;
+      if (fish.stateTimer.value <= 0) {
+        fish.state.value = SWIMMING;
+        fish.stateTimer.value = 5 + (cfg.phase % 3);
+        fish.wanderAngle.value = pickWanderAngle(fish.angle.value, cfg.phase);
+      }
+    } else {
+      fish.stateTimer.value = 1.5 + (cfg.phase % 2);
     }
-    return;
   }
 
-  fish.stateTimer.value = 1.5 + (cfg.phase % 2);
+  fish.x.value = clamp(fish.x.value, hardMinX, hardMaxX);
+  fish.y.value = clamp(fish.y.value, hardMinY, hardMaxY);
+
+  updateTurnArc(fish, dt);
 }
 
 export type KoiFishLayerProps = {
@@ -192,6 +249,9 @@ function useFishRuntime(
   const angle = useSharedValue(config.initialAngle);
   const speed = useSharedValue(config.baseSpeed * 0.5);
   const amplitude = useSharedValue(config.targetAmplitude * 0.5);
+  const turnArc = useSharedValue(0);
+  const prevAngle = useSharedValue(config.initialAngle);
+  const wanderAngle = useSharedValue(config.initialAngle);
   const state = useSharedValue(SWIMMING);
   const stateTimer = useSharedValue(4 + config.phase);
 
@@ -201,6 +261,9 @@ function useFishRuntime(
     angle.value = config.initialAngle;
     speed.value = config.baseSpeed * 0.5;
     amplitude.value = config.targetAmplitude * 0.5;
+    turnArc.value = 0;
+    prevAngle.value = config.initialAngle;
+    wanderAngle.value = config.initialAngle;
     state.value = SWIMMING;
     stateTimer.value = 4 + config.phase;
   }, [
@@ -214,11 +277,26 @@ function useFishRuntime(
     angle,
     speed,
     amplitude,
+    turnArc,
+    prevAngle,
+    wanderAngle,
     state,
     stateTimer,
   ]);
 
-  return { config, x, y, angle, speed, amplitude, state, stateTimer };
+  return {
+    config,
+    x,
+    y,
+    angle,
+    speed,
+    amplitude,
+    turnArc,
+    prevAngle,
+    wanderAngle,
+    state,
+    stateTimer,
+  };
 }
 
 type KoiFishActorProps = {
@@ -240,10 +318,14 @@ function KoiFishActor({ spawn, settings, swimZone, image, clock }: KoiFishActorP
   const fish = useFishRuntime(config, swimZone);
   const lastTimestamp = useSharedValue(-1);
 
-  const minX = swimZone.x + swimZone.w * BOUNDARY_MARGIN_RATIO;
-  const maxX = swimZone.x + swimZone.w * (1 - BOUNDARY_MARGIN_RATIO);
-  const minY = swimZone.y + swimZone.h * BOUNDARY_MARGIN_RATIO;
-  const maxY = swimZone.y + swimZone.h * (1 - BOUNDARY_MARGIN_RATIO);
+  const steerMinX = swimZone.x + swimZone.w * BOUNDARY_MARGIN_RATIO;
+  const steerMaxX = swimZone.x + swimZone.w * (1 - BOUNDARY_MARGIN_RATIO);
+  const steerMinY = swimZone.y + swimZone.h * BOUNDARY_MARGIN_RATIO;
+  const steerMaxY = swimZone.y + swimZone.h * (1 - BOUNDARY_MARGIN_RATIO);
+  const hardMinX = swimZone.x;
+  const hardMaxX = swimZone.x + swimZone.w;
+  const hardMinY = swimZone.y;
+  const hardMaxY = swimZone.y + swimZone.h;
   const centerX = swimZone.x + swimZone.w * 0.5;
   const centerY = swimZone.y + swimZone.h * 0.5;
 
@@ -257,7 +339,20 @@ function KoiFishActor({ spawn, settings, swimZone, image, clock }: KoiFishActorP
     const dt = Math.min((frameInfo.timestamp - lastTimestamp.value) / 1000, 0.05);
     lastTimestamp.value = frameInfo.timestamp;
 
-    updateFish(fish, dt, minX, maxX, minY, maxY, centerX, centerY);
+    updateFish(
+      fish,
+      dt,
+      steerMinX,
+      steerMaxX,
+      steerMinY,
+      steerMaxY,
+      hardMinX,
+      hardMaxX,
+      hardMinY,
+      hardMaxY,
+      centerX,
+      centerY,
+    );
   });
 
   const fishLength = KOI_BASE_LENGTH * settings.scale;
@@ -279,12 +374,17 @@ function KoiFishActor({ spawn, settings, swimZone, image, clock }: KoiFishActorP
         headBendScale: settings.headBendScale,
         swimSpeed: settings.swimSpeed,
       }}
+      turnDistort={{
+        squashGain: settings.turnSquashGain,
+        bulgeGain: settings.turnBulgeGain,
+      }}
       phase={spawn.phase}
       state={{
         x: fish.x,
         y: fish.y,
         angle: fish.angle,
         amplitude: fish.amplitude,
+        turnArc: fish.turnArc,
       }}
       clock={clock}
     />
