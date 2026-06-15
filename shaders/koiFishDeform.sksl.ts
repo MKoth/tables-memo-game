@@ -70,8 +70,8 @@ half4 main(float2 fragCoord) {
 
   float bodyFitScale = ${KOI_BODY_FIT_SCALE};
   float basePerpExtent = 0.5 / bodyFitScale;
-  float bendMargin = abs(turnArc)
-    + waveAmplitude * (tailBendScale + tailTipBendScale + headBendScale);
+  float maxWaveDisp = abs(waveAmplitude) * (tailBendScale + tailTipBendScale + headBendScale);
+  float bendMargin = abs(turnArc) + maxWaveDisp;
   float perpLimit = max(basePerpExtent, 0.5 + bendMargin);
 
   if (along < 0.0 || along > 1.0 || abs(perp) > perpLimit) {
