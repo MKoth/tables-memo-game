@@ -91,6 +91,7 @@ type FishRuntime = {
   stateTimer: SharedValue<number>;
   targetBaseSpeed: SharedValue<number>;
   wavePhase: SharedValue<number>;
+  wasNearEdge: SharedValue<boolean>;
 };
 
 type SwimZone = {
@@ -235,11 +236,20 @@ function updateFish(
         fish.wanderAngle.value,
         Math.min(1, WANDER_LERP * dt),
       );
+
+      if (fish.wasNearEdge.value) {
+        fish.targetBaseSpeed.value = pickRandomBaseSpeed();
+        fish.stateTimer.value = swimDurationForSpeed(fish.targetBaseSpeed.value, cfg.phase);
+        fish.wanderAngle.value = pickWanderAngle(fish.angle.value, cfg.phase);
+      }
     }
+
+    fish.wasNearEdge.value = nearEdge;
 
     fish.stateTimer.value -= dt;
     if (fish.stateTimer.value <= 0) {
       fish.state.value = IDLE;
+      fish.wasNearEdge.value = false;
       fish.stateTimer.value = idleDurationForPhase(cfg.phase);
     }
   } else {
@@ -253,6 +263,7 @@ function updateFish(
       fish.stateTimer.value -= dt;
       if (fish.stateTimer.value <= 0) {
         fish.state.value = SWIMMING;
+        fish.wasNearEdge.value = false;
         fish.targetBaseSpeed.value = pickRandomBaseSpeed();
         fish.stateTimer.value = swimDurationForSpeed(fish.targetBaseSpeed.value, cfg.phase);
         fish.wanderAngle.value = pickWanderAngle(fish.angle.value, cfg.phase);
@@ -302,6 +313,7 @@ function useFishRuntime(
   const stateTimer = useSharedValue(swimDurationForSpeed(initSpeed, config.phase));
   const targetBaseSpeed = useSharedValue(initSpeed);
   const wavePhase = useSharedValue(0);
+  const wasNearEdge = useSharedValue(false);
 
   useEffect(() => {
     const resetSpeed = pickRandomBaseSpeed();
@@ -317,6 +329,7 @@ function useFishRuntime(
     stateTimer.value = swimDurationForSpeed(resetSpeed, config.phase);
     targetBaseSpeed.value = resetSpeed;
     wavePhase.value = 0;
+    wasNearEdge.value = false;
   }, [
     swimZone.x,
     swimZone.y,
@@ -335,6 +348,7 @@ function useFishRuntime(
     stateTimer,
     targetBaseSpeed,
     wavePhase,
+    wasNearEdge,
   ]);
 
   return {
@@ -351,6 +365,7 @@ function useFishRuntime(
     stateTimer,
     targetBaseSpeed,
     wavePhase,
+    wasNearEdge,
   };
 }
 
