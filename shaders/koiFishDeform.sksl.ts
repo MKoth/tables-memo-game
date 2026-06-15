@@ -21,6 +21,18 @@
 /** Fraction of texture perp axis used for the straight body (rest is bend padding). */
 export const KOI_BODY_FIT_SCALE = 0.72;
 
+/** Pectoral fin along-band (srcAlong) — upper third just behind the head. */
+export const KOI_FIN_BAND_MIN = 0.6;
+export const KOI_FIN_BAND_MAX = 0.88;
+export const KOI_FIN_BAND_FEATHER = 0.05;
+/** Body edge in |srcPerp|; fins extend outward beyond this. */
+export const KOI_FIN_INNER = 0.3;
+export const KOI_FIN_OUTER = 0.69;
+/** Perp-retract squash strength. */
+export const KOI_FIN_PERP_RETRACT_GAIN = 1.6;
+/** Along-thin squash strength. */
+export const KOI_FIN_ALONG_THIN_GAIN = 1.5;
+
 export const KOI_FISH_DEFORM_SKSL = `
 uniform float swimZoneX;
 uniform float swimZoneY;
@@ -39,6 +51,10 @@ uniform float headBendScale;
 uniform float wavePhase;
 uniform float phase;
 uniform float turnArc;
+uniform float finSquashLeft;
+uniform float finSquashRight;
+uniform float finVariantLeft;
+uniform float finVariantRight;
 uniform float imageWidth;
 uniform float imageHeight;
 uniform shader koiTexture;
@@ -97,6 +113,41 @@ half4 main(float2 fragCoord) {
     return half4(0.0);
   }
 
+  float finBandMin = ${KOI_FIN_BAND_MIN};
+  float finBandMax = ${KOI_FIN_BAND_MAX};
+  float finBandFeather = ${KOI_FIN_BAND_FEATHER};
+  float finInner = ${KOI_FIN_INNER};
+  float finOuter = ${KOI_FIN_OUTER};
+  float finPerpRetractGain = ${KOI_FIN_PERP_RETRACT_GAIN};
+  float finAlongThinGain = ${KOI_FIN_ALONG_THIN_GAIN};
+
+  float absPerp = abs(srcPerp);
+  float sideSquash = srcPerp < 0.0 ? finSquashLeft : finSquashRight;
+  float sideVariant = srcPerp < 0.0 ? finVariantLeft : finVariantRight;
+  float bandMask =
+      smoothstep(finBandMin - finBandFeather, finBandMin + finBandFeather, srcAlong)
+    * (1.0 - smoothstep(finBandMax - finBandFeather, finBandMax + finBandFeather, srcAlong));
+  float perpMask = smoothstep(finInner, finInner + 0.04, absPerp);
+  float sq = sideSquash * bandMask * perpMask;
+
+  float retractSq = sq * (1.0 - sideVariant);
+  float thinSq = sq * sideVariant;
+
+  float kPerp = 1.0 - retractSq * finPerpRetractGain;
+  float retractedAbs = finInner + (absPerp - finInner) / max(kPerp, 0.001);
+  float adjPerp = sign(srcPerp) * retractedAbs;
+
+  float center = (finBandMin + finBandMax) * 0.5;
+  float kAlong = 1.0 - thinSq * finAlongThinGain;
+  float adjAlong = center + (srcAlong - center) / max(kAlong, 0.001);
+
+  srcPerp = adjPerp;
+  srcAlong = adjAlong;
+
+  if (abs(srcPerp) > finOuter + 0.02) {
+    return half4(0.0);
+  }
+
   vec2 bodyVec = vec2(srcAlong - 0.5, srcPerp * bodyFitScale);
   float cs = cos(-sourceAngle);
   float sn = sin(-sourceAngle);
@@ -134,6 +185,14 @@ export const koiFishDeformUniformDefaults = {
   turnArc: 0,
   /** Image head-to-tail axis in radians — 0 = right, PI/2 = down. */
   sourceAngle: 0,
+  /** Left pectoral fin squash (0 = none, 1 = full). */
+  finSquashLeft: 0,
+  /** Right pectoral fin squash (0 = none, 1 = full). */
+  finSquashRight: 0,
+  /** Left fin mode — 0 = retract, 1 = thin. */
+  finVariantLeft: 0,
+  /** Right fin mode — 0 = retract, 1 = thin. */
+  finVariantRight: 0,
 } as const;
 
 /** Amplitude at which forward speed reaches zero (inverse speed law). */

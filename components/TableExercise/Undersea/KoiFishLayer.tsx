@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
@@ -28,6 +28,24 @@ export const KOI_SETTINGS = {
   turnSquashGain: 0.2,
   /** Widen fish thickness per unit |turnArc| (counter thinning on turns). */
   turnBulgeGain: 0.2,
+  /** P(fin side uses thin). 0.5 = equal thin vs retract per side. */
+  finThinProbability: 0.5,
+  /** Retract/restore oscillation rate (radians per second). */
+  finRetractFreqBase: 4.8,
+  /** Thin/restore oscillation rate (radians per second). */
+  finThinFreqBase: 5.5,
+  /** Per-side retract frequency jitter. */
+  finRetractFreqJitter: 0.25,
+  /** Per-side thin frequency jitter. */
+  finThinFreqJitter: 0.25,
+  /** Minimum fin squash when oscillating (0 = none, 1 = full). */
+  finSquashBase: 0.1,
+  /** Fin squash oscillation amplitude added on top of finSquashBase. */
+  finSquashAmp: 0.5,
+  /** Seconds between fin-behavior rerolls per side (0 = disabled). */
+  finBehaviorRerollInterval: 3.5,
+  /** Random extra delay added to each fin-side reroll timer. */
+  finBehaviorRerollJitter: 2.0,
 } as const;
 
 const SWIMMING = 0;
@@ -67,6 +85,13 @@ const SEPARATION_RADIUS = 75;
 /** lerp strength multiplier for avoidance angle. */
 const SEPARATION_STEER = 10.0;
 
+export type FinSideSpawn = {
+  /** 0 = perp-retract, 1 = along-thin. */
+  variant: 0 | 1;
+  freq: number;
+  initialPhase: number;
+};
+
 export type KoiImageKey = 'koi1' | 'koi2';
 
 export type KoiSharedSettings = typeof KOI_SETTINGS;
@@ -96,6 +121,16 @@ type FishRuntime = {
   targetBaseSpeed: SharedValue<number>;
   wavePhase: SharedValue<number>;
   wasNearEdge: SharedValue<boolean>;
+  finSquashLeft: SharedValue<number>;
+  finSquashRight: SharedValue<number>;
+  finPhaseLeft: SharedValue<number>;
+  finPhaseRight: SharedValue<number>;
+  finVariantLeft: SharedValue<number>;
+  finVariantRight: SharedValue<number>;
+  finFreqLeft: SharedValue<number>;
+  finFreqRight: SharedValue<number>;
+  finRerollTimerLeft: SharedValue<number>;
+  finRerollTimerRight: SharedValue<number>;
 };
 
 type SwimZone = {
@@ -104,6 +139,104 @@ type SwimZone = {
   w: number;
   h: number;
 };
+
+function nextFinRerollDelay(interval: number, jitter: number): number {
+  if (interval <= 0) {
+    return Number.MAX_VALUE;
+  }
+  return interval + Math.random() * jitter;
+}
+
+function rollFinSideSpawn(
+  settings: KoiSharedSettings,
+  freqSeed: number,
+): FinSideSpawn {
+  const variant = Math.random() < settings.finThinProbability ? 1 : 0;
+  const base = variant === 1 ? settings.finThinFreqBase : settings.finRetractFreqBase;
+  const jitter = variant === 1 ? settings.finThinFreqJitter : settings.finRetractFreqJitter;
+  const freq = base + Math.sin(freqSeed) * jitter;
+
+  return {
+    variant,
+    freq,
+    initialPhase: Math.random() * Math.PI * 2,
+  };
+}
+
+function rollFinSideSpawnWorklet(
+  finThinProbability: number,
+  finRetractFreqBase: number,
+  finThinFreqBase: number,
+  finRetractFreqJitter: number,
+  finThinFreqJitter: number,
+): { variant: number; freq: number; phase: number } {
+  'worklet';
+  const variant = Math.random() < finThinProbability ? 1 : 0;
+  const base = variant === 1 ? finThinFreqBase : finRetractFreqBase;
+  const jitter = variant === 1 ? finThinFreqJitter : finRetractFreqJitter;
+  const freq = base + (Math.random() * 2 - 1) * jitter;
+  const phase = Math.random() * Math.PI * 2;
+
+  return { variant, freq, phase };
+}
+
+function nextFinRerollDelayWorklet(interval: number, jitter: number): number {
+  'worklet';
+  if (interval <= 0) {
+    return Number.MAX_VALUE;
+  }
+  return interval + Math.random() * jitter;
+}
+
+function finSquashFromPhase(phase: number, base: number, amp: number): number {
+  'worklet';
+  return base + amp * (0.5 - 0.5 * Math.cos(phase));
+}
+
+function finSquashAtPhase(phase: number, base: number, amp: number): number {
+  return base + amp * (0.5 - 0.5 * Math.cos(phase));
+}
+
+function rerollFinSide(fish: FishRuntime, side: 'left' | 'right'): void {
+  'worklet';
+  const cfg = fish.config;
+  const rolled = rollFinSideSpawnWorklet(
+    cfg.finThinProbability,
+    cfg.finRetractFreqBase,
+    cfg.finThinFreqBase,
+    cfg.finRetractFreqJitter,
+    cfg.finThinFreqJitter,
+  );
+
+  if (side === 'left') {
+    fish.finVariantLeft.value = rolled.variant;
+    fish.finFreqLeft.value = rolled.freq;
+    fish.finPhaseLeft.value = rolled.phase;
+    fish.finSquashLeft.value = finSquashFromPhase(
+      rolled.phase,
+      cfg.finSquashBase,
+      cfg.finSquashAmp,
+    );
+    fish.finRerollTimerLeft.value = nextFinRerollDelayWorklet(
+      cfg.finBehaviorRerollInterval,
+      cfg.finBehaviorRerollJitter,
+    );
+    return;
+  }
+
+  fish.finVariantRight.value = rolled.variant;
+  fish.finFreqRight.value = rolled.freq;
+  fish.finPhaseRight.value = rolled.phase;
+  fish.finSquashRight.value = finSquashFromPhase(
+    rolled.phase,
+    cfg.finSquashBase,
+    cfg.finSquashAmp,
+  );
+  fish.finRerollTimerRight.value = nextFinRerollDelayWorklet(
+    cfg.finBehaviorRerollInterval,
+    cfg.finBehaviorRerollJitter,
+  );
+}
 
 function createRandomSpawns(count: number): KoiSpawn[] {
   return Array.from({ length: count }, () => ({
@@ -166,6 +299,36 @@ function swimDurationForSpeed(speed: number, phase: number): number {
   const t = clamp((speed - BASE_SPEED_MIN) / (BASE_SPEED_MAX - BASE_SPEED_MIN), 0, 1);
   const base = SWIM_DURATION_MAX - t * (SWIM_DURATION_MAX - SWIM_DURATION_MIN);
   return base + (phase % SWIM_DURATION_JITTER);
+}
+
+function updateFinBehavior(fish: FishRuntime, dt: number): void {
+  'worklet';
+  const { finSquashBase, finSquashAmp, finBehaviorRerollInterval } = fish.config;
+
+  if (finBehaviorRerollInterval > 0) {
+    fish.finRerollTimerLeft.value -= dt;
+    if (fish.finRerollTimerLeft.value <= 0) {
+      rerollFinSide(fish, 'left');
+    }
+
+    fish.finRerollTimerRight.value -= dt;
+    if (fish.finRerollTimerRight.value <= 0) {
+      rerollFinSide(fish, 'right');
+    }
+  }
+
+  fish.finPhaseLeft.value += dt * fish.finFreqLeft.value;
+  fish.finPhaseRight.value += dt * fish.finFreqRight.value;
+  fish.finSquashLeft.value = finSquashFromPhase(
+    fish.finPhaseLeft.value,
+    finSquashBase,
+    finSquashAmp,
+  );
+  fish.finSquashRight.value = finSquashFromPhase(
+    fish.finPhaseRight.value,
+    finSquashBase,
+    finSquashAmp,
+  );
 }
 
 function updateTurnArc(fish: FishRuntime, dt: number): void {
@@ -290,6 +453,7 @@ function updateFish(
   fish.wavePhase.value = (fish.wavePhase.value + waveFreq * dt) % (Math.PI * 2);
 
   updateTurnArc(fish, dt);
+  updateFinBehavior(fish, dt);
 }
 
 export type KoiFishLayerProps = {
@@ -300,11 +464,48 @@ export type KoiFishLayerProps = {
   koiCount?: number;
 };
 
+function applyFinSideSpawn(
+  fish: FishRuntime,
+  side: 'left' | 'right',
+  spawn: FinSideSpawn,
+  config: FishConfig,
+): void {
+  const rerollDelay = nextFinRerollDelay(
+    config.finBehaviorRerollInterval,
+    config.finBehaviorRerollJitter,
+  );
+
+  if (side === 'left') {
+    fish.finVariantLeft.value = spawn.variant;
+    fish.finFreqLeft.value = spawn.freq;
+    fish.finPhaseLeft.value = spawn.initialPhase;
+    fish.finSquashLeft.value = finSquashAtPhase(
+      spawn.initialPhase,
+      config.finSquashBase,
+      config.finSquashAmp,
+    );
+    fish.finRerollTimerLeft.value = rerollDelay;
+    return;
+  }
+
+  fish.finVariantRight.value = spawn.variant;
+  fish.finFreqRight.value = spawn.freq;
+  fish.finPhaseRight.value = spawn.initialPhase;
+  fish.finSquashRight.value = finSquashAtPhase(
+    spawn.initialPhase,
+    config.finSquashBase,
+    config.finSquashAmp,
+  );
+  fish.finRerollTimerRight.value = rerollDelay;
+}
+
 function useFishRuntime(
   config: FishConfig,
   swimZone: SwimZone,
 ): FishRuntime {
   const initSpeed = pickRandomBaseSpeed();
+  const initFinLeft = rollFinSideSpawn(config, config.phase * 2.3);
+  const initFinRight = rollFinSideSpawn(config, config.phase * 4.1 + 1.3);
   const x = useSharedValue(swimZone.x + config.xRatio * swimZone.w);
   const y = useSharedValue(swimZone.y + config.yRatio * swimZone.h);
   const angle = useSharedValue(config.initialAngle);
@@ -318,9 +519,65 @@ function useFishRuntime(
   const targetBaseSpeed = useSharedValue(initSpeed);
   const wavePhase = useSharedValue(0);
   const wasNearEdge = useSharedValue(false);
+  const finSquashLeft = useSharedValue(
+    config.finSquashBase + config.finSquashAmp * (0.5 - 0.5 * Math.cos(initFinLeft.initialPhase)),
+  );
+  const finSquashRight = useSharedValue(
+    config.finSquashBase + config.finSquashAmp * (0.5 - 0.5 * Math.cos(initFinRight.initialPhase)),
+  );
+  const finPhaseLeft = useSharedValue(initFinLeft.initialPhase);
+  const finPhaseRight = useSharedValue(initFinRight.initialPhase);
+  const finVariantLeft = useSharedValue<number>(initFinLeft.variant);
+  const finVariantRight = useSharedValue<number>(initFinRight.variant);
+  const finFreqLeft = useSharedValue(initFinLeft.freq);
+  const finFreqRight = useSharedValue(initFinRight.freq);
+  const finRerollTimerLeft = useSharedValue(
+    nextFinRerollDelay(config.finBehaviorRerollInterval, config.finBehaviorRerollJitter),
+  );
+  const finRerollTimerRight = useSharedValue(
+    nextFinRerollDelay(config.finBehaviorRerollInterval, config.finBehaviorRerollJitter),
+  );
+
+  const fishRef = useRef<FishRuntime | undefined>(undefined);
+  if (!fishRef.current) {
+    fishRef.current = {
+      config,
+      x,
+      y,
+      angle,
+      speed,
+      amplitude,
+      turnArc,
+      prevAngle,
+      wanderAngle,
+      state,
+      stateTimer,
+      targetBaseSpeed,
+      wavePhase,
+      wasNearEdge,
+      finSquashLeft,
+      finSquashRight,
+      finPhaseLeft,
+      finPhaseRight,
+      finVariantLeft,
+      finVariantRight,
+      finFreqLeft,
+      finFreqRight,
+      finRerollTimerLeft,
+      finRerollTimerRight,
+    };
+  }
+  const fish = fishRef.current;
+  fish.config = config;
 
   useEffect(() => {
     const resetSpeed = pickRandomBaseSpeed();
+    const left = rollFinSideSpawn(config, config.phase * 2.3 + Math.random() * 10);
+    const right = rollFinSideSpawn(config, config.phase * 4.1 + Math.random() * 10);
+
+    applyFinSideSpawn(fish, 'left', left, config);
+    applyFinSideSpawn(fish, 'right', right, config);
+
     x.value = swimZone.x + config.xRatio * swimZone.w;
     y.value = swimZone.y + config.yRatio * swimZone.h;
     angle.value = config.initialAngle;
@@ -340,6 +597,7 @@ function useFishRuntime(
     swimZone.w,
     swimZone.h,
     config,
+    fish,
     x,
     y,
     angle,
@@ -355,22 +613,7 @@ function useFishRuntime(
     wasNearEdge,
   ]);
 
-  return {
-    config,
-    x,
-    y,
-    angle,
-    speed,
-    amplitude,
-    turnArc,
-    prevAngle,
-    wanderAngle,
-    state,
-    stateTimer,
-    targetBaseSpeed,
-    wavePhase,
-    wasNearEdge,
-  };
+  return fish;
 }
 
 type KoiFishActorProps = {
@@ -399,7 +642,7 @@ function KoiFishActor({
     }),
     [settings, spawn],
   );
-  const fish = useFishRuntime(config, swimZone);
+  const fishRuntime = useFishRuntime(config, swimZone);
   const lastTimestamp = useSharedValue(-1);
 
   const steerMinX = swimZone.x + swimZone.w * BOUNDARY_MARGIN_RATIO;
@@ -424,7 +667,7 @@ function KoiFishActor({
     lastTimestamp.value = frameInfo.timestamp;
 
     updateFish(
-      fish,
+      fishRuntime,
       dt,
       steerMinX,
       steerMaxX,
@@ -444,22 +687,22 @@ function KoiFishActor({
       }
       const ox = sharedPositions.value[i * 2];
       const oy = sharedPositions.value[i * 2 + 1];
-      const dx = fish.x.value - ox;
-      const dy = fish.y.value - oy;
+      const dx = fishRuntime.x.value - ox;
+      const dy = fishRuntime.y.value - oy;
       const distSq = dx * dx + dy * dy;
       if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
         const dist = Math.sqrt(distSq);
         const overlap = 1 - dist / SEPARATION_RADIUS;
         const awayAngle = Math.atan2(dy, dx);
         const str = Math.min(1, overlap * SEPARATION_STEER * dt);
-        fish.angle.value = lerpAngle(fish.angle.value, awayAngle, str);
-        fish.wanderAngle.value = lerpAngle(fish.wanderAngle.value, awayAngle, str);
+        fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
+        fishRuntime.wanderAngle.value = lerpAngle(fishRuntime.wanderAngle.value, awayAngle, str);
       }
     }
 
     const pos = sharedPositions.value;
-    pos[fishIndex * 2] = fish.x.value;
-    pos[fishIndex * 2 + 1] = fish.y.value;
+    pos[fishIndex * 2] = fishRuntime.x.value;
+    pos[fishIndex * 2 + 1] = fishRuntime.y.value;
     sharedPositions.value = pos;
   });
 
@@ -487,12 +730,16 @@ function KoiFishActor({
       }}
       phase={spawn.phase}
       state={{
-        x: fish.x,
-        y: fish.y,
-        angle: fish.angle,
-        amplitude: fish.amplitude,
-        turnArc: fish.turnArc,
-        wavePhase: fish.wavePhase,
+        x: fishRuntime.x,
+        y: fishRuntime.y,
+        angle: fishRuntime.angle,
+        amplitude: fishRuntime.amplitude,
+        turnArc: fishRuntime.turnArc,
+        wavePhase: fishRuntime.wavePhase,
+        finSquashLeft: fishRuntime.finSquashLeft,
+        finSquashRight: fishRuntime.finSquashRight,
+        finVariantLeft: fishRuntime.finVariantLeft,
+        finVariantRight: fishRuntime.finVariantRight,
       }}
     />
   );

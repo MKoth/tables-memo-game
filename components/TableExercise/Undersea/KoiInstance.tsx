@@ -31,6 +31,10 @@ export type KoiFishState = {
   amplitude: SharedValue<number>;
   turnArc: SharedValue<number>;
   wavePhase: SharedValue<number>;
+  finSquashLeft: SharedValue<number>;
+  finSquashRight: SharedValue<number>;
+  finVariantLeft: SharedValue<number>;
+  finVariantRight: SharedValue<number>;
 };
 
 export type KoiTailFlexSettings = {
@@ -99,6 +103,10 @@ export function KoiInstance({
     wavePhase: state.wavePhase.value,
     phase,
     turnArc: state.turnArc.value,
+    finSquashLeft: state.finSquashLeft.value,
+    finSquashRight: state.finSquashRight.value,
+    finVariantLeft: state.finVariantLeft.value,
+    finVariantRight: state.finVariantRight.value,
     imageWidth,
     imageHeight,
   };
