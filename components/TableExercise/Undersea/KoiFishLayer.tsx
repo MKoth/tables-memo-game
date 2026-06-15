@@ -36,7 +36,7 @@ const IDLE = 1;
 const BASE_SPEED_MIN = 50;
 const BASE_SPEED_MAX = 670;
 /** >1 biases random speed picks toward BASE_SPEED_MIN (higher = more slow fish). */
-const SPEED_PICK_BIAS = 5.5;
+const SPEED_PICK_BIAS = 15.5;
 /** Shader tail-wave angular rate at BASE_SPEED_MIN (radians per second). */
 const SWIM_SPEED_SHADER_MIN = 2.5;
 /** Shader tail-wave angular rate at BASE_SPEED_MAX (radians per second). */
@@ -62,6 +62,10 @@ const IDLE_SPEED_THRESHOLD = 2;
 const BOUNDARY_MARGIN_RATIO = 0.18;
 /** Max turn offset when steering away from swim-zone edges (radians). */
 const BOUNDARY_TURN_OFFSET = Math.PI * 0.25;
+/** px — roughly half KOI_BASE_LENGTH; steer zone before bodies overlap. */
+const SEPARATION_RADIUS = 75;
+/** lerp strength multiplier for avoidance angle. */
+const SEPARATION_STEER = 10.0;
 
 export type KoiImageKey = 'koi1' | 'koi2';
 
@@ -374,9 +378,20 @@ type KoiFishActorProps = {
   settings: KoiSharedSettings;
   swimZone: SwimZone;
   image: SkImage;
+  fishIndex: number;
+  fishCount: number;
+  sharedPositions: SharedValue<number[]>;
 };
 
-function KoiFishActor({ spawn, settings, swimZone, image }: KoiFishActorProps) {
+function KoiFishActor({
+  spawn,
+  settings,
+  swimZone,
+  image,
+  fishIndex,
+  fishCount,
+  sharedPositions,
+}: KoiFishActorProps) {
   const config = useMemo(
     (): FishConfig => ({
       ...settings,
@@ -422,6 +437,30 @@ function KoiFishActor({ spawn, settings, swimZone, image }: KoiFishActorProps) {
       centerX,
       centerY,
     );
+
+    for (let i = 0; i < fishCount; i++) {
+      if (i === fishIndex) {
+        continue;
+      }
+      const ox = sharedPositions.value[i * 2];
+      const oy = sharedPositions.value[i * 2 + 1];
+      const dx = fish.x.value - ox;
+      const dy = fish.y.value - oy;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
+        const dist = Math.sqrt(distSq);
+        const overlap = 1 - dist / SEPARATION_RADIUS;
+        const awayAngle = Math.atan2(dy, dx);
+        const str = Math.min(1, overlap * SEPARATION_STEER * dt);
+        fish.angle.value = lerpAngle(fish.angle.value, awayAngle, str);
+        fish.wanderAngle.value = lerpAngle(fish.wanderAngle.value, awayAngle, str);
+      }
+    }
+
+    const pos = sharedPositions.value;
+    pos[fishIndex * 2] = fish.x.value;
+    pos[fishIndex * 2 + 1] = fish.y.value;
+    sharedPositions.value = pos;
   });
 
   const fishLength = KOI_BASE_LENGTH * settings.scale;
@@ -480,12 +519,17 @@ export function KoiFishLayer({
     [koiCount, swimZone.w, swimZone.h],
   );
 
+  const sharedPositions = useSharedValue<number[]>(new Array(koiCount * 2).fill(0));
+
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
       <Group>
         {spawns.map((spawn, index) => (
           <KoiFishActor
             key={index}
+            fishIndex={index}
+            fishCount={spawns.length}
+            sharedPositions={sharedPositions}
             spawn={spawn}
             settings={KOI_SETTINGS}
             swimZone={swimZone}
