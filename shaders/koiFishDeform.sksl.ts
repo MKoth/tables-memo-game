@@ -22,7 +22,6 @@
 export const KOI_BODY_FIT_SCALE = 0.72;
 
 export const KOI_FISH_DEFORM_SKSL = `
-uniform float iTime;
 uniform float swimZoneX;
 uniform float swimZoneY;
 uniform float swimZoneW;
@@ -37,7 +36,7 @@ uniform float waveAmplitude;
 uniform float tailBendScale;
 uniform float tailTipBendScale;
 uniform float headBendScale;
-uniform float swimSpeed;
+uniform float wavePhase;
 uniform float phase;
 uniform float turnArc;
 uniform float imageWidth;
@@ -63,7 +62,7 @@ half4 main(float2 fragCoord) {
     return half4(0.0);
   }
 
-  float swimPhase = sin(iTime * swimSpeed + phase);
+  float swimPhase = sin(wavePhase + phase);
 
   // Arc-length compression: estimate local slope at the midpoint
   // between this pixel and the head, then compress toward the head.
@@ -127,8 +126,8 @@ export const koiFishDeformUniformDefaults = {
   tailTipBendScale: 1.5,
   /** Head counter-tilt scale — tilts the head opposite to the tail. */
   headBendScale: 0.35,
-  /** Tail oscillation rate in cycles per second. */
-  swimSpeed: 4.5,
+  /** Accumulated tail-wave phase in radians (integrated frequency * time). */
+  wavePhase: 0,
   /** Phase offset so fish animate out of sync. */
   phase: 0,
   /** Static body arc during turns (0 = straight, driven by angular velocity). */

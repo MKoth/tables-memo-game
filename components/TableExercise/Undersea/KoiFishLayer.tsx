@@ -4,7 +4,6 @@ import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
-import { KOI_MAX_AMPLITUDE } from '../../../shaders/koiFishDeform.sksl';
 import { KoiInstance } from './KoiInstance';
 
 const KOI_BASE_LENGTH = 120;
@@ -23,8 +22,6 @@ export const KOI_SETTINGS = {
   tailBendScale: 5.5,
   tailTipBendScale: 7.5,
   headBendScale: 0.35,
-  swimSpeed: 6.5,
-  baseSpeed: 130,
   /** Turn body arc strength — scales angular velocity into shader bend (higher = tighter arc). */
   turnArcGain: 0.28,
   /** Shorten fish length per unit |turnArc| (counter stretch on turns). */
@@ -35,6 +32,24 @@ export const KOI_SETTINGS = {
 
 const SWIMMING = 0;
 const IDLE = 1;
+
+const BASE_SPEED_MIN = 50;
+const BASE_SPEED_MAX = 670;
+/** >1 biases random speed picks toward BASE_SPEED_MIN (higher = more slow fish). */
+const SPEED_PICK_BIAS = 5.5;
+/** Shader tail-wave angular rate at BASE_SPEED_MIN (radians per second). */
+const SWIM_SPEED_SHADER_MIN = 2.5;
+/** Shader tail-wave angular rate at BASE_SPEED_MAX (radians per second). */
+const SWIM_SPEED_SHADER_MAX = 90.0;
+
+/** Swim bout length at max speed (seconds) — fast fish tire sooner. */
+const SWIM_DURATION_MIN = 0.1;
+/** Swim bout length at min speed (seconds). */
+const SWIM_DURATION_MAX = 12.0;
+const SWIM_DURATION_JITTER = 1.5;
+/** Base idle pause before the fish can swim again (seconds). */
+const IDLE_DURATION_BASE = 0.5;
+const IDLE_DURATION_JITTER = 0.6;
 
 const AMPLITUDE_LERP = 3.5;
 const ANGLE_LERP = 2.5;
@@ -74,6 +89,8 @@ type FishRuntime = {
   wanderAngle: SharedValue<number>;
   state: SharedValue<number>;
   stateTimer: SharedValue<number>;
+  targetBaseSpeed: SharedValue<number>;
+  wavePhase: SharedValue<number>;
 };
 
 type SwimZone = {
@@ -122,10 +139,28 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function speedFromAmplitude(baseSpeed: number, amplitude: number): number {
+function pickRandomBaseSpeed(): number {
   'worklet';
-  const ratio = 1 - amplitude / KOI_MAX_AMPLITUDE;
-  return baseSpeed * Math.max(0, ratio);
+  const t = Math.pow(Math.random(), SPEED_PICK_BIAS);
+  return BASE_SPEED_MIN + t * (BASE_SPEED_MAX - BASE_SPEED_MIN);
+}
+
+function swimSpeedForForwardSpeed(speed: number): number {
+  'worklet';
+  const t = clamp((speed - BASE_SPEED_MIN) / (BASE_SPEED_MAX - BASE_SPEED_MIN), 0, 1);
+  return SWIM_SPEED_SHADER_MIN + t * (SWIM_SPEED_SHADER_MAX - SWIM_SPEED_SHADER_MIN);
+}
+
+function idleDurationForPhase(phase: number): number {
+  'worklet';
+  return IDLE_DURATION_BASE + (phase % IDLE_DURATION_JITTER);
+}
+
+function swimDurationForSpeed(speed: number, phase: number): number {
+  'worklet';
+  const t = clamp((speed - BASE_SPEED_MIN) / (BASE_SPEED_MAX - BASE_SPEED_MIN), 0, 1);
+  const base = SWIM_DURATION_MAX - t * (SWIM_DURATION_MAX - SWIM_DURATION_MIN);
+  return base + (phase % SWIM_DURATION_JITTER);
 }
 
 function updateTurnArc(fish: FishRuntime, dt: number): void {
@@ -175,7 +210,7 @@ function updateFish(
       Math.min(1, AMPLITUDE_LERP * dt),
     );
 
-    const swimSpeed = speedFromAmplitude(cfg.baseSpeed, fish.amplitude.value);
+    const swimSpeed = fish.targetBaseSpeed.value;
     fish.speed.value = lerp(fish.speed.value, swimSpeed, Math.min(1, 4 * dt));
 
     fish.x.value += Math.cos(fish.angle.value) * fish.speed.value * dt;
@@ -205,7 +240,7 @@ function updateFish(
     fish.stateTimer.value -= dt;
     if (fish.stateTimer.value <= 0) {
       fish.state.value = IDLE;
-      fish.stateTimer.value = 1.5 + (cfg.phase % 2);
+      fish.stateTimer.value = idleDurationForPhase(cfg.phase);
     }
   } else {
     fish.amplitude.value = lerp(fish.amplitude.value, 0, Math.min(1, AMPLITUDE_LERP * dt));
@@ -218,16 +253,26 @@ function updateFish(
       fish.stateTimer.value -= dt;
       if (fish.stateTimer.value <= 0) {
         fish.state.value = SWIMMING;
-        fish.stateTimer.value = 5 + (cfg.phase % 3);
+        fish.targetBaseSpeed.value = pickRandomBaseSpeed();
+        fish.stateTimer.value = swimDurationForSpeed(fish.targetBaseSpeed.value, cfg.phase);
         fish.wanderAngle.value = pickWanderAngle(fish.angle.value, cfg.phase);
       }
     } else {
-      fish.stateTimer.value = 1.5 + (cfg.phase % 2);
+      fish.stateTimer.value = idleDurationForPhase(cfg.phase);
     }
   }
 
   fish.x.value = clamp(fish.x.value, hardMinX, hardMaxX);
   fish.y.value = clamp(fish.y.value, hardMinY, hardMaxY);
+
+  // Wave frequency tracks actual forward speed so faster fish wave faster.
+  // Integrate frequency into phase each frame (rather than iTime * frequency)
+  // so changing speed never produces a spurious instantaneous frequency.
+  const waveFreq =
+    fish.state.value === SWIMMING
+      ? swimSpeedForForwardSpeed(fish.targetBaseSpeed.value)
+      : swimSpeedForForwardSpeed(fish.speed.value);
+  fish.wavePhase.value = (fish.wavePhase.value + waveFreq * dt) % (Math.PI * 2);
 
   updateTurnArc(fish, dt);
 }
@@ -244,28 +289,34 @@ function useFishRuntime(
   config: FishConfig,
   swimZone: SwimZone,
 ): FishRuntime {
+  const initSpeed = pickRandomBaseSpeed();
   const x = useSharedValue(swimZone.x + config.xRatio * swimZone.w);
   const y = useSharedValue(swimZone.y + config.yRatio * swimZone.h);
   const angle = useSharedValue(config.initialAngle);
-  const speed = useSharedValue(config.baseSpeed * 0.5);
+  const speed = useSharedValue(initSpeed * 0.5);
   const amplitude = useSharedValue(config.targetAmplitude * 0.5);
   const turnArc = useSharedValue(0);
   const prevAngle = useSharedValue(config.initialAngle);
   const wanderAngle = useSharedValue(config.initialAngle);
   const state = useSharedValue(SWIMMING);
-  const stateTimer = useSharedValue(4 + config.phase);
+  const stateTimer = useSharedValue(swimDurationForSpeed(initSpeed, config.phase));
+  const targetBaseSpeed = useSharedValue(initSpeed);
+  const wavePhase = useSharedValue(0);
 
   useEffect(() => {
+    const resetSpeed = pickRandomBaseSpeed();
     x.value = swimZone.x + config.xRatio * swimZone.w;
     y.value = swimZone.y + config.yRatio * swimZone.h;
     angle.value = config.initialAngle;
-    speed.value = config.baseSpeed * 0.5;
+    speed.value = resetSpeed * 0.5;
     amplitude.value = config.targetAmplitude * 0.5;
     turnArc.value = 0;
     prevAngle.value = config.initialAngle;
     wanderAngle.value = config.initialAngle;
     state.value = SWIMMING;
-    stateTimer.value = 4 + config.phase;
+    stateTimer.value = swimDurationForSpeed(resetSpeed, config.phase);
+    targetBaseSpeed.value = resetSpeed;
+    wavePhase.value = 0;
   }, [
     swimZone.x,
     swimZone.y,
@@ -282,6 +333,8 @@ function useFishRuntime(
     wanderAngle,
     state,
     stateTimer,
+    targetBaseSpeed,
+    wavePhase,
   ]);
 
   return {
@@ -296,6 +349,8 @@ function useFishRuntime(
     wanderAngle,
     state,
     stateTimer,
+    targetBaseSpeed,
+    wavePhase,
   };
 }
 
@@ -304,10 +359,9 @@ type KoiFishActorProps = {
   settings: KoiSharedSettings;
   swimZone: SwimZone;
   image: SkImage;
-  clock: SharedValue<number>;
 };
 
-function KoiFishActor({ spawn, settings, swimZone, image, clock }: KoiFishActorProps) {
+function KoiFishActor({ spawn, settings, swimZone, image }: KoiFishActorProps) {
   const config = useMemo(
     (): FishConfig => ({
       ...settings,
@@ -372,7 +426,6 @@ function KoiFishActor({ spawn, settings, swimZone, image, clock }: KoiFishActorP
         tailBendScale: settings.tailBendScale,
         tailTipBendScale: settings.tailTipBendScale,
         headBendScale: settings.headBendScale,
-        swimSpeed: settings.swimSpeed,
       }}
       turnDistort={{
         squashGain: settings.turnSquashGain,
@@ -385,8 +438,8 @@ function KoiFishActor({ spawn, settings, swimZone, image, clock }: KoiFishActorP
         angle: fish.angle,
         amplitude: fish.amplitude,
         turnArc: fish.turnArc,
+        wavePhase: fish.wavePhase,
       }}
-      clock={clock}
     />
   );
 }
@@ -395,7 +448,6 @@ export function KoiFishLayer({
   width,
   height,
   images,
-  clock,
   koiCount = KOI_COUNT,
 }: KoiFishLayerProps) {
   const swimZone = useMemo(
@@ -423,7 +475,6 @@ export function KoiFishLayer({
             settings={KOI_SETTINGS}
             swimZone={swimZone}
             image={images[spawn.imageKey]}
-            clock={clock}
           />
         ))}
       </Group>
