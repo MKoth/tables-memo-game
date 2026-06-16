@@ -20,7 +20,7 @@ import { KoiFishLayer } from './KoiFishLayer';
 import { SeaweedInstance } from './SeaweedInstance';
 import { StoneInstance } from './StoneInstance';
 
-const BACKGROUND_RES = 0.5;
+const BACKGROUND_RES = 0.8;
 const DEG_TO_RAD = Math.PI / 180;
 const SEAWEED_BASE_WIDTH = 120;
 const SEAWEED_BASE_HEIGHT = 160;
@@ -42,15 +42,15 @@ const STONE_VARIANTS = {
 type StoneVariant = keyof typeof STONE_VARIANTS;
 
 const STONE_CONFIGS = [
-  { variant: 1 satisfies StoneVariant, xRatio: 0.06, yRatio: 0.13, scale: 1.85, stonePhase: 0.0 },
-  { variant: 2 satisfies StoneVariant, xRatio: 0.0, yRatio: 0.24, scale: 1.55, stonePhase: 0.5 },
-  { variant: 3 satisfies StoneVariant, xRatio: 0.28, yRatio: 0.31, scale: 1.4, stonePhase: 0.3 },
-  { variant: 4 satisfies StoneVariant, xRatio: 0.38, yRatio: 0.56, scale: 1.7, stonePhase: 0.7 },
-  { variant: 5 satisfies StoneVariant, xRatio: 0.5, yRatio: 0.40, scale: 1.8, stonePhase: 2.0 },
+  { variant: 1 satisfies StoneVariant, xRatio: 0.15, yRatio: 0.15, scale: 1.3, stonePhase: 0.0 },
+  { variant: 2 satisfies StoneVariant, xRatio: 0.04, yRatio: 0.22, scale: 1.3, stonePhase: 0.5 },
+  { variant: 3 satisfies StoneVariant, xRatio: 0.22, yRatio: 0.28, scale: 1.4, stonePhase: 0.3 },
+  { variant: 4 satisfies StoneVariant, xRatio: 0.48, yRatio: 0.56, scale: 1.4, stonePhase: 0.7 },
+  { variant: 5 satisfies StoneVariant, xRatio: 0.45, yRatio: 0.40, scale: 1.5, stonePhase: 2.0 },
   { variant: 6 satisfies StoneVariant, xRatio: 0.26, yRatio: 0.47, scale: 1.7, stonePhase: 0.0 },
-  { variant: 7 satisfies StoneVariant, xRatio: 0.63, yRatio: 0.50, scale: 2.2, stonePhase: 3.0 },
-  { variant: 8 satisfies StoneVariant, xRatio: 0.36, yRatio: 0.20, scale: 1.85, stonePhase: 1.0 },
-  { variant: 9 satisfies StoneVariant, xRatio: 0.74, yRatio: 0.65, scale: 1.35, stonePhase: 0.0 },
+  { variant: 7 satisfies StoneVariant, xRatio: 0.58, yRatio: 0.48, scale: 1.4, stonePhase: 3.0 },
+  { variant: 8 satisfies StoneVariant, xRatio: 0.28, yRatio: 0.20, scale: 1.45, stonePhase: 1.0 },
+  { variant: 9 satisfies StoneVariant, xRatio: 0.68, yRatio: 0.63, scale: 1.35, stonePhase: 0.0 },
 ] as const;
 
 const KOI_VARIANTS = {
@@ -71,7 +71,7 @@ const SEAWEED_CONFIGS = [
     variant: 1 satisfies SeaweedVariant,
     xRatio: 0.2,
     yRatio: 0.18,
-    scale: 0.9,
+    scale: 0.7,
     phase: 0.0,
     currentAngle: 3.14,
     waveAmplitude: 0.06,
@@ -88,7 +88,7 @@ const SEAWEED_CONFIGS = [
     variant: 2 satisfies SeaweedVariant,
     xRatio: 0.45,
     yRatio: 0.42,
-    scale: 1.0,
+    scale: 0.7,
     phase: 1.0,
     currentAngle: 3.14,
     waveAmplitude: 0.06,
@@ -105,7 +105,7 @@ const SEAWEED_CONFIGS = [
     variant: 3 satisfies SeaweedVariant,
     xRatio: 0.67,
     yRatio: 0.52,
-    scale: 1.0,
+    scale: 0.8,
     phase: 2.0,
     currentAngle: 3.14,
     waveAmplitude: 0.06,

@@ -12,7 +12,7 @@ const SWIM_ZONE_TOP_RATIO = 0;
 const SWIM_ZONE_MARGIN = 0;
 
 /** Number of koi fish in the swim zone. */
-export const KOI_COUNT = 30;
+export const KOI_COUNT = 3;
 
 /** Shared settings applied to every fish. */
 export const KOI_SETTINGS = {

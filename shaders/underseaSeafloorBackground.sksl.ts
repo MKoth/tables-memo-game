@@ -171,7 +171,7 @@ export const underseaSeafloorUniformDefaults = {
   /** Underwater tint intensity — 0 = no tint, 1 = full tint. */
   underwaterTintStrength: 0.7,
   /** Vertical depth gradient when tint is active — 0 = uniform tint, 1 = bluer toward top. */
-  underwaterDepthStrength: 3,
+  underwaterDepthStrength: 1.5,
   /** Number of stacked waterDrift layers (max MAX_DRIFT_LAYERS). */
   waterDriftCount: 3,
   /** WaterDrift voronoi cell density per layer. */
