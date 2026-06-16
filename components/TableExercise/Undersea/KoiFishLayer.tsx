@@ -110,6 +110,9 @@ export type KoiImageKey = 'koi1' | 'koi2' | 'koi3';
 
 const KOI_IMAGE_KEYS: KoiImageKey[] = ['koi1', 'koi2', 'koi3'];
 
+/** P(fish gets a second overlay mask pass at spawn). */
+export const KOI_OVERLAY_PROBABILITY = 0.4;
+
 /** Spot tint colors (RGB 0..1) picked randomly per fish at spawn. */
 export const KOI_SPOT_PALETTE: ReadonlyArray<readonly [number, number, number]> = [
   [0.92, 0.18, 0.12], // Beni red (Kohaku)
@@ -130,9 +133,16 @@ export const KOI_SPOT_PALETTE: ReadonlyArray<readonly [number, number, number]> 
 
 export type KoiSharedSettings = typeof KOI_SETTINGS;
 
+function pickSpotColor(): readonly [number, number, number] {
+  return KOI_SPOT_PALETTE[Math.floor(Math.random() * KOI_SPOT_PALETTE.length)];
+}
+
 type KoiSpawn = {
   imageKey: KoiImageKey;
   spotColor: readonly [number, number, number];
+  overlayMaskKey: KoiImageKey;
+  overlayColor: readonly [number, number, number];
+  overlayStrength: number;
   xRatio: number;
   yRatio: number;
   phase: number;
@@ -275,14 +285,24 @@ function rerollFinSide(fish: FishRuntime, side: 'left' | 'right'): void {
 }
 
 function createRandomSpawns(count: number): KoiSpawn[] {
-  return Array.from({ length: count }, () => ({
-    imageKey: KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)],
-    spotColor: KOI_SPOT_PALETTE[Math.floor(Math.random() * KOI_SPOT_PALETTE.length)],
-    xRatio: 0.12 + Math.random() * 0.76,
-    yRatio: 0.12 + Math.random() * 0.76,
-    phase: Math.random() * Math.PI * 2,
-    initialAngle: Math.random() * Math.PI * 2,
-  }));
+  return Array.from({ length: count }, () => {
+    const spotColor = pickSpotColor();
+    const hasOverlay = Math.random() < KOI_OVERLAY_PROBABILITY;
+
+    return {
+      imageKey: KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)],
+      spotColor,
+      overlayMaskKey: hasOverlay
+        ? KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)]
+        : 'koi1',
+      overlayColor: hasOverlay ? pickSpotColor() : spotColor,
+      overlayStrength: hasOverlay ? 1 : 0,
+      xRatio: 0.12 + Math.random() * 0.76,
+      yRatio: 0.12 + Math.random() * 0.76,
+      phase: Math.random() * Math.PI * 2,
+      initialAngle: Math.random() * Math.PI * 2,
+    };
+  });
 }
 
 function lerp(a: number, b: number, t: number): number {
@@ -619,6 +639,7 @@ type KoiRuntimeEntry = {
   runtime: FishRuntime;
   image: SkImage;
   maskImage: SkImage;
+  overlayMaskImage: SkImage;
 };
 
 function useFishSimulation(
@@ -728,6 +749,7 @@ export function KoiFishLayer({
         runtime: createFishRuntime({ ...KOI_SETTINGS, ...spawn }, swimZone),
         image: images[spawn.imageKey],
         maskImage: masks[spawn.imageKey],
+        overlayMaskImage: masks[spawn.overlayMaskKey],
       })),
     [spawns, swimZone, images, masks],
   );
@@ -759,12 +781,15 @@ export function KoiFishLayer({
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
       <Group>
-        {runtimeEntries.map(({ spawn, runtime, image, maskImage }, index) => (
+        {runtimeEntries.map(({ spawn, runtime, image, maskImage, overlayMaskImage }, index) => (
           <KoiShadowInstance
             key={`shadow-${index}`}
             image={image}
             maskImage={maskImage}
+            overlayMaskImage={overlayMaskImage}
             spotColor={spawn.spotColor}
+            overlayColor={spawn.overlayColor}
+            overlayStrength={spawn.overlayStrength}
             {...renderProps}
             phase={spawn.phase}
             state={{
@@ -788,12 +813,15 @@ export function KoiFishLayer({
         ))}
       </Group>
       <Group>
-        {runtimeEntries.map(({ spawn, runtime, image, maskImage }, index) => (
+        {runtimeEntries.map(({ spawn, runtime, image, maskImage, overlayMaskImage }, index) => (
           <KoiInstance
             key={`fish-${index}`}
             image={image}
             maskImage={maskImage}
+            overlayMaskImage={overlayMaskImage}
             spotColor={spawn.spotColor}
+            overlayColor={spawn.overlayColor}
+            overlayStrength={spawn.overlayStrength}
             {...renderProps}
             phase={spawn.phase}
             state={{

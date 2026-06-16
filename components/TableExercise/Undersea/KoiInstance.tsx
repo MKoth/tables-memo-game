@@ -64,7 +64,10 @@ export type KoiTurnDistortSettings = {
 type KoiRenderBaseProps = {
   image: SkImage;
   maskImage: SkImage;
+  overlayMaskImage: SkImage;
   spotColor: readonly [number, number, number];
+  overlayColor: readonly [number, number, number];
+  overlayStrength: number;
   swimZoneX: number;
   swimZoneY: number;
   swimZoneW: number;
@@ -153,6 +156,8 @@ function buildKoiUniforms(
   shadowOpacity: number,
   shadowSoftness: number,
   spotColor: [number, number, number],
+  overlayColor: [number, number, number],
+  overlayStrength: number,
 ) {
   'worklet';
   const turnT = Math.abs(state.turnArc.value);
@@ -188,6 +193,8 @@ function buildKoiUniforms(
     shadowOpacity,
     shadowSoftness,
     spotColor,
+    overlayColor,
+    overlayStrength,
   };
 }
 
@@ -203,7 +210,10 @@ type KoiShaderRectProps = KoiRenderBaseProps & {
 function KoiShaderRect({
   image,
   maskImage,
+  overlayMaskImage,
   spotColor,
+  overlayColor,
+  overlayStrength,
   swimZoneX,
   swimZoneY,
   swimZoneW,
@@ -226,8 +236,11 @@ function KoiShaderRect({
   const imageHeight = image.height();
   const maskWidth = maskImage.width();
   const maskHeight = maskImage.height();
+  const overlayMaskWidth = overlayMaskImage.width();
+  const overlayMaskHeight = overlayMaskImage.height();
   const shadowColorUniform = [...shadowColor] as [number, number, number];
   const spotColorUniform = [...spotColor] as [number, number, number];
+  const overlayColorUniform = [...overlayColor] as [number, number, number];
 
   const bounds = useDerivedValue(() => {
     const centerX = state.x.value + centerXOffset;
@@ -280,6 +293,8 @@ function KoiShaderRect({
       shadowOpacity,
       shadowSoftness,
       spotColorUniform,
+      overlayColorUniform,
+      overlayStrength,
     ),
   );
 
@@ -302,6 +317,16 @@ function KoiShaderRect({
           y={0}
           width={maskWidth}
           height={maskHeight}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
+        <ImageShader
+          image={overlayMaskImage}
+          x={0}
+          y={0}
+          width={overlayMaskWidth}
+          height={overlayMaskHeight}
           fit="fill"
           tx="clamp"
           ty="clamp"

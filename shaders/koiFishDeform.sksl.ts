@@ -65,7 +65,10 @@ uniform float shadowOpacity;
 uniform float shadowSoftness;
 uniform shader koiTexture;
 uniform shader koiSpotMask;
+uniform shader koiOverlayMask;
 uniform float3 spotColor;
+uniform float3 overlayColor;
+uniform float overlayStrength;
 
 half4 main(float2 fragCoord) {
   vec2 rel = fragCoord - vec2(fishX, fishY);
@@ -207,10 +210,16 @@ half4 main(float2 fragCoord) {
     return half4(0.0);
   }
 
-  float mask = koiSpotMask.eval(texCoord).r;
   float luma = dot(color.rgb, half3(0.299, 0.587, 0.114));
-  half3 tinted = half3(spotColor) * (luma * ${KOI_SPOT_TINT_GAIN});
+  float tintGain = ${KOI_SPOT_TINT_GAIN};
+
+  float mask = koiSpotMask.eval(texCoord).r;
+  half3 tinted = half3(spotColor) * (luma * tintGain);
   color.rgb = mix(color.rgb, tinted, mask * color.a);
+
+  float overlayMask = koiOverlayMask.eval(texCoord).r;
+  half3 overlayTinted = half3(overlayColor) * (luma * tintGain);
+  color.rgb = mix(color.rgb, overlayTinted, overlayMask * overlayStrength * color.a);
 
   return color;
 }
@@ -251,6 +260,10 @@ export const koiFishDeformUniformDefaults = {
   shadowSoftness: 0.15,
   /** Spot tint RGB (1,1,1 = identity). */
   spotColor: [1, 1, 1] as const,
+  /** Optional overlay tint RGB. */
+  overlayColor: [0, 0, 0] as const,
+  /** 0 = no overlay pass, 1 = apply overlay mask. */
+  overlayStrength: 0,
 } as const;
 
 /** Amplitude at which forward speed reaches zero (inverse speed law). */
