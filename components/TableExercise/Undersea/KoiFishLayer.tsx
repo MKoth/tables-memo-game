@@ -113,12 +113,16 @@ const KOI_IMAGE_KEYS: KoiImageKey[] = ['koi1', 'koi2', 'koi3'];
 /** P(fish gets a second overlay mask pass at spawn). */
 export const KOI_OVERLAY_PROBABILITY = 0.4;
 
+/** P(fish body is tinted from the palette at spawn). */
+export const KOI_BODY_TINT_PROBABILITY = 0.3;
+
 /** Spot tint colors (RGB 0..1) picked randomly per fish at spawn. */
 export const KOI_SPOT_PALETTE: ReadonlyArray<readonly [number, number, number]> = [
   [0.92, 0.18, 0.12], // Beni red (Kohaku)
   [0.98, 0.42, 0.08], // Orange (Orenji Ogon)
   [1.00, 0.75, 0.12], // Yamabuki yellow
   [0.10, 0.10, 0.12], // Sumi black
+  [0.05, 0.05, 0.05], // Dark black
   [0.42, 0.25, 0.10], // Chagoi brown
   [0.73, 0.58, 0.25], // Gold
   [0.60, 0.12, 0.10], // Dark red
@@ -128,7 +132,29 @@ export const KOI_SPOT_PALETTE: ReadonlyArray<readonly [number, number, number]> 
 
   [0.95, 0.55, 0.18], // Deep orange
   [0.65, 0.15, 0.12], // Dark beni red
+
+  // rosy color
+  [0.95, 0.55, 0.55], // rosy pink
+  [0.88, 0.45, 0.42], // soft beni pink
+  [0.05, 0.20, 0.05], // Dark green
+  [0.35, 0.45, 0.20], // Moss green
+  [0.60, 0.72, 0.25], // Yellow-green Midori Goi
+];
+
+/** Body tint colors (RGB 0..1) — edit independently from spot palette. */
+export const KOI_BODY_PALETTE: ReadonlyArray<readonly [number, number, number]> = [
   [0.92, 0.18, 0.12], // Beni red (Kohaku)
+  [0.10, 0.10, 0.12], // Sumi black
+  [0.42, 0.25, 0.10], // Chagoi brown
+  [0.60, 0.12, 0.10], // Dark red
+  [0.12, 0.12, 0.14], // Sumi black
+  [0.05, 0.05, 0.05], // Dark black
+  [0.45, 0.28, 0.12], // Brown / bronze
+
+  [0.65, 0.15, 0.12], // Dark beni red
+
+  // [0.05, 0.20, 0.05], // Dark green
+  [0.35, 0.45, 0.20], // Moss green
 ];
 
 export type KoiSharedSettings = typeof KOI_SETTINGS;
@@ -137,9 +163,15 @@ function pickSpotColor(): readonly [number, number, number] {
   return KOI_SPOT_PALETTE[Math.floor(Math.random() * KOI_SPOT_PALETTE.length)];
 }
 
+function pickBodyColor(): readonly [number, number, number] {
+  return KOI_BODY_PALETTE[Math.floor(Math.random() * KOI_BODY_PALETTE.length)];
+}
+
 type KoiSpawn = {
   imageKey: KoiImageKey;
   spotColor: readonly [number, number, number];
+  bodyColor: readonly [number, number, number];
+  bodyTintStrength: number;
   overlayMaskKey: KoiImageKey;
   overlayColor: readonly [number, number, number];
   overlayStrength: number;
@@ -287,11 +319,14 @@ function rerollFinSide(fish: FishRuntime, side: 'left' | 'right'): void {
 function createRandomSpawns(count: number): KoiSpawn[] {
   return Array.from({ length: count }, () => {
     const spotColor = pickSpotColor();
+    const hasBodyTint = Math.random() < KOI_BODY_TINT_PROBABILITY;
     const hasOverlay = Math.random() < KOI_OVERLAY_PROBABILITY;
 
     return {
       imageKey: KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)],
       spotColor,
+      bodyColor: hasBodyTint ? pickBodyColor() : spotColor,
+      bodyTintStrength: hasBodyTint ? 1 : 0,
       overlayMaskKey: hasOverlay
         ? KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)]
         : 'koi1',
@@ -788,6 +823,8 @@ export function KoiFishLayer({
             maskImage={maskImage}
             overlayMaskImage={overlayMaskImage}
             spotColor={spawn.spotColor}
+            bodyColor={spawn.bodyColor}
+            bodyTintStrength={spawn.bodyTintStrength}
             overlayColor={spawn.overlayColor}
             overlayStrength={spawn.overlayStrength}
             {...renderProps}
@@ -820,6 +857,8 @@ export function KoiFishLayer({
             maskImage={maskImage}
             overlayMaskImage={overlayMaskImage}
             spotColor={spawn.spotColor}
+            bodyColor={spawn.bodyColor}
+            bodyTintStrength={spawn.bodyTintStrength}
             overlayColor={spawn.overlayColor}
             overlayStrength={spawn.overlayStrength}
             {...renderProps}

@@ -34,6 +34,8 @@ export const KOI_FIN_PERP_RETRACT_GAIN = 1.6;
 export const KOI_FIN_ALONG_THIN_GAIN = 1.5;
 /** Multiplier on spot luma when tinting masked regions. */
 export const KOI_SPOT_TINT_GAIN = 2.7;
+/** Multiplier on body luma when tinting the full fish silhouette. */
+export const KOI_BODY_TINT_GAIN = 2.7;
 
 export const KOI_FISH_DEFORM_SKSL = `
 uniform float swimZoneX;
@@ -67,6 +69,8 @@ uniform shader koiTexture;
 uniform shader koiSpotMask;
 uniform shader koiOverlayMask;
 uniform float3 spotColor;
+uniform float3 bodyColor;
+uniform float bodyTintStrength;
 uniform float3 overlayColor;
 uniform float overlayStrength;
 
@@ -211,14 +215,18 @@ half4 main(float2 fragCoord) {
   }
 
   float luma = dot(color.rgb, half3(0.299, 0.587, 0.114));
-  float tintGain = ${KOI_SPOT_TINT_GAIN};
+  float bodyTintGain = ${KOI_BODY_TINT_GAIN};
+  float spotTintGain = ${KOI_SPOT_TINT_GAIN};
+
+  half3 bodyTinted = half3(bodyColor) * (luma * bodyTintGain);
+  color.rgb = mix(color.rgb, bodyTinted, bodyTintStrength * color.a);
 
   float mask = koiSpotMask.eval(texCoord).r;
-  half3 tinted = half3(spotColor) * (luma * tintGain);
+  half3 tinted = half3(spotColor) * (luma * spotTintGain);
   color.rgb = mix(color.rgb, tinted, mask * color.a);
 
   float overlayMask = koiOverlayMask.eval(texCoord).r;
-  half3 overlayTinted = half3(overlayColor) * (luma * tintGain);
+  half3 overlayTinted = half3(overlayColor) * (luma * spotTintGain);
   color.rgb = mix(color.rgb, overlayTinted, overlayMask * overlayStrength * color.a);
 
   return color;
@@ -260,6 +268,10 @@ export const koiFishDeformUniformDefaults = {
   shadowSoftness: 0.15,
   /** Spot tint RGB (1,1,1 = identity). */
   spotColor: [1, 1, 1] as const,
+  /** Body tint RGB when bodyTintStrength > 0. */
+  bodyColor: [1, 1, 1] as const,
+  /** 0 = original body, 1 = apply bodyColor. */
+  bodyTintStrength: 0,
   /** Optional overlay tint RGB. */
   overlayColor: [0, 0, 0] as const,
   /** 0 = no overlay pass, 1 = apply overlay mask. */

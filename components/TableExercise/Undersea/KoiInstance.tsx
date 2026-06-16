@@ -66,6 +66,8 @@ type KoiRenderBaseProps = {
   maskImage: SkImage;
   overlayMaskImage: SkImage;
   spotColor: readonly [number, number, number];
+  bodyColor: readonly [number, number, number];
+  bodyTintStrength: number;
   overlayColor: readonly [number, number, number];
   overlayStrength: number;
   swimZoneX: number;
@@ -156,6 +158,8 @@ function buildKoiUniforms(
   shadowOpacity: number,
   shadowSoftness: number,
   spotColor: [number, number, number],
+  bodyColor: [number, number, number],
+  bodyTintStrength: number,
   overlayColor: [number, number, number],
   overlayStrength: number,
 ) {
@@ -193,6 +197,8 @@ function buildKoiUniforms(
     shadowOpacity,
     shadowSoftness,
     spotColor,
+    bodyColor,
+    bodyTintStrength,
     overlayColor,
     overlayStrength,
   };
@@ -212,6 +218,8 @@ function KoiShaderRect({
   maskImage,
   overlayMaskImage,
   spotColor,
+  bodyColor,
+  bodyTintStrength,
   overlayColor,
   overlayStrength,
   swimZoneX,
@@ -240,6 +248,7 @@ function KoiShaderRect({
   const overlayMaskHeight = overlayMaskImage.height();
   const shadowColorUniform = [...shadowColor] as [number, number, number];
   const spotColorUniform = [...spotColor] as [number, number, number];
+  const bodyColorUniform = [...bodyColor] as [number, number, number];
   const overlayColorUniform = [...overlayColor] as [number, number, number];
 
   const bounds = useDerivedValue(() => {
@@ -293,6 +302,8 @@ function KoiShaderRect({
       shadowOpacity,
       shadowSoftness,
       spotColorUniform,
+      bodyColorUniform,
+      bodyTintStrength,
       overlayColorUniform,
       overlayStrength,
     ),
