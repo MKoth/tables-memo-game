@@ -12,7 +12,7 @@ const SWIM_ZONE_TOP_RATIO = 0;
 const SWIM_ZONE_MARGIN = 0;
 
 /** Number of koi fish in the swim zone. */
-export const KOI_COUNT = 3;
+export const KOI_COUNT = 20;
 
 /** Shared settings applied to every fish. */
 export const KOI_SETTINGS = {
@@ -106,12 +106,33 @@ export type FinSideSpawn = {
   initialPhase: number;
 };
 
-export type KoiImageKey = 'koi1' | 'koi2';
+export type KoiImageKey = 'koi1' | 'koi2' | 'koi3';
+
+const KOI_IMAGE_KEYS: KoiImageKey[] = ['koi1', 'koi2', 'koi3'];
+
+/** Spot tint colors (RGB 0..1) picked randomly per fish at spawn. */
+export const KOI_SPOT_PALETTE: ReadonlyArray<readonly [number, number, number]> = [
+  [0.92, 0.18, 0.12], // Beni red (Kohaku)
+  [0.98, 0.42, 0.08], // Orange (Orenji Ogon)
+  [1.00, 0.75, 0.12], // Yamabuki yellow
+  [0.10, 0.10, 0.12], // Sumi black
+  [0.42, 0.25, 0.10], // Chagoi brown
+  [0.73, 0.58, 0.25], // Gold
+  [0.60, 0.12, 0.10], // Dark red
+  [0.95, 0.65, 0.25], // Apricot orange
+  [0.12, 0.12, 0.14], // Sumi black
+  [0.45, 0.28, 0.12], // Brown / bronze
+
+  [0.95, 0.55, 0.18], // Deep orange
+  [0.65, 0.15, 0.12], // Dark beni red
+  [0.92, 0.18, 0.12], // Beni red (Kohaku)
+];
 
 export type KoiSharedSettings = typeof KOI_SETTINGS;
 
 type KoiSpawn = {
   imageKey: KoiImageKey;
+  spotColor: readonly [number, number, number];
   xRatio: number;
   yRatio: number;
   phase: number;
@@ -255,7 +276,8 @@ function rerollFinSide(fish: FishRuntime, side: 'left' | 'right'): void {
 
 function createRandomSpawns(count: number): KoiSpawn[] {
   return Array.from({ length: count }, () => ({
-    imageKey: Math.random() < 0.5 ? 'koi1' : 'koi2',
+    imageKey: KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)],
+    spotColor: KOI_SPOT_PALETTE[Math.floor(Math.random() * KOI_SPOT_PALETTE.length)],
     xRatio: 0.12 + Math.random() * 0.76,
     yRatio: 0.12 + Math.random() * 0.76,
     phase: Math.random() * Math.PI * 2,
@@ -493,6 +515,7 @@ export type KoiFishLayerProps = {
   width: number;
   height: number;
   images: Record<KoiImageKey, SkImage>;
+  masks: Record<KoiImageKey, SkImage>;
   clock: SharedValue<number>;
   koiCount?: number;
 };
@@ -595,6 +618,7 @@ type KoiRuntimeEntry = {
   spawn: KoiSpawn;
   runtime: FishRuntime;
   image: SkImage;
+  maskImage: SkImage;
 };
 
 function useFishSimulation(
@@ -679,6 +703,7 @@ export function KoiFishLayer({
   width,
   height,
   images,
+  masks,
   koiCount = KOI_COUNT,
 }: KoiFishLayerProps) {
   const swimZone = useMemo(
@@ -702,8 +727,9 @@ export function KoiFishLayer({
         spawn,
         runtime: createFishRuntime({ ...KOI_SETTINGS, ...spawn }, swimZone),
         image: images[spawn.imageKey],
+        maskImage: masks[spawn.imageKey],
       })),
-    [spawns, swimZone, images],
+    [spawns, swimZone, images, masks],
   );
 
   const sharedPositions = useSharedValue<number[]>(new Array(koiCount * 2).fill(0));
@@ -733,10 +759,12 @@ export function KoiFishLayer({
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
       <Group>
-        {runtimeEntries.map(({ spawn, runtime, image }, index) => (
+        {runtimeEntries.map(({ spawn, runtime, image, maskImage }, index) => (
           <KoiShadowInstance
             key={`shadow-${index}`}
             image={image}
+            maskImage={maskImage}
+            spotColor={spawn.spotColor}
             {...renderProps}
             phase={spawn.phase}
             state={{
@@ -760,10 +788,12 @@ export function KoiFishLayer({
         ))}
       </Group>
       <Group>
-        {runtimeEntries.map(({ spawn, runtime, image }, index) => (
+        {runtimeEntries.map(({ spawn, runtime, image, maskImage }, index) => (
           <KoiInstance
             key={`fish-${index}`}
             image={image}
+            maskImage={maskImage}
+            spotColor={spawn.spotColor}
             {...renderProps}
             phase={spawn.phase}
             state={{

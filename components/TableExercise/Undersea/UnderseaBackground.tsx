@@ -59,6 +59,13 @@ const STONE_CONFIGS = [
 const KOI_VARIANTS = {
   koi1: require('../../../assets/koi1.png'),
   koi2: require('../../../assets/koi2.png'),
+  koi3: require('../../../assets/koi3.png'),
+} as const;
+
+const KOI_MASK_VARIANTS = {
+  koi1: require('../../../assets/koi1-mask.png'),
+  koi2: require('../../../assets/koi2-mask.png'),
+  koi3: require('../../../assets/koi3-mask.png'),
 } as const;
 
 const SEAWEED_VARIANTS = {
@@ -213,6 +220,10 @@ export function UnderseaBackground() {
   const stone9 = useImage(STONE_VARIANTS[9]);
   const koi1 = useImage(KOI_VARIANTS.koi1);
   const koi2 = useImage(KOI_VARIANTS.koi2);
+  const koi3 = useImage(KOI_VARIANTS.koi3);
+  const koi1Mask = useImage(KOI_MASK_VARIANTS.koi1);
+  const koi2Mask = useImage(KOI_MASK_VARIANTS.koi2);
+  const koi3Mask = useImage(KOI_MASK_VARIANTS.koi3);
   const clock = useThrottledClock(30);
 
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
@@ -263,6 +274,10 @@ export function UnderseaBackground() {
     !stone9 ||
     !koi1 ||
     !koi2 ||
+    !koi3 ||
+    !koi1Mask ||
+    !koi2Mask ||
+    !koi3Mask ||
     width === 0 ||
     height === 0
   ) {
@@ -410,7 +425,8 @@ export function UnderseaBackground() {
       <KoiFishLayer
         width={width}
         height={height}
-        images={{ koi1, koi2 }}
+        images={{ koi1, koi2, koi3 }}
+        masks={{ koi1: koi1Mask, koi2: koi2Mask, koi3: koi3Mask }}
         clock={clock}
       />
     </View>

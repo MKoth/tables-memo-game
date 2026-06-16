@@ -63,6 +63,8 @@ export type KoiTurnDistortSettings = {
 
 type KoiRenderBaseProps = {
   image: SkImage;
+  maskImage: SkImage;
+  spotColor: readonly [number, number, number];
   swimZoneX: number;
   swimZoneY: number;
   swimZoneW: number;
@@ -150,6 +152,7 @@ function buildKoiUniforms(
   shadowColor: [number, number, number],
   shadowOpacity: number,
   shadowSoftness: number,
+  spotColor: [number, number, number],
 ) {
   'worklet';
   const turnT = Math.abs(state.turnArc.value);
@@ -184,6 +187,7 @@ function buildKoiUniforms(
     shadowColor,
     shadowOpacity,
     shadowSoftness,
+    spotColor,
   };
 }
 
@@ -198,6 +202,8 @@ type KoiShaderRectProps = KoiRenderBaseProps & {
 
 function KoiShaderRect({
   image,
+  maskImage,
+  spotColor,
   swimZoneX,
   swimZoneY,
   swimZoneW,
@@ -218,7 +224,10 @@ function KoiShaderRect({
 }: KoiShaderRectProps) {
   const imageWidth = image.width();
   const imageHeight = image.height();
+  const maskWidth = maskImage.width();
+  const maskHeight = maskImage.height();
   const shadowColorUniform = [...shadowColor] as [number, number, number];
+  const spotColorUniform = [...spotColor] as [number, number, number];
 
   const bounds = useDerivedValue(() => {
     const centerX = state.x.value + centerXOffset;
@@ -270,6 +279,7 @@ function KoiShaderRect({
       shadowColorUniform,
       shadowOpacity,
       shadowSoftness,
+      spotColorUniform,
     ),
   );
 
@@ -282,6 +292,16 @@ function KoiShaderRect({
           y={0}
           width={imageWidth}
           height={imageHeight}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
+        <ImageShader
+          image={maskImage}
+          x={0}
+          y={0}
+          width={maskWidth}
+          height={maskHeight}
           fit="fill"
           tx="clamp"
           ty="clamp"

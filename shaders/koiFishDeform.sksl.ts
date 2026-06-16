@@ -32,6 +32,8 @@ export const KOI_FIN_OUTER = 0.69;
 export const KOI_FIN_PERP_RETRACT_GAIN = 1.6;
 /** Along-thin squash strength. */
 export const KOI_FIN_ALONG_THIN_GAIN = 1.5;
+/** Multiplier on spot luma when tinting masked regions. */
+export const KOI_SPOT_TINT_GAIN = 2.7;
 
 export const KOI_FISH_DEFORM_SKSL = `
 uniform float swimZoneX;
@@ -62,6 +64,8 @@ uniform float3 shadowColor;
 uniform float shadowOpacity;
 uniform float shadowSoftness;
 uniform shader koiTexture;
+uniform shader koiSpotMask;
+uniform float3 spotColor;
 
 half4 main(float2 fragCoord) {
   vec2 rel = fragCoord - vec2(fishX, fishY);
@@ -203,6 +207,11 @@ half4 main(float2 fragCoord) {
     return half4(0.0);
   }
 
+  float mask = koiSpotMask.eval(texCoord).r;
+  float luma = dot(color.rgb, half3(0.299, 0.587, 0.114));
+  half3 tinted = half3(spotColor) * (luma * ${KOI_SPOT_TINT_GAIN});
+  color.rgb = mix(color.rgb, tinted, mask * color.a);
+
   return color;
 }
 `;
@@ -240,6 +249,8 @@ export const koiFishDeformUniformDefaults = {
   shadowOpacity: 0.35,
   /** Softens shadow edges in body-perp units (~0.12 ≈ 4–5 px at fishH 38). */
   shadowSoftness: 0.15,
+  /** Spot tint RGB (1,1,1 = identity). */
+  spotColor: [1, 1, 1] as const,
 } as const;
 
 /** Amplitude at which forward speed reaches zero (inverse speed law). */
