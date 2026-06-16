@@ -57,6 +57,10 @@ uniform float finVariantLeft;
 uniform float finVariantRight;
 uniform float imageWidth;
 uniform float imageHeight;
+uniform float renderMode;
+uniform float3 shadowColor;
+uniform float shadowOpacity;
+uniform float shadowSoftness;
 uniform shader koiTexture;
 
 half4 main(float2 fragCoord) {
@@ -73,8 +77,9 @@ half4 main(float2 fragCoord) {
   float maxWaveDisp = abs(waveAmplitude) * (tailBendScale + tailTipBendScale + headBendScale);
   float bendMargin = abs(turnArc) + maxWaveDisp;
   float perpLimit = max(basePerpExtent, 0.5 + bendMargin);
+  float shadowSamplePad = step(0.5, renderMode) * shadowSoftness * 0.8;
 
-  if (along < 0.0 || along > 1.0 || abs(perp) > perpLimit) {
+  if (along < 0.0 || along > 1.0 || abs(perp) > perpLimit + shadowSamplePad) {
     return half4(0.0);
   }
 
@@ -109,7 +114,7 @@ half4 main(float2 fragCoord) {
   float srcPerp = perp - disp;
   float srcPerpLimit = basePerpExtent + bendMargin;
 
-  if (abs(srcPerp) > srcPerpLimit) {
+  if (abs(srcPerp) > srcPerpLimit + shadowSamplePad) {
     return half4(0.0);
   }
 
@@ -144,7 +149,9 @@ half4 main(float2 fragCoord) {
   srcPerp = adjPerp;
   srcAlong = adjAlong;
 
-  if (abs(srcPerp) > finOuter + 0.02) {
+  float silPerp = finOuter + 0.02;
+
+  if (renderMode <= 0.5 && abs(srcPerp) > silPerp) {
     return half4(0.0);
   }
 
@@ -153,6 +160,38 @@ half4 main(float2 fragCoord) {
   float sn = sin(-sourceAngle);
   vec2 uvCentered = vec2(cs * bodyVec.x - sn * bodyVec.y, sn * bodyVec.x + cs * bodyVec.y);
   vec2 imgUV = uvCentered + 0.5;
+
+  if (renderMode > 0.5) {
+    if (abs(srcPerp) > silPerp + shadowSamplePad) {
+      return half4(0.0);
+    }
+
+    if (imgUV.x < -0.02 || imgUV.x > 1.02 || imgUV.y < -0.02 || imgUV.y > 1.02) {
+      return half4(0.0);
+    }
+
+    vec2 texCoord = imgUV * vec2(imageWidth, imageHeight);
+    float step = shadowSoftness * fishH * 0.55;
+
+    // Isotropic 3x3 Gaussian — monotonic falloff at hard alpha edges (no ring bands).
+    float accum =
+        koiTexture.eval(texCoord + vec2(-step, -step)).a * 1.0
+      + koiTexture.eval(texCoord + vec2(0.0, -step)).a * 2.0
+      + koiTexture.eval(texCoord + vec2(step, -step)).a * 1.0
+      + koiTexture.eval(texCoord + vec2(-step, 0.0)).a * 2.0
+      + koiTexture.eval(texCoord + vec2(0.0, 0.0)).a * 4.0
+      + koiTexture.eval(texCoord + vec2(step, 0.0)).a * 2.0
+      + koiTexture.eval(texCoord + vec2(-step, step)).a * 1.0
+      + koiTexture.eval(texCoord + vec2(0.0, step)).a * 2.0
+      + koiTexture.eval(texCoord + vec2(step, step)).a * 1.0;
+
+    float coverage = accum / 16.0;
+    float a = coverage * shadowOpacity;
+    if (a < 0.004) {
+      return half4(0.0);
+    }
+    return half4(shadowColor * a, a);
+  }
 
   if (imgUV.x < -0.02 || imgUV.x > 1.02 || imgUV.y < -0.02 || imgUV.y > 1.02) {
     return half4(0.0);
@@ -193,6 +232,14 @@ export const koiFishDeformUniformDefaults = {
   finVariantLeft: 0,
   /** Right fin mode — 0 = retract, 1 = thin. */
   finVariantRight: 0,
+  /** 0 = fish, 1 = shadow. */
+  renderMode: 0,
+  /** Premultiplied shadow tint (RGB). */
+  shadowColor: [0.02, 0.06, 0.12] as const,
+  /** Shadow alpha multiplier. */
+  shadowOpacity: 0.35,
+  /** Softens shadow edges in body-perp units (~0.12 ≈ 4–5 px at fishH 38). */
+  shadowSoftness: 0.15,
 } as const;
 
 /** Amplitude at which forward speed reaches zero (inverse speed law). */

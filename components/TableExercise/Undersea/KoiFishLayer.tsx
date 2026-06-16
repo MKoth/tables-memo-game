@@ -1,18 +1,18 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
-import { KoiInstance } from './KoiInstance';
+import { makeMutable, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import { KoiInstance, KoiShadowInstance } from './KoiInstance';
 
 const KOI_BASE_LENGTH = 120;
 const KOI_BASE_THICKNESS = 38;
-const SWIM_ZONE_TOP_RATIO = 0.5;
+const SWIM_ZONE_TOP_RATIO = 0;
 const SWIM_ZONE_MARGIN = 0;
 
 /** Number of koi fish in the swim zone. */
-export const KOI_COUNT = 15;
+export const KOI_COUNT = 30;
 
 /** Shared settings applied to every fish. */
 export const KOI_SETTINGS = {
@@ -47,6 +47,13 @@ export const KOI_SETTINGS = {
   /** Random extra delay added to each fin-side reroll timer. */
   finBehaviorRerollJitter: 2.0,
 } as const;
+
+/** px — shadow offset from fish center (light from above-left). */
+const SHADOW_OFFSET_X = 30;
+const SHADOW_OFFSET_Y = 70;
+const SHADOW_COLOR = [0.02, 0.06, 0.12] as const;
+const SHADOW_OPACITY = 0.15;
+const SHADOW_SOFTNESS = 0.45;
 
 /** px — inset fish center from swim-zone edges so bodies are not clipped by the render Rect. */
 const FISH_BODY_INSET = (KOI_BASE_LENGTH * KOI_SETTINGS.scale) / 2;
@@ -525,175 +532,78 @@ function applyFinSideSpawn(
   fish.finRerollTimerRight.value = rerollDelay;
 }
 
-function useFishRuntime(
-  config: FishConfig,
-  swimZone: SwimZone,
-): FishRuntime {
+function createFishRuntime(config: FishConfig, swimZone: SwimZone): FishRuntime {
   const initSpeed = pickRandomBaseSpeed();
   const initFinLeft = rollFinSideSpawn(config, config.phase * 2.3);
   const initFinRight = rollFinSideSpawn(config, config.phase * 4.1 + 1.3);
-  const x = useSharedValue(
-    clamp(
-      swimZone.x + config.xRatio * swimZone.w,
-      swimZone.x + FISH_BODY_INSET,
-      swimZone.x + swimZone.w - FISH_BODY_INSET,
-    ),
-  );
-  const y = useSharedValue(
-    clamp(
-      swimZone.y + config.yRatio * swimZone.h,
-      swimZone.y + FISH_BODY_INSET,
-      swimZone.y + swimZone.h - FISH_BODY_INSET,
-    ),
-  );
-  const angle = useSharedValue(config.initialAngle);
-  const speed = useSharedValue(initSpeed * 0.5);
-  const amplitude = useSharedValue(config.targetAmplitude * 0.5);
-  const turnArc = useSharedValue(0);
-  const prevAngle = useSharedValue(config.initialAngle);
-  const wanderAngle = useSharedValue(config.initialAngle);
-  const state = useSharedValue(SWIMMING);
-  const stateTimer = useSharedValue(swimDurationForSpeed(initSpeed, config.phase));
-  const idleMode = useSharedValue(IDLE_HOLD);
-  const targetBaseSpeed = useSharedValue(initSpeed);
-  const wavePhase = useSharedValue(0);
-  const wasNearEdge = useSharedValue(false);
-  const finSquashLeft = useSharedValue(
-    config.finSquashBase + config.finSquashAmp * (0.5 - 0.5 * Math.cos(initFinLeft.initialPhase)),
-  );
-  const finSquashRight = useSharedValue(
-    config.finSquashBase + config.finSquashAmp * (0.5 - 0.5 * Math.cos(initFinRight.initialPhase)),
-  );
-  const finPhaseLeft = useSharedValue(initFinLeft.initialPhase);
-  const finPhaseRight = useSharedValue(initFinRight.initialPhase);
-  const finVariantLeft = useSharedValue<number>(initFinLeft.variant);
-  const finVariantRight = useSharedValue<number>(initFinRight.variant);
-  const finFreqLeft = useSharedValue(initFinLeft.freq);
-  const finFreqRight = useSharedValue(initFinRight.freq);
-  const finRerollTimerLeft = useSharedValue(
-    nextFinRerollDelay(config.finBehaviorRerollInterval, config.finBehaviorRerollJitter),
-  );
-  const finRerollTimerRight = useSharedValue(
-    nextFinRerollDelay(config.finBehaviorRerollInterval, config.finBehaviorRerollJitter),
-  );
 
-  const fishRef = useRef<FishRuntime | undefined>(undefined);
-  if (!fishRef.current) {
-    fishRef.current = {
-      config,
-      x,
-      y,
-      angle,
-      speed,
-      amplitude,
-      turnArc,
-      prevAngle,
-      wanderAngle,
-      state,
-      stateTimer,
-      idleMode,
-      targetBaseSpeed,
-      wavePhase,
-      wasNearEdge,
-      finSquashLeft,
-      finSquashRight,
-      finPhaseLeft,
-      finPhaseRight,
-      finVariantLeft,
-      finVariantRight,
-      finFreqLeft,
-      finFreqRight,
-      finRerollTimerLeft,
-      finRerollTimerRight,
-    };
-  }
-  const fish = fishRef.current;
-  fish.config = config;
-
-  useEffect(() => {
-    const resetSpeed = pickRandomBaseSpeed();
-    const left = rollFinSideSpawn(config, config.phase * 2.3 + Math.random() * 10);
-    const right = rollFinSideSpawn(config, config.phase * 4.1 + Math.random() * 10);
-
-    applyFinSideSpawn(fish, 'left', left, config);
-    applyFinSideSpawn(fish, 'right', right, config);
-
-    x.value = clamp(
-      swimZone.x + config.xRatio * swimZone.w,
-      swimZone.x + FISH_BODY_INSET,
-      swimZone.x + swimZone.w - FISH_BODY_INSET,
-    );
-    y.value = clamp(
-      swimZone.y + config.yRatio * swimZone.h,
-      swimZone.y + FISH_BODY_INSET,
-      swimZone.y + swimZone.h - FISH_BODY_INSET,
-    );
-    angle.value = config.initialAngle;
-    speed.value = resetSpeed * 0.5;
-    amplitude.value = config.targetAmplitude * 0.5;
-    turnArc.value = 0;
-    prevAngle.value = config.initialAngle;
-    wanderAngle.value = config.initialAngle;
-    state.value = SWIMMING;
-    stateTimer.value = swimDurationForSpeed(resetSpeed, config.phase);
-    idleMode.value = IDLE_HOLD;
-    targetBaseSpeed.value = resetSpeed;
-    wavePhase.value = 0;
-    wasNearEdge.value = false;
-  }, [
-    swimZone.x,
-    swimZone.y,
-    swimZone.w,
-    swimZone.h,
+  const fish: FishRuntime = {
     config,
-    fish,
-    x,
-    y,
-    angle,
-    speed,
-    amplitude,
-    turnArc,
-    prevAngle,
-    wanderAngle,
-    state,
-    stateTimer,
-    idleMode,
-    targetBaseSpeed,
-    wavePhase,
-    wasNearEdge,
-  ]);
+    x: makeMutable(
+      clamp(
+        swimZone.x + config.xRatio * swimZone.w,
+        swimZone.x + FISH_BODY_INSET,
+        swimZone.x + swimZone.w - FISH_BODY_INSET,
+      ),
+    ),
+    y: makeMutable(
+      clamp(
+        swimZone.y + config.yRatio * swimZone.h,
+        swimZone.y + FISH_BODY_INSET,
+        swimZone.y + swimZone.h - FISH_BODY_INSET,
+      ),
+    ),
+    angle: makeMutable(config.initialAngle),
+    speed: makeMutable(initSpeed * 0.5),
+    amplitude: makeMutable(config.targetAmplitude * 0.5),
+    turnArc: makeMutable(0),
+    prevAngle: makeMutable(config.initialAngle),
+    wanderAngle: makeMutable(config.initialAngle),
+    state: makeMutable(SWIMMING),
+    stateTimer: makeMutable(swimDurationForSpeed(initSpeed, config.phase)),
+    idleMode: makeMutable(IDLE_HOLD),
+    targetBaseSpeed: makeMutable(initSpeed),
+    wavePhase: makeMutable(0),
+    wasNearEdge: makeMutable(false),
+    finSquashLeft: makeMutable(
+      config.finSquashBase + config.finSquashAmp * (0.5 - 0.5 * Math.cos(initFinLeft.initialPhase)),
+    ),
+    finSquashRight: makeMutable(
+      config.finSquashBase + config.finSquashAmp * (0.5 - 0.5 * Math.cos(initFinRight.initialPhase)),
+    ),
+    finPhaseLeft: makeMutable(initFinLeft.initialPhase),
+    finPhaseRight: makeMutable(initFinRight.initialPhase),
+    finVariantLeft: makeMutable<number>(initFinLeft.variant),
+    finVariantRight: makeMutable<number>(initFinRight.variant),
+    finFreqLeft: makeMutable(initFinLeft.freq),
+    finFreqRight: makeMutable(initFinRight.freq),
+    finRerollTimerLeft: makeMutable(
+      nextFinRerollDelay(config.finBehaviorRerollInterval, config.finBehaviorRerollJitter),
+    ),
+    finRerollTimerRight: makeMutable(
+      nextFinRerollDelay(config.finBehaviorRerollInterval, config.finBehaviorRerollJitter),
+    ),
+  };
+
+  applyFinSideSpawn(fish, 'left', initFinLeft, config);
+  applyFinSideSpawn(fish, 'right', initFinRight, config);
 
   return fish;
 }
 
-type KoiFishActorProps = {
+type KoiRuntimeEntry = {
   spawn: KoiSpawn;
-  settings: KoiSharedSettings;
-  swimZone: SwimZone;
+  runtime: FishRuntime;
   image: SkImage;
-  fishIndex: number;
-  fishCount: number;
-  sharedPositions: SharedValue<number[]>;
 };
 
-function KoiFishActor({
-  spawn,
-  settings,
-  swimZone,
-  image,
-  fishIndex,
-  fishCount,
-  sharedPositions,
-}: KoiFishActorProps) {
-  const config = useMemo(
-    (): FishConfig => ({
-      ...settings,
-      ...spawn,
-    }),
-    [settings, spawn],
-  );
-  const fishRuntime = useFishRuntime(config, swimZone);
+function useFishSimulation(
+  runtimes: KoiRuntimeEntry[],
+  swimZone: SwimZone,
+  sharedPositions: SharedValue<number[]>,
+): void {
   const lastTimestamp = useSharedValue(-1);
+  const fishCount = runtimes.length;
 
   const steerMinX = swimZone.x + swimZone.w * BOUNDARY_MARGIN_RATIO;
   const steerMaxX = swimZone.x + swimZone.w * (1 - BOUNDARY_MARGIN_RATIO);
@@ -716,86 +626,53 @@ function KoiFishActor({
     const dt = Math.min((frameInfo.timestamp - lastTimestamp.value) / 1000, 0.05);
     lastTimestamp.value = frameInfo.timestamp;
 
-    updateFish(
-      fishRuntime,
-      dt,
-      steerMinX,
-      steerMaxX,
-      steerMinY,
-      steerMaxY,
-      hardMinX,
-      hardMaxX,
-      hardMinY,
-      hardMaxY,
-      centerX,
-      centerY,
-    );
+    const pos = sharedPositions.value;
 
-    for (let i = 0; i < fishCount; i++) {
-      if (i === fishIndex) {
-        continue;
+    for (let fishIndex = 0; fishIndex < fishCount; fishIndex++) {
+      const fishRuntime = runtimes[fishIndex].runtime;
+
+      updateFish(
+        fishRuntime,
+        dt,
+        steerMinX,
+        steerMaxX,
+        steerMinY,
+        steerMaxY,
+        hardMinX,
+        hardMaxX,
+        hardMinY,
+        hardMaxY,
+        centerX,
+        centerY,
+      );
+
+      if (fishRuntime.state.value === SWIMMING) {
+        for (let i = 0; i < fishCount; i++) {
+          if (i === fishIndex) {
+            continue;
+          }
+          const ox = pos[i * 2];
+          const oy = pos[i * 2 + 1];
+          const dx = fishRuntime.x.value - ox;
+          const dy = fishRuntime.y.value - oy;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
+            const dist = Math.sqrt(distSq);
+            const overlap = 1 - dist / SEPARATION_RADIUS;
+            const awayAngle = Math.atan2(dy, dx);
+            const str = Math.min(1, overlap * SEPARATION_STEER * dt);
+            fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
+            fishRuntime.wanderAngle.value = lerpAngle(fishRuntime.wanderAngle.value, awayAngle, str);
+          }
+        }
       }
-      if (fishRuntime.state.value !== SWIMMING) {
-        continue;
-      }
-      const ox = sharedPositions.value[i * 2];
-      const oy = sharedPositions.value[i * 2 + 1];
-      const dx = fishRuntime.x.value - ox;
-      const dy = fishRuntime.y.value - oy;
-      const distSq = dx * dx + dy * dy;
-      if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
-        const dist = Math.sqrt(distSq);
-        const overlap = 1 - dist / SEPARATION_RADIUS;
-        const awayAngle = Math.atan2(dy, dx);
-        const str = Math.min(1, overlap * SEPARATION_STEER * dt);
-        fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
-        fishRuntime.wanderAngle.value = lerpAngle(fishRuntime.wanderAngle.value, awayAngle, str);
-      }
+
+      pos[fishIndex * 2] = fishRuntime.x.value;
+      pos[fishIndex * 2 + 1] = fishRuntime.y.value;
     }
 
-    const pos = sharedPositions.value;
-    pos[fishIndex * 2] = fishRuntime.x.value;
-    pos[fishIndex * 2 + 1] = fishRuntime.y.value;
     sharedPositions.value = pos;
   });
-
-  const fishLength = KOI_BASE_LENGTH * settings.scale;
-  const fishThickness = KOI_BASE_THICKNESS * settings.scale;
-
-  return (
-    <KoiInstance
-      image={image}
-      swimZoneX={swimZone.x}
-      swimZoneY={swimZone.y}
-      swimZoneW={swimZone.w}
-      swimZoneH={swimZone.h}
-      fishW={fishLength}
-      fishH={fishThickness}
-      sourceAngle={settings.sourceAngle}
-      tailFlex={{
-        tailBendScale: settings.tailBendScale,
-        tailTipBendScale: settings.tailTipBendScale,
-        headBendScale: settings.headBendScale,
-      }}
-      turnDistort={{
-        squashGain: settings.turnSquashGain,
-        bulgeGain: settings.turnBulgeGain,
-      }}
-      phase={spawn.phase}
-      state={{
-        x: fishRuntime.x,
-        y: fishRuntime.y,
-        angle: fishRuntime.angle,
-        amplitude: fishRuntime.amplitude,
-        turnArc: fishRuntime.turnArc,
-        wavePhase: fishRuntime.wavePhase,
-        finSquashLeft: fishRuntime.finSquashLeft,
-        finSquashRight: fishRuntime.finSquashRight,
-        finVariantLeft: fishRuntime.finVariantLeft,
-        finVariantRight: fishRuntime.finVariantRight,
-      }}
-    />
-  );
 }
 
 export function KoiFishLayer({
@@ -819,21 +696,88 @@ export function KoiFishLayer({
     [koiCount, swimZone.w, swimZone.h],
   );
 
+  const runtimeEntries = useMemo(
+    (): KoiRuntimeEntry[] =>
+      spawns.map((spawn) => ({
+        spawn,
+        runtime: createFishRuntime({ ...KOI_SETTINGS, ...spawn }, swimZone),
+        image: images[spawn.imageKey],
+      })),
+    [spawns, swimZone, images],
+  );
+
   const sharedPositions = useSharedValue<number[]>(new Array(koiCount * 2).fill(0));
+  useFishSimulation(runtimeEntries, swimZone, sharedPositions);
+
+  const fishLength = KOI_BASE_LENGTH * KOI_SETTINGS.scale;
+  const fishThickness = KOI_BASE_THICKNESS * KOI_SETTINGS.scale;
+  const renderProps = {
+    swimZoneX: swimZone.x,
+    swimZoneY: swimZone.y,
+    swimZoneW: swimZone.w,
+    swimZoneH: swimZone.h,
+    fishW: fishLength,
+    fishH: fishThickness,
+    sourceAngle: KOI_SETTINGS.sourceAngle,
+    tailFlex: {
+      tailBendScale: KOI_SETTINGS.tailBendScale,
+      tailTipBendScale: KOI_SETTINGS.tailTipBendScale,
+      headBendScale: KOI_SETTINGS.headBendScale,
+    },
+    turnDistort: {
+      squashGain: KOI_SETTINGS.turnSquashGain,
+      bulgeGain: KOI_SETTINGS.turnBulgeGain,
+    },
+  };
 
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
       <Group>
-        {spawns.map((spawn, index) => (
-          <KoiFishActor
-            key={index}
-            fishIndex={index}
-            fishCount={spawns.length}
-            sharedPositions={sharedPositions}
-            spawn={spawn}
-            settings={KOI_SETTINGS}
-            swimZone={swimZone}
-            image={images[spawn.imageKey]}
+        {runtimeEntries.map(({ spawn, runtime, image }, index) => (
+          <KoiShadowInstance
+            key={`shadow-${index}`}
+            image={image}
+            {...renderProps}
+            phase={spawn.phase}
+            state={{
+              x: runtime.x,
+              y: runtime.y,
+              angle: runtime.angle,
+              amplitude: runtime.amplitude,
+              turnArc: runtime.turnArc,
+              wavePhase: runtime.wavePhase,
+              finSquashLeft: runtime.finSquashLeft,
+              finSquashRight: runtime.finSquashRight,
+              finVariantLeft: runtime.finVariantLeft,
+              finVariantRight: runtime.finVariantRight,
+            }}
+            offsetX={SHADOW_OFFSET_X}
+            offsetY={SHADOW_OFFSET_Y}
+            shadowColor={SHADOW_COLOR}
+            shadowOpacity={SHADOW_OPACITY}
+            shadowSoftness={SHADOW_SOFTNESS}
+          />
+        ))}
+      </Group>
+      <Group>
+        {runtimeEntries.map(({ spawn, runtime, image }, index) => (
+          <KoiInstance
+            key={`fish-${index}`}
+            image={image}
+            {...renderProps}
+            phase={spawn.phase}
+            state={{
+              x: runtime.x,
+              y: runtime.y,
+              angle: runtime.angle,
+              amplitude: runtime.amplitude,
+              turnArc: runtime.turnArc,
+              wavePhase: runtime.wavePhase,
+              finSquashLeft: runtime.finSquashLeft,
+              finSquashRight: runtime.finSquashRight,
+              finVariantLeft: runtime.finVariantLeft,
+              finVariantRight: runtime.finVariantRight,
+            }}
           />
         ))}
       </Group>
