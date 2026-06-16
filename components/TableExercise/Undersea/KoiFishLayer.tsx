@@ -60,8 +60,6 @@ const FISH_BODY_INSET = (KOI_BASE_LENGTH * KOI_SETTINGS.scale) / 2;
 
 const SWIMMING = 0;
 const IDLE = 1;
-const IDLE_HOLD = 0;
-const IDLE_RETRACT = 1;
 
 const BASE_SPEED_MIN = 50;
 const BASE_SPEED_MAX = 670;
@@ -80,9 +78,7 @@ const SWIM_DURATION_JITTER = 1.5;
 /** Base idle pause before the fish can swim again (seconds). */
 const IDLE_DURATION_BASE = 2.0;
 const IDLE_DURATION_JITTER = 0.6;
-/** P(idle bout is slow backward retract vs full stop). */
-const IDLE_RETRACT_PROBABILITY = 0.4;
-/** Tail swing while backing up during idle retract. */
+/** Tail swing while backing up during idle. */
 const IDLE_RETRACT_AMPLITUDE_RATIO = 0.3;
 
 const AMPLITUDE_LERP = 3.5;
@@ -195,7 +191,6 @@ type FishRuntime = {
   wanderAngle: SharedValue<number>;
   state: SharedValue<number>;
   stateTimer: SharedValue<number>;
-  idleMode: SharedValue<number>;
   targetBaseSpeed: SharedValue<number>;
   wavePhase: SharedValue<number>;
   wasNearEdge: SharedValue<boolean>;
@@ -509,31 +504,22 @@ function updateFish(
     if (fish.stateTimer.value <= 0) {
       fish.state.value = IDLE;
       fish.wasNearEdge.value = false;
-      fish.idleMode.value = Math.random() < IDLE_RETRACT_PROBABILITY ? IDLE_RETRACT : IDLE_HOLD;
-      fish.speed.value = fish.idleMode.value === IDLE_RETRACT ? BASE_SPEED_MIN : 0;
+      fish.speed.value = BASE_SPEED_MIN;
       fish.prevAngle.value = fish.angle.value;
       fish.turnArc.value = 0;
       fish.stateTimer.value = idleDurationForPhase(cfg.phase);
     }
   } else {
-    const isRetract = fish.idleMode.value === IDLE_RETRACT;
-    const targetAmplitude = isRetract
-      ? -cfg.targetAmplitude * IDLE_RETRACT_AMPLITUDE_RATIO
-      : 0;
     fish.amplitude.value = lerp(
       fish.amplitude.value,
-      targetAmplitude,
+      -cfg.targetAmplitude * IDLE_RETRACT_AMPLITUDE_RATIO,
       Math.min(1, AMPLITUDE_LERP * dt),
     );
 
-    if (isRetract) {
-      fish.speed.value = BASE_SPEED_MIN;
-      const retractAngle = fish.angle.value + Math.PI;
-      fish.x.value += Math.cos(retractAngle) * BASE_SPEED_MIN * dt;
-      fish.y.value += Math.sin(retractAngle) * BASE_SPEED_MIN * dt;
-    } else {
-      fish.speed.value = 0;
-    }
+    fish.speed.value = BASE_SPEED_MIN;
+    const retractAngle = fish.angle.value + Math.PI;
+    fish.x.value += Math.cos(retractAngle) * BASE_SPEED_MIN * dt;
+    fish.y.value += Math.sin(retractAngle) * BASE_SPEED_MIN * dt;
 
     fish.stateTimer.value -= dt;
     if (fish.stateTimer.value <= 0) {
@@ -639,7 +625,6 @@ function createFishRuntime(config: FishConfig, swimZone: SwimZone): FishRuntime 
     wanderAngle: makeMutable(config.initialAngle),
     state: makeMutable(SWIMMING),
     stateTimer: makeMutable(swimDurationForSpeed(initSpeed, config.phase)),
-    idleMode: makeMutable(IDLE_HOLD),
     targetBaseSpeed: makeMutable(initSpeed),
     wavePhase: makeMutable(0),
     wasNearEdge: makeMutable(false),
