@@ -17,8 +17,8 @@ import {
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
 import { KoiFishLayer } from './KoiFishLayer';
-import { SeaweedInstance } from './SeaweedInstance';
-import { StoneInstance } from './StoneInstance';
+import { SeaweedInstance, SeaweedShadowInstance } from './SeaweedInstance';
+import { StoneInstance, StoneShadowInstance } from './StoneInstance';
 
 const BACKGROUND_RES = 0.8;
 const DEG_TO_RAD = Math.PI / 180;
@@ -26,6 +26,9 @@ const SEAWEED_BASE_WIDTH = 120;
 const SEAWEED_BASE_HEIGHT = 160;
 const STONE_BASE_WIDTH = 72;
 const STONE_BASE_HEIGHT = 56;
+const SHADOW_COLOR = [0.02, 0.06, 0.12] as const;
+const SHADOW_OPACITY = 0.70;
+const SHADOW_SOFTNESS = 0.06;
 
 const STONE_VARIANTS = {
   1: require('../../../assets/stone1.png'),
@@ -311,6 +314,27 @@ export function UnderseaBackground() {
             const stoneImage = stoneImages[config.variant];
 
             return (
+              <StoneShadowInstance
+                key={`stone-shadow-${index}`}
+                image={stoneImage}
+                x={config.xRatio * width}
+                y={config.yRatio * height}
+                width={stoneWidth}
+                height={stoneHeight}
+                shadowColor={SHADOW_COLOR}
+                shadowOpacity={SHADOW_OPACITY}
+                shadowSoftness={SHADOW_SOFTNESS}
+              />
+            );
+          })}
+        </Group>
+        <Group>
+          {STONE_CONFIGS.map((config, index) => {
+            const stoneWidth = STONE_BASE_WIDTH * config.scale;
+            const stoneHeight = STONE_BASE_HEIGHT * config.scale;
+            const stoneImage = stoneImages[config.variant];
+
+            return (
               <StoneInstance
                 key={`stone-${index}`}
                 image={stoneImage}
@@ -321,6 +345,33 @@ export function UnderseaBackground() {
                 screenWidth={width}
                 screenHeight={height}
                 clock={clock}
+              />
+            );
+          })}
+        </Group>
+        <Group>
+          {SEAWEED_CONFIGS.map((config, index) => {
+            const seaweedWidth = SEAWEED_BASE_WIDTH * config.scale;
+            const seaweedHeight = SEAWEED_BASE_HEIGHT * config.scale;
+            const seaweedImage = seaweedImages[config.variant];
+
+            return (
+              <SeaweedShadowInstance
+                key={`seaweed-shadow-${index}`}
+                image={seaweedImage}
+                x={config.xRatio * width}
+                y={config.yRatio * height}
+                width={seaweedWidth}
+                height={seaweedHeight}
+                currentAngle={config.currentAngle}
+                waveAmplitude={config.waveAmplitude}
+                waveFreq={config.waveFreq}
+                waveSpeed={config.waveSpeed}
+                phase={config.phase}
+                clock={clock}
+                shadowColor={SHADOW_COLOR}
+                shadowOpacity={SHADOW_OPACITY}
+                shadowSoftness={SHADOW_SOFTNESS}
               />
             );
           })}

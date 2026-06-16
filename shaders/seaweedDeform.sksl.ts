@@ -18,6 +18,12 @@ uniform float beamDistortion;
 uniform float beamSpeed;
 uniform float beamPhase;
 uniform float3 beamTint;
+uniform float renderMode;
+uniform float3 shadowColor;
+uniform float shadowOpacity;
+uniform float shadowSoftness;
+uniform float2 shadowProj;
+uniform float shadowTipSwayGain;
 uniform shader seaweedTexture;
 
 half4 main(float2 fragCoord) {
@@ -25,7 +31,7 @@ half4 main(float2 fragCoord) {
 
   // Fast path: skip wave + beam math for fully transparent pixels.
   // Sample at the unwarped coord first; if empty, return immediately.
-  {
+  if (renderMode < 0.5) {
     half4 earlyCheck = seaweedTexture.eval(fragCoord);
     if (earlyCheck.a < 0.01) { return earlyCheck; }
   }
@@ -40,6 +46,40 @@ half4 main(float2 fragCoord) {
   float dPerp = waveAmplitude * sin(wavePhase) * edgeFactor;
 
   vec2 dispPixels = dPerp * currentPerp * vec2(seaweedW, seaweedH);
+
+  if (renderMode > 0.5) {
+    // Shadow pass: anchored at base, projected toward light direction, swaying with the plant.
+    float heightFactor = clamp(1.0 - uv.y, 0.0, 1.0);
+    float swayGain = 1.0 + shadowTipSwayGain * heightFactor;
+    vec2 projShift = shadowProj * heightFactor;
+
+    vec2 shadowDisp = dispPixels * swayGain;
+    vec2 sampleCoord = fragCoord - projShift - shadowDisp;
+
+    // 3x3 Gaussian blur over alpha, mirroring koi shadow kernel.
+    float step = shadowSoftness * seaweedH * 0.55;
+    vec2 dx = vec2(step, 0.0);
+    vec2 dy = vec2(0.0, step);
+
+    float accum =
+        seaweedTexture.eval(sampleCoord - dx - dy).a * 1.0 +
+        seaweedTexture.eval(sampleCoord      - dy).a * 2.0 +
+        seaweedTexture.eval(sampleCoord + dx - dy).a * 1.0 +
+        seaweedTexture.eval(sampleCoord - dx     ).a * 2.0 +
+        seaweedTexture.eval(sampleCoord         ).a * 4.0 +
+        seaweedTexture.eval(sampleCoord + dx     ).a * 2.0 +
+        seaweedTexture.eval(sampleCoord - dx + dy).a * 1.0 +
+        seaweedTexture.eval(sampleCoord      + dy).a * 2.0 +
+        seaweedTexture.eval(sampleCoord + dx + dy).a * 1.0;
+
+    float coverage = accum / 16.0;
+    float a = coverage * shadowOpacity;
+    if (a < 0.004) {
+      return half4(0.0);
+    }
+    return half4(shadowColor * a, a);
+  }
+
   vec2 sampleCoord = fragCoord - dispPixels;
 
   half4 color = seaweedTexture.eval(sampleCoord);
@@ -98,4 +138,16 @@ export const seaweedDeformUniformDefaults = {
   beamPhase: 0,
   /** RGB multiplier for the beam — warm gold reads as sun rays. */
   beamTint: [1.8, 1.8, 1.8] as const,
+  /** 0 = seaweed, 1 = shadow. */
+  renderMode: 0,
+  /** Shadow tint, matches koi shadow by default. */
+  shadowColor: [0.02, 0.06, 0.12] as const,
+  /** Shadow alpha multiplier. */
+  shadowOpacity: 0.15,
+  /** Softens shadow edges in body-perp units. */
+  shadowSoftness: 0.45,
+  /** Projected tip offset in pixels (down-right). */
+  shadowProj: [-30, 30] as const,
+  /** Extra sway gain toward the tip. */
+  shadowTipSwayGain: 2.6,
 } as const;

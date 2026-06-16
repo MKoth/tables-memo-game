@@ -14,6 +14,10 @@ import {
   STONE_UNDERWATER_SKSL,
   stoneUnderwaterDefaults,
 } from '../../../shaders/stoneUnderwater.sksl';
+import {
+  SPRITE_SHADOW_SKSL,
+  spriteShadowDefaults,
+} from '../../../shaders/spriteShadow.sksl';
 
 function compileStoneEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(STONE_UNDERWATER_SKSL);
@@ -24,6 +28,16 @@ function compileStoneEffect(): SkRuntimeEffect {
 }
 
 const stoneEffect = compileStoneEffect();
+
+function compileStoneShadowEffect(): SkRuntimeEffect {
+  const effect = Skia.RuntimeEffect.Make(SPRITE_SHADOW_SKSL);
+  if (!effect) {
+    throw new Error('Failed to compile sprite shadow shader');
+  }
+  return effect;
+}
+
+const stoneShadowEffect = compileStoneShadowEffect();
 
 const {
   switchRate,
@@ -91,6 +105,74 @@ export type StoneInstanceProps = {
   beamTint?: readonly [number, number, number];
   clock: SharedValue<number>;
 };
+
+export type StoneShadowInstanceProps = {
+  image: SkImage;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Optional override for shadow offset in pixels. */
+  offsetX?: number;
+  offsetY?: number;
+  shadowColor?: readonly [number, number, number];
+  shadowOpacity?: number;
+  shadowSoftness?: number;
+};
+
+export function StoneShadowInstance({
+  image,
+  x,
+  y,
+  width,
+  height,
+  offsetX = spriteShadowDefaults.offset[0],
+  offsetY = spriteShadowDefaults.offset[1],
+  shadowColor = spriteShadowDefaults.shadowColor,
+  shadowOpacity = spriteShadowDefaults.shadowOpacity,
+  shadowSoftness = spriteShadowDefaults.shadowSoftness,
+}: StoneShadowInstanceProps) {
+  const spriteX = x;
+  const spriteY = y;
+  const spriteW = width;
+  const spriteH = height;
+  const shadowColorUniform = [...shadowColor] as [number, number, number];
+
+  const bounds = {
+    x: spriteX - Math.abs(offsetX) - shadowSoftness * spriteH * 2,
+    y: spriteY - Math.abs(offsetY) - shadowSoftness * spriteH * 2,
+    width: spriteW + Math.abs(offsetX) * 2 + shadowSoftness * spriteH * 4,
+    height: spriteH + Math.abs(offsetY) * 2 + shadowSoftness * spriteH * 4,
+  };
+
+  const uniforms = useDerivedValue(() => ({
+    spriteX,
+    spriteY,
+    spriteW,
+    spriteH,
+    offset: [offsetX, offsetY] as [number, number],
+    shadowColor: shadowColorUniform,
+    shadowOpacity,
+    shadowSoftness,
+  }));
+
+  return (
+    <Rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height}>
+      <Shader source={stoneShadowEffect} uniforms={uniforms}>
+        <ImageShader
+          image={image}
+          x={spriteX}
+          y={spriteY}
+          width={spriteW}
+          height={spriteH}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
+      </Shader>
+    </Rect>
+  );
+}
 
 export function StoneInstance({
   image,
