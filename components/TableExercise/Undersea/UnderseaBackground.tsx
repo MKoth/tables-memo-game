@@ -16,6 +16,7 @@ import {
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
+import { JellyfishInstance } from './JellyfishInstance';
 import { KoiFishLayer } from './KoiFishLayer';
 import { SeaweedInstance, SeaweedShadowInstance } from './SeaweedInstance';
 import { StoneInstance, StoneShadowInstance } from './StoneInstance';
@@ -75,6 +76,26 @@ const SEAWEED_VARIANTS = {
 } as const;
 
 type SeaweedVariant = keyof typeof SEAWEED_VARIANTS;
+
+const JELLYFISH_BELL = require('../../../assets/jellyfish-bell.png');
+const JELLYFISH_TENTACLES = require('../../../assets/jellyfish-tentacles.png');
+
+const JELLYFISH_CONFIGS = [
+  {
+    xRatio: 0.3,
+    yRatio: 0.34,
+    bellSize: 150,
+    phase: 0.0,
+    pulseSpeed: 2.5,
+  },
+  {
+    xRatio: 0.7,
+    yRatio: 0.6,
+    bellSize: 120,
+    phase: 2.1,
+    pulseSpeed: 1.9,
+  },
+] as const;
 
 const SEAWEED_CONFIGS = [
   {
@@ -224,6 +245,8 @@ export function UnderseaBackground() {
   const koi1Mask = useImage(KOI_MASK_VARIANTS.koi1);
   const koi2Mask = useImage(KOI_MASK_VARIANTS.koi2);
   const koi3Mask = useImage(KOI_MASK_VARIANTS.koi3);
+  const jellyfishBell = useImage(JELLYFISH_BELL);
+  const jellyfishTentacles = useImage(JELLYFISH_TENTACLES);
   const clock = useThrottledClock(30);
 
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
@@ -278,6 +301,8 @@ export function UnderseaBackground() {
     !koi1Mask ||
     !koi2Mask ||
     !koi3Mask ||
+    !jellyfishBell ||
+    !jellyfishTentacles ||
     width === 0 ||
     height === 0
   ) {
@@ -429,6 +454,23 @@ export function UnderseaBackground() {
         masks={{ koi1: koi1Mask, koi2: koi2Mask, koi3: koi3Mask }}
         clock={clock}
       />
+      <Canvas style={styles.foregroundCanvas}>
+        <Group>
+          {JELLYFISH_CONFIGS.map((config, index) => (
+            <JellyfishInstance
+              key={`jellyfish-${index}`}
+              bellImage={jellyfishBell}
+              tentacleImage={jellyfishTentacles}
+              centerX={config.xRatio * width}
+              centerY={config.yRatio * height}
+              bellSize={config.bellSize}
+              phase={config.phase}
+              pulseSpeed={config.pulseSpeed}
+              clock={clock}
+            />
+          ))}
+        </Group>
+      </Canvas>
     </View>
   );
 }
