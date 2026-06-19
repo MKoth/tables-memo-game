@@ -37,11 +37,18 @@ type JellyfishLayerProps = {
   relaxAmp: number;
   contractAmp: number;
   pushDur: number;
-  waveAmp: number;
-  waveLobes: number;
-  waveSpeed: number;
   swirlAmp: number;
   swirlFreq: number;
+  swirlSpeed: number;
+  densityGamma: number;
+  contractShrink: number;
+  scaleRelax: number;
+  scaleContract: number;
+  rimWidth: number;
+  rimStrength: number;
+  wobbleAmp: number;
+  wobbleSpeed: number;
+  wobbleLobes: number;
   opacity: number;
   clock: SharedValue<number>;
 };
@@ -57,11 +64,18 @@ function JellyfishLayer({
   relaxAmp,
   contractAmp,
   pushDur,
-  waveAmp,
-  waveLobes,
-  waveSpeed,
   swirlAmp,
   swirlFreq,
+  swirlSpeed,
+  densityGamma,
+  contractShrink,
+  scaleRelax,
+  scaleContract,
+  rimWidth,
+  rimStrength,
+  wobbleAmp,
+  wobbleSpeed,
+  wobbleLobes,
   opacity,
   clock,
 }: JellyfishLayerProps) {
@@ -80,12 +94,18 @@ function JellyfishLayer({
     relaxAmp,
     contractAmp,
     pushDur,
-    waveAmp,
-    waveLobes,
-    waveSpeed,
     swirlAmp,
     swirlFreq,
-    edgeStart: jellyfishDeformUniformDefaults.edgeStart,
+    swirlSpeed,
+    densityGamma,
+    contractShrink,
+    scaleRelax,
+    scaleContract,
+    rimWidth,
+    rimStrength,
+    wobbleAmp,
+    wobbleSpeed,
+    wobbleLobes,
     opacity,
   }));
 
@@ -122,11 +142,19 @@ export type JellyfishInstanceProps = {
   relaxAmp?: number;
   contractAmp?: number;
   pushDur?: number;
-  bellWaveAmp?: number;
-  bellWaveLobes?: number;
-  waveSpeed?: number;
   tentacleSwirlAmp?: number;
   tentacleSwirlFreq?: number;
+  swirlSpeed?: number;
+  bellDensityGamma?: number;
+  tentacleRetract?: number;
+  scaleRelax?: number;
+  scaleContract?: number;
+  bellRimWidth?: number;
+  bellRimStrength?: number;
+  bellWobbleAmp?: number;
+  tentacleWobbleAmp?: number;
+  wobbleSpeed?: number;
+  wobbleLobes?: number;
   bellOpacity?: number;
   tentacleOpacity?: number;
   clock: SharedValue<number>;
@@ -145,11 +173,19 @@ export function JellyfishInstance({
   relaxAmp = jellyfishDeformUniformDefaults.relaxAmp,
   contractAmp = jellyfishDeformUniformDefaults.contractAmp,
   pushDur = jellyfishDeformUniformDefaults.pushDur,
-  bellWaveAmp = jellyfishDeformUniformDefaults.waveAmp,
-  bellWaveLobes = jellyfishDeformUniformDefaults.waveLobes,
-  waveSpeed = jellyfishDeformUniformDefaults.waveSpeed,
-  tentacleSwirlAmp = 0.06,
+  tentacleSwirlAmp = jellyfishDeformUniformDefaults.swirlAmp,
   tentacleSwirlFreq = jellyfishDeformUniformDefaults.swirlFreq,
+  swirlSpeed = jellyfishDeformUniformDefaults.swirlSpeed,
+  bellDensityGamma = jellyfishDeformUniformDefaults.densityGamma,
+  tentacleRetract = jellyfishDeformUniformDefaults.contractShrink,
+  scaleRelax = jellyfishDeformUniformDefaults.scaleRelax,
+  scaleContract = jellyfishDeformUniformDefaults.scaleContract,
+  bellRimWidth = jellyfishDeformUniformDefaults.rimWidth,
+  bellRimStrength = jellyfishDeformUniformDefaults.rimStrength,
+  bellWobbleAmp = jellyfishDeformUniformDefaults.wobbleAmp,
+  tentacleWobbleAmp = jellyfishDeformUniformDefaults.wobbleAmp * 1.35,
+  wobbleSpeed = jellyfishDeformUniformDefaults.wobbleSpeed,
+  wobbleLobes = jellyfishDeformUniformDefaults.wobbleLobes,
   bellOpacity = 0.88,
   tentacleOpacity = 0.85,
   clock,
@@ -169,11 +205,18 @@ export function JellyfishInstance({
         relaxAmp={relaxAmp}
         contractAmp={contractAmp}
         pushDur={pushDur}
-        waveAmp={0}
-        waveLobes={bellWaveLobes}
-        waveSpeed={waveSpeed}
         swirlAmp={tentacleSwirlAmp}
         swirlFreq={tentacleSwirlFreq}
+        swirlSpeed={swirlSpeed}
+        densityGamma={1}
+        contractShrink={tentacleRetract}
+        scaleRelax={scaleRelax}
+        scaleContract={scaleContract}
+        rimWidth={0}
+        rimStrength={0}
+        wobbleAmp={tentacleWobbleAmp}
+        wobbleSpeed={wobbleSpeed}
+        wobbleLobes={wobbleLobes}
         opacity={tentacleOpacity}
         clock={clock}
       />
@@ -188,11 +231,18 @@ export function JellyfishInstance({
         relaxAmp={relaxAmp}
         contractAmp={contractAmp}
         pushDur={pushDur}
-        waveAmp={bellWaveAmp}
-        waveLobes={bellWaveLobes}
-        waveSpeed={waveSpeed}
         swirlAmp={0}
         swirlFreq={tentacleSwirlFreq}
+        swirlSpeed={swirlSpeed}
+        densityGamma={bellDensityGamma}
+        contractShrink={0}
+        scaleRelax={scaleRelax}
+        scaleContract={scaleContract}
+        rimWidth={bellRimWidth}
+        rimStrength={bellRimStrength}
+        wobbleAmp={bellWobbleAmp}
+        wobbleSpeed={wobbleSpeed}
+        wobbleLobes={wobbleLobes}
         opacity={bellOpacity}
         clock={clock}
       />

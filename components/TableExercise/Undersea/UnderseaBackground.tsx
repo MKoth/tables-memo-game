@@ -84,14 +84,14 @@ const JELLYFISH_CONFIGS = [
   {
     xRatio: 0.3,
     yRatio: 0.34,
-    bellSize: 150,
+    bellSize: 188,
     phase: 0.0,
     pulseSpeed: 2.5,
   },
   {
     xRatio: 0.7,
     yRatio: 0.6,
-    bellSize: 120,
+    bellSize: 150,
     phase: 2.1,
     pulseSpeed: 1.9,
   },

@@ -18,16 +18,28 @@
  *   k > 0 (push):  content near the pivot magnifies (center bulges) while the
  *                  rim is pulled inward — the body rounds toward a circle.
  *   k < 0 (relax): the center shrinks slightly while the rim stretches outward
- *                  — a wider, flatter, ruffled bell.
+ *                  — a wider, flatter bell.
  *
- * Rim wave (bell):
- *   angular ripple on the sampled radius, strongest near the rim. Its amplitude
- *   fades as the bell contracts, so the edge smooths toward a circle on the push
- *   and ruffles up (with an off-count harmonic for unevenness) when relaxed.
+ * Pattern density warp (bell, on contraction):
+ *   a gamma remap on rSrc compresses texture toward the rim and stretches it
+ *   at the center, amplifying the bulge during the push.
+ *
+ * Tentacle retract (on contraction):
+ *   scales rSrc outward so visible tentacle content pulls inward under the bell.
+ *
+ * Rim transparency (bell, on contraction):
+ *   a smooth band near the display-space edge becomes see-through when the bell
+ *   is contracted, giving the impression the rim is curling over and is thin.
+ *   rimWidth controls how far the band extends inward; rimStrength is how
+ *   transparent it becomes at peak contraction (0 = no effect, 1 = fully clear).
  *
  * Swirl wave (tentacles):
  *   adds a traveling angular offset along the radius so the radiating arms
  *   undulate from base to tip.
+ *
+ * Wobble (bell + tentacles, always on):
+ *   low-frequency angular distortion driven only by iTime — independent of the
+ *   swim cycle. Edge-weighted so the rim flaps while the center stays stable.
  */
 export const JELLYFISH_DEFORM_SKSL = `
 uniform float jellyX;
@@ -41,23 +53,30 @@ uniform float pivotR;
 uniform float relaxAmp;
 uniform float contractAmp;
 uniform float pushDur;
-uniform float waveAmp;
-uniform float waveLobes;
-uniform float waveSpeed;
 uniform float swirlAmp;
 uniform float swirlFreq;
-uniform float edgeStart;
+uniform float swirlSpeed;
+uniform float densityGamma;
+uniform float contractShrink;
+uniform float scaleRelax;
+uniform float scaleContract;
+uniform float rimWidth;
+uniform float rimStrength;
+uniform float wobbleAmp;
+uniform float wobbleSpeed;
+uniform float wobbleLobes;
 uniform float opacity;
 uniform shader jellyTexture;
 
 half4 main(float2 fragCoord) {
-  // Fast path: skip polar math for fully transparent pixels.
-  half4 earlyCheck = jellyTexture.eval(fragCoord);
-  if (earlyCheck.a < 0.01) { return half4(0.0); }
-
   vec2 uv = (fragCoord - vec2(jellyX, jellyY)) / vec2(jellyW, jellyH);
   vec2 c = uv - 0.5;
   float r = length(c);
+
+  if (r > 0.5) {
+    return half4(0.0);
+  }
+
   float theta = atan(c.y, c.x);
 
   // Asymmetric swim cycle: quick push, slow relax. 'contract' in [0, 1].
@@ -70,25 +89,29 @@ half4 main(float2 fragCoord) {
   // k > 0 push (center bulge, rim in); k < 0 relax (center shrink, rim out).
   float k = mix(-relaxAmp, contractAmp, contract);
 
-  // Edge weighting: motion concentrated toward the rim, center stays calm.
-  float edgeFactor = smoothstep(edgeStart, 0.5, r);
-
-  // Bell rim ripple — ruffled & uneven when relaxed, smooths to a circle on push.
-  float waviness = waveAmp * (1.0 - contract);
-  float rim =
-      sin(theta * waveLobes - iTime * waveSpeed + phase)
-    + 0.5 * sin(theta * (waveLobes * 0.5 + 1.0) + iTime * waveSpeed * 0.7);
-  float rimWave = waviness * rim * edgeFactor;
-
   // Tentacle swirl — traveling angular offset along the radius.
-  float swirl = swirlAmp * sin(r * swirlFreq - iTime * waveSpeed + phase) * edgeFactor;
+  float swirl = swirlAmp * sin(r * swirlFreq - iTime * swirlSpeed + phase);
   float thetaSrc = theta + swirl;
 
-  // Non-uniform scale about the pivot ring, then rim ripple.
-  float rSrc = pivotR + (r - pivotR) * (1.0 + k) - rimWave;
-  if (rSrc < 0.0) {
-    return half4(0.0);
-  }
+  float rSrc = pivotR + (r - pivotR) * (1.0 + k);
+  rSrc *= 1.0 + contractShrink * contract;
+
+  // Overall swim scale: zoom in (closer) on contraction, slightly out on relax.
+  rSrc /= mix(scaleRelax, scaleContract, contract);
+
+  // Clamp to the center rather than punching a hole when the pivot pushes
+  // the source radius past the center.
+  rSrc = max(rSrc, 0.0);
+
+  float g = mix(1.0, densityGamma, contract);
+  rSrc = pow(rSrc / 0.5, g) * 0.5;
+
+  // Always-on wobble — independent of swim cycle.
+  float w1 = sin(theta * wobbleLobes + iTime * wobbleSpeed + phase);
+  float w2 = sin(theta * (wobbleLobes + 1.0) - iTime * wobbleSpeed * 0.7 + phase * 1.7);
+  float wobble = wobbleAmp * (w1 + 0.5 * w2) * smoothstep(0.0, 0.5, r);
+  rSrc *= 1.0 + wobble;
+  thetaSrc += wobbleAmp * 0.5 * sin(theta * wobbleLobes + iTime * wobbleSpeed * 0.9 + phase);
 
   vec2 srcUV = 0.5 + vec2(cos(thetaSrc), sin(thetaSrc)) * rSrc;
   if (srcUV.x < 0.0 || srcUV.x > 1.0 || srcUV.y < 0.0 || srcUV.y > 1.0) {
@@ -97,7 +120,11 @@ half4 main(float2 fragCoord) {
 
   vec2 sampleCoord = vec2(jellyX, jellyY) + srcUV * vec2(jellyW, jellyH);
   half4 color = jellyTexture.eval(sampleCoord);
-  return color * opacity;
+
+  // Rim band: rises from 0 at (0.5 - rimWidth) to 1 at the display edge.
+  float rim = smoothstep(0.5 - rimWidth, 0.5, r);
+  float rimAlpha = 1.0 - rim * rimStrength * (1.0 - contract);
+  return color * (opacity * rimAlpha);
 }
 `;
 
@@ -108,24 +135,36 @@ export const jellyfishDeformUniformDefaults = {
   pulseSpeed: 1.6,
   /** Pivot ring (UV radius) the bell scales about — inside it bulges, outside pulls in. */
   pivotR: 0.12,
-  /** Outward rim stretch depth during relax (kept modest to avoid clipping). */
+  /** Outward rim stretch depth during relax. */
   relaxAmp: 0.08,
   /** Inward rim pull / center bulge depth during the push. */
   contractAmp: 0.18,
   /** Fraction of the cycle spent on the fast contraction (rest is slow relax). */
   pushDur: 0.4,
-  /** Rim ripple height as a UV-radius fraction (bell). */
-  waveAmp: 0.05,
-  /** Number of rim lobes the ripple runs over (match sprite scallops ~16). */
-  waveLobes: 16,
-  /** Speed of the rim/swirl wave travel. */
-  waveSpeed: 2.2,
-  /** Angular swirl amplitude in radians (tentacles). */
-  swirlAmp: 0.0,
+  /** Angular swirl amplitude in radians (tentacles only; 0 for bell). */
+  swirlAmp: 0.3,
   /** Spatial frequency of the swirl along the radius (tentacles). */
-  swirlFreq: 14,
-  /** Radius where edge motion begins ramping in (0 = center). */
-  edgeStart: 0.08,
+  swirlFreq: 9,
+  /** Speed of the tentacle swirl wave travel. */
+  swirlSpeed: 2.2,
+  /** Bell pattern gamma on contraction — >1 denser at rim, stretched at center. */
+  densityGamma: 1.6,
+  /** Tentacle source-radius scale on contraction — pulls arms under the bell. */
+  contractShrink: 0.9,
+  /** Display scale during relax (<1 = slightly farther/smaller). */
+  scaleRelax: 0.8,
+  /** Display scale during contraction (>1 = closer/larger). */
+  scaleContract: 1.2,
+  /** How far the see-through rim band extends inward from the edge (UV units). */
+  rimWidth: 0.12,
+  /** How transparent the rim becomes at peak contraction (0 = off, 1 = fully clear). */
+  rimStrength: 1.0,
+  /** Radial wobble amplitude at the rim (always on). */
+  wobbleAmp: 0.06,
+  /** Wobble cycle speed. */
+  wobbleSpeed: 5.3,
+  /** Angular lobe count — use an integer for seamless wrap. */
+  wobbleLobes: 1,
   /** Overall sprite opacity for translucency. */
   opacity: 1.0,
 } as const;
