@@ -50,6 +50,11 @@ type JellyfishLayerProps = {
   wobbleSpeed: number;
   wobbleLobes: number;
   opacity: number;
+  tiltAngle: number;
+  tiltCenterShift: number;
+  tiltBodyShift: number;
+  tiltLen: number;
+  tiltEgg: number;
   clock: SharedValue<number>;
 };
 
@@ -77,6 +82,11 @@ function JellyfishLayer({
   wobbleSpeed,
   wobbleLobes,
   opacity,
+  tiltAngle,
+  tiltCenterShift,
+  tiltBodyShift,
+  tiltLen,
+  tiltEgg,
   clock,
 }: JellyfishLayerProps) {
   const x = centerX - size / 2;
@@ -107,6 +117,11 @@ function JellyfishLayer({
     wobbleSpeed,
     wobbleLobes,
     opacity,
+    tiltAngle,
+    tiltCenterShift,
+    tiltBodyShift,
+    tiltLen,
+    tiltEgg,
   }));
 
   return (
@@ -157,6 +172,16 @@ export type JellyfishInstanceProps = {
   wobbleLobes?: number;
   bellOpacity?: number;
   tentacleOpacity?: number;
+  /** Lean direction in radians (0 = right, increasing toward down). */
+  tiltAngle?: number;
+  /** Lean amplitude in UV units: bell center leans toward tiltAngle, tentacles trail opposite. */
+  tiltAmp?: number;
+  /** Tentacle body slide as a multiple of tiltAmp (opposite direction). */
+  tentacleTiltShiftRatio?: number;
+  /** Tentacle length asymmetry as a multiple of tiltAmp. */
+  tentacleTiltLenRatio?: number;
+  /** Egg silhouette warp on the bell: 0 = circle, ~0.4 = blunt back arc, rounded front dome. */
+  bellTiltEgg?: number;
   clock: SharedValue<number>;
 };
 
@@ -188,9 +213,16 @@ export function JellyfishInstance({
   wobbleLobes = jellyfishDeformUniformDefaults.wobbleLobes,
   bellOpacity = 0.88,
   tentacleOpacity = 0.85,
+  tiltAngle = jellyfishDeformUniformDefaults.tiltAngle,
+  tiltAmp = 0,
+  tentacleTiltShiftRatio = 1,
+  tentacleTiltLenRatio = 3,
+  bellTiltEgg = 0,
   clock,
 }: JellyfishInstanceProps) {
   const tentacleSize = bellSize * tentacleSizeRatio;
+  const tentacleBodyShift = -tiltAmp * tentacleTiltShiftRatio;
+  const tentacleLen = tiltAmp * tentacleTiltLenRatio;
 
   return (
     <>
@@ -218,6 +250,11 @@ export function JellyfishInstance({
         wobbleSpeed={wobbleSpeed}
         wobbleLobes={wobbleLobes}
         opacity={tentacleOpacity}
+        tiltAngle={tiltAngle}
+        tiltCenterShift={0}
+        tiltBodyShift={tentacleBodyShift}
+        tiltLen={tentacleLen}
+        tiltEgg={0}
         clock={clock}
       />
       <JellyfishLayer
@@ -244,6 +281,11 @@ export function JellyfishInstance({
         wobbleSpeed={wobbleSpeed}
         wobbleLobes={wobbleLobes}
         opacity={bellOpacity}
+        tiltAngle={tiltAngle}
+        tiltCenterShift={tiltAmp}
+        tiltBodyShift={0}
+        tiltLen={0}
+        tiltEgg={bellTiltEgg}
         clock={clock}
       />
     </>

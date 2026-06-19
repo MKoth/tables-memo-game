@@ -87,13 +87,19 @@ const JELLYFISH_CONFIGS = [
     bellSize: 188,
     phase: 0.0,
     pulseSpeed: 2.5,
+    tiltAngle: -3.14,
+    tiltAmp: 0.05,
+    bellTiltEgg: 0.08,
   },
   {
     xRatio: 0.7,
     yRatio: 0.6,
     bellSize: 150,
     phase: 2.1,
-    pulseSpeed: 1.9,
+    pulseSpeed: 3.9,
+    tiltAngle: 0,
+    tiltAmp: 0,
+    bellTiltEgg: 0,
   },
 ] as const;
 
@@ -466,6 +472,9 @@ export function UnderseaBackground() {
               bellSize={config.bellSize}
               phase={config.phase}
               pulseSpeed={config.pulseSpeed}
+              tiltAngle={config.tiltAngle}
+              tiltAmp={config.tiltAmp}
+              bellTiltEgg={config.bellTiltEgg}
               clock={clock}
             />
           ))}

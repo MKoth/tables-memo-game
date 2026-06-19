@@ -40,6 +40,22 @@
  * Wobble (bell + tentacles, always on):
  *   low-frequency angular distortion driven only by iTime — independent of the
  *   swim cycle. Edge-weighted so the rim flaps while the center stays stable.
+ *
+ * Tilt (directional lean, all along the unit vector tiltDir = (cos,sin) of
+ * tiltAngle). Three independent, sign-explicit channels so the bell and the
+ * tentacles always lean to corresponding sides:
+ *   tiltCenterShift: rim-anchored lean in display space (applied to c before the
+ *     pulse). Inner disc shifts rigidly toward tiltDir while the rim stays put;
+ *     constant across relax and contract so the center stays leaned at rest.
+ *   tiltBodyShift: uniform whole-sprite slide of the sampling center — used by
+ *     the tentacles to trail opposite the motion (pass a negative value).
+ *   tiltLen: radial length asymmetry. dot>0 on the tiltDir side enlarges rSrc
+ *     (samples farther out -> shorter arms); the opposite side lengthens.
+ *   tiltEgg: only applied to the bell. Shrinks the perpendicular-to-tilt
+ *     component on the back half (dot(c,tiltDir) < 0), which expands the
+ *     silhouette boundary there → blunt/flat arc. Front hemisphere is untouched
+ *     → stays a normal rounded dome. Uses tiltDir, so must be 0 for tentacles.
+ * All default to 0, so the sprite is untouched until motion drives them.
  */
 export const JELLYFISH_DEFORM_SKSL = `
 uniform float jellyX;
@@ -66,11 +82,35 @@ uniform float wobbleAmp;
 uniform float wobbleSpeed;
 uniform float wobbleLobes;
 uniform float opacity;
+uniform float tiltAngle;
+uniform float tiltCenterShift;
+uniform float tiltBodyShift;
+uniform float tiltLen;
+uniform float tiltEgg;
 uniform shader jellyTexture;
 
 half4 main(float2 fragCoord) {
   vec2 uv = (fragCoord - vec2(jellyX, jellyY)) / vec2(jellyW, jellyH);
+
+  // Tilt direction — computed once; used by egg warp below and shift effects further down.
+  vec2 tiltDir  = vec2(cos(tiltAngle), sin(tiltAngle));
+  vec2 tiltPerp = vec2(-tiltDir.y, tiltDir.x);
+
   vec2 c = uv - 0.5;
+
+  // Egg silhouette warp (bell only, tiltEgg = 0 for tentacles).
+  // In backward mapping, shrinking the perpendicular component of c on the
+  // back half makes the discard boundary (r = 0.5) expand in display space
+  // on that side → wider blunt arc. Front stays a normal circular dome.
+  float axisSigned = dot(c, tiltDir);
+  float backness   = smoothstep(0.0, 0.5, max(0.0, -axisSigned));
+  float perpComp   = dot(c, tiltPerp) / (1.0 + tiltEgg * backness);
+  c = tiltDir * axisSigned + tiltPerp * perpComp;
+
+  // Bell center lean in display space — constant across the swim cycle.
+  float centerHold = 1.0 - smoothstep(0.32, 0.5, length(c));
+  c -= tiltCenterShift * tiltDir * centerHold;
+
   float r = length(c);
 
   if (r > 0.5) {
@@ -113,7 +153,15 @@ half4 main(float2 fragCoord) {
   rSrc *= 1.0 + wobble;
   thetaSrc += wobbleAmp * 0.5 * sin(theta * wobbleLobes + iTime * wobbleSpeed * 0.9 + phase);
 
+  // Tentacle length asymmetry: shorter on the tiltDir side, longer opposite.
+  float lenAlign = (r > 0.0001) ? dot(c, tiltDir) / r : 0.0;
+  rSrc *= 1.0 + tiltLen * lenAlign * smoothstep(0.0, 0.5, r);
+
   vec2 srcUV = 0.5 + vec2(cos(thetaSrc), sin(thetaSrc)) * rSrc;
+
+  // Uniform whole-sprite slide (tentacles trail opposite the motion).
+  srcUV -= tiltBodyShift * tiltDir;
+
   if (srcUV.x < 0.0 || srcUV.x > 1.0 || srcUV.y < 0.0 || srcUV.y > 1.0) {
     return half4(0.0);
   }
@@ -136,9 +184,9 @@ export const jellyfishDeformUniformDefaults = {
   /** Pivot ring (UV radius) the bell scales about — inside it bulges, outside pulls in. */
   pivotR: 0.12,
   /** Outward rim stretch depth during relax. */
-  relaxAmp: 0.08,
+  relaxAmp: 0.03,
   /** Inward rim pull / center bulge depth during the push. */
-  contractAmp: 0.18,
+  contractAmp: 0.12,
   /** Fraction of the cycle spent on the fast contraction (rest is slow relax). */
   pushDur: 0.4,
   /** Angular swirl amplitude in radians (tentacles only; 0 for bell). */
@@ -148,23 +196,33 @@ export const jellyfishDeformUniformDefaults = {
   /** Speed of the tentacle swirl wave travel. */
   swirlSpeed: 2.2,
   /** Bell pattern gamma on contraction — >1 denser at rim, stretched at center. */
-  densityGamma: 1.6,
+  densityGamma: 1.1,
   /** Tentacle source-radius scale on contraction — pulls arms under the bell. */
   contractShrink: 0.9,
   /** Display scale during relax (<1 = slightly farther/smaller). */
   scaleRelax: 0.8,
   /** Display scale during contraction (>1 = closer/larger). */
-  scaleContract: 1.2,
+  scaleContract: 1.1,
   /** How far the see-through rim band extends inward from the edge (UV units). */
   rimWidth: 0.12,
   /** How transparent the rim becomes at peak contraction (0 = off, 1 = fully clear). */
   rimStrength: 1.0,
   /** Radial wobble amplitude at the rim (always on). */
-  wobbleAmp: 0.06,
+  wobbleAmp: 0.05,
   /** Wobble cycle speed. */
-  wobbleSpeed: 5.3,
+  wobbleSpeed: 4.3,
   /** Angular lobe count — use an integer for seamless wrap. */
   wobbleLobes: 1,
   /** Overall sprite opacity for translucency. */
   opacity: 1.0,
+  /** Tilt/lean direction in radians (0 = +x, increasing toward +y / screen-down). */
+  tiltAngle: 0,
+  /** Display-space center lean toward tiltDir, UV units (bell uses this). */
+  tiltCenterShift: 0,
+  /** Uniform whole-sprite slide toward tiltDir, UV units (tentacles use negative). */
+  tiltBodyShift: 0,
+  /** Radial length asymmetry along the tilt axis, fraction (tentacles use this). */
+  tiltLen: 0,
+  /** Egg silhouette: widens the back half into a blunt arc, front stays round (bell only). */
+  tiltEgg: 0,
 } as const;
