@@ -16,7 +16,7 @@ import {
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
-import { JellyfishInstance } from './JellyfishInstance';
+import { JellyfishLayer } from './JellyfishLayer';
 import { KoiFishLayer } from './KoiFishLayer';
 import { SeaweedInstance, SeaweedShadowInstance } from './SeaweedInstance';
 import { StoneInstance, StoneShadowInstance } from './StoneInstance';
@@ -79,29 +79,6 @@ type SeaweedVariant = keyof typeof SEAWEED_VARIANTS;
 
 const JELLYFISH_BELL = require('../../../assets/jellyfish-bell.png');
 const JELLYFISH_TENTACLES = require('../../../assets/jellyfish-tentacles.png');
-
-const JELLYFISH_CONFIGS = [
-  {
-    xRatio: 0.3,
-    yRatio: 0.34,
-    bellSize: 188,
-    phase: 0.0,
-    pulseSpeed: 2.5,
-    tiltAngle: -3.14,
-    tiltAmp: 0.05,
-    bellTiltEgg: 0.08,
-  },
-  {
-    xRatio: 0.7,
-    yRatio: 0.6,
-    bellSize: 150,
-    phase: 2.1,
-    pulseSpeed: 3.9,
-    tiltAngle: 0,
-    tiltAmp: 0,
-    bellTiltEgg: 0,
-  },
-] as const;
 
 const SEAWEED_CONFIGS = [
   {
@@ -460,26 +437,13 @@ export function UnderseaBackground() {
         masks={{ koi1: koi1Mask, koi2: koi2Mask, koi3: koi3Mask }}
         clock={clock}
       />
-      <Canvas style={styles.foregroundCanvas}>
-        <Group>
-          {JELLYFISH_CONFIGS.map((config, index) => (
-            <JellyfishInstance
-              key={`jellyfish-${index}`}
-              bellImage={jellyfishBell}
-              tentacleImage={jellyfishTentacles}
-              centerX={config.xRatio * width}
-              centerY={config.yRatio * height}
-              bellSize={config.bellSize}
-              phase={config.phase}
-              pulseSpeed={config.pulseSpeed}
-              tiltAngle={config.tiltAngle}
-              tiltAmp={config.tiltAmp}
-              bellTiltEgg={config.bellTiltEgg}
-              clock={clock}
-            />
-          ))}
-        </Group>
-      </Canvas>
+      <JellyfishLayer
+        width={width}
+        height={height}
+        bellImage={jellyfishBell}
+        tentacleImage={jellyfishTentacles}
+        clock={clock}
+      />
     </View>
   );
 }

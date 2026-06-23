@@ -24,7 +24,7 @@ function compileJellyfishEffect(): SkRuntimeEffect {
 
 const jellyfishEffect = compileJellyfishEffect();
 
-type JellyfishLayerProps = {
+type JellyfishDeformPassProps = {
   image: SkImage;
   /** Centered square size in px. */
   size: number;
@@ -58,7 +58,7 @@ type JellyfishLayerProps = {
   clock: SharedValue<number>;
 };
 
-function JellyfishLayer({
+function JellyfishDeformPass({
   image,
   size,
   centerX,
@@ -88,7 +88,7 @@ function JellyfishLayer({
   tiltLen,
   tiltEgg,
   clock,
-}: JellyfishLayerProps) {
+}: JellyfishDeformPassProps) {
   const x = centerX - size / 2;
   const y = centerY - size / 2;
 
@@ -226,7 +226,7 @@ export function JellyfishInstance({
 
   return (
     <>
-      <JellyfishLayer
+      <JellyfishDeformPass
         image={tentacleImage}
         size={tentacleSize}
         centerX={centerX}
@@ -257,7 +257,7 @@ export function JellyfishInstance({
         tiltEgg={0}
         clock={clock}
       />
-      <JellyfishLayer
+      <JellyfishDeformPass
         image={bellImage}
         size={bellSize}
         centerX={centerX}
