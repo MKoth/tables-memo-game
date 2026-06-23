@@ -60,6 +60,8 @@ type JellyfishDeformPassProps = {
   tintA: readonly [number, number, number];
   tintB: readonly [number, number, number];
   tintC: readonly [number, number, number];
+  animatedTint: number;
+  tintWaveSpeed: number;
   clock: SharedValue<number>;
 };
 
@@ -97,6 +99,8 @@ function JellyfishDeformPass({
   tintA,
   tintB,
   tintC,
+  animatedTint,
+  tintWaveSpeed,
   clock,
 }: JellyfishDeformPassProps) {
   const jellyX = centerX - size / 2;
@@ -140,6 +144,8 @@ function JellyfishDeformPass({
     tintA: tintAUniform,
     tintB: tintBUniform,
     tintC: tintCUniform,
+    tintAnimated: animatedTint,
+    tintWaveSpeed,
   }));
 
   return (
@@ -206,6 +212,9 @@ export type JellyfishInstanceProps = {
   tintA?: readonly [number, number, number];
   tintB?: readonly [number, number, number];
   tintC?: readonly [number, number, number];
+  /** Scroll multicolor bell tint outward (colors expand from center and swap roles). */
+  animatedTint?: boolean;
+  tintWaveSpeed?: number;
   clock: SharedValue<number>;
 };
 
@@ -247,11 +256,22 @@ export function JellyfishInstance({
   tintA = jellyfishDeformUniformDefaults.tintA,
   tintB = jellyfishDeformUniformDefaults.tintB,
   tintC = jellyfishDeformUniformDefaults.tintC,
+  animatedTint = false,
+  tintWaveSpeed = jellyfishDeformUniformDefaults.tintWaveSpeed,
   clock,
 }: JellyfishInstanceProps) {
   const tentacleSize = bellSize * tentacleSizeRatio;
   const tentacleBodyShift = -tiltAmp * tentacleTiltShiftRatio;
   const tentacleLen = tiltAmp * tentacleTiltLenRatio;
+  const bellTintProps = {
+    tintMode,
+    tintStrength,
+    tintA,
+    tintB,
+    tintC,
+    animatedTint: animatedTint ? 1 : 0,
+    tintWaveSpeed,
+  };
   const passProps = {
     centerX,
     centerY,
@@ -267,11 +287,6 @@ export function JellyfishInstance({
     wobbleSpeed,
     wobbleLobes,
     tiltAngle,
-    tintMode,
-    tintStrength,
-    tintA,
-    tintB,
-    tintC,
     clock,
   };
 
@@ -292,6 +307,13 @@ export function JellyfishInstance({
         tiltBodyShift={tentacleBodyShift}
         tiltLen={tentacleLen}
         tiltEgg={0}
+        tintMode={0}
+        tintStrength={0}
+        tintA={jellyfishDeformUniformDefaults.tintA}
+        tintB={jellyfishDeformUniformDefaults.tintB}
+        tintC={jellyfishDeformUniformDefaults.tintC}
+        animatedTint={0}
+        tintWaveSpeed={0}
         {...passProps}
       />
       <JellyfishDeformPass
@@ -309,6 +331,7 @@ export function JellyfishInstance({
         tiltBodyShift={0}
         tiltLen={0}
         tiltEgg={bellTiltEgg}
+        {...bellTintProps}
         {...passProps}
       />
     </>

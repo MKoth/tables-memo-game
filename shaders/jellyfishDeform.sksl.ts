@@ -62,6 +62,8 @@
  *   tintMode 1 = radial gradient tintA (center) -> tintB (edge)
  *   tintMode 2 = radial gradient tintA (center) -> tintB (mid) -> tintC (edge)
  *   Applied in display space using r so the gradient follows the deformed silhouette.
+ *   tintAnimated (bell only): each color expands from center with soft boundaries and
+ *   swaps roles (center/mid/edge rotate). Dual = two half-cycles; triple = three segments.
  */
 export const JELLYFISH_DEFORM_SKSL = `
 uniform float jellyX;
@@ -98,6 +100,8 @@ uniform float tintStrength;
 uniform float3 tintA;
 uniform float3 tintB;
 uniform float3 tintC;
+uniform float tintAnimated;
+uniform float tintWaveSpeed;
 uniform shader jellyTexture;
 
 half4 main(float2 fragCoord) {
@@ -183,14 +187,54 @@ half4 main(float2 fragCoord) {
 
   // Per-instance tint in display space — follows the deformed silhouette.
   float radialT = smoothstep(0.0, 0.5, r);
-  half3 uniformTint = half3(tintA);
-  half3 dualTint = mix(half3(tintA), half3(tintB), half(radialT));
-  half3 tripleTint = radialT < 0.5
-    ? mix(half3(tintA), half3(tintB), half(radialT * 2.0))
-    : mix(half3(tintB), half3(tintC), half((radialT - 0.5) * 2.0));
-  half3 tint = uniformTint;
-  if (tintMode >= 1.0) { tint = dualTint; }
-  if (tintMode >= 2.0) { tint = tripleTint; }
+  const float TINT_WAVE_SOFT = 0.18;
+
+  half3 tint = half3(tintA);
+  if (tintAnimated >= 0.5 && tintMode >= 2.0) {
+    // Three colors: each third of the cycle one color grows from center, pushing the others outward.
+    float p = fract(iTime * tintWaveSpeed + phase);
+    float seg = floor(p * 3.0);
+    float localP = fract(p * 3.0);
+
+    half3 incoming;
+    half3 midCol;
+    half3 outerCol;
+    if (seg < 0.5) {
+      incoming = half3(tintB);
+      midCol = half3(tintC);
+      outerCol = half3(tintA);
+    } else if (seg < 1.5) {
+      incoming = half3(tintC);
+      midCol = half3(tintA);
+      outerCol = half3(tintB);
+    } else {
+      incoming = half3(tintA);
+      midCol = half3(tintB);
+      outerCol = half3(tintC);
+    }
+
+    float b1 = smoothstep(localP - TINT_WAVE_SOFT, localP + TINT_WAVE_SOFT, radialT);
+    float midFront = min(localP + (1.0 - TINT_WAVE_SOFT), 1.0);
+    float b2 = smoothstep(midFront - TINT_WAVE_SOFT, midFront + TINT_WAVE_SOFT, radialT);
+    tint = mix(incoming, midCol, half(b1));
+    tint = mix(tint, outerCol, half(b2));
+  } else if (tintAnimated >= 0.5 && tintMode >= 1.0) {
+    // Two colors: each half-cycle one color grows from center while the other sits at the rim.
+    float p = fract(iTime * tintWaveSpeed + phase);
+    float localP = p < 0.5 ? p * 2.0 : (p - 0.5) * 2.0;
+    half3 centerColor = p < 0.5 ? half3(tintB) : half3(tintA);
+    half3 edgeColor = p < 0.5 ? half3(tintA) : half3(tintB);
+    float t = smoothstep(localP - TINT_WAVE_SOFT, localP + TINT_WAVE_SOFT, radialT);
+    tint = mix(centerColor, edgeColor, half(t));
+  } else if (tintMode >= 1.0) {
+    half3 dualTint = mix(half3(tintA), half3(tintB), half(radialT));
+    tint = dualTint;
+    if (tintMode >= 2.0) {
+      tint = radialT < 0.5
+        ? mix(half3(tintA), half3(tintB), half(radialT * 2.0))
+        : mix(half3(tintB), half3(tintC), half((radialT - 0.5) * 2.0));
+    }
+  }
   color.rgb *= mix(half3(1.0), tint, half(tintStrength));
 
   // Rim band: rises from 0 at (0.5 - rimWidth) to 1 at the display edge.
@@ -259,4 +303,8 @@ export const jellyfishDeformUniformDefaults = {
   tintB: [1, 1, 1] as const,
   /** Radial edge (mode 2 only). */
   tintC: [1, 1, 1] as const,
+  /** 1 = expanding multicolor tint on bell (colors swap center/edge roles). */
+  tintAnimated: 0,
+  /** Cycle speed for animated bell tint. */
+  tintWaveSpeed: 0.4,
 } as const;

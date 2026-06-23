@@ -6,7 +6,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import { JellyfishInstance } from './JellyfishInstance';
 
 /** Number of jellyfish in the scene. */
-export const JELLYFISH_COUNT = 50;
+export const JELLYFISH_COUNT = 16;
 
 /** Render resolution multiplier — lower = fewer fragment shader pixels. */
 export const JELLYFISH_RES = 0.65;
@@ -21,6 +21,12 @@ export const JELLYFISH_SPAWN_RANGES = {
 
 /** Relative weights for uniform / dual / triple radial tint at spawn. */
 export const JELLYFISH_TINT_MODE_WEIGHTS = [0.35, 0.35, 0.3] as const;
+
+/** P(multicolor jellyfish gets expanding bell tint with color role swap). */
+export const JELLYFISH_ANIMATED_TINT_PROBABILITY = 0.45;
+
+/** Cycle speed range for animated bell tint. */
+export const JELLYFISH_TINT_WAVE_SPEED_RANGE = { min: 0.2, max: 0.6 } as const;
 
 /** Jellyfish tint colors (RGB 0..1) picked randomly per instance at spawn. */
 export const JELLYFISH_TINT_PALETTE: ReadonlyArray<readonly [number, number, number]> = [
@@ -47,6 +53,8 @@ type JellyfishSpawn = {
   tintA: readonly [number, number, number];
   tintB: readonly [number, number, number];
   tintC: readonly [number, number, number];
+  animatedTint: boolean;
+  tintWaveSpeed: number;
 };
 
 function randomInRange({ min, max }: { min: number; max: number }): number {
@@ -78,19 +86,49 @@ function pickDistinctTintColors(
 
 function rollTintSpawn(): Pick<
   JellyfishSpawn,
-  'tintMode' | 'tintStrength' | 'tintA' | 'tintB' | 'tintC'
+  | 'tintMode'
+  | 'tintStrength'
+  | 'tintA'
+  | 'tintB'
+  | 'tintC'
+  | 'animatedTint'
+  | 'tintWaveSpeed'
 > {
   const mode = rollTintMode();
   if (mode === 0) {
     const [a] = pickDistinctTintColors(1);
-    return { tintMode: 0, tintA: a, tintB: a, tintC: a, tintStrength: 0.85 };
+    return {
+      tintMode: 0,
+      tintA: a,
+      tintB: a,
+      tintC: a,
+      tintStrength: 0.85,
+      animatedTint: false,
+      tintWaveSpeed: 0,
+    };
   }
   if (mode === 1) {
     const [a, b] = pickDistinctTintColors(2);
-    return { tintMode: 1, tintA: a, tintB: b, tintC: b, tintStrength: 0.9 };
+    return {
+      tintMode: 1,
+      tintA: a,
+      tintB: b,
+      tintC: b,
+      tintStrength: 0.9,
+      animatedTint: Math.random() < JELLYFISH_ANIMATED_TINT_PROBABILITY,
+      tintWaveSpeed: randomInRange(JELLYFISH_TINT_WAVE_SPEED_RANGE),
+    };
   }
   const [a, b, c] = pickDistinctTintColors(3);
-  return { tintMode: 2, tintA: a, tintB: b, tintC: c, tintStrength: 0.9 };
+  return {
+    tintMode: 2,
+    tintA: a,
+    tintB: b,
+    tintC: c,
+    tintStrength: 0.9,
+    animatedTint: Math.random() < JELLYFISH_ANIMATED_TINT_PROBABILITY,
+    tintWaveSpeed: randomInRange(JELLYFISH_TINT_WAVE_SPEED_RANGE),
+  };
 }
 
 function createRandomSpawns(count: number): JellyfishSpawn[] {
@@ -156,6 +194,8 @@ export function JellyfishLayer({
             tintA={spawn.tintA}
             tintB={spawn.tintB}
             tintC={spawn.tintC}
+            animatedTint={spawn.animatedTint}
+            tintWaveSpeed={spawn.tintWaveSpeed}
             clock={clock}
           />
         ))}
