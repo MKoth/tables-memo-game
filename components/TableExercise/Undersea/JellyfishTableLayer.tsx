@@ -12,12 +12,13 @@ import React, { useMemo } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   Canvas,
+  Glyphs,
   Group,
   matchFont,
-  Text,
   type SkFont,
   type SkImage,
   useImage,
+  vec,
 } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import {
@@ -72,6 +73,14 @@ const TILT_DECAY = 0.88;
 const LABEL_TILT_PX = 3;
 /** Max label rotation during motion, in movement direction (radians). */
 const LABEL_ROTATION_MAX_RAD = (45 * Math.PI) / 180;
+/** Per-glyph vertical bob amplitude (px, before layout scale). */
+const LABEL_WAVE_AMP = 2.7;
+/** Label wave phase speed (radians / second). */
+const LABEL_WAVE_SPEED = 0.22;
+/** Phase offset between adjacent glyphs — lower = smoother, less ripple. */
+const LABEL_WAVE_SPATIAL = 0.32;
+/** Outline thickness (px, before layout scale). */
+const LABEL_STROKE_WIDTH = 2.5;
 
 // ── Worklet helpers ───────────────────────────────────────────────────────
 
@@ -169,6 +178,67 @@ function rollBodyTint(r: number, c: number): TintSpawn {
   };
 }
 
+function uniqueTintColors(tintA: RGB, tintB: RGB, tintC: RGB): RGB[] {
+  const seen = new Set<string>();
+  const out: RGB[] = [];
+  for (const c of [tintA, tintB, tintC]) {
+    const key = `${c[0]},${c[1]},${c[2]}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(c);
+    }
+  }
+  return out;
+}
+
+function lightenTint(c: RGB, amount: number): RGB {
+  return [
+    c[0] + (1 - c[0]) * amount,
+    c[1] + (1 - c[1]) * amount,
+    c[2] + (1 - c[2]) * amount,
+  ];
+}
+
+function darkenTint(c: RGB, amount: number): RGB {
+  return [c[0] * (1 - amount), c[1] * (1 - amount), c[2] * (1 - amount)];
+}
+
+function tintToRgba(c: RGB, alpha: number): string {
+  const ch = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255);
+  return `rgba(${ch(c[0])}, ${ch(c[1])}, ${ch(c[2])}, ${alpha})`;
+}
+
+/** Pick label fill/stroke from jellyfish tints; body is lightened, border darkened. */
+function rollLabelColors(
+  tintA: RGB,
+  tintB: RGB,
+  tintC: RGB,
+  seedA: number,
+  seedB: number,
+): { labelFillColor: string; labelStrokeColor: string } {
+  const palette = uniqueTintColors(tintA, tintB, tintC);
+  let bodyBase: RGB;
+  let borderBase: RGB;
+
+  if (palette.length >= 2) {
+    const bodyIdx = Math.floor(sr(seedA, seedB) * palette.length);
+    let borderIdx = Math.floor(sr(seedA + 41, seedB + 67) * palette.length);
+    if (borderIdx === bodyIdx) {
+      borderIdx = (borderIdx + 1) % palette.length;
+    }
+    bodyBase = palette[bodyIdx];
+    borderBase = palette[borderIdx];
+  } else {
+    bodyBase = palette[0];
+    borderBase = palette[0];
+  }
+
+  return {
+    labelFillColor: tintToRgba(lightenTint(bodyBase, 0.38), 0.95),
+    labelStrokeColor: tintToRgba(darkenTint(borderBase, 0.68), 0.92),
+  };
+}
+
 // ── Cell config ───────────────────────────────────────────────────────────
 
 type CellConfig = {
@@ -181,6 +251,8 @@ type CellConfig = {
   bellSize: number;
   phase: number;
   pulseSpeed: number;
+  labelFillColor: string;
+  labelStrokeColor: string;
 } & TintSpawn;
 
 function createCellConfigs(table: TableData): CellConfig[] {
@@ -205,6 +277,7 @@ function createCellConfigs(table: TableData): CellConfig[] {
       tintC: HEADER_ROW_B,
       animatedTint: true,
       tintWaveSpeed: 0.25 + sr(20, c) * 0.35,
+      ...rollLabelColors(HEADER_ROW_A, HEADER_ROW_B, HEADER_ROW_B, c, 901),
     });
   });
 
@@ -226,11 +299,13 @@ function createCellConfigs(table: TableData): CellConfig[] {
       tintC: HEADER_COL_B,
       animatedTint: true,
       tintWaveSpeed: 0.25 + sr(r, 20) * 0.35,
+      ...rollLabelColors(HEADER_COL_A, HEADER_COL_B, HEADER_COL_B, r, 902),
     });
   });
 
   body.forEach((row, r) => {
     row.forEach((cell, c) => {
+      const tint = rollBodyTint(r, c);
       configs.push({
         key: `body-${r}-${c}`,
         index: configs.length,
@@ -241,7 +316,8 @@ function createCellConfigs(table: TableData): CellConfig[] {
         bellSize: BODY_BELL_SIZE,
         phase: sr(r + 5, c + 7) * Math.PI * 2,
         pulseSpeed: 2.0 + sr(r, c + 33) * 2.2,
-        ...rollBodyTint(r, c),
+        ...tint,
+        ...rollLabelColors(tint.tintA, tint.tintB, tint.tintC, r + 500, c + 700),
       });
     });
   });
@@ -332,6 +408,7 @@ type CellLabelProps = {
   motionAngle: SharedValue<number>;
   motionAmp: SharedValue<number>;
   retainedLabelRotation: SharedValue<number>;
+  clock: SharedValue<number>;
 };
 
 function CellLabel({
@@ -343,6 +420,7 @@ function CellLabel({
   motionAngle,
   motionAmp,
   retainedLabelRotation,
+  clock,
 }: CellLabelProps) {
   const idx = config.index;
 
@@ -354,6 +432,18 @@ function CellLabel({
   const metrics = font.getMetrics();
   const labelOffsetX = -textWidth / 2;
   const labelOffsetY = -(metrics.ascent + metrics.descent) / 2;
+
+  const glyphLayout = useMemo(() => {
+    const ids = font.getGlyphIDs(config.label);
+    const widths = font.getGlyphWidths(ids);
+    const xOffsets: number[] = [];
+    let x = 0;
+    for (const w of widths) {
+      xOffsets.push(x);
+      x += w;
+    }
+    return { ids, xOffsets };
+  }, [font, config.label]);
 
   const tiltOffsetX = useDerivedValue(() => {
     const amp = motionAmp.value;
@@ -372,12 +462,20 @@ function CellLabel({
     return Math.sin(motionAngle.value) * px;
   });
 
-  const labelX = useDerivedValue(
-    () => centerX.value + labelOffsetX + tiltOffsetX.value,
-  );
-  const labelY = useDerivedValue(
-    () => centerY.value + labelOffsetY + tiltOffsetY.value,
-  );
+  const glyphPositions = useDerivedValue(() => {
+    const bx = centerX.value + labelOffsetX + tiltOffsetX.value;
+    const by = centerY.value + labelOffsetY + tiltOffsetY.value;
+    const phase = (clock.value / 80) * LABEL_WAVE_SPEED + config.phase;
+    const { ids, xOffsets } = glyphLayout;
+    return ids.map((id, i) => ({
+      id,
+      pos: vec(
+        bx + (xOffsets[i] ?? 0),
+        by + Math.sin(i * LABEL_WAVE_SPATIAL + phase) * LABEL_WAVE_AMP,
+      ),
+    }));
+  });
+
   const labelTransform = useDerivedValue(() => [
     { translateX: centerX.value },
     { translateY: centerY.value },
@@ -389,13 +487,16 @@ function CellLabel({
 
   return (
     <Group transform={labelTransform}>
-      <Text
-        x={labelX}
-        y={labelY}
-        text={config.label}
-        font={font}
-        color="rgba(255, 255, 255, 0.95)"
-      />
+      <Group
+        style="stroke"
+        strokeWidth={LABEL_STROKE_WIDTH}
+        strokeJoin="round"
+        strokeCap="round"
+        color={config.labelStrokeColor}
+      >
+        <Glyphs font={font} glyphs={glyphPositions} />
+      </Group>
+      <Glyphs font={font} glyphs={glyphPositions} color={config.labelFillColor} />
     </Group>
   );
 }
@@ -629,6 +730,7 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
             motionAngle={motionAngle}
             motionAmp={motionAmp}
             retainedLabelRotation={retainedLabelRotation}
+            clock={clock}
           />
         ))}
       </Canvas>
