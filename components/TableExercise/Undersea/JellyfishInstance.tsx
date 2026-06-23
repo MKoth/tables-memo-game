@@ -24,12 +24,6 @@ function compileJellyfishEffect(): SkRuntimeEffect {
 
 const jellyfishEffect = compileJellyfishEffect();
 
-const {
-  shadowColor: defaultShadowColor,
-  shadowOpacity: defaultShadowOpacity,
-  shadowSoftness: defaultShadowSoftness,
-} = jellyfishDeformUniformDefaults;
-
 type JellyfishDeformPassProps = {
   image: SkImage;
   /** Centered square size in px. */
@@ -37,8 +31,6 @@ type JellyfishDeformPassProps = {
   /** Sprite center on screen. */
   centerX: number;
   centerY: number;
-  centerXOffset: number;
-  centerYOffset: number;
   phase: number;
   pulseSpeed: number;
   pivotR: number;
@@ -63,10 +55,6 @@ type JellyfishDeformPassProps = {
   tiltBodyShift: number;
   tiltLen: number;
   tiltEgg: number;
-  renderMode: number;
-  shadowColor: readonly [number, number, number];
-  shadowOpacity: number;
-  shadowSoftness: number;
   clock: SharedValue<number>;
 };
 
@@ -75,8 +63,6 @@ function JellyfishDeformPass({
   size,
   centerX,
   centerY,
-  centerXOffset,
-  centerYOffset,
   phase,
   pulseSpeed,
   pivotR,
@@ -101,21 +87,10 @@ function JellyfishDeformPass({
   tiltBodyShift,
   tiltLen,
   tiltEgg,
-  renderMode,
-  shadowColor,
-  shadowOpacity,
-  shadowSoftness,
   clock,
 }: JellyfishDeformPassProps) {
-  const penumbraPx = renderMode > 0.5 ? shadowSoftness * size * 0.8 : 0;
-  const effectiveCenterX = centerX + centerXOffset;
-  const effectiveCenterY = centerY + centerYOffset;
-  const jellyX = effectiveCenterX - size / 2;
-  const jellyY = effectiveCenterY - size / 2;
-  const rectX = jellyX - penumbraPx;
-  const rectY = jellyY - penumbraPx;
-  const rectSize = size + penumbraPx * 2;
-  const shadowColorUniform = [...shadowColor] as [number, number, number];
+  const jellyX = centerX - size / 2;
+  const jellyY = centerY - size / 2;
 
   const uniforms = useDerivedValue(() => ({
     jellyX,
@@ -147,14 +122,10 @@ function JellyfishDeformPass({
     tiltBodyShift,
     tiltLen,
     tiltEgg,
-    renderMode,
-    shadowColor: shadowColorUniform,
-    shadowOpacity,
-    shadowSoftness,
   }));
 
   return (
-    <Rect x={rectX} y={rectY} width={rectSize} height={rectSize}>
+    <Rect x={jellyX} y={jellyY} width={size} height={size}>
       <Shader source={jellyfishEffect} uniforms={uniforms}>
         <ImageShader
           image={image}
@@ -214,16 +185,7 @@ export type JellyfishInstanceProps = {
   clock: SharedValue<number>;
 };
 
-type JellyfishRenderProps = JellyfishInstanceProps & {
-  centerXOffset: number;
-  centerYOffset: number;
-  renderMode: number;
-  shadowColor: readonly [number, number, number];
-  shadowOpacity: number;
-  shadowSoftness: number;
-};
-
-function JellyfishRender({
+export function JellyfishInstance({
   bellImage,
   tentacleImage,
   centerX,
@@ -257,22 +219,13 @@ function JellyfishRender({
   tentacleTiltLenRatio = 3,
   bellTiltEgg = 0,
   clock,
-  centerXOffset,
-  centerYOffset,
-  renderMode,
-  shadowColor,
-  shadowOpacity,
-  shadowSoftness,
-}: JellyfishRenderProps) {
+}: JellyfishInstanceProps) {
   const tentacleSize = bellSize * tentacleSizeRatio;
   const tentacleBodyShift = -tiltAmp * tentacleTiltShiftRatio;
   const tentacleLen = tiltAmp * tentacleTiltLenRatio;
-  const isShadow = renderMode > 0.5;
   const passProps = {
     centerX,
     centerY,
-    centerXOffset,
-    centerYOffset,
     phase,
     pulseSpeed,
     pivotR,
@@ -285,34 +238,28 @@ function JellyfishRender({
     wobbleSpeed,
     wobbleLobes,
     tiltAngle,
-    renderMode,
-    shadowColor,
-    shadowOpacity,
-    shadowSoftness,
     clock,
   };
 
   return (
     <>
-      {!isShadow && (
-        <JellyfishDeformPass
-          image={tentacleImage}
-          size={tentacleSize}
-          swirlAmp={tentacleSwirlAmp}
-          swirlFreq={tentacleSwirlFreq}
-          densityGamma={1}
-          contractShrink={tentacleRetract}
-          rimWidth={0}
-          rimStrength={0}
-          wobbleAmp={tentacleWobbleAmp}
-          opacity={tentacleOpacity}
-          tiltCenterShift={0}
-          tiltBodyShift={tentacleBodyShift}
-          tiltLen={tentacleLen}
-          tiltEgg={0}
-          {...passProps}
-        />
-      )}
+      <JellyfishDeformPass
+        image={tentacleImage}
+        size={tentacleSize}
+        swirlAmp={tentacleSwirlAmp}
+        swirlFreq={tentacleSwirlFreq}
+        densityGamma={1}
+        contractShrink={tentacleRetract}
+        rimWidth={0}
+        rimStrength={0}
+        wobbleAmp={tentacleWobbleAmp}
+        opacity={tentacleOpacity}
+        tiltCenterShift={0}
+        tiltBodyShift={tentacleBodyShift}
+        tiltLen={tentacleLen}
+        tiltEgg={0}
+        {...passProps}
+      />
       <JellyfishDeformPass
         image={bellImage}
         size={bellSize}
@@ -331,48 +278,5 @@ function JellyfishRender({
         {...passProps}
       />
     </>
-  );
-}
-
-export function JellyfishInstance(props: JellyfishInstanceProps) {
-  return (
-    <JellyfishRender
-      {...props}
-      centerXOffset={0}
-      centerYOffset={0}
-      renderMode={0}
-      shadowColor={defaultShadowColor}
-      shadowOpacity={defaultShadowOpacity}
-      shadowSoftness={0}
-    />
-  );
-}
-
-export type JellyfishShadowInstanceProps = JellyfishInstanceProps & {
-  offsetX: number;
-  offsetY: number;
-  shadowColor?: readonly [number, number, number];
-  shadowOpacity?: number;
-  shadowSoftness?: number;
-};
-
-export function JellyfishShadowInstance({
-  offsetX,
-  offsetY,
-  shadowColor = defaultShadowColor,
-  shadowOpacity = defaultShadowOpacity,
-  shadowSoftness = defaultShadowSoftness,
-  ...props
-}: JellyfishShadowInstanceProps) {
-  return (
-    <JellyfishRender
-      {...props}
-      centerXOffset={offsetX}
-      centerYOffset={offsetY}
-      renderMode={1}
-      shadowColor={shadowColor}
-      shadowOpacity={shadowOpacity}
-      shadowSoftness={shadowSoftness}
-    />
   );
 }

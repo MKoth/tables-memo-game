@@ -87,10 +87,6 @@ uniform float tiltCenterShift;
 uniform float tiltBodyShift;
 uniform float tiltLen;
 uniform float tiltEgg;
-uniform float renderMode;
-uniform float3 shadowColor;
-uniform float shadowOpacity;
-uniform float shadowSoftness;
 uniform shader jellyTexture;
 
 half4 main(float2 fragCoord) {
@@ -116,9 +112,8 @@ half4 main(float2 fragCoord) {
   c -= tiltCenterShift * tiltDir * centerHold;
 
   float r = length(c);
-  float shadowSamplePad = step(0.5, renderMode) * shadowSoftness * 0.8;
 
-  if (r > 0.5 + shadowSamplePad) {
+  if (r > 0.5) {
     return half4(0.0);
   }
 
@@ -172,29 +167,6 @@ half4 main(float2 fragCoord) {
   }
 
   vec2 sampleCoord = vec2(jellyX, jellyY) + srcUV * vec2(jellyW, jellyH);
-
-  if (renderMode > 0.5) {
-    float step = shadowSoftness * jellyH * 0.55;
-
-    // Isotropic 3x3 Gaussian — monotonic falloff at hard alpha edges (no ring bands).
-    float accum =
-        jellyTexture.eval(sampleCoord + vec2(-step, -step)).a * 1.0
-      + jellyTexture.eval(sampleCoord + vec2(0.0, -step)).a * 2.0
-      + jellyTexture.eval(sampleCoord + vec2(step, -step)).a * 1.0
-      + jellyTexture.eval(sampleCoord + vec2(-step, 0.0)).a * 2.0
-      + jellyTexture.eval(sampleCoord + vec2(0.0, 0.0)).a * 4.0
-      + jellyTexture.eval(sampleCoord + vec2(step, 0.0)).a * 2.0
-      + jellyTexture.eval(sampleCoord + vec2(-step, step)).a * 1.0
-      + jellyTexture.eval(sampleCoord + vec2(0.0, step)).a * 2.0
-      + jellyTexture.eval(sampleCoord + vec2(step, step)).a * 1.0;
-
-    float coverage = accum / 16.0;
-    float a = coverage * shadowOpacity;
-    if (a < 0.004) {
-      return half4(0.0);
-    }
-    return half4(shadowColor * a, a);
-  }
 
   half4 color = jellyTexture.eval(sampleCoord);
 
@@ -254,12 +226,4 @@ export const jellyfishDeformUniformDefaults = {
   tiltLen: 0,
   /** Egg silhouette: widens the back half into a blunt arc, front stays round (bell only). */
   tiltEgg: 0,
-  /** 0 = body, 1 = shadow. */
-  renderMode: 0,
-  /** Premultiplied shadow tint (RGB). */
-  shadowColor: [0.02, 0.06, 0.12] as const,
-  /** Shadow alpha multiplier. */
-  shadowOpacity: 0.35,
-  /** Softens shadow edges in sprite-perp units. */
-  shadowSoftness: 0.15,
 } as const;

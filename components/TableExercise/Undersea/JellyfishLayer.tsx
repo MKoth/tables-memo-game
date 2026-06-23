@@ -3,17 +3,13 @@ import { StyleSheet } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import { JellyfishInstance, JellyfishShadowInstance } from './JellyfishInstance';
+import { JellyfishInstance } from './JellyfishInstance';
 
 /** Number of jellyfish in the scene. */
-export const JELLYFISH_COUNT = 10;
+export const JELLYFISH_COUNT = 16;
 
-/** px — shadow offset from jellyfish center (light from above-left). */
-const SHADOW_OFFSET_X = 40;
-const SHADOW_OFFSET_Y = 90;
-const SHADOW_COLOR = [0.02, 0.06, 0.12] as const;
-const SHADOW_OPACITY = 0.15;
-const SHADOW_SOFTNESS = 0.45;
+/** Render resolution multiplier — lower = fewer fragment shader pixels. */
+export const JELLYFISH_RES = 0.65;
 
 /** Per-instance random ranges at spawn. Tilt params are not randomized — they stay 0. */
 export const JELLYFISH_SPAWN_RANGES = {
@@ -67,29 +63,21 @@ export function JellyfishLayer({
     [jellyfishCount, width, height],
   );
 
+  const canvasWidth = Math.max(1, Math.round(width * JELLYFISH_RES));
+  const canvasHeight = Math.max(1, Math.round(height * JELLYFISH_RES));
+
   return (
-    <Canvas style={styles.canvas} pointerEvents="none">
-      <Group>
-        {spawns.map((spawn, index) => (
-          <JellyfishShadowInstance
-            key={`jellyfish-shadow-${index}`}
-            bellImage={bellImage}
-            tentacleImage={tentacleImage}
-            centerX={spawn.xRatio * width}
-            centerY={spawn.yRatio * height}
-            bellSize={spawn.bellSize}
-            phase={spawn.phase}
-            pulseSpeed={spawn.pulseSpeed}
-            clock={clock}
-            offsetX={SHADOW_OFFSET_X}
-            offsetY={SHADOW_OFFSET_Y}
-            shadowColor={SHADOW_COLOR}
-            shadowOpacity={SHADOW_OPACITY}
-            shadowSoftness={SHADOW_SOFTNESS}
-          />
-        ))}
-      </Group>
-      <Group>
+    <Canvas
+      style={[
+        styles.canvas,
+        {
+          width: canvasWidth,
+          height: canvasHeight,
+          transform: [{ scale: 1 / JELLYFISH_RES }],
+        },
+      ]}
+      pointerEvents="none">
+      <Group transform={[{ scale: JELLYFISH_RES }]}>
         {spawns.map((spawn, index) => (
           <JellyfishInstance
             key={`jellyfish-${index}`}
@@ -112,8 +100,7 @@ const styles = StyleSheet.create({
   canvas: {
     position: 'absolute',
     left: 0,
-    right: 0,
     top: 0,
-    bottom: 0,
+    transformOrigin: 'top left',
   },
 });

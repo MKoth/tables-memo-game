@@ -231,6 +231,7 @@ export function UnderseaBackground() {
   const jellyfishBell = useImage(JELLYFISH_BELL);
   const jellyfishTentacles = useImage(JELLYFISH_TENTACLES);
   const clock = useThrottledClock(30);
+  const jellyfishClock = useThrottledClock(20);
 
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
   const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
@@ -442,7 +443,7 @@ export function UnderseaBackground() {
         height={height}
         bellImage={jellyfishBell}
         tentacleImage={jellyfishTentacles}
-        clock={clock}
+        clock={jellyfishClock}
       />
     </View>
   );
