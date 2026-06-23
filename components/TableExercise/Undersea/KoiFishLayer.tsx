@@ -8,7 +8,7 @@ import { KoiInstance, KoiShadowInstance } from './KoiInstance';
 
 const KOI_BASE_LENGTH = 120;
 const KOI_BASE_THICKNESS = 38;
-const SWIM_ZONE_TOP_RATIO = 0;
+const SWIM_ZONE_TOP_RATIO = 0.5;
 const SWIM_ZONE_MARGIN = 0;
 
 /** Number of koi fish in the swim zone. */

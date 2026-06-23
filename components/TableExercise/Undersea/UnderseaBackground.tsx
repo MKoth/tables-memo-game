@@ -16,7 +16,6 @@ import {
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
   underseaSeafloorUniformDefaults,
 } from '../../../shaders/underseaSeafloorBackground.sksl';
-import { JellyfishLayer } from './JellyfishLayer';
 import { KoiFishLayer } from './KoiFishLayer';
 import { SeaweedInstance, SeaweedShadowInstance } from './SeaweedInstance';
 import { StoneInstance, StoneShadowInstance } from './StoneInstance';
@@ -77,8 +76,6 @@ const SEAWEED_VARIANTS = {
 
 type SeaweedVariant = keyof typeof SEAWEED_VARIANTS;
 
-const JELLYFISH_BELL = require('../../../assets/jellyfish-bell.png');
-const JELLYFISH_TENTACLES = require('../../../assets/jellyfish-tentacles.png');
 
 const SEAWEED_CONFIGS = [
   {
@@ -228,10 +225,7 @@ export function UnderseaBackground() {
   const koi1Mask = useImage(KOI_MASK_VARIANTS.koi1);
   const koi2Mask = useImage(KOI_MASK_VARIANTS.koi2);
   const koi3Mask = useImage(KOI_MASK_VARIANTS.koi3);
-  const jellyfishBell = useImage(JELLYFISH_BELL);
-  const jellyfishTentacles = useImage(JELLYFISH_TENTACLES);
   const clock = useThrottledClock(30);
-  const jellyfishClock = useThrottledClock(20);
 
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
   const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
@@ -285,8 +279,6 @@ export function UnderseaBackground() {
     !koi1Mask ||
     !koi2Mask ||
     !koi3Mask ||
-    !jellyfishBell ||
-    !jellyfishTentacles ||
     width === 0 ||
     height === 0
   ) {
@@ -437,13 +429,6 @@ export function UnderseaBackground() {
         images={{ koi1, koi2, koi3 }}
         masks={{ koi1: koi1Mask, koi2: koi2Mask, koi3: koi3Mask }}
         clock={clock}
-      />
-      <JellyfishLayer
-        width={width}
-        height={height}
-        bellImage={jellyfishBell}
-        tentacleImage={jellyfishTentacles}
-        clock={jellyfishClock}
       />
     </View>
   );
