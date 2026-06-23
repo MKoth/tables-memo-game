@@ -24,6 +24,7 @@ import {
   Easing,
   useAnimatedReaction,
   useDerivedValue,
+  useFrameCallback,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -55,11 +56,64 @@ const BIAS_FLING_SENS = 0.00035;
 const MAX_FLING_MS = 900;
 const MIN_FLING_MS = 80;
 
+/** Max shader tilt amplitude (UV units). */
+const TILT_AMP_MAX = 0.08;
+/** Gesture velocity (px/s) → tilt strength. */
+const TILT_VEL_SCALE = 1 / 900;
+/** Per-frame drag delta (px) → tilt strength when velocity is low. */
+const TILT_DRAG_SCALE = 0.018;
+/** Bias delta per frame → tilt strength during coasting fling. */
+const TILT_BIAS_VEL_SCALE = 120;
+/** Bias speed below this is treated as stopped. */
+const TILT_STOP_BIAS_VEL = 0.00003;
+/** Per-frame exponential decay when layout is idle. */
+const TILT_DECAY = 0.88;
+/** Label slide: motionAmp (UV) × bellSize × scale → screen px. */
+const LABEL_TILT_PX = 3;
+/** Max label rotation during motion, in movement direction (radians). */
+const LABEL_ROTATION_MAX_RAD = (45 * Math.PI) / 180;
+
 // ── Worklet helpers ───────────────────────────────────────────────────────
 
 function clampW(val: number, lo: number, hi: number): number {
   'worklet';
   return Math.max(lo, Math.min(hi, val));
+}
+
+function updateRetainedLabelRotation(
+  retained: { value: number },
+  angle: number,
+  amp: number,
+): void {
+  'worklet';
+  if (amp === 0) {
+    return;
+  }
+  const t = amp / TILT_AMP_MAX;
+  const raw = angle * t;
+  retained.value = clampW(raw, -LABEL_ROTATION_MAX_RAD, LABEL_ROTATION_MAX_RAD);
+}
+
+function updateMotionFromDrag(
+  motionAngle: { value: number },
+  motionAmp: { value: number },
+  velocityX: number,
+  velocityY: number,
+  dX: number,
+  dY: number,
+): void {
+  'worklet';
+  const speed = Math.hypot(velocityX, velocityY);
+  if (speed > 40) {
+    motionAngle.value = Math.atan2(velocityY, velocityX);
+    motionAmp.value = Math.min(TILT_AMP_MAX, speed * TILT_VEL_SCALE);
+    return;
+  }
+  const dragSpeed = Math.hypot(dX, dY);
+  if (dragSpeed > 0.5) {
+    motionAngle.value = Math.atan2(dY, dX);
+    motionAmp.value = Math.min(TILT_AMP_MAX, dragSpeed * TILT_DRAG_SCALE);
+  }
 }
 
 // ── Tint palette & helpers ────────────────────────────────────────────────
@@ -219,8 +273,8 @@ type CellJellyfishProps = {
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
-  biasX: SharedValue<number>;
-  biasY: SharedValue<number>;
+  motionAngle: SharedValue<number>;
+  motionAmp: SharedValue<number>;
   bellImage: SkImage;
   tentacleImage: SkImage;
   clock: SharedValue<number>;
@@ -231,8 +285,8 @@ function CellJellyfish({
   layoutX,
   layoutY,
   layoutScale,
-  biasX,
-  biasY,
+  motionAngle,
+  motionAmp,
   bellImage,
   tentacleImage,
   clock,
@@ -242,13 +296,6 @@ function CellJellyfish({
   const centerX = useDerivedValue(() => layoutX.value[idx] ?? 0);
   const centerY = useDerivedValue(() => layoutY.value[idx] ?? 0);
   const sizeScale = useDerivedValue(() => layoutScale.value[idx] ?? 1);
-
-  const tiltAngle = useDerivedValue(() =>
-    Math.atan2(biasY.value, biasX.value),
-  );
-  const tiltAmp = useDerivedValue(() =>
-    Math.min(0.06, Math.hypot(biasX.value, biasY.value) * 0.04),
-  );
 
   return (
     <>
@@ -268,8 +315,8 @@ function CellJellyfish({
         tintC={config.tintC}
         animatedTint={config.animatedTint}
         tintWaveSpeed={config.tintWaveSpeed}
-        tiltAngle={tiltAngle}
-        tiltAmp={tiltAmp}
+        tiltAngle={motionAngle}
+        tiltAmp={motionAmp}
         clock={clock}
       />
     </>
@@ -282,9 +329,21 @@ type CellLabelProps = {
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
+  motionAngle: SharedValue<number>;
+  motionAmp: SharedValue<number>;
+  retainedLabelRotation: SharedValue<number>;
 };
 
-function CellLabel({ config, font, layoutX, layoutY, layoutScale }: CellLabelProps) {
+function CellLabel({
+  config,
+  font,
+  layoutX,
+  layoutY,
+  layoutScale,
+  motionAngle,
+  motionAmp,
+  retainedLabelRotation,
+}: CellLabelProps) {
   const idx = config.index;
 
   const centerX = useDerivedValue(() => layoutX.value[idx] ?? 0);
@@ -296,12 +355,34 @@ function CellLabel({ config, font, layoutX, layoutY, layoutScale }: CellLabelPro
   const labelOffsetX = -textWidth / 2;
   const labelOffsetY = -(metrics.ascent + metrics.descent) / 2;
 
-  const labelX = useDerivedValue(() => centerX.value + labelOffsetX);
-  const labelY = useDerivedValue(() => centerY.value + labelOffsetY);
+  const tiltOffsetX = useDerivedValue(() => {
+    const amp = motionAmp.value;
+    if (amp === 0) {
+      return 0;
+    }
+    const px = amp * config.bellSize * scale.value * LABEL_TILT_PX;
+    return Math.cos(motionAngle.value) * px;
+  });
+  const tiltOffsetY = useDerivedValue(() => {
+    const amp = motionAmp.value;
+    if (amp === 0) {
+      return 0;
+    }
+    const px = amp * config.bellSize * scale.value * LABEL_TILT_PX;
+    return Math.sin(motionAngle.value) * px;
+  });
+
+  const labelX = useDerivedValue(
+    () => centerX.value + labelOffsetX + tiltOffsetX.value,
+  );
+  const labelY = useDerivedValue(
+    () => centerY.value + labelOffsetY + tiltOffsetY.value,
+  );
   const labelTransform = useDerivedValue(() => [
     { translateX: centerX.value },
     { translateY: centerY.value },
     { scale: scale.value },
+    { rotate: retainedLabelRotation.value },
     { translateX: -centerX.value },
     { translateY: -centerY.value },
   ]);
@@ -397,6 +478,12 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
 
   const biasX = useSharedValue(0);
   const biasY = useSharedValue(0);
+  const motionAngle = useSharedValue(0);
+  const motionAmp = useSharedValue(0);
+  const retainedLabelRotation = useSharedValue(0);
+  const isDragging = useSharedValue(0);
+  const prevBiasX = useSharedValue(0);
+  const prevBiasY = useSharedValue(0);
   const layoutX = useSharedValue<number[]>([]);
   const layoutY = useSharedValue<number[]>([]);
   const layoutScale = useSharedValue<number[]>([]);
@@ -418,6 +505,37 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
     [layoutParticles, layoutBounds],
   );
 
+  // ── Motion tilt (drag + coasting fling, decays to zero when idle) ───────
+
+  useFrameCallback(() => {
+    'worklet';
+    if (isDragging.value) {
+      return;
+    }
+
+    const biasDx = biasX.value - prevBiasX.value;
+    const biasDy = biasY.value - prevBiasY.value;
+    prevBiasX.value = biasX.value;
+    prevBiasY.value = biasY.value;
+
+    const speed = Math.hypot(biasDx, biasDy);
+    if (speed > TILT_STOP_BIAS_VEL) {
+      // Bias moves opposite finger drag; negate to match gesture direction.
+      motionAngle.value = Math.atan2(-biasDy, -biasDx);
+      motionAmp.value = Math.min(TILT_AMP_MAX, speed * TILT_BIAS_VEL_SCALE);
+      updateRetainedLabelRotation(
+        retainedLabelRotation,
+        motionAngle.value,
+        motionAmp.value,
+      );
+    } else {
+      motionAmp.value *= TILT_DECAY;
+      if (motionAmp.value < 0.0005) {
+        motionAmp.value = 0;
+      }
+    }
+  });
+
   // ── Gesture ─────────────────────────────────────────────────────────────
 
   const prevTX = useSharedValue(0);
@@ -426,8 +544,11 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   const panGesture = Gesture.Pan()
     .onBegin(() => {
       'worklet';
+      isDragging.value = 1;
       prevTX.value = 0;
       prevTY.value = 0;
+      prevBiasX.value = biasX.value;
+      prevBiasY.value = biasY.value;
     })
     .onUpdate((e) => {
       'worklet';
@@ -437,6 +558,19 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
       prevTY.value = e.translationY;
       biasX.value = clampW(biasX.value - dX * BIAS_DRAG_SENS, -1, 1);
       biasY.value = clampW(biasY.value - dY * BIAS_DRAG_SENS, -1, 1);
+      updateMotionFromDrag(
+        motionAngle,
+        motionAmp,
+        e.velocityX,
+        e.velocityY,
+        dX,
+        dY,
+      );
+      updateRetainedLabelRotation(
+        retainedLabelRotation,
+        motionAngle.value,
+        motionAmp.value,
+      );
     })
     .onEnd((e) => {
       'worklet';
@@ -460,6 +594,9 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
         duration: flingMsY,
         easing: Easing.out(Easing.cubic),
       });
+      prevBiasX.value = biasX.value;
+      prevBiasY.value = biasY.value;
+      isDragging.value = 0;
     });
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -474,8 +611,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
             layoutX={layoutX}
             layoutY={layoutY}
             layoutScale={layoutScale}
-            biasX={biasX}
-            biasY={biasY}
+            motionAngle={motionAngle}
+            motionAmp={motionAmp}
             bellImage={bellImage}
             tentacleImage={tentacleImage}
             clock={clock}
@@ -489,6 +626,9 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
             layoutX={layoutX}
             layoutY={layoutY}
             layoutScale={layoutScale}
+            motionAngle={motionAngle}
+            motionAmp={motionAmp}
+            retainedLabelRotation={retainedLabelRotation}
           />
         ))}
       </Canvas>
