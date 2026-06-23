@@ -55,6 +55,11 @@ type JellyfishDeformPassProps = {
   tiltBodyShift: number;
   tiltLen: number;
   tiltEgg: number;
+  tintMode: number;
+  tintStrength: number;
+  tintA: readonly [number, number, number];
+  tintB: readonly [number, number, number];
+  tintC: readonly [number, number, number];
   clock: SharedValue<number>;
 };
 
@@ -87,10 +92,18 @@ function JellyfishDeformPass({
   tiltBodyShift,
   tiltLen,
   tiltEgg,
+  tintMode,
+  tintStrength,
+  tintA,
+  tintB,
+  tintC,
   clock,
 }: JellyfishDeformPassProps) {
   const jellyX = centerX - size / 2;
   const jellyY = centerY - size / 2;
+  const tintAUniform = [...tintA] as [number, number, number];
+  const tintBUniform = [...tintB] as [number, number, number];
+  const tintCUniform = [...tintC] as [number, number, number];
 
   const uniforms = useDerivedValue(() => ({
     jellyX,
@@ -122,6 +135,11 @@ function JellyfishDeformPass({
     tiltBodyShift,
     tiltLen,
     tiltEgg,
+    tintMode,
+    tintStrength,
+    tintA: tintAUniform,
+    tintB: tintBUniform,
+    tintC: tintCUniform,
   }));
 
   return (
@@ -182,6 +200,12 @@ export type JellyfishInstanceProps = {
   tentacleTiltLenRatio?: number;
   /** Egg silhouette warp on the bell: 0 = circle, ~0.4 = blunt back arc, rounded front dome. */
   bellTiltEgg?: number;
+  /** 0 = uniform tint, 1 = two-stop radial, 2 = three-stop radial. */
+  tintMode?: number;
+  tintStrength?: number;
+  tintA?: readonly [number, number, number];
+  tintB?: readonly [number, number, number];
+  tintC?: readonly [number, number, number];
   clock: SharedValue<number>;
 };
 
@@ -218,6 +242,11 @@ export function JellyfishInstance({
   tentacleTiltShiftRatio = 1,
   tentacleTiltLenRatio = 3,
   bellTiltEgg = 0,
+  tintMode = jellyfishDeformUniformDefaults.tintMode,
+  tintStrength = jellyfishDeformUniformDefaults.tintStrength,
+  tintA = jellyfishDeformUniformDefaults.tintA,
+  tintB = jellyfishDeformUniformDefaults.tintB,
+  tintC = jellyfishDeformUniformDefaults.tintC,
   clock,
 }: JellyfishInstanceProps) {
   const tentacleSize = bellSize * tentacleSizeRatio;
@@ -238,6 +267,11 @@ export function JellyfishInstance({
     wobbleSpeed,
     wobbleLobes,
     tiltAngle,
+    tintMode,
+    tintStrength,
+    tintA,
+    tintB,
+    tintC,
     clock,
   };
 

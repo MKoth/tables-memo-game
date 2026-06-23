@@ -56,6 +56,12 @@
  *     silhouette boundary there → blunt/flat arc. Front hemisphere is untouched
  *     → stays a normal rounded dome. Uses tiltDir, so must be 0 for tentacles.
  * All default to 0, so the sprite is untouched until motion drives them.
+ *
+ * Tint (per-instance, rolled at spawn):
+ *   tintMode 0 = uniform tintA everywhere
+ *   tintMode 1 = radial gradient tintA (center) -> tintB (edge)
+ *   tintMode 2 = radial gradient tintA (center) -> tintB (mid) -> tintC (edge)
+ *   Applied in display space using r so the gradient follows the deformed silhouette.
  */
 export const JELLYFISH_DEFORM_SKSL = `
 uniform float jellyX;
@@ -87,6 +93,11 @@ uniform float tiltCenterShift;
 uniform float tiltBodyShift;
 uniform float tiltLen;
 uniform float tiltEgg;
+uniform float tintMode;
+uniform float tintStrength;
+uniform float3 tintA;
+uniform float3 tintB;
+uniform float3 tintC;
 uniform shader jellyTexture;
 
 half4 main(float2 fragCoord) {
@@ -170,6 +181,18 @@ half4 main(float2 fragCoord) {
 
   half4 color = jellyTexture.eval(sampleCoord);
 
+  // Per-instance tint in display space — follows the deformed silhouette.
+  float radialT = smoothstep(0.0, 0.5, r);
+  half3 uniformTint = half3(tintA);
+  half3 dualTint = mix(half3(tintA), half3(tintB), half(radialT));
+  half3 tripleTint = radialT < 0.5
+    ? mix(half3(tintA), half3(tintB), half(radialT * 2.0))
+    : mix(half3(tintB), half3(tintC), half((radialT - 0.5) * 2.0));
+  half3 tint = uniformTint;
+  if (tintMode >= 1.0) { tint = dualTint; }
+  if (tintMode >= 2.0) { tint = tripleTint; }
+  color.rgb *= mix(half3(1.0), tint, half(tintStrength));
+
   // Rim band: rises from 0 at (0.5 - rimWidth) to 1 at the display edge.
   float rim = smoothstep(0.5 - rimWidth, 0.5, r);
   float rimAlpha = 1.0 - rim * rimStrength * (1.0 - contract);
@@ -226,4 +249,14 @@ export const jellyfishDeformUniformDefaults = {
   tiltLen: 0,
   /** Egg silhouette: widens the back half into a blunt arc, front stays round (bell only). */
   tiltEgg: 0,
+  /** 0 = uniform, 1 = two-stop radial, 2 = three-stop radial. */
+  tintMode: 0,
+  /** Tint blend strength — 0 = off, 1 = full. */
+  tintStrength: 0,
+  /** Uniform color, or radial center. */
+  tintA: [1, 1, 1] as const,
+  /** Radial edge (mode 1) or mid ring (mode 2). */
+  tintB: [1, 1, 1] as const,
+  /** Radial edge (mode 2 only). */
+  tintC: [1, 1, 1] as const,
 } as const;
