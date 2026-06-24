@@ -73,14 +73,8 @@ const TILT_DECAY = 0.88;
 const LABEL_TILT_PX = 3;
 /** Max label rotation during motion, in movement direction (radians). */
 const LABEL_ROTATION_MAX_RAD = (45 * Math.PI) / 180;
-/** Per-glyph vertical bob amplitude (px, before layout scale). */
-const LABEL_WAVE_AMP = 2.7;
-/** Label wave phase speed (radians / second). */
-const LABEL_WAVE_SPEED = 0.22;
-/** Phase offset between adjacent glyphs — lower = smoother, less ripple. */
-const LABEL_WAVE_SPATIAL = 0.32;
 /** Outline thickness (px, before layout scale). */
-const LABEL_STROKE_WIDTH = 2.5;
+const LABEL_STROKE_WIDTH = 1.5;
 
 // ── Worklet helpers ───────────────────────────────────────────────────────
 
@@ -408,7 +402,6 @@ type CellLabelProps = {
   motionAngle: SharedValue<number>;
   motionAmp: SharedValue<number>;
   retainedLabelRotation: SharedValue<number>;
-  clock: SharedValue<number>;
 };
 
 function CellLabel({
@@ -420,7 +413,6 @@ function CellLabel({
   motionAngle,
   motionAmp,
   retainedLabelRotation,
-  clock,
 }: CellLabelProps) {
   const idx = config.index;
 
@@ -428,62 +420,42 @@ function CellLabel({
   const centerY = useDerivedValue(() => layoutY.value[idx] ?? 0);
   const scale = useDerivedValue(() => layoutScale.value[idx] ?? 1);
 
-  const textWidth = font.getTextWidth(config.label);
-  const metrics = font.getMetrics();
-  const labelOffsetX = -textWidth / 2;
-  const labelOffsetY = -(metrics.ascent + metrics.descent) / 2;
-
-  const glyphLayout = useMemo(() => {
+  const staticGlyphs = useMemo(() => {
+    const textWidth = font.getTextWidth(config.label);
+    const metrics = font.getMetrics();
+    const labelOffsetX = -textWidth / 2;
+    const labelOffsetY = -(metrics.ascent + metrics.descent) / 2;
     const ids = font.getGlyphIDs(config.label);
     const widths = font.getGlyphWidths(ids);
-    const xOffsets: number[] = [];
-    let x = 0;
-    for (const w of widths) {
-      xOffsets.push(x);
-      x += w;
-    }
-    return { ids, xOffsets };
+    let x = labelOffsetX;
+    return ids.map((id, i) => {
+      const pos = vec(x, labelOffsetY);
+      x += widths[i] ?? 0;
+      return { id, pos };
+    });
   }, [font, config.label]);
 
-  const tiltOffsetX = useDerivedValue(() => {
+  const labelTransform = useDerivedValue(() => {
+    const cx = centerX.value;
+    const cy = centerY.value;
     const amp = motionAmp.value;
-    if (amp === 0) {
-      return 0;
+    let tiltX = 0;
+    let tiltY = 0;
+    if (amp !== 0) {
+      const px = amp * config.bellSize * scale.value * LABEL_TILT_PX;
+      tiltX = Math.cos(motionAngle.value) * px;
+      tiltY = Math.sin(motionAngle.value) * px;
     }
-    const px = amp * config.bellSize * scale.value * LABEL_TILT_PX;
-    return Math.cos(motionAngle.value) * px;
+    const pivotX = cx + tiltX;
+    const pivotY = cy + tiltY;
+    // Glyphs are in local space centered at (0,0); translate to pivot then scale/rotate.
+    return [
+      { translateX: pivotX },
+      { translateY: pivotY },
+      { scale: scale.value },
+      { rotate: retainedLabelRotation.value },
+    ];
   });
-  const tiltOffsetY = useDerivedValue(() => {
-    const amp = motionAmp.value;
-    if (amp === 0) {
-      return 0;
-    }
-    const px = amp * config.bellSize * scale.value * LABEL_TILT_PX;
-    return Math.sin(motionAngle.value) * px;
-  });
-
-  const glyphPositions = useDerivedValue(() => {
-    const bx = centerX.value + labelOffsetX + tiltOffsetX.value;
-    const by = centerY.value + labelOffsetY + tiltOffsetY.value;
-    const phase = (clock.value / 80) * LABEL_WAVE_SPEED + config.phase;
-    const { ids, xOffsets } = glyphLayout;
-    return ids.map((id, i) => ({
-      id,
-      pos: vec(
-        bx + (xOffsets[i] ?? 0),
-        by + Math.sin(i * LABEL_WAVE_SPATIAL + phase) * LABEL_WAVE_AMP,
-      ),
-    }));
-  });
-
-  const labelTransform = useDerivedValue(() => [
-    { translateX: centerX.value },
-    { translateY: centerY.value },
-    { scale: scale.value },
-    { rotate: retainedLabelRotation.value },
-    { translateX: -centerX.value },
-    { translateY: -centerY.value },
-  ]);
 
   return (
     <Group transform={labelTransform}>
@@ -494,9 +466,9 @@ function CellLabel({
         strokeCap="round"
         color={config.labelStrokeColor}
       >
-        <Glyphs font={font} glyphs={glyphPositions} />
+        <Glyphs font={font} glyphs={staticGlyphs} />
       </Group>
-      <Glyphs font={font} glyphs={glyphPositions} color={config.labelFillColor} />
+      <Glyphs font={font} glyphs={staticGlyphs} color={config.labelFillColor} />
     </Group>
   );
 }
@@ -532,7 +504,7 @@ type InnerProps = {
 
 function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProps) {
   const { width, height } = useWindowDimensions();
-  const clock = useThrottledClock(20);
+  const clock = useThrottledClock(15);
 
   const nGridCols = table.colHeaders.length + 1;
   const nGridRows = table.rowHeaders.length + 1;
@@ -719,6 +691,9 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
             clock={clock}
           />
         ))}
+      </Canvas>
+
+      <Canvas style={styles.canvas} pointerEvents="none">
         {drawOrder.map(config => (
           <CellLabel
             key={`${config.key}-label`}
@@ -730,7 +705,6 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
             motionAngle={motionAngle}
             motionAmp={motionAmp}
             retainedLabelRotation={retainedLabelRotation}
-            clock={clock}
           />
         ))}
       </Canvas>

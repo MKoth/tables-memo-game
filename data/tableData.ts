@@ -31,17 +31,47 @@ export function createTableData(
   return { id, title, rowHeaders, colHeaders, body };
 }
 
+const SPANISH_ROW_HEADERS = [
+  'Yo',
+  'Tú',
+  'Él/Ella',
+  'Nosotros',
+  'Vosotros',
+  'Ellos/Ellas',
+] as const;
+
+const SPANISH_BODY_FULL = [
+  ['hablo', 'como', 'vivo', 'canto', 'bailo', 'corro', 'salto'],
+  ['hablas', 'comes', 'vives', 'cantas', 'bailas', 'corres', 'saltas'],
+  ['habla', 'come', 'vive', 'canta', 'baila', 'corre', 'salta'],
+  ['hablamos', 'comemos', 'vivimos', 'cantamos', 'bailamos', 'corremos', 'saltamos'],
+  ['habláis', 'coméis', 'vivís', 'cantáis', 'bailáis', 'corréis', 'saltáis'],
+  ['hablan', 'comen', 'viven', 'cantan', 'bailan', 'corren', 'saltan'],
+] as const;
+
+/** Present tense — hablar, comer, vivir (all pronouns). */
+export const spanishPresentTable1 = createTableData(
+  'spanish-present-part-1',
+  'Spanish Present — hablar, comer, vivir',
+  [...SPANISH_ROW_HEADERS],
+  ['hablar', 'comer', 'vivir'],
+  SPANISH_BODY_FULL.map(row => row.slice(0, 3)),
+);
+
+/** Present tense — cantar, bailar, correr, saltar (all pronouns). */
+export const spanishPresentTable2 = createTableData(
+  'spanish-present-part-2',
+  'Spanish Present — cantar, bailar, correr, saltar',
+  [...SPANISH_ROW_HEADERS],
+  ['cantar', 'bailar', 'correr', 'saltar'],
+  SPANISH_BODY_FULL.map(row => row.slice(3, 7)),
+);
+
+/** Full present tense table (original). */
 export const sampleSpanishTable = createTableData(
   'spanish-present-hablar',
   'Spanish Present Tense - hablar',
-  ['Yo', 'Tú', 'Él/Ella', 'Nosotros', 'Vosotros', 'Ellos/Ellas'],
+  [...SPANISH_ROW_HEADERS],
   ['hablar', 'comer', 'vivir', 'cantar', 'bailar', 'correr', 'saltar'],
-  [
-    ['hablo', 'como', 'vivo', 'canto', 'bailo', 'corro', 'salto'],
-    ['hablas', 'comes', 'vives', 'cantas', 'bailas', 'corres', 'saltas'],
-    ['habla', 'come', 'vive', 'canta', 'baila', 'corre', 'salta'],
-    ['hablamos', 'comemos', 'vivimos', 'cantamos', 'bailamos', 'corremos', 'saltamos'],
-    ['habláis', 'coméis', 'vivís', 'cantáis', 'bailáis', 'corréis', 'saltáis'],
-    ['hablan', 'comen', 'viven', 'cantan', 'bailan', 'corren', 'saltan'],
-  ],
+  SPANISH_BODY_FULL.map(row => [...row]),
 );

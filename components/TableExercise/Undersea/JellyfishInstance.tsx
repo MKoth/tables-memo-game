@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ImageShader,
   Rect,
@@ -9,182 +9,21 @@ import {
 } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import {
-  JELLYFISH_DEFORM_SKSL,
-  jellyfishDeformUniformDefaults,
-} from '../../../shaders/jellyfishDeform.sksl';
+import { JELLYFISH_COMBINED_DEFORM_SKSL } from '../../../shaders/jellyfishCombinedDeform.sksl';
+import { jellyfishDeformUniformDefaults } from '../../../shaders/jellyfishDeform.sksl';
 
-function compileJellyfishEffect(): SkRuntimeEffect {
-  const effect = Skia.RuntimeEffect.Make(JELLYFISH_DEFORM_SKSL);
+function compileJellyfishCombinedEffect(): SkRuntimeEffect {
+  const effect = Skia.RuntimeEffect.Make(JELLYFISH_COMBINED_DEFORM_SKSL);
   if (!effect) {
-    throw new Error('Failed to compile jellyfish deform shader');
+    throw new Error('Failed to compile jellyfish combined deform shader');
   }
   return effect;
 }
 
-const jellyfishEffect = compileJellyfishEffect();
+const jellyfishCombinedEffect = compileJellyfishCombinedEffect();
 
-type JellyfishDeformPassProps = {
-  image: SkImage;
-  /** Unscaled square size in px. */
-  baseSize: number;
-  /** Multiplier applied to baseSize (reactive). */
-  sizeScale: SharedValue<number>;
-  /** Sprite center on screen — reactive SharedValue so scroll doesn't trigger React re-renders. */
-  centerX: SharedValue<number>;
-  centerY: SharedValue<number>;
-  /**
-   * Submerge depth: 0 = fully visible front layer, 1 = fully submerged back layer.
-   * Continuously drives opacity and a subtle blue-shift of the tint.
-   */
-  depth?: SharedValue<number>;
-  phase: number;
-  pulseSpeed: number;
-  pivotR: number;
-  relaxAmp: number;
-  contractAmp: number;
-  pushDur: number;
-  swirlAmp: number;
-  swirlFreq: number;
-  swirlSpeed: number;
-  densityGamma: number;
-  contractShrink: number;
-  scaleRelax: number;
-  scaleContract: number;
-  rimWidth: number;
-  rimStrength: number;
-  wobbleAmp: number;
-  wobbleSpeed: number;
-  wobbleLobes: number;
-  opacity: number;
-  tiltAngle: SharedValue<number>;
-  tiltCenterShift: SharedValue<number>;
-  tiltBodyShift: SharedValue<number>;
-  tiltLen: SharedValue<number>;
-  tiltEgg: number;
-  tintMode: number;
-  tintStrength: number;
-  tintA: readonly [number, number, number];
-  tintB: readonly [number, number, number];
-  tintC: readonly [number, number, number];
-  animatedTint: number;
-  tintWaveSpeed: number;
-  clock: SharedValue<number>;
-};
-
-function JellyfishDeformPass({
-  image,
-  baseSize,
-  sizeScale,
-  centerX,
-  centerY,
-  depth,
-  phase,
-  pulseSpeed,
-  pivotR,
-  relaxAmp,
-  contractAmp,
-  pushDur,
-  swirlAmp,
-  swirlFreq,
-  swirlSpeed,
-  densityGamma,
-  contractShrink,
-  scaleRelax,
-  scaleContract,
-  rimWidth,
-  rimStrength,
-  wobbleAmp,
-  wobbleSpeed,
-  wobbleLobes,
-  opacity,
-  tiltAngle,
-  tiltCenterShift,
-  tiltBodyShift,
-  tiltLen,
-  tiltEgg,
-  tintMode,
-  tintStrength,
-  tintA,
-  tintB,
-  tintC,
-  animatedTint,
-  tintWaveSpeed,
-  clock,
-}: JellyfishDeformPassProps) {
-  const size = useDerivedValue(() => baseSize * sizeScale.value);
-  const half = useDerivedValue(() => size.value / 2);
-  const tintAUniform = [...tintA] as [number, number, number];
-  const tintBUniform = [...tintB] as [number, number, number];
-  const tintCUniform = [...tintC] as [number, number, number];
-
-  // Reactive position: SharedValue so position changes never cause React re-renders.
-  const jellyX = useDerivedValue(() => centerX.value - half.value);
-  const jellyY = useDerivedValue(() => centerY.value - half.value);
-
-  const uniforms = useDerivedValue(() => {
-    const d = depth?.value ?? 0;
-    // Fade to ~30 % opacity as the cell submerges; also deepen blue tint slightly.
-    const effectiveOpacity = opacity * (1 - d * 0.7);
-    const s = size.value;
-    const h = s / 2;
-
-    return {
-      jellyX: centerX.value - h,
-      jellyY: centerY.value - h,
-      jellyW: s,
-      jellyH: s,
-      iTime: clock.value / 1000,
-      phase,
-      pulseSpeed,
-      pivotR,
-      relaxAmp,
-      contractAmp,
-      pushDur,
-      swirlAmp,
-      swirlFreq,
-      swirlSpeed,
-      densityGamma,
-      contractShrink,
-      scaleRelax,
-      scaleContract,
-      rimWidth,
-      rimStrength,
-      wobbleAmp,
-      wobbleSpeed,
-      wobbleLobes,
-      opacity: effectiveOpacity,
-      tiltAngle: tiltAngle.value,
-      tiltCenterShift: tiltCenterShift.value,
-      tiltBodyShift: tiltBodyShift.value,
-      tiltLen: tiltLen.value,
-      tiltEgg,
-      tintMode,
-      tintStrength,
-      tintA: tintAUniform,
-      tintB: tintBUniform,
-      tintC: tintCUniform,
-      tintAnimated: animatedTint,
-      tintWaveSpeed,
-    };
-  });
-
-  return (
-    <Rect x={jellyX} y={jellyY} width={size} height={size}>
-      <Shader source={jellyfishEffect} uniforms={uniforms}>
-        <ImageShader
-          image={image}
-          x={jellyX}
-          y={jellyY}
-          width={size}
-          height={size}
-          fit="fill"
-          tx="clamp"
-          ty="clamp"
-        />
-      </Shader>
-    </Rect>
-  );
+function toTintUniform(tint: readonly [number, number, number]): [number, number, number] {
+  return [tint[0], tint[1], tint[2]];
 }
 
 export type JellyfishInstanceProps = {
@@ -288,6 +127,11 @@ export function JellyfishInstance({
   tintWaveSpeed = jellyfishDeformUniformDefaults.tintWaveSpeed,
   clock,
 }: JellyfishInstanceProps) {
+  const tentacleBaseSize = bellSize * tentacleSizeRatio;
+  const tintAUniform = useMemo(() => toTintUniform(tintA), [tintA]);
+  const tintBUniform = useMemo(() => toTintUniform(tintB), [tintB]);
+  const tintCUniform = useMemo(() => toTintUniform(tintC), [tintC]);
+
   const sizeScaleSv = useDerivedValue(() => {
     if (typeof sizeScale === 'number') {
       return sizeScale;
@@ -301,96 +145,95 @@ export function JellyfishInstance({
     }
     return tiltAngle?.value ?? jellyfishDeformUniformDefaults.tiltAngle;
   });
+
   const tiltAmpSv = useDerivedValue(() => {
     if (typeof tiltAmp === 'number') {
       return tiltAmp;
     }
     return tiltAmp?.value ?? 0;
   });
-  const tentacleBodyShift = useDerivedValue(
-    () => -tiltAmpSv.value * tentacleTiltShiftRatio,
-  );
-  const tentacleLen = useDerivedValue(
-    () => tiltAmpSv.value * tentacleTiltLenRatio,
-  );
-  const bellTiltCenterShift = useDerivedValue(() => tiltAmpSv.value);
-  const zeroSv = useDerivedValue(() => 0);
 
-  const bellTintProps = {
-    tintMode,
-    tintStrength,
-    tintA,
-    tintB,
-    tintC,
-    animatedTint: animatedTint ? 1 : 0,
-    tintWaveSpeed,
-  };
-  const passProps = {
-    centerX,
-    centerY,
-    depth,
-    phase,
-    pulseSpeed,
-    pivotR,
-    relaxAmp,
-    contractAmp,
-    pushDur,
-    swirlSpeed,
-    scaleRelax,
-    scaleContract,
-    wobbleSpeed,
-    wobbleLobes,
-    clock,
-  };
+  const tentacleSize = useDerivedValue(() => tentacleBaseSize * sizeScaleSv.value);
+  const bellSizePx = useDerivedValue(() => bellSize * sizeScaleSv.value);
+  const tentacleX = useDerivedValue(() => centerX.value - tentacleSize.value / 2);
+  const tentacleY = useDerivedValue(() => centerY.value - tentacleSize.value / 2);
+  const bellX = useDerivedValue(() => centerX.value - bellSizePx.value / 2);
+  const bellY = useDerivedValue(() => centerY.value - bellSizePx.value / 2);
+
+  const uniforms = useDerivedValue(() => {
+    const d = depth?.value ?? 0;
+    const depthFade = 1 - d * 0.7;
+
+    return {
+      tentacleX: tentacleX.value,
+      tentacleY: tentacleY.value,
+      tentacleW: tentacleSize.value,
+      tentacleH: tentacleSize.value,
+      bellX: bellX.value,
+      bellY: bellY.value,
+      bellW: bellSizePx.value,
+      bellH: bellSizePx.value,
+      iTime: clock.value / 1000,
+      phase,
+      pulseSpeed,
+      pivotR,
+      relaxAmp,
+      contractAmp,
+      pushDur,
+      swirlFreq: tentacleSwirlFreq,
+      swirlSpeed,
+      scaleRelax,
+      scaleContract,
+      wobbleSpeed,
+      wobbleLobes,
+      tiltAngle: tiltAngleSv.value,
+      tentacleSwirlAmp,
+      tentacleContractShrink: tentacleRetract,
+      tentacleWobbleAmp,
+      tentacleOpacity: tentacleOpacity * depthFade,
+      tentacleTiltBodyShift: -tiltAmpSv.value * tentacleTiltShiftRatio,
+      tentacleTiltLen: tiltAmpSv.value * tentacleTiltLenRatio,
+      bellDensityGamma,
+      bellRimWidth,
+      bellRimStrength,
+      bellWobbleAmp,
+      bellOpacity: bellOpacity * depthFade,
+      bellTiltCenterShift: tiltAmpSv.value,
+      bellTiltEgg,
+      tintMode,
+      tintStrength,
+      tintA: tintAUniform,
+      tintB: tintBUniform,
+      tintC: tintCUniform,
+      tintAnimated: animatedTint ? 1 : 0,
+      tintWaveSpeed,
+    };
+  });
 
   return (
-    <>
-      <JellyfishDeformPass
-        image={tentacleImage}
-        baseSize={bellSize * tentacleSizeRatio}
-        sizeScale={sizeScaleSv}
-        swirlAmp={tentacleSwirlAmp}
-        swirlFreq={tentacleSwirlFreq}
-        densityGamma={1}
-        contractShrink={tentacleRetract}
-        rimWidth={0}
-        rimStrength={0}
-        wobbleAmp={tentacleWobbleAmp}
-        opacity={tentacleOpacity}
-        tiltAngle={tiltAngleSv}
-        tiltCenterShift={zeroSv}
-        tiltBodyShift={tentacleBodyShift}
-        tiltLen={tentacleLen}
-        tiltEgg={0}
-        tintMode={0}
-        tintStrength={0}
-        tintA={jellyfishDeformUniformDefaults.tintA}
-        tintB={jellyfishDeformUniformDefaults.tintB}
-        tintC={jellyfishDeformUniformDefaults.tintC}
-        animatedTint={0}
-        tintWaveSpeed={0}
-        {...passProps}
-      />
-      <JellyfishDeformPass
-        image={bellImage}
-        baseSize={bellSize}
-        sizeScale={sizeScaleSv}
-        swirlAmp={0}
-        swirlFreq={tentacleSwirlFreq}
-        densityGamma={bellDensityGamma}
-        contractShrink={0}
-        rimWidth={bellRimWidth}
-        rimStrength={bellRimStrength}
-        wobbleAmp={bellWobbleAmp}
-        opacity={bellOpacity}
-        tiltAngle={tiltAngleSv}
-        tiltCenterShift={bellTiltCenterShift}
-        tiltBodyShift={zeroSv}
-        tiltLen={zeroSv}
-        tiltEgg={bellTiltEgg}
-        {...bellTintProps}
-        {...passProps}
-      />
-    </>
+    <Rect x={tentacleX} y={tentacleY} width={tentacleSize} height={tentacleSize}>
+      <Shader source={jellyfishCombinedEffect} uniforms={uniforms}>
+        <ImageShader
+          image={tentacleImage}
+          x={tentacleX}
+          y={tentacleY}
+          width={tentacleSize}
+          height={tentacleSize}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
+        <ImageShader
+          image={bellImage}
+          x={bellX}
+          y={bellY}
+          width={bellSizePx}
+          height={bellSizePx}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
+      </Shader>
+    </Rect>
   );
 }
