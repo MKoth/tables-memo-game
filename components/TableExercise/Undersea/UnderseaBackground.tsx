@@ -20,7 +20,7 @@ import { KoiFishLayer } from './KoiFishLayer';
 import { SeaweedInstance, SeaweedShadowInstance } from './SeaweedInstance';
 import { StoneInstance, StoneShadowInstance } from './StoneInstance';
 
-const BACKGROUND_RES = 0.8;
+const BACKGROUND_RES = 0.65;
 const DEG_TO_RAD = Math.PI / 180;
 const SEAWEED_BASE_WIDTH = 120;
 const SEAWEED_BASE_HEIGHT = 160;

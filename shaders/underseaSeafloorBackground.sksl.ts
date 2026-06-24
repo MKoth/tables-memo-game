@@ -33,9 +33,12 @@ uniform float waterDriftMoveY[${MAX_DRIFT_LAYERS}];
 uniform float waterDriftMoveSpeed[${MAX_DRIFT_LAYERS}];
 uniform shader tileTexture;
 
+// Sin-free hash (Dave Hoskins style). Avoids per-pixel sin() which is
+// expensive on mobile GPUs; hash2 is evaluated ~10x per pixel.
 vec2 hash2(vec2 p) {
-  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
-  return fract(sin(p) * 43758.5453);
+  vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.xx + p3.yz) * p3.zy);
 }
 
 vec2 clusterWarp(vec2 coord, float amp, float freq) {
@@ -173,7 +176,7 @@ export const underseaSeafloorUniformDefaults = {
   /** Vertical depth gradient when tint is active — 0 = uniform tint, 1 = bluer toward top. */
   underwaterDepthStrength: 1.5,
   /** Number of stacked waterDrift layers (max MAX_DRIFT_LAYERS). */
-  waterDriftCount: 3,
+  waterDriftCount: 1,
   /** WaterDrift voronoi cell density per layer. */
   waterDriftScale: [4.0, 6.0, 8.0],
   /** WaterDrift beam strength per layer — 0 = none, 1 = full tint on edges. */

@@ -8,7 +8,7 @@
  * Each jellyfish carries a text label centered on its bell (labels may overlap).
  */
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   Canvas,
@@ -23,7 +23,6 @@ import {
 import type { SharedValue } from 'react-native-reanimated';
 import {
   Easing,
-  useAnimatedReaction,
   useDerivedValue,
   useFrameCallback,
   useSharedValue,
@@ -55,6 +54,13 @@ const BIAS_DRAG_SENS = 0.0035;
 const BIAS_FLING_SENS = 0.00035;
 const MAX_FLING_MS = 900;
 const MIN_FLING_MS = 80;
+
+/**
+ * Coalesce bias-driven layout recomputes to ~60fps. Pointer events on
+ * ProMotion can fire up to 120Hz; without this cap the full layout would be
+ * recomputed and both layers repainted on every event during a drag.
+ */
+const LAYOUT_MIN_INTERVAL_MS = 1000 / 60;
 
 /** Max shader tilt amplitude (UV units). */
 const TILT_AMP_MAX = 0.08;
@@ -570,22 +576,49 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   const layoutY = useSharedValue<number[]>([]);
   const layoutScale = useSharedValue<number[]>([]);
 
-  useAnimatedReaction(
-    () => ({ bx: biasX.value, by: biasY.value }),
-    () => {
-      'worklet';
-      const layout = computeLayoutPositions(
-        layoutParticles,
-        layoutBounds,
-        biasX.value,
-        biasY.value,
-      );
-      layoutX.value = layout.xs;
-      layoutY.value = layout.ys;
-      layoutScale.value = layout.scales;
-    },
-    [layoutParticles, layoutBounds],
-  );
+  // Mirror layout inputs into shared values so the frame callback always reads
+  // the latest grid/bounds without relying on closure capture.
+  const layoutBoundsSv = useSharedValue<LayoutBounds>(layoutBounds);
+  const layoutParticlesSv = useSharedValue<LayoutParticle[]>(layoutParticles);
+  const appliedBiasX = useSharedValue(Number.NaN);
+  const appliedBiasY = useSharedValue(Number.NaN);
+  const lastLayoutTs = useSharedValue(-1);
+
+  useEffect(() => {
+    layoutBoundsSv.value = layoutBounds;
+    layoutParticlesSv.value = layoutParticles;
+    // Force a recompute on the next frame when grid/bounds change.
+    appliedBiasX.value = Number.NaN;
+  }, [layoutBounds, layoutParticles, layoutBoundsSv, layoutParticlesSv, appliedBiasX]);
+
+  // Recompute positions at most once per ~LAYOUT_MIN_INTERVAL_MS, coalescing
+  // bursts of pointer events (drag) and per-frame fling steps into one pass.
+  useFrameCallback((info) => {
+    'worklet';
+    const bx = biasX.value;
+    const by = biasY.value;
+    if (bx === appliedBiasX.value && by === appliedBiasY.value) {
+      return;
+    }
+    if (
+      lastLayoutTs.value !== -1 &&
+      info.timestamp - lastLayoutTs.value < LAYOUT_MIN_INTERVAL_MS
+    ) {
+      return;
+    }
+    lastLayoutTs.value = info.timestamp;
+    appliedBiasX.value = bx;
+    appliedBiasY.value = by;
+    const layout = computeLayoutPositions(
+      layoutParticlesSv.value,
+      layoutBoundsSv.value,
+      bx,
+      by,
+    );
+    layoutX.value = layout.xs;
+    layoutY.value = layout.ys;
+    layoutScale.value = layout.scales;
+  });
 
   // ── Motion tilt (drag + coasting fling, decays to zero when idle) ───────
 
@@ -685,6 +718,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
 
   return (
     <>
+      {/* Single canvas: all jellyfish first, then every label on top. One
+          surface = one re-record/repaint per bias change instead of two. */}
       <Canvas style={styles.canvas} pointerEvents="none">
         {drawOrder.map(config => (
           <CellJellyfish
@@ -700,9 +735,6 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
             clock={clock}
           />
         ))}
-      </Canvas>
-
-      <Canvas style={styles.canvas} pointerEvents="none">
         {drawOrder.map(config => (
           <CellLabel
             key={`${config.key}-label`}
