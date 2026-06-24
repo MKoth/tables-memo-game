@@ -69,7 +69,7 @@ export const spanishPresentTable2 = createTableData(
   SPANISH_BODY_FULL.map(row => row.slice(3, 7)),
 );
 
-const spanishPresentTable1Singular = createTableData(
+export const spanishPresentTable1Singular = createTableData(
   'spanish-present-part-1-singular',
   'Spanish Present — hablar, comer, vivir (singular)',
   [...SPANISH_SINGULAR_ROW_HEADERS],
@@ -77,7 +77,7 @@ const spanishPresentTable1Singular = createTableData(
   SPANISH_BODY_FULL.slice(0, 3).map(row => row.slice(0, 3)),
 );
 
-const spanishPresentTable2Singular = createTableData(
+export const spanishPresentTable2Singular = createTableData(
   'spanish-present-part-2-singular',
   'Spanish Present — cantar, bailar, correr, saltar (singular)',
   [...SPANISH_SINGULAR_ROW_HEADERS],

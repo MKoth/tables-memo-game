@@ -34,18 +34,17 @@ import { JellyfishInstance } from './JellyfishInstance';
 import type { TableData } from '../../../data/tableData';
 import { useThrottledClock } from '../../../hooks/useThrottledClock';
 import {
+  computeJellyfishSizing,
   computeLayoutPositions,
   LAYOUT_ZONE_HEIGHT_RATIO,
   LAYOUT_ZONE_TOP_RATIO,
+  type JellyfishSizing,
   type LayoutBounds,
   type LayoutParticle,
 } from './jellyfishLayout';
 
 const JELLYFISH_BELL = require('../../../assets/jellyfish-bell.png');
 const JELLYFISH_TENTACLES = require('../../../assets/jellyfish-tentacles.png');
-
-const BODY_BELL_SIZE = 55;
-const HEADER_BELL_SIZE = 45;
 
 const BODY_FONT_SIZE = 13;
 const HEADER_FONT_SIZE = 14;
@@ -249,9 +248,10 @@ type CellConfig = {
   labelStrokeColor: string;
 } & TintSpawn;
 
-function createCellConfigs(table: TableData): CellConfig[] {
+function createCellConfigs(table: TableData, sizing: JellyfishSizing): CellConfig[] {
   const configs: CellConfig[] = [];
   const { rowHeaders, colHeaders, body } = table;
+  const { bodyBellSize, headerBellSize } = sizing;
 
   colHeaders.forEach((verb, c) => {
     configs.push({
@@ -261,7 +261,7 @@ function createCellConfigs(table: TableData): CellConfig[] {
       gridRow: 0,
       isHeader: true,
       label: verb,
-      bellSize: HEADER_BELL_SIZE,
+      bellSize: headerBellSize,
       phase: sr(0, c + 1) * Math.PI * 2,
       pulseSpeed: 2.2 + sr(10, c) * 2.0,
       tintMode: 1,
@@ -283,7 +283,7 @@ function createCellConfigs(table: TableData): CellConfig[] {
       gridRow: r + 1,
       isHeader: true,
       label: pronoun,
-      bellSize: HEADER_BELL_SIZE,
+      bellSize: headerBellSize,
       phase: sr(r + 1, 0) * Math.PI * 2,
       pulseSpeed: 2.2 + sr(r, 10) * 2.0,
       tintMode: 1,
@@ -307,7 +307,7 @@ function createCellConfigs(table: TableData): CellConfig[] {
         gridRow: r + 1,
         isHeader: false,
         label: cell,
-        bellSize: BODY_BELL_SIZE,
+        bellSize: bodyBellSize,
         phase: sr(r + 5, c + 7) * Math.PI * 2,
         pulseSpeed: 2.0 + sr(r, c + 33) * 2.2,
         ...tint,
@@ -509,29 +509,34 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   const nGridCols = table.colHeaders.length + 1;
   const nGridRows = table.rowHeaders.length + 1;
 
+  const sizing = useMemo(
+    () => computeJellyfishSizing({ width, height, nGridCols, nGridRows }),
+    [width, height, nGridCols, nGridRows],
+  );
+
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
 
   const bodyFont = useMemo(
     () =>
       matchFont({
         fontFamily,
-        fontSize: BODY_FONT_SIZE,
+        fontSize: BODY_FONT_SIZE * sizing.fontScale,
         fontWeight: '500',
       }),
-    [fontFamily],
+    [fontFamily, sizing.fontScale],
   );
 
   const headerFont = useMemo(
     () =>
       matchFont({
         fontFamily,
-        fontSize: HEADER_FONT_SIZE,
+        fontSize: HEADER_FONT_SIZE * sizing.fontScale,
         fontWeight: 'bold',
       }),
-    [fontFamily],
+    [fontFamily, sizing.fontScale],
   );
 
-  const cellConfigs = useMemo(() => createCellConfigs(table), [table]);
+  const cellConfigs = useMemo(() => createCellConfigs(table, sizing), [table, sizing]);
   const drawOrder = useMemo(() => sortDrawOrder(cellConfigs), [cellConfigs]);
   const layoutParticles = useMemo(() => buildLayoutParticles(cellConfigs), [cellConfigs]);
 
@@ -543,8 +548,12 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
       nGridRows,
       zoneTop: height * LAYOUT_ZONE_TOP_RATIO,
       zoneHeight: height * LAYOUT_ZONE_HEIGHT_RATIO,
+      scaleMin: sizing.scaleMin,
+      scaleMax: sizing.scaleMax,
+      edgeSqueeze: sizing.edgeSqueeze,
+      spreadBoost: sizing.spreadBoost,
     }),
-    [width, height, nGridCols, nGridRows],
+    [width, height, nGridCols, nGridRows, sizing],
   );
 
   // ── Layout state ────────────────────────────────────────────────────────

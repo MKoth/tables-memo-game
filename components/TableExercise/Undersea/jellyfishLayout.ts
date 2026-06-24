@@ -25,16 +25,94 @@ export type LayoutBounds = {
   zoneTop: number;
   /** Height of the layout zone in px. */
   zoneHeight: number;
+  /** Jellyfish/tentacle scale when packed tight (overlap). */
+  scaleMin: number;
+  /** Jellyfish/tentacle scale when spread apart. */
+  scaleMax: number;
+  /** How strongly edges compress toward overlap (0 = uniform, 1 = max squeeze at edges). */
+  edgeSqueeze: number;
+  /** Extra spread multiplier at the spacing peak (center + bias). */
+  spreadBoost: number;
 };
 
-/** Jellyfish/tentacle scale when packed tight (overlap). */
+/** Default fallbacks when sizing is not computed dynamically. */
 export const SCALE_MIN = 0.8;
-/** Jellyfish/tentacle scale when spread apart. */
 export const SCALE_MAX = 1.1;
-/** How strongly edges compress toward overlap (0 = uniform, 1 = max squeeze at edges). */
 export const EDGE_SQUEEZE = 0.30;
-/** Extra spread multiplier at the spacing peak (center + bias). */
 export const SPREAD_BOOST = 0.40;
+
+/** Reference body bell size used for font scaling. */
+export const REFERENCE_BODY_BELL_SIZE = 55;
+
+export type JellyfishSizing = {
+  bodyBellSize: number;
+  headerBellSize: number;
+  scaleMin: number;
+  scaleMax: number;
+  edgeSqueeze: number;
+  spreadBoost: number;
+  fontScale: number;
+};
+
+export type JellyfishSizingInput = {
+  width: number;
+  height: number;
+  nGridCols: number;
+  nGridRows: number;
+};
+
+const BASE_DIAMETER_FRACTION = 1.1;
+const HEADER_BELL_RATIO = 45 / 55;
+const BODY_BELL_SIZE_MIN = 15;
+const BODY_BELL_SIZE_MAX = 85;
+const DENSITY_COUNT_MIN = 3;
+const DENSITY_COUNT_MAX = 9;
+
+function clamp(val: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, val));
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/**
+ * Derive base bell sizes, gesture scale range, and packing density from
+ * table grid dimensions and viewport. Uses the tighter axis pitch (most cells
+ * in least space) as the constraining dimension.
+ */
+export function computeJellyfishSizing(input: JellyfishSizingInput): JellyfishSizing {
+  const { width, height, nGridCols, nGridRows } = input;
+  const zoneHeight = height * LAYOUT_ZONE_HEIGHT_RATIO;
+
+  const pitchX = width / nGridCols;
+  const pitchY = zoneHeight / nGridRows;
+  const pitch = Math.min(pitchX, pitchY);
+  const dominantCount = pitchX <= pitchY ? nGridCols : nGridRows;
+
+  const bodyBellSize = clamp(
+    pitch * BASE_DIAMETER_FRACTION,
+    BODY_BELL_SIZE_MIN,
+    BODY_BELL_SIZE_MAX,
+  );
+  const headerBellSize = bodyBellSize * HEADER_BELL_RATIO;
+
+  const d = clamp(
+    (dominantCount - DENSITY_COUNT_MIN) / (DENSITY_COUNT_MAX - DENSITY_COUNT_MIN),
+    0,
+    1,
+  );
+
+  return {
+    bodyBellSize,
+    headerBellSize,
+    scaleMin: lerp(0.85, 0.55, d),
+    scaleMax: lerp(1.15, 1.35, d),
+    edgeSqueeze: lerp(0.30, 0.45, d),
+    spreadBoost: lerp(0.35, 0.45, d),
+    fontScale: bodyBellSize / REFERENCE_BODY_BELL_SIZE,
+  };
+}
 
 function clampW(val: number, lo: number, hi: number): number {
   'worklet';
@@ -83,26 +161,33 @@ function gapToScaleRelative(
   gap: number,
   minGap: number,
   maxGap: number,
+  scaleMin: number,
+  scaleMax: number,
 ): number {
   'worklet';
   const span = maxGap - minGap;
   if (span <= 1e-4) {
-    return (SCALE_MIN + SCALE_MAX) * 0.5;
+    return (scaleMin + scaleMax) * 0.5;
   }
   const t = clampW((gap - minGap) / span, 0, 1);
   const eased = Math.pow(t, 0.85);
-  return SCALE_MIN + eased * (SCALE_MAX - SCALE_MIN);
+  return scaleMin + eased * (scaleMax - scaleMin);
 }
 
 /** Relative gap weight at normalized position t; largest near peak. */
-function gapWeightAt(t: number, peak: number): number {
+function gapWeightAt(
+  t: number,
+  peak: number,
+  edgeSqueeze: number,
+  spreadBoost: number,
+): number {
   'worklet';
   const distFromPeak = Math.abs(t - peak);
   const maxDist = Math.max(peak, 1 - peak);
   const edgeFactor = maxDist > 0 ? Math.min(1, distFromPeak / maxDist) : 0;
   const compression = Math.pow(edgeFactor, 1.35);
-  const minW = 1 - EDGE_SQUEEZE * 0.85;
-  const maxW = 1 + SPREAD_BOOST;
+  const minW = 1 - edgeSqueeze * 0.85;
+  const maxW = 1 + spreadBoost;
   return minW + (1 - compression) * (maxW - minW);
 }
 
@@ -116,6 +201,8 @@ export function computeAxisPositions(
   spanMin: number,
   span: number,
   bias: number,
+  edgeSqueeze: number,
+  spreadBoost: number,
 ): number[] {
   'worklet';
   if (count <= 1) {
@@ -129,7 +216,7 @@ export function computeAxisPositions(
 
   for (let i = 0; i < gapCount; i++) {
     const midT = (i + 0.5) / gapCount;
-    const w = gapWeightAt(midT, peak);
+    const w = gapWeightAt(midT, peak, edgeSqueeze, spreadBoost);
     gaps.push(w);
     totalWeight += w;
   }
@@ -152,7 +239,17 @@ export function computeLayoutPositions(
   biasY: number,
 ): { xs: number[]; ys: number[]; scales: number[] } {
   'worklet';
-  const { width, zoneTop, zoneHeight, nGridCols, nGridRows } = bounds;
+  const {
+    width,
+    zoneTop,
+    zoneHeight,
+    nGridCols,
+    nGridRows,
+    scaleMin,
+    scaleMax,
+    edgeSqueeze,
+    spreadBoost,
+  } = bounds;
 
   let maxR = 0;
   for (let i = 0; i < particles.length; i++) {
@@ -167,8 +264,22 @@ export function computeLayoutPositions(
   const yMin = zoneTop + maxR;
   const ySpan = zoneHeight - 2 * maxR;
 
-  const colX = computeAxisPositions(nGridCols, xMin, xSpan, biasX);
-  const rowY = computeAxisPositions(nGridRows, yMin, ySpan, biasY);
+  const colX = computeAxisPositions(
+    nGridCols,
+    xMin,
+    xSpan,
+    biasX,
+    edgeSqueeze,
+    spreadBoost,
+  );
+  const rowY = computeAxisPositions(
+    nGridRows,
+    yMin,
+    ySpan,
+    biasY,
+    edgeSqueeze,
+    spreadBoost,
+  );
 
   const colGaps = axisAdjacentGapExtents(colX);
   const rowGaps = axisAdjacentGapExtents(rowY);
@@ -187,8 +298,20 @@ export function computeLayoutPositions(
 
     const gapX = minNeighborGap(colX, gc);
     const gapY = minNeighborGap(rowY, gr);
-    const scaleX = gapToScaleRelative(gapX, colGaps.minGap, colGaps.maxGap);
-    const scaleY = gapToScaleRelative(gapY, rowGaps.minGap, rowGaps.maxGap);
+    const scaleX = gapToScaleRelative(
+      gapX,
+      colGaps.minGap,
+      colGaps.maxGap,
+      scaleMin,
+      scaleMax,
+    );
+    const scaleY = gapToScaleRelative(
+      gapY,
+      rowGaps.minGap,
+      rowGaps.maxGap,
+      scaleMin,
+      scaleMax,
+    );
     scales.push((scaleX + scaleY) * 0.5);
   }
 
