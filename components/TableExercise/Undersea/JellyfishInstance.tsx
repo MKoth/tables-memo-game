@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import {
+  FilterMode,
   ImageShader,
+  MipmapMode,
   Rect,
   Shader,
   Skia,
@@ -21,6 +23,15 @@ function compileJellyfishCombinedEffect(): SkRuntimeEffect {
 }
 
 const jellyfishCombinedEffect = compileJellyfishCombinedEffect();
+
+/**
+ * Sprites are minified hard (256px source → ≤115px on screen), so trilinear
+ * mipmapping is both cheaper to sample and removes shimmer versus plain bilinear.
+ */
+const SPRITE_SAMPLING = {
+  filter: FilterMode.Linear,
+  mipmap: MipmapMode.Linear,
+} as const;
 
 function toTintUniform(tint: readonly [number, number, number]): [number, number, number] {
   return [tint[0], tint[1], tint[2]];
@@ -186,7 +197,8 @@ export function JellyfishInstance({
       scaleContract,
       wobbleSpeed,
       wobbleLobes,
-      tiltAngle: tiltAngleSv.value,
+      tiltDirX: Math.cos(tiltAngleSv.value),
+      tiltDirY: Math.sin(tiltAngleSv.value),
       tentacleSwirlAmp,
       tentacleContractShrink: tentacleRetract,
       tentacleWobbleAmp,
@@ -222,6 +234,7 @@ export function JellyfishInstance({
           fit="fill"
           tx="clamp"
           ty="clamp"
+          sampling={SPRITE_SAMPLING}
         />
         <ImageShader
           image={bellImage}
@@ -232,6 +245,7 @@ export function JellyfishInstance({
           fit="fill"
           tx="clamp"
           ty="clamp"
+          sampling={SPRITE_SAMPLING}
         />
       </Shader>
     </Rect>

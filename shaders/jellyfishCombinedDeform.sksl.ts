@@ -32,13 +32,22 @@ function layerEvalBlock(
   layerTintWaveSpeed: string,
   textureSampler: string,
 ): string {
+  // The tentacle layer passes densityGamma '1.0', which makes the gamma remap an
+  // identity (pow(x, 1.0)). Emit the remap only when it actually changes pixels.
+  const densityRemap =
+    densityGamma === '1.0'
+      ? ''
+      : `
+      float g = mix(1.0, ${densityGamma}, contract);
+      rSrc = pow(rSrc / 0.5, g) * 0.5;`;
+
   return `
   half4 ${outVar} = half4(0.0);
   {
     vec2 uv = (fragCoord - vec2(${layerX}, ${layerY})) / vec2(${layerW}, ${layerH});
 
-    vec2 tiltDir  = vec2(cos(tiltAngle), sin(tiltAngle));
-    vec2 tiltPerp = vec2(-tiltDir.y, tiltDir.x);
+    vec2 tiltDir  = vec2(tiltDirX, tiltDirY);
+    vec2 tiltPerp = vec2(-tiltDirY, tiltDirX);
 
     vec2 c = uv - 0.5;
 
@@ -70,10 +79,7 @@ function layerEvalBlock(
       rSrc *= 1.0 + ${contractShrink} * contract;
       rSrc /= mix(scaleRelax, scaleContract, contract);
       rSrc = max(rSrc, 0.0);
-
-      float g = mix(1.0, ${densityGamma}, contract);
-      rSrc = pow(rSrc / 0.5, g) * 0.5;
-
+${densityRemap}
       float w1 = sin(theta * wobbleLobes + iTime * wobbleSpeed + phase);
       float w2 = sin(theta * (wobbleLobes + 1.0) - iTime * wobbleSpeed * 0.7 + phase * 1.7);
       float wobble = ${wobbleAmp} * (w1 + 0.5 * w2) * smoothstep(0.0, 0.5, r);
@@ -169,7 +175,8 @@ uniform float scaleRelax;
 uniform float scaleContract;
 uniform float wobbleSpeed;
 uniform float wobbleLobes;
-uniform float tiltAngle;
+uniform float tiltDirX;
+uniform float tiltDirY;
 uniform float tentacleSwirlAmp;
 uniform float tentacleContractShrink;
 uniform float tentacleWobbleAmp;
