@@ -85,6 +85,48 @@ type KoiRenderBaseProps = {
 
 export type KoiInstanceProps = KoiRenderBaseProps;
 
+type KoiBounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type KoiUniforms = {
+  swimZoneX: number;
+  swimZoneY: number;
+  swimZoneW: number;
+  swimZoneH: number;
+  fishX: number;
+  fishY: number;
+  fishW: number;
+  fishH: number;
+  fishAngle: number;
+  sourceAngle: number;
+  waveAmplitude: number;
+  tailBendScale: number;
+  tailTipBendScale: number;
+  headBendScale: number;
+  wavePhase: number;
+  phase: number;
+  turnArc: number;
+  finSquashLeft: number;
+  finSquashRight: number;
+  finVariantLeft: number;
+  finVariantRight: number;
+  imageWidth: number;
+  imageHeight: number;
+  renderMode: number;
+  shadowColor: [number, number, number];
+  shadowOpacity: number;
+  shadowSoftness: number;
+  spotColor: [number, number, number];
+  bodyColor: [number, number, number];
+  bodyTintStrength: number;
+  overlayColor: [number, number, number];
+  overlayStrength: number;
+};
+
 function computeKoiBounds(
   swimZoneX: number,
   swimZoneY: number,
@@ -102,7 +144,7 @@ function computeKoiBounds(
   centerY: number,
   margin: number,
   penumbraPx: number,
-) {
+): KoiBounds {
   'worklet';
   const turnT = Math.abs(state.turnArc.value);
   const fishWAdj = fishW / (1 + turnT * squashGain);
@@ -162,7 +204,7 @@ function buildKoiUniforms(
   bodyTintStrength: number,
   overlayColor: [number, number, number],
   overlayStrength: number,
-) {
+): KoiUniforms {
   'worklet';
   const turnT = Math.abs(state.turnArc.value);
   const fishWAdj = fishW / (1 + turnT * squashGain);

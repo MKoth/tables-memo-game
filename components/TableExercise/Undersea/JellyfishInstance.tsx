@@ -33,22 +33,17 @@ const SPRITE_SAMPLING = {
   mipmap: MipmapMode.Linear,
 } as const;
 
-function toTintUniform(tint: readonly [number, number, number]): [number, number, number] {
-  return [tint[0], tint[1], tint[2]];
-}
-
 export type JellyfishInstanceProps = {
   bellImage: SkImage;
   tentacleImage: SkImage;
-  /** Reactive center — pass a SharedValue so scroll is driven on the UI thread. */
-  centerX: SharedValue<number>;
-  centerY: SharedValue<number>;
+  layoutX: SharedValue<number[]>;
+  layoutY: SharedValue<number[]>;
+  layoutScale: SharedValue<number[]>;
+  layoutIndex: number;
   /** Submerge depth 0..1; modulates opacity and fog. Default 0 (fully visible). */
   depth?: SharedValue<number>;
   /** Bell square size in px; tentacles are scaled relative to this. */
   bellSize: number;
-  /** Reactive size multiplier from local spacing (default 1). */
-  sizeScale?: number | SharedValue<number>;
   /** Tentacle square size as a multiple of bellSize. */
   tentacleSizeRatio?: number;
   phase?: number;
@@ -73,9 +68,9 @@ export type JellyfishInstanceProps = {
   bellOpacity?: number;
   tentacleOpacity?: number;
   /** Lean direction in radians (0 = right, increasing toward down). */
-  tiltAngle?: number | SharedValue<number>;
+  tiltAngle: SharedValue<number>;
   /** Lean amplitude in UV units: bell center leans toward tiltAngle, tentacles trail opposite. */
-  tiltAmp?: number | SharedValue<number>;
+  tiltAmp: SharedValue<number>;
   /** Tentacle body slide as a multiple of tiltAmp (opposite direction). */
   tentacleTiltShiftRatio?: number;
   /** Tentacle length asymmetry as a multiple of tiltAmp. */
@@ -97,11 +92,12 @@ export type JellyfishInstanceProps = {
 export function JellyfishInstance({
   bellImage,
   tentacleImage,
-  centerX,
-  centerY,
+  layoutX,
+  layoutY,
+  layoutScale,
+  layoutIndex,
   depth,
   bellSize,
-  sizeScale = 1,
   tentacleSizeRatio = 1.35,
   phase = jellyfishDeformUniformDefaults.phase,
   pulseSpeed = jellyfishDeformUniformDefaults.pulseSpeed,
@@ -124,8 +120,8 @@ export function JellyfishInstance({
   wobbleLobes = jellyfishDeformUniformDefaults.wobbleLobes,
   bellOpacity = 0.88,
   tentacleOpacity = 0.85,
-  tiltAngle = jellyfishDeformUniformDefaults.tiltAngle,
-  tiltAmp = 0,
+  tiltAngle,
+  tiltAmp,
   tentacleTiltShiftRatio = 0.45,
   tentacleTiltLenRatio = 1.8,
   bellTiltEgg = 0,
@@ -139,51 +135,44 @@ export function JellyfishInstance({
   clock,
 }: JellyfishInstanceProps) {
   const tentacleBaseSize = bellSize * tentacleSizeRatio;
-  const tintAUniform = useMemo(() => toTintUniform(tintA), [tintA]);
-  const tintBUniform = useMemo(() => toTintUniform(tintB), [tintB]);
-  const tintCUniform = useMemo(() => toTintUniform(tintC), [tintC]);
-
-  const sizeScaleSv = useDerivedValue(() => {
-    if (typeof sizeScale === 'number') {
-      return sizeScale;
-    }
-    return sizeScale?.value ?? 1;
-  });
-
-  const tiltAngleSv = useDerivedValue(() => {
-    if (typeof tiltAngle === 'number') {
-      return tiltAngle;
-    }
-    return tiltAngle?.value ?? jellyfishDeformUniformDefaults.tiltAngle;
-  });
-
-  const tiltAmpSv = useDerivedValue(() => {
-    if (typeof tiltAmp === 'number') {
-      return tiltAmp;
-    }
-    return tiltAmp?.value ?? 0;
-  });
-
-  const tentacleSize = useDerivedValue(() => tentacleBaseSize * sizeScaleSv.value);
-  const bellSizePx = useDerivedValue(() => bellSize * sizeScaleSv.value);
-  const tentacleX = useDerivedValue(() => centerX.value - tentacleSize.value / 2);
-  const tentacleY = useDerivedValue(() => centerY.value - tentacleSize.value / 2);
-  const bellX = useDerivedValue(() => centerX.value - bellSizePx.value / 2);
-  const bellY = useDerivedValue(() => centerY.value - bellSizePx.value / 2);
+  const tintAUniform = useMemo(
+    () => [tintA[0], tintA[1], tintA[2]] as [number, number, number],
+    [tintA],
+  );
+  const tintBUniform = useMemo(
+    () => [tintB[0], tintB[1], tintB[2]] as [number, number, number],
+    [tintB],
+  );
+  const tintCUniform = useMemo(
+    () => [tintC[0], tintC[1], tintC[2]] as [number, number, number],
+    [tintC],
+  );
 
   const uniforms = useDerivedValue(() => {
+    const scale = layoutScale.value[layoutIndex] ?? 1;
+    const cx = layoutX.value[layoutIndex] ?? 0;
+    const cy = layoutY.value[layoutIndex] ?? 0;
+    const tentacleSize = tentacleBaseSize * scale;
+    const bellSizePx = bellSize * scale;
+    const tentacleX = cx - tentacleSize / 2;
+    const tentacleY = cy - tentacleSize / 2;
+    const bellX = cx - bellSizePx / 2;
+    const bellY = cy - bellSizePx / 2;
+
     const d = depth?.value ?? 0;
     const depthFade = 1 - d * 0.7;
+    const tiltAngleVal = tiltAngle.value;
+    const tiltAmpVal = tiltAmp.value;
 
     return {
-      tentacleX: tentacleX.value,
-      tentacleY: tentacleY.value,
-      tentacleW: tentacleSize.value,
-      tentacleH: tentacleSize.value,
-      bellX: bellX.value,
-      bellY: bellY.value,
-      bellW: bellSizePx.value,
-      bellH: bellSizePx.value,
+      tentacleX,
+      tentacleY,
+      tentacleW: tentacleSize,
+      tentacleH: tentacleSize,
+      bellX,
+      bellY,
+      bellW: bellSizePx,
+      bellH: bellSizePx,
       iTime: clock.value / 1000,
       phase,
       pulseSpeed,
@@ -197,20 +186,20 @@ export function JellyfishInstance({
       scaleContract,
       wobbleSpeed,
       wobbleLobes,
-      tiltDirX: Math.cos(tiltAngleSv.value),
-      tiltDirY: Math.sin(tiltAngleSv.value),
+      tiltDirX: Math.cos(tiltAngleVal),
+      tiltDirY: Math.sin(tiltAngleVal),
       tentacleSwirlAmp,
       tentacleContractShrink: tentacleRetract,
       tentacleWobbleAmp,
       tentacleOpacity: tentacleOpacity * depthFade,
-      tentacleTiltBodyShift: -tiltAmpSv.value * tentacleTiltShiftRatio,
-      tentacleTiltLen: tiltAmpSv.value * tentacleTiltLenRatio,
+      tentacleTiltBodyShift: -tiltAmpVal * tentacleTiltShiftRatio,
+      tentacleTiltLen: tiltAmpVal * tentacleTiltLenRatio,
       bellDensityGamma,
       bellRimWidth,
       bellRimStrength,
       bellWobbleAmp,
       bellOpacity: bellOpacity * depthFade,
-      bellTiltCenterShift: tiltAmpSv.value,
+      bellTiltCenterShift: tiltAmpVal,
       bellTiltEgg,
       tintMode,
       tintStrength,
@@ -221,6 +210,13 @@ export function JellyfishInstance({
       tintWaveSpeed,
     };
   });
+
+  const tentacleX = useDerivedValue(() => uniforms.value.tentacleX);
+  const tentacleY = useDerivedValue(() => uniforms.value.tentacleY);
+  const tentacleSize = useDerivedValue(() => uniforms.value.tentacleW);
+  const bellX = useDerivedValue(() => uniforms.value.bellX);
+  const bellY = useDerivedValue(() => uniforms.value.bellY);
+  const bellSizePx = useDerivedValue(() => uniforms.value.bellW);
 
   return (
     <Rect x={tentacleX} y={tentacleY} width={tentacleSize} height={tentacleSize}>

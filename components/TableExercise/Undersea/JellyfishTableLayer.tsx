@@ -367,35 +367,28 @@ function CellJellyfish({
   tentacleImage,
   clock,
 }: CellJellyfishProps) {
-  const idx = config.index;
-
-  const centerX = useDerivedValue(() => layoutX.value[idx] ?? 0);
-  const centerY = useDerivedValue(() => layoutY.value[idx] ?? 0);
-  const sizeScale = useDerivedValue(() => layoutScale.value[idx] ?? 1);
-
   return (
-    <>
-      <JellyfishInstance
-        bellImage={bellImage}
-        tentacleImage={tentacleImage}
-        centerX={centerX}
-        centerY={centerY}
-        bellSize={config.bellSize}
-        sizeScale={sizeScale}
-        phase={config.phase}
-        pulseSpeed={config.pulseSpeed}
-        tintMode={config.tintMode}
-        tintStrength={config.tintStrength}
-        tintA={config.tintA}
-        tintB={config.tintB}
-        tintC={config.tintC}
-        animatedTint={config.animatedTint}
-        tintWaveSpeed={config.tintWaveSpeed}
-        tiltAngle={motionAngle}
-        tiltAmp={motionAmp}
-        clock={clock}
-      />
-    </>
+    <JellyfishInstance
+      bellImage={bellImage}
+      tentacleImage={tentacleImage}
+      layoutX={layoutX}
+      layoutY={layoutY}
+      layoutScale={layoutScale}
+      layoutIndex={config.index}
+      bellSize={config.bellSize}
+      phase={config.phase}
+      pulseSpeed={config.pulseSpeed}
+      tintMode={config.tintMode}
+      tintStrength={config.tintStrength}
+      tintA={config.tintA}
+      tintB={config.tintB}
+      tintC={config.tintC}
+      animatedTint={config.animatedTint}
+      tintWaveSpeed={config.tintWaveSpeed}
+      tiltAngle={motionAngle}
+      tiltAmp={motionAmp}
+      clock={clock}
+    />
   );
 }
 
@@ -422,10 +415,6 @@ function CellLabel({
 }: CellLabelProps) {
   const idx = config.index;
 
-  const centerX = useDerivedValue(() => layoutX.value[idx] ?? 0);
-  const centerY = useDerivedValue(() => layoutY.value[idx] ?? 0);
-  const scale = useDerivedValue(() => layoutScale.value[idx] ?? 1);
-
   const staticGlyphs = useMemo(() => {
     const textWidth = font.getTextWidth(config.label);
     const metrics = font.getMetrics();
@@ -442,13 +431,14 @@ function CellLabel({
   }, [font, config.label]);
 
   const labelTransform = useDerivedValue(() => {
-    const cx = centerX.value;
-    const cy = centerY.value;
+    const cx = layoutX.value[idx] ?? 0;
+    const cy = layoutY.value[idx] ?? 0;
+    const scale = layoutScale.value[idx] ?? 1;
     const amp = motionAmp.value;
     let tiltX = 0;
     let tiltY = 0;
     if (amp !== 0) {
-      const px = amp * config.bellSize * scale.value * LABEL_TILT_PX;
+      const px = amp * config.bellSize * scale * LABEL_TILT_PX;
       tiltX = Math.cos(motionAngle.value) * px;
       tiltY = Math.sin(motionAngle.value) * px;
     }
@@ -458,7 +448,7 @@ function CellLabel({
     return [
       { translateX: pivotX },
       { translateY: pivotY },
-      { scale: scale.value },
+      { scale },
       { rotate: retainedLabelRotation.value },
     ];
   });
