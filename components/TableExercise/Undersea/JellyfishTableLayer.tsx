@@ -31,7 +31,15 @@ import {
   withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { JellyfishInstance } from './JellyfishInstance';
+import { JellyfishInstance, type JellyfishDynamicOverrides } from './JellyfishInstance';
+import {
+  JELLYFISH_DEFAULT_WOBBLE,
+  JELLYFISH_FLASH_TINT_WAVE_SPEED,
+  JELLYFISH_FLASH_WOBBLE,
+  JELLYFISH_LABEL_COLORS_BY_INDEX,
+  JELLYFISH_TINT_PRESET_INDEX,
+  JELLYFISH_TINT_PRESETS_BY_INDEX,
+} from './jellyfishTintPresets';
 import type { TableData } from '../../../data/tableData';
 import { useUnderseaClockQuantized } from './UnderseaClockContext';
 import {
@@ -68,6 +76,8 @@ const TAP_HIT_RADIUS_PAD = 1.55;
 const PAN_MIN_DISTANCE_PX = 10;
 /** Tap may move up to this (px); must stay below pan activation distance. */
 const TAP_MAX_DISTANCE_PX = 10;
+/** Click flash: preset tint duration before reverting to spawn colors. */
+const TINT_FLASH_MS = 800;
 
 /**
  * Coalesce bias-driven layout recomputes to ~60fps. Pointer events on
@@ -378,6 +388,22 @@ function findJellyfishIndexAtTap(
   return bestIdx;
 }
 
+function triggerJellyfishTintFlash(
+  idx: number,
+  preset: number,
+  tintFlashPreset: SharedValue<number[]>,
+  tintFlashUntil: SharedValue<number[]>,
+  clock: SharedValue<number>,
+): void {
+  'worklet';
+  const presets = [...tintFlashPreset.value];
+  const until = [...tintFlashUntil.value];
+  presets[idx] = preset;
+  until[idx] = clock.value + TINT_FLASH_MS;
+  tintFlashPreset.value = presets;
+  tintFlashUntil.value = until;
+}
+
 function updateMotionFromDrag(
   motionAngle: { value: number },
   motionAmp: { value: number },
@@ -627,6 +653,8 @@ type CellJellyfishProps = {
   layoutScale: SharedValue<number[]>;
   motionAngle: SharedValue<number>;
   motionAmp: SharedValue<number>;
+  tintFlashPreset: SharedValue<number[]>;
+  tintFlashUntil: SharedValue<number[]>;
   bellImage: SkImage;
   tentacleImage: SkImage;
   clock: SharedValue<number>;
@@ -639,10 +667,55 @@ function CellJellyfish({
   layoutScale,
   motionAngle,
   motionAmp,
+  tintFlashPreset,
+  tintFlashUntil,
   bellImage,
   tentacleImage,
   clock,
 }: CellJellyfishProps) {
+  const idx = config.index;
+
+  const dynamicOverrides = useDerivedValue((): JellyfishDynamicOverrides => {
+    const until = tintFlashUntil.value[idx] ?? 0;
+    const presetIdx = tintFlashPreset.value[idx] ?? -1;
+    const isFlashing = clock.value < until && presetIdx >= 0;
+    const wobble = isFlashing ? JELLYFISH_FLASH_WOBBLE : JELLYFISH_DEFAULT_WOBBLE;
+    const tentacleWobbleAmp = wobble.wobbleAmp * 1.25;
+
+    if (isFlashing) {
+      const preset = JELLYFISH_TINT_PRESETS_BY_INDEX[presetIdx];
+      if (preset) {
+        return {
+          tintMode: preset.tintMode,
+          tintStrength: preset.tintStrength,
+          tintA: [preset.tintA[0], preset.tintA[1], preset.tintA[2]],
+          tintB: [preset.tintB[0], preset.tintB[1], preset.tintB[2]],
+          tintC: [preset.tintC[0], preset.tintC[1], preset.tintC[2]],
+          animatedTint: preset.animatedTint,
+          tintWaveSpeed: JELLYFISH_FLASH_TINT_WAVE_SPEED,
+          bellWobbleAmp: wobble.wobbleAmp,
+          tentacleWobbleAmp,
+          wobbleSpeed: wobble.wobbleSpeed,
+          wobbleLobes: wobble.wobbleLobes,
+        };
+      }
+    }
+
+    return {
+      tintMode: config.tintMode,
+      tintStrength: config.tintStrength,
+      tintA: [config.tintA[0], config.tintA[1], config.tintA[2]],
+      tintB: [config.tintB[0], config.tintB[1], config.tintB[2]],
+      tintC: [config.tintC[0], config.tintC[1], config.tintC[2]],
+      animatedTint: config.animatedTint,
+      tintWaveSpeed: config.tintWaveSpeed,
+      bellWobbleAmp: wobble.wobbleAmp,
+      tentacleWobbleAmp,
+      wobbleSpeed: wobble.wobbleSpeed,
+      wobbleLobes: wobble.wobbleLobes,
+    };
+  });
+
   return (
     <JellyfishInstance
       bellImage={bellImage}
@@ -661,6 +734,7 @@ function CellJellyfish({
       tintC={config.tintC}
       animatedTint={config.animatedTint}
       tintWaveSpeed={config.tintWaveSpeed}
+      dynamicOverrides={dynamicOverrides}
       tiltAngle={motionAngle}
       tiltAmp={motionAmp}
       clock={clock}
@@ -677,6 +751,9 @@ type CellLabelProps = {
   motionAngle: SharedValue<number>;
   motionAmp: SharedValue<number>;
   retainedLabelRotation: SharedValue<number>;
+  tintFlashPreset: SharedValue<number[]>;
+  tintFlashUntil: SharedValue<number[]>;
+  clock: SharedValue<number>;
 };
 
 function CellLabel({
@@ -688,8 +765,13 @@ function CellLabel({
   motionAngle,
   motionAmp,
   retainedLabelRotation,
+  tintFlashPreset,
+  tintFlashUntil,
+  clock,
 }: CellLabelProps) {
   const idx = config.index;
+  const defaultFillColor = config.labelFillColor;
+  const defaultStrokeColor = config.labelStrokeColor;
 
   const staticGlyphs = useMemo(() => {
     const textWidth = font.getTextWidth(config.label);
@@ -729,6 +811,24 @@ function CellLabel({
     ];
   });
 
+  const labelFillColor = useDerivedValue(() => {
+    const until = tintFlashUntil.value[idx] ?? 0;
+    const presetIdx = tintFlashPreset.value[idx] ?? -1;
+    if (clock.value < until && presetIdx >= 0) {
+      return JELLYFISH_LABEL_COLORS_BY_INDEX[presetIdx]?.labelFillColor ?? defaultFillColor;
+    }
+    return defaultFillColor;
+  });
+
+  const labelStrokeColor = useDerivedValue(() => {
+    const until = tintFlashUntil.value[idx] ?? 0;
+    const presetIdx = tintFlashPreset.value[idx] ?? -1;
+    if (clock.value < until && presetIdx >= 0) {
+      return JELLYFISH_LABEL_COLORS_BY_INDEX[presetIdx]?.labelStrokeColor ?? defaultStrokeColor;
+    }
+    return defaultStrokeColor;
+  });
+
   return (
     <Group transform={labelTransform}>
       <Group
@@ -736,11 +836,11 @@ function CellLabel({
         strokeWidth={LABEL_STROKE_WIDTH}
         strokeJoin="round"
         strokeCap="round"
-        color={config.labelStrokeColor}
+        color={labelStrokeColor}
       >
         <Glyphs font={font} glyphs={staticGlyphs} />
       </Group>
-      <Glyphs font={font} glyphs={staticGlyphs} color={config.labelFillColor} />
+      <Glyphs font={font} glyphs={staticGlyphs} color={labelFillColor} />
     </Group>
   );
 }
@@ -843,6 +943,9 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   const layoutX = useSharedValue<number[]>([]);
   const layoutY = useSharedValue<number[]>([]);
   const layoutScale = useSharedValue<number[]>([]);
+  /** -1 = spawn tint; 0/1/2 = primary/error/success preset while flashing. */
+  const tintFlashPreset = useSharedValue<number[]>([]);
+  const tintFlashUntil = useSharedValue<number[]>([]);
 
   // Mirror layout inputs into shared values so the frame callback always reads
   // the latest grid/bounds without relying on closure capture.
@@ -867,6 +970,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
     layoutX.value = layout.xs;
     layoutY.value = layout.ys;
     layoutScale.value = layout.scales;
+    tintFlashPreset.value = cellConfigs.map(() => -1);
+    tintFlashUntil.value = cellConfigs.map(() => 0);
     appliedBiasX.value = 0;
     appliedBiasY.value = 0;
     prevBiasX.value = 0;
@@ -884,6 +989,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
     layoutX,
     layoutY,
     layoutScale,
+    tintFlashPreset,
+    tintFlashUntil,
     appliedBiasX,
     appliedBiasY,
     prevBiasX,
@@ -1103,6 +1210,13 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
       if (hitIdx < 0) {
         return;
       }
+      triggerJellyfishTintFlash(
+        hitIdx,
+        JELLYFISH_TINT_PRESET_INDEX.primary,
+        tintFlashPreset,
+        tintFlashUntil,
+        clock,
+      );
       tryFocusJellyfish(
         hitIdx,
         0,
@@ -1153,6 +1267,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
             layoutScale={layoutScale}
             motionAngle={motionAngle}
             motionAmp={motionAmp}
+            tintFlashPreset={tintFlashPreset}
+            tintFlashUntil={tintFlashUntil}
             bellImage={bellImage}
             tentacleImage={tentacleImage}
             clock={clock}
@@ -1169,6 +1285,9 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
             motionAngle={motionAngle}
             motionAmp={motionAmp}
             retainedLabelRotation={retainedLabelRotation}
+            tintFlashPreset={tintFlashPreset}
+            tintFlashUntil={tintFlashUntil}
+            clock={clock}
           />
         ))}
       </Canvas>

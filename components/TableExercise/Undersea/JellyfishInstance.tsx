@@ -86,7 +86,23 @@ export type JellyfishInstanceProps = {
   /** Scroll multicolor bell tint outward (colors expand from center and swap roles). */
   animatedTint?: boolean;
   tintWaveSpeed?: number;
+  /** When set, overrides static tint/wobble props each frame (e.g. click flash). */
+  dynamicOverrides?: SharedValue<JellyfishDynamicOverrides>;
   clock: SharedValue<number>;
+};
+
+export type JellyfishDynamicOverrides = {
+  tintMode: number;
+  tintStrength: number;
+  tintA: [number, number, number];
+  tintB: [number, number, number];
+  tintC: [number, number, number];
+  animatedTint: boolean;
+  tintWaveSpeed: number;
+  bellWobbleAmp: number;
+  tentacleWobbleAmp: number;
+  wobbleSpeed: number;
+  wobbleLobes: number;
 };
 
 export function JellyfishInstance({
@@ -132,6 +148,7 @@ export function JellyfishInstance({
   tintC = jellyfishDeformUniformDefaults.tintC,
   animatedTint = false,
   tintWaveSpeed = jellyfishDeformUniformDefaults.tintWaveSpeed,
+  dynamicOverrides,
   clock,
 }: JellyfishInstanceProps) {
   const tentacleBaseSize = bellSize * tentacleSizeRatio;
@@ -163,6 +180,19 @@ export function JellyfishInstance({
     const depthFade = 1 - d * 0.7;
     const tiltAngleVal = tiltAngle.value;
     const tiltAmpVal = tiltAmp.value;
+    const t = dynamicOverrides?.value ?? {
+      tintMode,
+      tintStrength,
+      tintA: tintAUniform,
+      tintB: tintBUniform,
+      tintC: tintCUniform,
+      animatedTint,
+      tintWaveSpeed,
+      bellWobbleAmp,
+      tentacleWobbleAmp,
+      wobbleSpeed,
+      wobbleLobes,
+    };
 
     return {
       tentacleX,
@@ -184,30 +214,30 @@ export function JellyfishInstance({
       swirlSpeed,
       scaleRelax,
       scaleContract,
-      wobbleSpeed,
-      wobbleLobes,
+      wobbleSpeed: t.wobbleSpeed,
+      wobbleLobes: t.wobbleLobes,
       tiltDirX: Math.cos(tiltAngleVal),
       tiltDirY: Math.sin(tiltAngleVal),
       tentacleSwirlAmp,
       tentacleContractShrink: tentacleRetract,
-      tentacleWobbleAmp,
+      tentacleWobbleAmp: t.tentacleWobbleAmp,
       tentacleOpacity: tentacleOpacity * depthFade,
       tentacleTiltBodyShift: -tiltAmpVal * tentacleTiltShiftRatio,
       tentacleTiltLen: tiltAmpVal * tentacleTiltLenRatio,
       bellDensityGamma,
       bellRimWidth,
       bellRimStrength,
-      bellWobbleAmp,
+      bellWobbleAmp: t.bellWobbleAmp,
       bellOpacity: bellOpacity * depthFade,
       bellTiltCenterShift: tiltAmpVal,
       bellTiltEgg,
-      tintMode,
-      tintStrength,
-      tintA: tintAUniform,
-      tintB: tintBUniform,
-      tintC: tintCUniform,
-      tintAnimated: animatedTint ? 1 : 0,
-      tintWaveSpeed,
+      tintMode: t.tintMode,
+      tintStrength: t.tintStrength,
+      tintA: t.tintA,
+      tintB: t.tintB,
+      tintC: t.tintC,
+      tintAnimated: t.animatedTint ? 1 : 0,
+      tintWaveSpeed: t.tintWaveSpeed,
     };
   });
 
