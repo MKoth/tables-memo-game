@@ -9,6 +9,11 @@ export type TableData = {
   body: string[][];
 };
 
+/** All body cell strings in row-major order — one entry per table body cell. */
+export function getTableBodyWords(table: TableData): string[] {
+  return table.body.flat();
+}
+
 export function createTableData(
   id: string,
   title: string,

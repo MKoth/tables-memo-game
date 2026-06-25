@@ -1,18 +1,23 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { AppState, StyleSheet, type AppStateStatus } from 'react-native';
+import { AppState, StyleSheet, View, type AppStateStatus } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import { makeMutable, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { makeMutable, runOnJS, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { KoiInstance, KoiShadowInstance } from './KoiInstance';
 
 const KOI_BASE_LENGTH = 120;
 const KOI_BASE_THICKNESS = 38;
-const SWIM_ZONE_TOP_RATIO = 0.5;
+export const SWIM_ZONE_TOP_RATIO = 0.5;
 const SWIM_ZONE_MARGIN = 0;
 
-/** Number of koi fish in the swim zone. */
+/** Legacy default count — production uses `words.length`. */
 export const KOI_COUNT = 20;
+
+/** Hit radius multiplier beyond fish body center. */
+const TAP_HIT_RADIUS_PAD = 1.55;
+const TAP_MAX_DISTANCE_PX = 10;
 
 /** Shared settings applied to every fish. */
 export const KOI_SETTINGS = {
@@ -175,6 +180,7 @@ function pickBodyColor(): readonly [number, number, number] {
 }
 
 type KoiSpawn = {
+  word: string;
   imageKey: KoiImageKey;
   spotColor: readonly [number, number, number];
   bodyColor: readonly [number, number, number];
@@ -322,28 +328,55 @@ function rerollFinSide(fish: FishRuntime, side: 'left' | 'right'): void {
   );
 }
 
-function createRandomSpawns(count: number): KoiSpawn[] {
-  return Array.from({ length: count }, () => {
-    const spotColor = pickSpotColor();
-    const hasBodyTint = Math.random() < KOI_BODY_TINT_PROBABILITY;
-    const hasOverlay = Math.random() < KOI_OVERLAY_PROBABILITY;
+function createRandomVisualSpawn(): Omit<KoiSpawn, 'word'> {
+  const spotColor = pickSpotColor();
+  const hasBodyTint = Math.random() < KOI_BODY_TINT_PROBABILITY;
+  const hasOverlay = Math.random() < KOI_OVERLAY_PROBABILITY;
 
-    return {
-      imageKey: KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)],
-      spotColor,
-      bodyColor: hasBodyTint ? pickBodyColor() : spotColor,
-      bodyTintStrength: hasBodyTint ? 1 : 0,
-      overlayMaskKey: hasOverlay
-        ? KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)]
-        : 'koi1',
-      overlayColor: hasOverlay ? pickSpotColor() : spotColor,
-      overlayStrength: hasOverlay ? 1 : 0,
-      xRatio: 0.12 + Math.random() * 0.76,
-      yRatio: 0.12 + Math.random() * 0.76,
-      phase: Math.random() * Math.PI * 2,
-      initialAngle: Math.random() * Math.PI * 2,
-    };
-  });
+  return {
+    imageKey: KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)],
+    spotColor,
+    bodyColor: hasBodyTint ? pickBodyColor() : spotColor,
+    bodyTintStrength: hasBodyTint ? 1 : 0,
+    overlayMaskKey: hasOverlay
+      ? KOI_IMAGE_KEYS[Math.floor(Math.random() * KOI_IMAGE_KEYS.length)]
+      : 'koi1',
+    overlayColor: hasOverlay ? pickSpotColor() : spotColor,
+    overlayStrength: hasOverlay ? 1 : 0,
+    xRatio: 0.12 + Math.random() * 0.76,
+    yRatio: 0.12 + Math.random() * 0.76,
+    phase: Math.random() * Math.PI * 2,
+    initialAngle: Math.random() * Math.PI * 2,
+  };
+}
+
+function createSpawnsFromWords(words: string[]): KoiSpawn[] {
+  return words.map((word) => ({
+    word,
+    ...createRandomVisualSpawn(),
+  }));
+}
+
+function findKoiIndexAtTap(
+  tapX: number,
+  tapY: number,
+  positions: number[],
+  count: number,
+  hitRadius: number,
+): number {
+  'worklet';
+  let bestIdx = -1;
+  let bestDist = Infinity;
+  for (let i = 0; i < count; i++) {
+    const cx = positions[i * 2] ?? 0;
+    const cy = positions[i * 2 + 1] ?? 0;
+    const dist = Math.hypot(tapX - cx, tapY - cy);
+    if (dist <= hitRadius && dist < bestDist) {
+      bestDist = dist;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
 }
 
 function lerp(a: number, b: number, t: number): number {
@@ -568,7 +601,9 @@ export type KoiFishLayerProps = {
   height: number;
   images: Record<KoiImageKey, SkImage>;
   masks: Record<KoiImageKey, SkImage>;
-  koiCount?: number;
+  words: string[];
+  interactive?: boolean;
+  onFishSelect?: (word: string, fishIndex: number) => void;
 };
 
 function applyFinSideSpawn(
@@ -667,9 +702,6 @@ function createFishRuntime(config: FishConfig, swimZone: SwimZone): FishRuntime 
 type KoiRuntimeEntry = {
   spawn: KoiSpawn;
   runtime: FishRuntime;
-  image: SkImage;
-  maskImage: SkImage;
-  overlayMaskImage: SkImage;
 };
 
 function useFishSimulation(
@@ -876,8 +908,12 @@ export function KoiFishLayer({
   height,
   images,
   masks,
-  koiCount = KOI_COUNT,
+  words,
+  interactive = true,
+  onFishSelect,
 }: KoiFishLayerProps) {
+  const koiCount = words.length;
+
   const swimZone = useMemo(
     (): SwimZone => ({
       x: width * SWIM_ZONE_MARGIN,
@@ -889,8 +925,8 @@ export function KoiFishLayer({
   );
 
   const spawns = useMemo(
-    () => createRandomSpawns(koiCount),
-    [koiCount, swimZone.w, swimZone.h],
+    () => createSpawnsFromWords(words),
+    [words, swimZone.w, swimZone.h],
   );
 
   const runtimeEntries = useMemo(
@@ -898,17 +934,49 @@ export function KoiFishLayer({
       spawns.map((spawn) => ({
         spawn,
         runtime: createFishRuntime({ ...KOI_SETTINGS, ...spawn }, swimZone),
-        image: images[spawn.imageKey],
-        maskImage: masks[spawn.imageKey],
-        overlayMaskImage: masks[spawn.overlayMaskKey],
       })),
-    [spawns, swimZone, images, masks],
+    [spawns, swimZone],
   );
 
   const sharedPositions = useSharedValue<number[]>(new Array(koiCount * 2).fill(0));
   useFishSimulation(runtimeEntries, swimZone, sharedPositions);
 
   const fishLength = KOI_BASE_LENGTH * KOI_SETTINGS.scale;
+  const hitRadius = fishLength * 0.55 * TAP_HIT_RADIUS_PAD;
+  const swimZoneTop = height * SWIM_ZONE_TOP_RATIO;
+  const swimZoneHeight = height * (1 - SWIM_ZONE_TOP_RATIO);
+
+  const handleFishSelect = useCallback(
+    (fishIndex: number) => {
+      const word = spawns[fishIndex]?.word;
+      if (word != null) {
+        onFishSelect?.(word, fishIndex);
+      }
+    },
+    [spawns, onFishSelect],
+  );
+
+  const tapGesture = useMemo(
+    () =>
+      Gesture.Tap()
+        .maxDistance(TAP_MAX_DISTANCE_PX)
+        .onEnd((e) => {
+          'worklet';
+          const positions = sharedPositions.value;
+          const tapY = e.y + swimZoneTop;
+          const hitIdx = findKoiIndexAtTap(e.x, tapY, positions, koiCount, hitRadius);
+          if (hitIdx < 0) {
+            return;
+          }
+          runOnJS(handleFishSelect)(hitIdx);
+        }),
+    [sharedPositions, swimZoneTop, koiCount, hitRadius, handleFishSelect],
+  );
+
+  if (koiCount === 0) {
+    return null;
+  }
+
   const fishThickness = KOI_BASE_THICKNESS * KOI_SETTINGS.scale;
   const renderProps = {
     swimZoneX: swimZone.x,
@@ -930,71 +998,83 @@ export function KoiFishLayer({
   };
 
   return (
-    <Canvas style={styles.canvas} pointerEvents="none">
-      <Group>
-        {runtimeEntries.map(({ spawn, runtime, image, maskImage, overlayMaskImage }, index) => (
-          <KoiShadowInstance
-            key={`shadow-${index}`}
-            image={image}
-            maskImage={maskImage}
-            overlayMaskImage={overlayMaskImage}
-            spotColor={spawn.spotColor}
-            bodyColor={spawn.bodyColor}
-            bodyTintStrength={spawn.bodyTintStrength}
-            overlayColor={spawn.overlayColor}
-            overlayStrength={spawn.overlayStrength}
-            {...renderProps}
-            phase={spawn.phase}
-            state={{
-              x: runtime.x,
-              y: runtime.y,
-              angle: runtime.angle,
-              amplitude: runtime.amplitude,
-              turnArc: runtime.turnArc,
-              wavePhase: runtime.wavePhase,
-              finSquashLeft: runtime.finSquashLeft,
-              finSquashRight: runtime.finSquashRight,
-              finVariantLeft: runtime.finVariantLeft,
-              finVariantRight: runtime.finVariantRight,
-            }}
-            offsetX={SHADOW_OFFSET_X}
-            offsetY={SHADOW_OFFSET_Y}
-            shadowColor={SHADOW_COLOR}
-            shadowOpacity={SHADOW_OPACITY}
-            shadowSoftness={SHADOW_SOFTNESS}
+    <>
+      <Canvas style={styles.canvas} pointerEvents="none">
+        <Group>
+          {runtimeEntries.map(({ spawn, runtime }, index) => (
+            <KoiShadowInstance
+              key={`shadow-${index}`}
+              image={images[spawn.imageKey]}
+              maskImage={masks[spawn.imageKey]}
+              overlayMaskImage={masks[spawn.overlayMaskKey]}
+              spotColor={spawn.spotColor}
+              bodyColor={spawn.bodyColor}
+              bodyTintStrength={spawn.bodyTintStrength}
+              overlayColor={spawn.overlayColor}
+              overlayStrength={spawn.overlayStrength}
+              {...renderProps}
+              phase={spawn.phase}
+              state={{
+                x: runtime.x,
+                y: runtime.y,
+                angle: runtime.angle,
+                amplitude: runtime.amplitude,
+                turnArc: runtime.turnArc,
+                wavePhase: runtime.wavePhase,
+                finSquashLeft: runtime.finSquashLeft,
+                finSquashRight: runtime.finSquashRight,
+                finVariantLeft: runtime.finVariantLeft,
+                finVariantRight: runtime.finVariantRight,
+              }}
+              offsetX={SHADOW_OFFSET_X}
+              offsetY={SHADOW_OFFSET_Y}
+              shadowColor={SHADOW_COLOR}
+              shadowOpacity={SHADOW_OPACITY}
+              shadowSoftness={SHADOW_SOFTNESS}
+            />
+          ))}
+        </Group>
+        <Group>
+          {runtimeEntries.map(({ spawn, runtime }, index) => (
+            <KoiInstance
+              key={`fish-${index}`}
+              image={images[spawn.imageKey]}
+              maskImage={masks[spawn.imageKey]}
+              overlayMaskImage={masks[spawn.overlayMaskKey]}
+              spotColor={spawn.spotColor}
+              bodyColor={spawn.bodyColor}
+              bodyTintStrength={spawn.bodyTintStrength}
+              overlayColor={spawn.overlayColor}
+              overlayStrength={spawn.overlayStrength}
+              {...renderProps}
+              phase={spawn.phase}
+              state={{
+                x: runtime.x,
+                y: runtime.y,
+                angle: runtime.angle,
+                amplitude: runtime.amplitude,
+                turnArc: runtime.turnArc,
+                wavePhase: runtime.wavePhase,
+                finSquashLeft: runtime.finSquashLeft,
+                finSquashRight: runtime.finSquashRight,
+                finVariantLeft: runtime.finVariantLeft,
+                finVariantRight: runtime.finVariantRight,
+              }}
+            />
+          ))}
+        </Group>
+      </Canvas>
+      {interactive && onFishSelect != null && (
+        <GestureDetector gesture={tapGesture}>
+          <View
+            style={[
+              styles.gestureCapture,
+              { top: swimZoneTop, height: swimZoneHeight },
+            ]}
           />
-        ))}
-      </Group>
-      <Group>
-        {runtimeEntries.map(({ spawn, runtime, image, maskImage, overlayMaskImage }, index) => (
-          <KoiInstance
-            key={`fish-${index}`}
-            image={image}
-            maskImage={maskImage}
-            overlayMaskImage={overlayMaskImage}
-            spotColor={spawn.spotColor}
-            bodyColor={spawn.bodyColor}
-            bodyTintStrength={spawn.bodyTintStrength}
-            overlayColor={spawn.overlayColor}
-            overlayStrength={spawn.overlayStrength}
-            {...renderProps}
-            phase={spawn.phase}
-            state={{
-              x: runtime.x,
-              y: runtime.y,
-              angle: runtime.angle,
-              amplitude: runtime.amplitude,
-              turnArc: runtime.turnArc,
-              wavePhase: runtime.wavePhase,
-              finSquashLeft: runtime.finSquashLeft,
-              finSquashRight: runtime.finSquashRight,
-              finVariantLeft: runtime.finVariantLeft,
-              finVariantRight: runtime.finVariantRight,
-            }}
-          />
-        ))}
-      </Group>
-    </Canvas>
+        </GestureDetector>
+      )}
+    </>
   );
 }
 
@@ -1005,5 +1085,10 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
+  },
+  gestureCapture: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
   },
 });
