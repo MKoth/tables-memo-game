@@ -10,7 +10,7 @@ import {
   useImage,
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
-import { useThrottledClock } from '../../../hooks/useThrottledClock';
+import { useUnderseaClock } from './UnderseaClockContext';
 import {
   MAX_DRIFT_LAYERS,
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
@@ -225,7 +225,7 @@ export function UnderseaBackground() {
   const koi1Mask = useImage(KOI_MASK_VARIANTS.koi1);
   const koi2Mask = useImage(KOI_MASK_VARIANTS.koi2);
   const koi3Mask = useImage(KOI_MASK_VARIANTS.koi3);
-  const clock = useThrottledClock(30);
+  const clock = useUnderseaClock();
 
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
   const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
@@ -428,7 +428,6 @@ export function UnderseaBackground() {
         height={height}
         images={{ koi1, koi2, koi3 }}
         masks={{ koi1: koi1Mask, koi2: koi2Mask, koi3: koi3Mask }}
-        clock={clock}
       />
     </View>
   );

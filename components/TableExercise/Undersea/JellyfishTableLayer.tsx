@@ -8,7 +8,7 @@
  * Each jellyfish carries a text label centered on its bell (labels may overlap).
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   Canvas,
@@ -23,6 +23,7 @@ import {
 import type { SharedValue } from 'react-native-reanimated';
 import {
   Easing,
+  runOnJS,
   useDerivedValue,
   useFrameCallback,
   useSharedValue,
@@ -31,7 +32,7 @@ import {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { JellyfishInstance } from './JellyfishInstance';
 import type { TableData } from '../../../data/tableData';
-import { useThrottledClock } from '../../../hooks/useThrottledClock';
+import { useUnderseaClockQuantized } from './UnderseaClockContext';
 import {
   computeJellyfishSizing,
   computeLayoutPositions,
@@ -498,9 +499,11 @@ type InnerProps = {
   tentacleImage: NonNullable<ReturnType<typeof useImage>>;
 };
 
+const JELLYFISH_CLOCK_FPS = 15;
+
 function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProps) {
   const { width, height } = useWindowDimensions();
-  const clock = useThrottledClock(15);
+  const clock = useUnderseaClockQuantized(JELLYFISH_CLOCK_FPS);
 
   const nGridCols = table.colHeaders.length + 1;
   const nGridRows = table.rowHeaders.length + 1;
@@ -577,69 +580,125 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   useEffect(() => {
     layoutBoundsSv.value = layoutBounds;
     layoutParticlesSv.value = layoutParticles;
-    // Force a recompute on the next frame when grid/bounds change.
-    appliedBiasX.value = Number.NaN;
-  }, [layoutBounds, layoutParticles, layoutBoundsSv, layoutParticlesSv, appliedBiasX]);
-
-  // Recompute positions at most once per ~LAYOUT_MIN_INTERVAL_MS, coalescing
-  // bursts of pointer events (drag) and per-frame fling steps into one pass.
-  useFrameCallback((info) => {
-    'worklet';
-    const bx = biasX.value;
-    const by = biasY.value;
-    if (bx === appliedBiasX.value && by === appliedBiasY.value) {
-      return;
-    }
-    if (
-      lastLayoutTs.value !== -1 &&
-      info.timestamp - lastLayoutTs.value < LAYOUT_MIN_INTERVAL_MS
-    ) {
-      return;
-    }
-    lastLayoutTs.value = info.timestamp;
-    appliedBiasX.value = bx;
-    appliedBiasY.value = by;
-    const layout = computeLayoutPositions(
-      layoutParticlesSv.value,
-      layoutBoundsSv.value,
-      bx,
-      by,
-    );
+    const layout = computeLayoutPositions(layoutParticles, layoutBounds, 0, 0);
     layoutX.value = layout.xs;
     layoutY.value = layout.ys;
     layoutScale.value = layout.scales;
-  });
+    appliedBiasX.value = 0;
+    appliedBiasY.value = 0;
+    prevBiasX.value = 0;
+    prevBiasY.value = 0;
+    lastLayoutTs.value = -1;
+  }, [
+    layoutBounds,
+    layoutParticles,
+    layoutBoundsSv,
+    layoutParticlesSv,
+    layoutX,
+    layoutY,
+    layoutScale,
+    appliedBiasX,
+    appliedBiasY,
+    prevBiasX,
+    prevBiasY,
+    lastLayoutTs,
+  ]);
 
-  // ── Motion tilt (drag + coasting fling, decays to zero when idle) ───────
+  const motionFrameLoopRef = useRef<ReturnType<typeof useFrameCallback> | null>(null);
+  const motionLoopEngaged = useSharedValue(0);
 
-  useFrameCallback(() => {
-    'worklet';
-    if (isDragging.value) {
-      return;
-    }
+  const activateMotionLoop = useCallback(() => {
+    motionFrameLoopRef.current?.setActive(true);
+  }, []);
 
-    const biasDx = biasX.value - prevBiasX.value;
-    const biasDy = biasY.value - prevBiasY.value;
-    prevBiasX.value = biasX.value;
-    prevBiasY.value = biasY.value;
+  const deactivateMotionLoop = useCallback(() => {
+    motionFrameLoopRef.current?.setActive(false);
+  }, []);
 
-    const speed = Math.hypot(biasDx, biasDy);
-    if (speed > TILT_STOP_BIAS_VEL) {
-      // Bias moves opposite finger drag; negate to match gesture direction.
-      motionAngle.value = Math.atan2(-biasDy, -biasDx);
-      motionAmp.value = Math.min(TILT_AMP_MAX, speed * TILT_BIAS_VEL_SCALE);
-      updateRetainedLabelRotation(
-        retainedLabelRotation,
-        motionAngle.value,
-        motionAmp.value,
-      );
-    } else {
-      motionAmp.value *= TILT_DECAY;
-      if (motionAmp.value < 0.0005) {
-        motionAmp.value = 0;
+  const onMotionFrame = useCallback(
+    (info: { timestamp: number }) => {
+      'worklet';
+      const bx = biasX.value;
+      const by = biasY.value;
+
+      if (bx !== appliedBiasX.value || by !== appliedBiasY.value) {
+        if (
+          lastLayoutTs.value === -1 ||
+          info.timestamp - lastLayoutTs.value >= LAYOUT_MIN_INTERVAL_MS
+        ) {
+          lastLayoutTs.value = info.timestamp;
+          appliedBiasX.value = bx;
+          appliedBiasY.value = by;
+          const layout = computeLayoutPositions(
+            layoutParticlesSv.value,
+            layoutBoundsSv.value,
+            bx,
+            by,
+          );
+          layoutX.value = layout.xs;
+          layoutY.value = layout.ys;
+          layoutScale.value = layout.scales;
+        }
       }
-    }
-  });
+
+      if (!isDragging.value) {
+        const biasDx = biasX.value - prevBiasX.value;
+        const biasDy = biasY.value - prevBiasY.value;
+        prevBiasX.value = biasX.value;
+        prevBiasY.value = biasY.value;
+
+        const speed = Math.hypot(biasDx, biasDy);
+        if (speed > TILT_STOP_BIAS_VEL) {
+          motionAngle.value = Math.atan2(-biasDy, -biasDx);
+          motionAmp.value = Math.min(TILT_AMP_MAX, speed * TILT_BIAS_VEL_SCALE);
+          updateRetainedLabelRotation(
+            retainedLabelRotation,
+            motionAngle.value,
+            motionAmp.value,
+          );
+        } else {
+          motionAmp.value *= TILT_DECAY;
+          if (motionAmp.value < 0.0005) {
+            motionAmp.value = 0;
+          }
+        }
+      }
+
+      const layoutSettled = bx === appliedBiasX.value && by === appliedBiasY.value;
+      if (
+        !isDragging.value &&
+        layoutSettled &&
+        motionAmp.value < 0.0005 &&
+        motionLoopEngaged.value
+      ) {
+        motionLoopEngaged.value = 0;
+        runOnJS(deactivateMotionLoop)();
+      }
+    },
+    [
+      biasX,
+      biasY,
+      appliedBiasX,
+      appliedBiasY,
+      lastLayoutTs,
+      layoutParticlesSv,
+      layoutBoundsSv,
+      layoutX,
+      layoutY,
+      layoutScale,
+      isDragging,
+      prevBiasX,
+      prevBiasY,
+      motionAngle,
+      motionAmp,
+      retainedLabelRotation,
+      motionLoopEngaged,
+      deactivateMotionLoop,
+    ],
+  );
+
+  const motionFrameLoop = useFrameCallback(onMotionFrame, false);
+  motionFrameLoopRef.current = motionFrameLoop;
 
   // ── Gesture ─────────────────────────────────────────────────────────────
 
@@ -649,6 +708,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   const panGesture = Gesture.Pan()
     .onBegin(() => {
       'worklet';
+      motionLoopEngaged.value = 1;
+      runOnJS(activateMotionLoop)();
       isDragging.value = 1;
       prevTX.value = 0;
       prevTY.value = 0;
@@ -679,6 +740,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
     })
     .onEnd((e) => {
       'worklet';
+      motionLoopEngaged.value = 1;
+      runOnJS(activateMotionLoop)();
       const flingMsX = clampW(Math.abs(e.velocityX) * 0.35, MIN_FLING_MS, MAX_FLING_MS);
       const flingMsY = clampW(Math.abs(e.velocityY) * 0.35, MIN_FLING_MS, MAX_FLING_MS);
       const targetX = clampW(

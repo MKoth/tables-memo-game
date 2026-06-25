@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ImageShader,
   Rect,
@@ -145,16 +145,29 @@ export function StoneShadowInstance({
     height: spriteH + Math.abs(offsetY) * 2 + shadowSoftness * spriteH * 4,
   };
 
-  const uniforms = useDerivedValue(() => ({
-    spriteX,
-    spriteY,
-    spriteW,
-    spriteH,
-    offset: [offsetX, offsetY] as [number, number],
-    shadowColor: shadowColorUniform,
-    shadowOpacity,
-    shadowSoftness,
-  }));
+  const uniforms = useMemo(
+    () => ({
+      spriteX,
+      spriteY,
+      spriteW,
+      spriteH,
+      offset: [offsetX, offsetY] as [number, number],
+      shadowColor: shadowColorUniform,
+      shadowOpacity,
+      shadowSoftness,
+    }),
+    [
+      spriteX,
+      spriteY,
+      spriteW,
+      spriteH,
+      offsetX,
+      offsetY,
+      shadowColorUniform,
+      shadowOpacity,
+      shadowSoftness,
+    ],
+  );
 
   return (
     <Rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height}>

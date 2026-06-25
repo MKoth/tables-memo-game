@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { AppState, StyleSheet, type AppStateStatus } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
@@ -568,7 +568,6 @@ export type KoiFishLayerProps = {
   height: number;
   images: Record<KoiImageKey, SkImage>;
   masks: Record<KoiImageKey, SkImage>;
-  clock: SharedValue<number>;
   koiCount?: number;
 };
 
@@ -711,125 +710,165 @@ function useFishSimulation(
     fishNext.value = new Array(fishCount).fill(-1);
   }, [cellCount, fishCount, cellHead, fishNext]);
 
-  useFrameCallback((frameInfo) => {
-    'worklet';
-    if (lastTimestamp.value < 0) {
+  const onSimFrame = useCallback(
+    (frameInfo: { timestamp: number }) => {
+      'worklet';
+      if (lastTimestamp.value < 0) {
+        lastTimestamp.value = frameInfo.timestamp;
+        return;
+      }
+
+      // Fixed-cadence step: bail cheaply on vsync frames between sim steps so
+      // koi SharedValues (and the Skia re-records they trigger) change at SIM_FPS.
+      const elapsed = frameInfo.timestamp - lastTimestamp.value;
+      if (elapsed < SIM_STEP_MS) {
+        return;
+      }
+      const dt = Math.min(elapsed / 1000, 0.05);
       lastTimestamp.value = frameInfo.timestamp;
-      return;
-    }
 
-    // Fixed-cadence step: bail cheaply on vsync frames between sim steps so
-    // koi SharedValues (and the Skia re-records they trigger) change at SIM_FPS.
-    const elapsed = frameInfo.timestamp - lastTimestamp.value;
-    if (elapsed < SIM_STEP_MS) {
-      return;
-    }
-    const dt = Math.min(elapsed / 1000, 0.05);
-    lastTimestamp.value = frameInfo.timestamp;
+      const pos = sharedPositions.value;
+      const heads = cellHead.value;
+      const next = fishNext.value;
+      const gridReady = heads.length === cellCount && next.length === fishCount;
 
-    const pos = sharedPositions.value;
-    const heads = cellHead.value;
-    const next = fishNext.value;
-    const gridReady = heads.length === cellCount && next.length === fishCount;
-
-    // Build the grid from last-frame positions before any fish moves this step.
-    if (gridReady) {
-      for (let c = 0; c < cellCount; c++) {
-        heads[c] = -1;
-      }
-      for (let i = 0; i < fishCount; i++) {
-        let cx = Math.floor((pos[i * 2] - gridMinX) / cellSize);
-        let cy = Math.floor((pos[i * 2 + 1] - gridMinY) / cellSize);
-        if (cx < 0) { cx = 0; } else if (cx >= gridCols) { cx = gridCols - 1; }
-        if (cy < 0) { cy = 0; } else if (cy >= gridRows) { cy = gridRows - 1; }
-        const cell = cy * gridCols + cx;
-        next[i] = heads[cell];
-        heads[cell] = i;
-      }
-    }
-
-    for (let fishIndex = 0; fishIndex < fishCount; fishIndex++) {
-      const fishRuntime = runtimes[fishIndex].runtime;
-
-      updateFish(
-        fishRuntime,
-        dt,
-        steerMinX,
-        steerMaxX,
-        steerMinY,
-        steerMaxY,
-        hardMinX,
-        hardMaxX,
-        hardMinY,
-        hardMaxY,
-        centerX,
-        centerY,
-      );
-
-      if (fishRuntime.state.value === SWIMMING) {
-        const fx = fishRuntime.x.value;
-        const fy = fishRuntime.y.value;
-
-        if (gridReady) {
-          let cx = Math.floor((fx - gridMinX) / cellSize);
-          let cy = Math.floor((fy - gridMinY) / cellSize);
+      // Build the grid from last-frame positions before any fish moves this step.
+      if (gridReady) {
+        for (let c = 0; c < cellCount; c++) {
+          heads[c] = -1;
+        }
+        for (let i = 0; i < fishCount; i++) {
+          let cx = Math.floor((pos[i * 2] - gridMinX) / cellSize);
+          let cy = Math.floor((pos[i * 2 + 1] - gridMinY) / cellSize);
           if (cx < 0) { cx = 0; } else if (cx >= gridCols) { cx = gridCols - 1; }
           if (cy < 0) { cy = 0; } else if (cy >= gridRows) { cy = gridRows - 1; }
-
-          for (let gy = cy - 1; gy <= cy + 1; gy++) {
-            if (gy < 0 || gy >= gridRows) {
-              continue;
-            }
-            for (let gx = cx - 1; gx <= cx + 1; gx++) {
-              if (gx < 0 || gx >= gridCols) {
-                continue;
-              }
-              let i = heads[gy * gridCols + gx];
-              while (i !== -1) {
-                if (i !== fishIndex) {
-                  const dx = fx - pos[i * 2];
-                  const dy = fy - pos[i * 2 + 1];
-                  const distSq = dx * dx + dy * dy;
-                  if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
-                    const dist = Math.sqrt(distSq);
-                    const overlap = 1 - dist / SEPARATION_RADIUS;
-                    const awayAngle = Math.atan2(dy, dx);
-                    const str = Math.min(1, overlap * SEPARATION_STEER * dt);
-                    fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
-                    fishRuntime.wanderAngle.value = lerpAngle(fishRuntime.wanderAngle.value, awayAngle, str);
-                  }
-                }
-                i = next[i];
-              }
-            }
-          }
-        } else {
-          // Fallback before the grid arrays are initialized (first frame only).
-          for (let i = 0; i < fishCount; i++) {
-            if (i === fishIndex) {
-              continue;
-            }
-            const dx = fx - pos[i * 2];
-            const dy = fy - pos[i * 2 + 1];
-            const distSq = dx * dx + dy * dy;
-            if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
-              const dist = Math.sqrt(distSq);
-              const overlap = 1 - dist / SEPARATION_RADIUS;
-              const awayAngle = Math.atan2(dy, dx);
-              const str = Math.min(1, overlap * SEPARATION_STEER * dt);
-              fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
-              fishRuntime.wanderAngle.value = lerpAngle(fishRuntime.wanderAngle.value, awayAngle, str);
-            }
-          }
+          const cell = cy * gridCols + cx;
+          next[i] = heads[cell];
+          heads[cell] = i;
         }
       }
 
-      pos[fishIndex * 2] = fishRuntime.x.value;
-      pos[fishIndex * 2 + 1] = fishRuntime.y.value;
-    }
+      for (let fishIndex = 0; fishIndex < fishCount; fishIndex++) {
+        const fishRuntime = runtimes[fishIndex].runtime;
 
-    sharedPositions.value = pos;
-  });
+        updateFish(
+          fishRuntime,
+          dt,
+          steerMinX,
+          steerMaxX,
+          steerMinY,
+          steerMaxY,
+          hardMinX,
+          hardMaxX,
+          hardMinY,
+          hardMaxY,
+          centerX,
+          centerY,
+        );
+
+        if (fishRuntime.state.value === SWIMMING) {
+          const fx = fishRuntime.x.value;
+          const fy = fishRuntime.y.value;
+
+          if (gridReady) {
+            let cx = Math.floor((fx - gridMinX) / cellSize);
+            let cy = Math.floor((fy - gridMinY) / cellSize);
+            if (cx < 0) { cx = 0; } else if (cx >= gridCols) { cx = gridCols - 1; }
+            if (cy < 0) { cy = 0; } else if (cy >= gridRows) { cy = gridRows - 1; }
+
+            for (let gy = cy - 1; gy <= cy + 1; gy++) {
+              if (gy < 0 || gy >= gridRows) {
+                continue;
+              }
+              for (let gx = cx - 1; gx <= cx + 1; gx++) {
+                if (gx < 0 || gx >= gridCols) {
+                  continue;
+                }
+                let i = heads[gy * gridCols + gx];
+                while (i !== -1) {
+                  if (i !== fishIndex) {
+                    const dx = fx - pos[i * 2];
+                    const dy = fy - pos[i * 2 + 1];
+                    const distSq = dx * dx + dy * dy;
+                    if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
+                      const dist = Math.sqrt(distSq);
+                      const overlap = 1 - dist / SEPARATION_RADIUS;
+                      const awayAngle = Math.atan2(dy, dx);
+                      const str = Math.min(1, overlap * SEPARATION_STEER * dt);
+                      fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
+                      fishRuntime.wanderAngle.value = lerpAngle(fishRuntime.wanderAngle.value, awayAngle, str);
+                    }
+                  }
+                  i = next[i];
+                }
+              }
+            }
+          } else {
+            // Fallback before the grid arrays are initialized (first frame only).
+            for (let i = 0; i < fishCount; i++) {
+              if (i === fishIndex) {
+                continue;
+              }
+              const dx = fx - pos[i * 2];
+              const dy = fy - pos[i * 2 + 1];
+              const distSq = dx * dx + dy * dy;
+              if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
+                const dist = Math.sqrt(distSq);
+                const overlap = 1 - dist / SEPARATION_RADIUS;
+                const awayAngle = Math.atan2(dy, dx);
+                const str = Math.min(1, overlap * SEPARATION_STEER * dt);
+                fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
+                fishRuntime.wanderAngle.value = lerpAngle(fishRuntime.wanderAngle.value, awayAngle, str);
+              }
+            }
+          }
+        }
+
+        pos[fishIndex * 2] = fishRuntime.x.value;
+        pos[fishIndex * 2 + 1] = fishRuntime.y.value;
+      }
+
+      sharedPositions.value = pos;
+    },
+    [
+      lastTimestamp,
+      sharedPositions,
+      cellHead,
+      fishNext,
+      cellCount,
+      fishCount,
+      gridMinX,
+      gridMinY,
+      cellSize,
+      gridCols,
+      gridRows,
+      runtimes,
+      steerMinX,
+      steerMaxX,
+      steerMinY,
+      steerMaxY,
+      hardMinX,
+      hardMaxX,
+      hardMinY,
+      hardMaxY,
+      centerX,
+      centerY,
+    ],
+  );
+
+  const simLoop = useFrameCallback(onSimFrame, true);
+
+  useEffect(() => {
+    const syncActive = (state: AppStateStatus) => {
+      simLoop.setActive(state === 'active');
+      if (state !== 'active') {
+        lastTimestamp.value = -1;
+      }
+    };
+    syncActive(AppState.currentState);
+    const subscription = AppState.addEventListener('change', syncActive);
+    return () => subscription.remove();
+  }, [simLoop, lastTimestamp]);
 }
 
 export function KoiFishLayer({
