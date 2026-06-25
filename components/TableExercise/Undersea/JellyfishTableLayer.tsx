@@ -22,6 +22,7 @@ import {
 } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import {
+  cancelAnimation,
   Easing,
   runOnJS,
   useDerivedValue,
@@ -34,6 +35,7 @@ import { JellyfishInstance } from './JellyfishInstance';
 import type { TableData } from '../../../data/tableData';
 import { useUnderseaClockQuantized } from './UnderseaClockContext';
 import {
+  biasForGridSlot,
   computeJellyfishSizing,
   computeLayoutPositions,
   LAYOUT_ZONE_HEIGHT_RATIO,
@@ -56,6 +58,17 @@ const BIAS_FLING_SENS = 0.00035;
 const MAX_FLING_MS = 900;
 const MIN_FLING_MS = 80;
 
+/** Tap-to-focus: bias travel → animation duration. */
+const FOCUS_ANIM_MIN_MS = 400;
+const FOCUS_ANIM_MAX_MS = 900;
+const FOCUS_ANIM_BIAS_SCALE = 900;
+/** Hit radius multiplier beyond bell edge (includes label area). */
+const TAP_HIT_RADIUS_PAD = 1.55;
+/** Pan activates after this movement (px); below it a release is a click. */
+const PAN_MIN_DISTANCE_PX = 10;
+/** Tap may move up to this (px); must stay below pan activation distance. */
+const TAP_MAX_DISTANCE_PX = 10;
+
 /**
  * Coalesce bias-driven layout recomputes to ~60fps. Pointer events on
  * ProMotion can fire up to 120Hz; without this cap the full layout would be
@@ -75,6 +88,8 @@ const TILT_BIAS_VEL_SCALE = 120;
 const TILT_STOP_BIAS_VEL = 0.00003;
 /** Per-frame exponential decay when layout is idle. */
 const TILT_DECAY = 0.88;
+/** Applied vs live bias within this → layout considered settled. */
+const BIAS_SETTLE_EPS = 1e-4;
 /** Label slide: motionAmp (UV) × bellSize × scale → screen px. */
 const LABEL_TILT_PX = 3;
 /** Max label rotation during motion, in movement direction (radians). */
@@ -101,6 +116,266 @@ function updateRetainedLabelRotation(
   const t = amp / TILT_AMP_MAX;
   const raw = angle * t;
   retained.value = clampW(raw, -LABEL_ROTATION_MAX_RAD, LABEL_ROTATION_MAX_RAD);
+}
+
+function flushAppliedBiasLayout(
+  biasX: SharedValue<number>,
+  biasY: SharedValue<number>,
+  appliedBiasX: SharedValue<number>,
+  appliedBiasY: SharedValue<number>,
+  prevBiasX: SharedValue<number>,
+  prevBiasY: SharedValue<number>,
+  layoutParticlesSv: SharedValue<LayoutParticle[]>,
+  layoutBoundsSv: SharedValue<LayoutBounds>,
+  layoutX: SharedValue<number[]>,
+  layoutY: SharedValue<number[]>,
+  layoutScale: SharedValue<number[]>,
+  lastLayoutTs: SharedValue<number>,
+): void {
+  'worklet';
+  const bx = biasX.value;
+  const by = biasY.value;
+  appliedBiasX.value = bx;
+  appliedBiasY.value = by;
+  prevBiasX.value = bx;
+  prevBiasY.value = by;
+  lastLayoutTs.value = -1;
+  const layout = computeLayoutPositions(
+    layoutParticlesSv.value,
+    layoutBoundsSv.value,
+    bx,
+    by,
+  );
+  layoutX.value = layout.xs;
+  layoutY.value = layout.ys;
+  layoutScale.value = layout.scales;
+}
+
+/** Bias auto-anim finished: flush layout, hand off to gradual tilt settling. */
+function completeBiasAutoAnim(
+  biasX: SharedValue<number>,
+  biasY: SharedValue<number>,
+  appliedBiasX: SharedValue<number>,
+  appliedBiasY: SharedValue<number>,
+  prevBiasX: SharedValue<number>,
+  prevBiasY: SharedValue<number>,
+  layoutParticlesSv: SharedValue<LayoutParticle[]>,
+  layoutBoundsSv: SharedValue<LayoutBounds>,
+  layoutX: SharedValue<number[]>,
+  layoutY: SharedValue<number[]>,
+  layoutScale: SharedValue<number[]>,
+  lastLayoutTs: SharedValue<number>,
+  isBiasCoasting: SharedValue<number>,
+  biasCoastPending: SharedValue<number>,
+): void {
+  'worklet';
+  if (!isBiasCoasting.value) {
+    return;
+  }
+  flushAppliedBiasLayout(
+    biasX,
+    biasY,
+    appliedBiasX,
+    appliedBiasY,
+    prevBiasX,
+    prevBiasY,
+    layoutParticlesSv,
+    layoutBoundsSv,
+    layoutX,
+    layoutY,
+    layoutScale,
+    lastLayoutTs,
+  );
+  isBiasCoasting.value = 0;
+  biasCoastPending.value = 0;
+}
+
+function scheduleBiasAutoAnim(
+  targetX: number,
+  targetY: number,
+  durationX: number,
+  durationY: number,
+  biasX: SharedValue<number>,
+  biasY: SharedValue<number>,
+  appliedBiasX: SharedValue<number>,
+  appliedBiasY: SharedValue<number>,
+  prevBiasX: SharedValue<number>,
+  prevBiasY: SharedValue<number>,
+  layoutParticlesSv: SharedValue<LayoutParticle[]>,
+  layoutBoundsSv: SharedValue<LayoutBounds>,
+  layoutX: SharedValue<number[]>,
+  layoutY: SharedValue<number[]>,
+  layoutScale: SharedValue<number[]>,
+  lastLayoutTs: SharedValue<number>,
+  isBiasCoasting: SharedValue<number>,
+  biasCoastPending: SharedValue<number>,
+): void {
+  'worklet';
+  cancelAnimation(biasX);
+  cancelAnimation(biasY);
+  isBiasCoasting.value = 1;
+  biasCoastPending.value = 2;
+  const onAxisDone = (finished?: boolean) => {
+    'worklet';
+    if (finished === false) {
+      return;
+    }
+    biasCoastPending.value -= 1;
+    if (biasCoastPending.value <= 0) {
+      completeBiasAutoAnim(
+        biasX,
+        biasY,
+        appliedBiasX,
+        appliedBiasY,
+        prevBiasX,
+        prevBiasY,
+        layoutParticlesSv,
+        layoutBoundsSv,
+        layoutX,
+        layoutY,
+        layoutScale,
+        lastLayoutTs,
+        isBiasCoasting,
+        biasCoastPending,
+      );
+    }
+  };
+  biasX.value = withTiming(
+    targetX,
+    { duration: durationX, easing: Easing.out(Easing.cubic) },
+    onAxisDone,
+  );
+  biasY.value = withTiming(
+    targetY,
+    { duration: durationY, easing: Easing.out(Easing.cubic) },
+    onAxisDone,
+  );
+  prevBiasX.value = biasX.value;
+  prevBiasY.value = biasY.value;
+}
+
+function tryFocusJellyfish(
+  hitIdx: number,
+  revertBiasX: number,
+  revertBiasY: number,
+  shouldRevertBias: boolean,
+  cellGridColsSv: SharedValue<number[]>,
+  cellGridRowsSv: SharedValue<number[]>,
+  biasX: SharedValue<number>,
+  biasY: SharedValue<number>,
+  appliedBiasX: SharedValue<number>,
+  appliedBiasY: SharedValue<number>,
+  prevBiasX: SharedValue<number>,
+  prevBiasY: SharedValue<number>,
+  layoutParticlesSv: SharedValue<LayoutParticle[]>,
+  layoutBoundsSv: SharedValue<LayoutBounds>,
+  layoutX: SharedValue<number[]>,
+  layoutY: SharedValue<number[]>,
+  layoutScale: SharedValue<number[]>,
+  lastLayoutTs: SharedValue<number>,
+  isBiasCoasting: SharedValue<number>,
+  biasCoastPending: SharedValue<number>,
+  motionAngle: SharedValue<number>,
+  motionAmp: SharedValue<number>,
+  retainedLabelRotation: SharedValue<number>,
+  motionLoopEngaged: SharedValue<number>,
+  activateMotionLoop: () => void,
+): void {
+  'worklet';
+  const bounds = layoutBoundsSv.value;
+  const targetX = biasForGridSlot(
+    cellGridColsSv.value[hitIdx] ?? 0,
+    bounds.nGridCols,
+  );
+  const targetY = biasForGridSlot(
+    cellGridRowsSv.value[hitIdx] ?? 0,
+    bounds.nGridRows,
+  );
+
+  if (shouldRevertBias) {
+    biasX.value = revertBiasX;
+    biasY.value = revertBiasY;
+  }
+
+  const dx = targetX - biasX.value;
+  const dy = targetY - biasY.value;
+  const dist = Math.hypot(dx, dy);
+  if (dist <= 0.01) {
+    return;
+  }
+
+  motionLoopEngaged.value = 1;
+  runOnJS(activateMotionLoop)();
+  motionAngle.value = Math.atan2(-dy, -dx);
+  motionAmp.value = TILT_AMP_MAX * 0.6;
+  updateRetainedLabelRotation(
+    retainedLabelRotation,
+    motionAngle.value,
+    motionAmp.value,
+  );
+  const duration = clampW(
+    dist * FOCUS_ANIM_BIAS_SCALE,
+    FOCUS_ANIM_MIN_MS,
+    FOCUS_ANIM_MAX_MS,
+  );
+  scheduleBiasAutoAnim(
+    targetX,
+    targetY,
+    duration,
+    duration,
+    biasX,
+    biasY,
+    appliedBiasX,
+    appliedBiasY,
+    prevBiasX,
+    prevBiasY,
+    layoutParticlesSv,
+    layoutBoundsSv,
+    layoutX,
+    layoutY,
+    layoutScale,
+    lastLayoutTs,
+    isBiasCoasting,
+    biasCoastPending,
+  );
+}
+
+function decayMotionTilt(
+  motionAmp: SharedValue<number>,
+  retainedLabelRotation: SharedValue<number>,
+): void {
+  'worklet';
+  motionAmp.value *= TILT_DECAY;
+  retainedLabelRotation.value *= TILT_DECAY;
+  if (motionAmp.value < 0.0005) {
+    motionAmp.value = 0;
+    retainedLabelRotation.value = 0;
+  }
+}
+
+function findJellyfishIndexAtTap(
+  tapX: number,
+  tapY: number,
+  bellSizes: number[],
+  xs: number[],
+  ys: number[],
+  scales: number[],
+): number {
+  'worklet';
+  let bestIdx = -1;
+  let bestDist = Infinity;
+  for (let i = 0; i < bellSizes.length; i++) {
+    const cx = xs[i] ?? 0;
+    const cy = ys[i] ?? 0;
+    const scale = scales[i] ?? 1;
+    const radius = (bellSizes[i] * scale * TAP_HIT_RADIUS_PAD) / 2;
+    const dist = Math.hypot(tapX - cx, tapY - cy);
+    if (dist <= radius && dist < bestDist) {
+      bestDist = dist;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
 }
 
 function updateMotionFromDrag(
@@ -573,13 +848,21 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   // the latest grid/bounds without relying on closure capture.
   const layoutBoundsSv = useSharedValue<LayoutBounds>(layoutBounds);
   const layoutParticlesSv = useSharedValue<LayoutParticle[]>(layoutParticles);
+  const cellBellSizesSv = useSharedValue<number[]>([]);
+  const cellGridColsSv = useSharedValue<number[]>([]);
+  const cellGridRowsSv = useSharedValue<number[]>([]);
   const appliedBiasX = useSharedValue(Number.NaN);
   const appliedBiasY = useSharedValue(Number.NaN);
   const lastLayoutTs = useSharedValue(-1);
+  const biasCoastPending = useSharedValue(0);
+  const isBiasCoasting = useSharedValue(0);
 
   useEffect(() => {
     layoutBoundsSv.value = layoutBounds;
     layoutParticlesSv.value = layoutParticles;
+    cellBellSizesSv.value = cellConfigs.map(c => c.bellSize);
+    cellGridColsSv.value = cellConfigs.map(c => c.gridCol);
+    cellGridRowsSv.value = cellConfigs.map(c => c.gridRow);
     const layout = computeLayoutPositions(layoutParticles, layoutBounds, 0, 0);
     layoutX.value = layout.xs;
     layoutY.value = layout.ys;
@@ -592,8 +875,12 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   }, [
     layoutBounds,
     layoutParticles,
+    cellConfigs,
     layoutBoundsSv,
     layoutParticlesSv,
+    cellBellSizesSv,
+    cellGridColsSv,
+    cellGridRowsSv,
     layoutX,
     layoutY,
     layoutScale,
@@ -642,31 +929,35 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
       }
 
       if (!isDragging.value) {
-        const biasDx = biasX.value - prevBiasX.value;
-        const biasDy = biasY.value - prevBiasY.value;
-        prevBiasX.value = biasX.value;
-        prevBiasY.value = biasY.value;
+        if (isBiasCoasting.value) {
+          const biasDx = biasX.value - prevBiasX.value;
+          const biasDy = biasY.value - prevBiasY.value;
+          prevBiasX.value = biasX.value;
+          prevBiasY.value = biasY.value;
 
-        const speed = Math.hypot(biasDx, biasDy);
-        if (speed > TILT_STOP_BIAS_VEL) {
-          motionAngle.value = Math.atan2(-biasDy, -biasDx);
-          motionAmp.value = Math.min(TILT_AMP_MAX, speed * TILT_BIAS_VEL_SCALE);
-          updateRetainedLabelRotation(
-            retainedLabelRotation,
-            motionAngle.value,
-            motionAmp.value,
-          );
-        } else {
-          motionAmp.value *= TILT_DECAY;
-          if (motionAmp.value < 0.0005) {
-            motionAmp.value = 0;
+          const speed = Math.hypot(biasDx, biasDy);
+          if (speed > TILT_STOP_BIAS_VEL) {
+            motionAngle.value = Math.atan2(-biasDy, -biasDx);
+            motionAmp.value = Math.min(TILT_AMP_MAX, speed * TILT_BIAS_VEL_SCALE);
+            updateRetainedLabelRotation(
+              retainedLabelRotation,
+              motionAngle.value,
+              motionAmp.value,
+            );
+          } else {
+            decayMotionTilt(motionAmp, retainedLabelRotation);
           }
+        } else {
+          decayMotionTilt(motionAmp, retainedLabelRotation);
         }
       }
 
-      const layoutSettled = bx === appliedBiasX.value && by === appliedBiasY.value;
+      const layoutSettled =
+        Math.abs(bx - appliedBiasX.value) < BIAS_SETTLE_EPS &&
+        Math.abs(by - appliedBiasY.value) < BIAS_SETTLE_EPS;
       if (
         !isDragging.value &&
+        !isBiasCoasting.value &&
         layoutSettled &&
         motionAmp.value < 0.0005 &&
         motionLoopEngaged.value
@@ -693,6 +984,7 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
       motionAmp,
       retainedLabelRotation,
       motionLoopEngaged,
+      isBiasCoasting,
       deactivateMotionLoop,
     ],
   );
@@ -706,7 +998,15 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   const prevTY = useSharedValue(0);
 
   const panGesture = Gesture.Pan()
+    .minDistance(PAN_MIN_DISTANCE_PX)
     .onBegin(() => {
+      'worklet';
+      cancelAnimation(biasX);
+      cancelAnimation(biasY);
+      isBiasCoasting.value = 0;
+      biasCoastPending.value = 0;
+    })
+    .onStart(() => {
       'worklet';
       motionLoopEngaged.value = 1;
       runOnJS(activateMotionLoop)();
@@ -742,6 +1042,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
       'worklet';
       motionLoopEngaged.value = 1;
       runOnJS(activateMotionLoop)();
+      isDragging.value = 0;
+
       const flingMsX = clampW(Math.abs(e.velocityX) * 0.35, MIN_FLING_MS, MAX_FLING_MS);
       const flingMsY = clampW(Math.abs(e.velocityY) * 0.35, MIN_FLING_MS, MAX_FLING_MS);
       const targetX = clampW(
@@ -754,18 +1056,86 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
         -1,
         1,
       );
-      biasX.value = withTiming(targetX, {
-        duration: flingMsX,
-        easing: Easing.out(Easing.cubic),
-      });
-      biasY.value = withTiming(targetY, {
-        duration: flingMsY,
-        easing: Easing.out(Easing.cubic),
-      });
-      prevBiasX.value = biasX.value;
-      prevBiasY.value = biasY.value;
-      isDragging.value = 0;
+      const needsCoastX = Math.abs(targetX - biasX.value) > 1e-5;
+      const needsCoastY = Math.abs(targetY - biasY.value) > 1e-5;
+      if (!needsCoastX && !needsCoastY) {
+        return;
+      }
+
+      scheduleBiasAutoAnim(
+        targetX,
+        targetY,
+        flingMsX,
+        flingMsY,
+        biasX,
+        biasY,
+        appliedBiasX,
+        appliedBiasY,
+        prevBiasX,
+        prevBiasY,
+        layoutParticlesSv,
+        layoutBoundsSv,
+        layoutX,
+        layoutY,
+        layoutScale,
+        lastLayoutTs,
+        isBiasCoasting,
+        biasCoastPending,
+      );
     });
+
+  const tapGesture = Gesture.Tap()
+    .numberOfTaps(1)
+    .maxDuration(400)
+    .maxDistance(TAP_MAX_DISTANCE_PX)
+    .onEnd((e) => {
+      'worklet';
+      const bounds = layoutBoundsSv.value;
+      const tapY = e.y + bounds.zoneTop;
+      const hitIdx = findJellyfishIndexAtTap(
+        e.x,
+        tapY,
+        cellBellSizesSv.value,
+        layoutX.value,
+        layoutY.value,
+        layoutScale.value,
+      );
+      if (hitIdx < 0) {
+        return;
+      }
+      tryFocusJellyfish(
+        hitIdx,
+        0,
+        0,
+        false,
+        cellGridColsSv,
+        cellGridRowsSv,
+        biasX,
+        biasY,
+        appliedBiasX,
+        appliedBiasY,
+        prevBiasX,
+        prevBiasY,
+        layoutParticlesSv,
+        layoutBoundsSv,
+        layoutX,
+        layoutY,
+        layoutScale,
+        lastLayoutTs,
+        isBiasCoasting,
+        biasCoastPending,
+        motionAngle,
+        motionAmp,
+        retainedLabelRotation,
+        motionLoopEngaged,
+        activateMotionLoop,
+      );
+    });
+
+  const tableGesture = Gesture.Exclusive(tapGesture, panGesture);
+
+  const zoneTop = height * LAYOUT_ZONE_TOP_RATIO;
+  const zoneHeight = height * LAYOUT_ZONE_HEIGHT_RATIO;
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -803,8 +1173,8 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
         ))}
       </Canvas>
 
-      <GestureDetector gesture={panGesture}>
-        <View style={[styles.gestureCapture, { height: height * LAYOUT_ZONE_HEIGHT_RATIO }]} />
+      <GestureDetector gesture={tableGesture}>
+        <View style={[styles.gestureCapture, { top: zoneTop, height: zoneHeight }]} />
       </GestureDetector>
     </>
   );

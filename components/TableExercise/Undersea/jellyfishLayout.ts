@@ -119,6 +119,16 @@ function clampW(val: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, val));
 }
 
+/** Bias that centers the spacing peak on a grid slot (max scale for that axis). */
+export function biasForGridSlot(slotIndex: number, slotCount: number): number {
+  'worklet';
+  if (slotCount <= 1) {
+    return 0;
+  }
+  const t = slotIndex / (slotCount - 1);
+  return clampW((t - 0.5) / 0.38, -1, 1);
+}
+
 function minNeighborGap(positions: number[], index: number): number {
   'worklet';
   const count = positions.length;
