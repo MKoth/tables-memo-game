@@ -8,7 +8,7 @@
  * Each jellyfish carries a text label centered on its bell (labels may overlap).
  */
 
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   Canvas,
@@ -935,6 +935,9 @@ function JellyfishTableLayerInner({
   const cellConfigs = useMemo(() => createCellConfigs(table, sizing), [table, sizing]);
   const drawOrder = useMemo(() => sortDrawOrder(cellConfigs), [cellConfigs]);
   const layoutParticles = useMemo(() => buildLayoutParticles(cellConfigs), [cellConfigs]);
+  const [revealedBodyIndices, setRevealedBodyIndices] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
   const cellLabelsSv = useSharedValue<string[]>([]);
   const capturedWordSv = useSharedValue('');
   const fallbackBubblePhase = useSharedValue(BubblePhase.None);
@@ -946,6 +949,10 @@ function JellyfishTableLayerInner({
   }, [onMatchSuccess]);
 
   useEffect(() => {
+    setRevealedBodyIndices(new Set());
+  }, [table]);
+
+  useEffect(() => {
     cellLabelsSv.value = cellConfigs.map(c => c.label);
   }, [cellConfigs, cellLabelsSv]);
 
@@ -953,11 +960,21 @@ function JellyfishTableLayerInner({
     capturedWordSv.value = capturedWord ?? '';
   }, [capturedWord, capturedWordSv]);
 
+  const revealBodyLabel = useCallback((hitIdx: number) => {
+    setRevealedBodyIndices(prev => {
+      if (prev.has(hitIdx)) {
+        return prev;
+      }
+      return new Set(prev).add(hitIdx);
+    });
+  }, []);
+
   const handleMatchSuccessJs = useCallback(
     (targetX: number, targetY: number, hitIdx: number) => {
+      revealBodyLabel(hitIdx);
       onMatchSuccessRef.current?.(targetX, targetY, hitIdx);
     },
-    [],
+    [revealBodyLabel],
   );
 
   const layoutBounds: LayoutBounds = useMemo(
@@ -1374,7 +1391,11 @@ function JellyfishTableLayerInner({
             clock={clock}
           />
         ))}
-        {drawOrder.map(config => (
+        {drawOrder.map(config => {
+          if (!config.isHeader && !revealedBodyIndices.has(config.index)) {
+            return null;
+          }
+          return (
           <CellLabel
             key={`${config.key}-label`}
             config={config}
@@ -1389,7 +1410,8 @@ function JellyfishTableLayerInner({
             tintFlashUntil={tintFlashUntil}
             clock={clock}
           />
-        ))}
+          );
+        })}
       </Canvas>
 
       <GestureDetector gesture={tableGesture}>
