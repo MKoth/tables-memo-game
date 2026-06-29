@@ -15,8 +15,10 @@ import { BubbleInstance } from './BubbleInstance';
 import { useUnderseaClock } from './UnderseaClockContext';
 import {
   BubblePhase,
+  BurstIntent,
   isTapInsideBubble,
   type BubbleAnimState,
+  type BurstIntentValue,
 } from './useBubbleAnimation';
 
 const BUBBLE_DIAMETER_RATIO = 0.9;
@@ -29,16 +31,20 @@ export type KoiWordBubbleProps = {
   word: string;
   anim: SharedValue<BubbleAnimState>;
   phase: SharedValue<number>;
-  startBurst: () => void;
+  escapeActive?: SharedValue<boolean>;
+  startBurst: (intent?: BurstIntentValue) => void;
   capturedFish: React.ReactNode;
+  interactive?: boolean;
 };
 
 export function KoiWordBubble({
   word,
   anim,
   phase,
+  escapeActive,
   startBurst,
   capturedFish,
+  interactive = true,
 }: KoiWordBubbleProps) {
   const { width, height } = useWindowDimensions();
   const clock = useUnderseaClock();
@@ -81,7 +87,7 @@ export function KoiWordBubble({
   const labelOpacity = useDerivedValue(() => anim.value.labelOpacity);
 
   const handleBurst = useCallback(() => {
-    startBurst();
+    startBurst(BurstIntent.Release);
   }, [startBurst]);
 
   const tapGesture = useMemo(
@@ -93,12 +99,15 @@ export function KoiWordBubble({
           if (phase.value !== BubblePhase.Idle) {
             return;
           }
+          if (escapeActive != null && escapeActive.value) {
+            return;
+          }
           if (!isTapInsideBubble(e.x, e.y, anim.value)) {
             return;
           }
           runOnJS(handleBurst)();
         }),
-    [anim, handleBurst, phase],
+    [anim, escapeActive, handleBurst, phase],
   );
 
   if (!bubbleImage || width === 0 || height === 0) {
@@ -122,9 +131,11 @@ export function KoiWordBubble({
           <Glyphs font={font} glyphs={staticGlyphs} color={LABEL_FILL_COLOR} />
         </Group>
       </Canvas>
-      <GestureDetector gesture={tapGesture}>
-        <View style={StyleSheet.absoluteFill} />
-      </GestureDetector>
+      {interactive && (
+        <GestureDetector gesture={tapGesture}>
+          <View style={StyleSheet.absoluteFill} />
+        </GestureDetector>
+      )}
     </View>
   );
 }

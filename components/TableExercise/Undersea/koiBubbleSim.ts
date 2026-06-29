@@ -10,7 +10,11 @@ const SWIMMING = 0;
 const IDLE = 1;
 
 const BASE_SPEED_MIN = 50;
-const BASE_SPEED_MAX = 670;
+export const BASE_SPEED_MAX = 670;
+
+const ESCAPE_ARRIVAL_THRESHOLD = 48;
+const ESCAPE_ANGLE_LERP = 10.0;
+const ESCAPE_SCREEN_MARGIN = 8;
 const SPEED_PICK_BIAS = 15.5;
 const SWIM_SPEED_SHADER_MIN = 2.5;
 const SWIM_SPEED_SHADER_MAX = 90.0;
@@ -312,4 +316,60 @@ export function updateFishInBubble(
 
   clampToCircle(fish, centerX, centerY, hardRadius);
   advanceFishCosmetics(fish, dt);
+}
+
+function clampFishEscapeToScreen(
+  fish: FishRuntime,
+  fishBodyInset: number,
+  screenW: number,
+  screenH: number,
+): void {
+  'worklet';
+  const margin = Math.max(ESCAPE_SCREEN_MARGIN, fishBodyInset * 0.5);
+  fish.x.value = clamp(fish.x.value, margin, screenW - margin);
+  // Bottom and sides only — no top clamp so the fish can exit upward.
+  fish.y.value = Math.min(fish.y.value, screenH - margin);
+}
+
+/** Directed swim toward a target at fixed speed; returns true when within arrival threshold. */
+export function updateFishDirectedEscape(
+  fish: FishRuntime,
+  dt: number,
+  targetX: number,
+  targetY: number,
+  speed: number,
+  fishBodyInset: number,
+  screenW: number,
+  screenH: number,
+): boolean {
+  'worklet';
+  const cfg = fish.config;
+  const SWIMMING = 0;
+
+  fish.state.value = SWIMMING;
+  fish.stateTimer.value = 999;
+  fish.targetBaseSpeed.value = speed;
+  fish.speed.value = lerp(fish.speed.value, speed, Math.min(1, 8 * dt));
+  fish.amplitude.value = lerp(
+    fish.amplitude.value,
+    cfg.targetAmplitude,
+    Math.min(1, AMPLITUDE_LERP * dt),
+  );
+
+  const dx = targetX - fish.x.value;
+  const dy = targetY - fish.y.value;
+  const dist = Math.hypot(dx, dy);
+  const targetAngle = Math.atan2(dy, dx);
+  fish.angle.value = lerpAngle(fish.angle.value, targetAngle, Math.min(1, ESCAPE_ANGLE_LERP * dt));
+  fish.wanderAngle.value = targetAngle;
+  fish.wasNearEdge.value = false;
+  fish.turnArc.value = lerp(fish.turnArc.value, 0, Math.min(1, TURN_ARC_LERP * dt));
+  fish.prevAngle.value = fish.angle.value;
+
+  fish.x.value += Math.cos(fish.angle.value) * fish.speed.value * dt;
+  fish.y.value += Math.sin(fish.angle.value) * fish.speed.value * dt;
+
+  clampFishEscapeToScreen(fish, fishBodyInset, screenW, screenH);
+  advanceFishCosmetics(fish, dt);
+  return dist <= ESCAPE_ARRIVAL_THRESHOLD;
 }

@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
+import type { SharedValue } from 'react-native-reanimated';
+import { runOnJS, useSharedValue } from 'react-native-reanimated';
 import { KoiInstance, KoiShadowInstance } from './KoiInstance';
 import type { KoiFishSimulation } from './useKoiFishSimulation';
 
@@ -95,11 +96,22 @@ function findKoiIndexAtTap(
   positions: number[],
   count: number,
   hitRadius: number,
+  eliminated: number[],
 ): number {
   'worklet';
   let bestIdx = -1;
   let bestDist = Infinity;
   for (let i = 0; i < count; i++) {
+    let isEliminated = false;
+    for (let e = 0; e < eliminated.length; e++) {
+      if (eliminated[e] === i) {
+        isEliminated = true;
+        break;
+      }
+    }
+    if (isEliminated) {
+      continue;
+    }
     const cx = positions[i * 2] ?? 0;
     const cy = positions[i * 2 + 1] ?? 0;
     const dist = Math.hypot(tapX - cx, tapY - cy);
@@ -116,15 +128,28 @@ export type KoiFishLayerProps = {
   images: Record<KoiImageKey, SkImage>;
   masks: Record<KoiImageKey, SkImage>;
   capturedFishIndex?: number | null;
+  eliminatedFishSv?: SharedValue<number[]>;
+  eliminatedFishIndices?: number[];
   interactive?: boolean;
   onFishSelect?: (word: string, fishIndex: number, originX: number, originY: number) => void;
 };
+
+function isFishEliminated(eliminated: number[], fishIndex: number): boolean {
+  for (let i = 0; i < eliminated.length; i++) {
+    if (eliminated[i] === fishIndex) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export function KoiFishLayer({
   sim,
   images,
   masks,
   capturedFishIndex = null,
+  eliminatedFishSv,
+  eliminatedFishIndices = [],
   interactive = true,
   onFishSelect,
 }: KoiFishLayerProps) {
@@ -137,6 +162,8 @@ export function KoiFishLayer({
     swimZoneHeight,
   } = sim;
   const koiCount = runtimeEntries.length;
+  const emptyEliminatedSv = useSharedValue<number[]>([]);
+  const eliminatedSv = eliminatedFishSv ?? emptyEliminatedSv;
 
   const handleFishSelect = useCallback(
     (fishIndex: number, originX: number, originY: number) => {
@@ -156,7 +183,14 @@ export function KoiFishLayer({
           'worklet';
           const positions = sharedPositions.value;
           const tapY = e.y + swimZoneTop;
-          const hitIdx = findKoiIndexAtTap(e.x, tapY, positions, koiCount, hitRadius);
+          const hitIdx = findKoiIndexAtTap(
+            e.x,
+            tapY,
+            positions,
+            koiCount,
+            hitRadius,
+            eliminatedSv.value,
+          );
           if (hitIdx < 0) {
             return;
           }
@@ -166,7 +200,13 @@ export function KoiFishLayer({
             positions[hitIdx * 2 + 1] ?? 0,
           );
         }),
-    [sharedPositions, swimZoneTop, koiCount, hitRadius, handleFishSelect],
+    [sharedPositions, swimZoneTop, koiCount, hitRadius, handleFishSelect, eliminatedSv],
+  );
+
+  const isHidden = useCallback(
+    (index: number) =>
+      index === capturedFishIndex || eliminatedFishIndices.includes(index),
+    [capturedFishIndex, eliminatedFishIndices],
   );
 
   if (koiCount === 0) {
@@ -178,7 +218,7 @@ export function KoiFishLayer({
       <Canvas style={styles.canvas} pointerEvents="none">
         <Group>
           {runtimeEntries.map(({ spawn, runtime }, index) => {
-            if (index === capturedFishIndex) {
+            if (isHidden(index)) {
               return null;
             }
             return (
@@ -217,7 +257,7 @@ export function KoiFishLayer({
         </Group>
         <Group>
           {runtimeEntries.map(({ spawn, runtime }, index) => {
-            if (index === capturedFishIndex) {
+            if (isHidden(index)) {
               return null;
             }
             return (

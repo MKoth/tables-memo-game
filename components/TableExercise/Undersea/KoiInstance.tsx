@@ -83,6 +83,8 @@ type KoiRenderBaseProps = {
   state: KoiFishState;
   /** Multiplier applied to fishW/fishH each frame (e.g. bubble capture scale). */
   fishWScale?: SharedValue<number>;
+  /** When true, render bounds follow the fish anywhere on screen (escape mode). */
+  freeBounds?: SharedValue<boolean>;
 };
 
 export type KoiInstanceProps = KoiRenderBaseProps;
@@ -157,6 +159,7 @@ function computeKoiBounds(
   centerY: number,
   margin: number,
   penumbraPx: number,
+  clampToSwimZone: boolean,
 ): KoiBounds {
   'worklet';
   const turnT = Math.abs(state.turnArc.value);
@@ -175,6 +178,17 @@ function computeKoiBounds(
   const halfW = halfAlong * cosA + halfPerp * sinA;
   const halfH = halfAlong * sinA + halfPerp * cosA;
   const totalMargin = margin + penumbraPx;
+
+  if (!clampToSwimZone) {
+    const pad = halfW + totalMargin;
+    const padY = halfH + totalMargin;
+    return {
+      x: centerX - pad,
+      y: centerY - padY,
+      width: Math.max(1, pad * 2),
+      height: Math.max(1, padY * 2),
+    };
+  }
 
   const minX = Math.max(swimZoneX, centerX - halfW - totalMargin);
   const minY = Math.max(swimZoneY, centerY - halfH - totalMargin);
@@ -289,6 +303,7 @@ function KoiShaderRect({
   phase,
   state,
   fishWScale,
+  freeBounds,
   centerXOffset = 0,
   centerYOffset = 0,
   renderMode,
@@ -333,6 +348,7 @@ function KoiShaderRect({
       centerY,
       RENDER_BOUNDS_MARGIN,
       penumbraPx,
+      !(freeBounds?.value ?? false),
     );
   });
 

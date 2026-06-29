@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import { makeMutable, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import { makeMutable, runOnJS, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import {
   KOI_BODY_TINT_PROBABILITY,
   KOI_OVERLAY_PROBABILITY,
@@ -16,6 +16,7 @@ import { SWIM_ZONE_TOP_RATIO } from './KoiFishLayer';
 import {
   advanceFishCosmetics,
   applyEnterFishPosition,
+  updateFishDirectedEscape,
   updateFishInBubble,
 } from './koiBubbleSim';
 import { releaseCapturedFishWorklet } from './fishPoolSnapshot';
@@ -61,6 +62,13 @@ export type KoiCaptureSharedState = {
   bubbleAnim: SharedValue<BubbleAnimState>;
   bubblePhase: SharedValue<number>;
   enterProgress: SharedValue<number>;
+  escapeActive: SharedValue<boolean>;
+  escapeStage: SharedValue<number>;
+  escapeTargetX: SharedValue<number>;
+  escapeTargetY: SharedValue<number>;
+  offScreenTargetX: SharedValue<number>;
+  offScreenTargetY: SharedValue<number>;
+  escapeCompleteTriggered: SharedValue<boolean>;
 };
 
 export type UseKoiFishSimulationParams = {
@@ -69,6 +77,8 @@ export type UseKoiFishSimulationParams = {
   words: string[];
   captureState: KoiCaptureSharedState;
   releaseRequestSv: SharedValue<number>;
+  eliminatedFishSv: SharedValue<number[]>;
+  onEscapeComplete: () => void;
 };
 
 type PersistedSimBundle = {
@@ -542,12 +552,26 @@ function updateFish(
   updateFinBehavior(fish, dt);
 }
 
+function isFishEliminated(eliminated: number[], fishIndex: number): boolean {
+  'worklet';
+  for (let i = 0; i < eliminated.length; i++) {
+    if (eliminated[i] === fishIndex) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function useFishSimulation(
   runtimes: KoiRuntimeEntry[],
   swimZone: SwimZone,
+  screenWidth: number,
+  screenHeight: number,
   sharedPositions: SharedValue<number[]>,
   captureState: KoiCaptureSharedState,
   releaseRequestSv: SharedValue<number>,
+  eliminatedFishSv: SharedValue<number[]>,
+  onEscapeComplete: () => void,
 ): void {
   const lastTimestamp = useSharedValue(-1);
   const fishCount = runtimes.length;
@@ -613,13 +637,14 @@ function useFishSimulation(
       const next = fishNext.value;
       const gridReady = heads.length === cellCount && next.length === fishCount;
       const capturedFishIndex = captureState.capturedFishIndex.value;
+      const eliminated = eliminatedFishSv.value;
 
       if (gridReady) {
         for (let c = 0; c < cellCount; c++) {
           heads[c] = -1;
         }
         for (let i = 0; i < fishCount; i++) {
-          if (i === capturedFishIndex) {
+          if (i === capturedFishIndex || isFishEliminated(eliminated, i)) {
             continue;
           }
           let cx = Math.floor((pos[i * 2] - gridMinX) / cellSize);
@@ -635,7 +660,43 @@ function useFishSimulation(
       for (let fishIndex = 0; fishIndex < fishCount; fishIndex++) {
         const fishRuntime = runtimes[fishIndex].runtime;
 
+        if (isFishEliminated(eliminated, fishIndex)) {
+          continue;
+        }
+
         if (fishIndex === capturedFishIndex && capturedFishIndex >= 0) {
+          if (captureState.escapeActive.value) {
+            const arrived = updateFishDirectedEscape(
+              fishRuntime,
+              dt,
+              captureState.escapeTargetX.value,
+              captureState.escapeTargetY.value,
+              BASE_SPEED_MAX,
+              FISH_BODY_INSET,
+              screenWidth,
+              screenHeight,
+            );
+
+            if (captureState.escapeStage.value === 0 && arrived) {
+              captureState.escapeStage.value = 1;
+              captureState.escapeTargetX.value = captureState.offScreenTargetX.value;
+              captureState.escapeTargetY.value = captureState.offScreenTargetY.value;
+            }
+
+            if (
+              captureState.escapeStage.value === 1 &&
+              fishRuntime.y.value + FISH_BODY_INSET < 0 &&
+              !captureState.escapeCompleteTriggered.value
+            ) {
+              captureState.escapeCompleteTriggered.value = true;
+              runOnJS(onEscapeComplete)();
+            }
+
+            pos[fishIndex * 2] = fishRuntime.x.value;
+            pos[fishIndex * 2 + 1] = fishRuntime.y.value;
+            continue;
+          }
+
           const bubblePhase = captureState.bubblePhase.value;
           const bubble = captureState.bubbleAnim.value;
           const bubbleCenterX = bubble.centerX;
@@ -706,7 +767,7 @@ function useFishSimulation(
                 }
                 let i = heads[gy * gridCols + gx];
                 while (i !== -1) {
-                  if (i !== fishIndex && i !== capturedFishIndex) {
+                  if (i !== fishIndex && i !== capturedFishIndex && !isFishEliminated(eliminated, i)) {
                     const dx = fx - pos[i * 2];
                     const dy = fy - pos[i * 2 + 1];
                     const distSq = dx * dx + dy * dy;
@@ -729,7 +790,7 @@ function useFishSimulation(
             }
           } else {
             for (let i = 0; i < fishCount; i++) {
-              if (i === fishIndex || i === capturedFishIndex) {
+              if (i === fishIndex || i === capturedFishIndex || isFishEliminated(eliminated, i)) {
                 continue;
               }
               const dx = fx - pos[i * 2];
@@ -762,6 +823,10 @@ function useFishSimulation(
       fishCount,
       captureState,
       releaseRequestSv,
+      eliminatedFishSv,
+      onEscapeComplete,
+      screenWidth,
+      screenHeight,
       gridMinX,
       gridMinY,
       cellSize,
@@ -802,6 +867,8 @@ export function useKoiFishSimulation({
   words,
   captureState,
   releaseRequestSv,
+  eliminatedFishSv,
+  onEscapeComplete,
 }: UseKoiFishSimulationParams): KoiFishSimulation {
   const wordsKey = words.join('\0');
   const bundleRef = useRef<PersistedSimBundle | null>(null);
@@ -820,9 +887,13 @@ export function useKoiFishSimulation({
   useFishSimulation(
     runtimeEntries,
     swimZone,
+    width,
+    height,
     sharedPositions,
     captureState,
     releaseRequestSv,
+    eliminatedFishSv,
+    onEscapeComplete,
   );
 
   const armCapture = useCallback(

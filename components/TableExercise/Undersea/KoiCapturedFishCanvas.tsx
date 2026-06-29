@@ -27,6 +27,7 @@ function lerp(a: number, b: number, t: number): number {
 export type KoiCapturedFishCanvasProps = {
   entry: KoiRuntimeEntry;
   anim: SharedValue<BubbleAnimState>;
+  escapeActive?: SharedValue<boolean>;
   image: SkImage;
   maskImage: SkImage;
   overlayMaskImage: SkImage;
@@ -53,6 +54,7 @@ export type KoiCapturedFishCanvasProps = {
 export function KoiCapturedFishCanvas({
   entry,
   anim,
+  escapeActive,
   image,
   maskImage,
   overlayMaskImage,
@@ -61,6 +63,11 @@ export function KoiCapturedFishCanvas({
   const { spawn, runtime } = entry;
 
   const clipPath = useDerivedValue(() => {
+    if (escapeActive?.value) {
+      const path = Skia.Path.Make();
+      path.addRect({ x: -1e6, y: -1e6, width: 2e6, height: 2e6 });
+      return path;
+    }
     const { centerX, centerY, diameter, captureVisualT } = anim.value;
     const path = Skia.Path.Make();
     if (captureVisualT <= 0.001) {
@@ -123,6 +130,7 @@ export function KoiCapturedFishCanvas({
         phase={spawn.phase}
         state={fishState}
         fishWScale={fishWScale}
+        freeBounds={escapeActive}
         offsetX={shadowOffsetX}
         offsetY={shadowOffsetY}
         shadowColor={KOI_SHADOW_COLOR}
@@ -142,6 +150,7 @@ export function KoiCapturedFishCanvas({
         phase={spawn.phase}
         state={fishState}
         fishWScale={fishWScale}
+        freeBounds={escapeActive}
       />
     </Group>
   );

@@ -28,6 +28,13 @@ export const BubblePhase = {
   Burst: 2,
 } as const;
 
+export const BurstIntent = {
+  Release: 0,
+  Escape: 1,
+} as const;
+
+export type BurstIntentValue = (typeof BurstIntent)[keyof typeof BurstIntent];
+
 export type BubbleAnimState = {
   x: number;
   y: number;
@@ -174,17 +181,18 @@ export type UseBubbleAnimationResult = {
   anim: SharedValue<BubbleAnimState>;
   phase: SharedValue<number>;
   enterProgress: SharedValue<number>;
-  startBurst: () => void;
+  startBurst: (intent?: BurstIntentValue) => void;
 };
 
 export function useBubbleAnimation(
   config: BubbleAnimationConfig,
-  onDismiss: () => void,
+  onDismiss: (intent: BurstIntentValue) => void,
   enabled = true,
   onBurstCompleteWorklet?: () => void,
 ): UseBubbleAnimationResult {
   const enterProgress = useSharedValue(0);
   const burstProgress = useSharedValue(0);
+  const burstIntent = useSharedValue<BurstIntentValue>(BurstIntent.Release);
   const phase = useSharedValue<number>(enabled ? BubblePhase.Enter : BubblePhase.None);
 
   const anim = useDerivedValue((): BubbleAnimState =>
@@ -237,24 +245,31 @@ export function useBubbleAnimation(
     phase,
   ]);
 
-  const startBurst = useCallback(() => {
-    if (phase.value !== BubblePhase.Idle) {
-      return;
-    }
-    phase.value = BubblePhase.Burst;
-    burstProgress.value = 0;
-    burstProgress.value = withTiming(
-      1,
-      { duration: BUBBLE_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },
-      (finished) => {
-        'worklet';
-        if (finished) {
-          onBurstCompleteWorklet?.();
-          runOnJS(onDismiss)();
-        }
-      },
-    );
-  }, [burstProgress, onBurstCompleteWorklet, onDismiss, phase]);
+  const startBurst = useCallback(
+    (intent: BurstIntentValue = BurstIntent.Release) => {
+      if (phase.value !== BubblePhase.Idle) {
+        return;
+      }
+      burstIntent.value = intent;
+      phase.value = BubblePhase.Burst;
+      burstProgress.value = 0;
+      burstProgress.value = withTiming(
+        1,
+        { duration: BUBBLE_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },
+        (finished) => {
+          'worklet';
+          if (finished) {
+            const completedIntent = burstIntent.value;
+            if (completedIntent === BurstIntent.Release) {
+              onBurstCompleteWorklet?.();
+            }
+            runOnJS(onDismiss)(completedIntent);
+          }
+        },
+      );
+    },
+    [burstIntent, burstProgress, onBurstCompleteWorklet, onDismiss, phase],
+  );
 
   return { anim, phase, enterProgress, startBurst };
 }

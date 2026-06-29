@@ -32,6 +32,7 @@ import {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { JellyfishInstance, type JellyfishDynamicOverrides } from './JellyfishInstance';
+import { BubblePhase } from './useBubbleAnimation';
 import {
   JELLYFISH_DEFAULT_WOBBLE,
   JELLYFISH_FLASH_TINT_WAVE_SPEED,
@@ -849,13 +850,21 @@ function CellLabel({
 
 export type JellyfishTableLayerProps = {
   table: TableData;
+  capturedWord?: string | null;
+  bubblePhase?: SharedValue<number>;
+  onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;
 };
 
 /**
  * Thin loader shell: waits for images before mounting the stateful inner layer,
  * keeping hook call order unconditional inside each component.
  */
-export function JellyfishTableLayer({ table }: JellyfishTableLayerProps) {
+export function JellyfishTableLayer({
+  table,
+  capturedWord = null,
+  bubblePhase,
+  onMatchSuccess,
+}: JellyfishTableLayerProps) {
   const bellImage = useImage(JELLYFISH_BELL);
   const tentacleImage = useImage(JELLYFISH_TENTACLES);
   if (!bellImage || !tentacleImage) { return null; }
@@ -864,6 +873,9 @@ export function JellyfishTableLayer({ table }: JellyfishTableLayerProps) {
       table={table}
       bellImage={bellImage}
       tentacleImage={tentacleImage}
+      capturedWord={capturedWord}
+      bubblePhase={bubblePhase}
+      onMatchSuccess={onMatchSuccess}
     />
   );
 }
@@ -872,11 +884,21 @@ type InnerProps = {
   table: TableData;
   bellImage: NonNullable<ReturnType<typeof useImage>>;
   tentacleImage: NonNullable<ReturnType<typeof useImage>>;
+  capturedWord: string | null;
+  bubblePhase?: SharedValue<number>;
+  onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;
 };
 
 const JELLYFISH_CLOCK_FPS = 15;
 
-function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProps) {
+function JellyfishTableLayerInner({
+  table,
+  bellImage,
+  tentacleImage,
+  capturedWord,
+  bubblePhase,
+  onMatchSuccess,
+}: InnerProps) {
   const { width, height } = useWindowDimensions();
   const clock = useUnderseaClockQuantized(JELLYFISH_CLOCK_FPS);
 
@@ -913,6 +935,30 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
   const cellConfigs = useMemo(() => createCellConfigs(table, sizing), [table, sizing]);
   const drawOrder = useMemo(() => sortDrawOrder(cellConfigs), [cellConfigs]);
   const layoutParticles = useMemo(() => buildLayoutParticles(cellConfigs), [cellConfigs]);
+  const cellLabelsSv = useSharedValue<string[]>([]);
+  const capturedWordSv = useSharedValue('');
+  const fallbackBubblePhase = useSharedValue(BubblePhase.None);
+  const effectiveBubblePhase = bubblePhase ?? fallbackBubblePhase;
+  const onMatchSuccessRef = useRef(onMatchSuccess);
+
+  useEffect(() => {
+    onMatchSuccessRef.current = onMatchSuccess;
+  }, [onMatchSuccess]);
+
+  useEffect(() => {
+    cellLabelsSv.value = cellConfigs.map(c => c.label);
+  }, [cellConfigs, cellLabelsSv]);
+
+  useEffect(() => {
+    capturedWordSv.value = capturedWord ?? '';
+  }, [capturedWord, capturedWordSv]);
+
+  const handleMatchSuccessJs = useCallback(
+    (targetX: number, targetY: number, hitIdx: number) => {
+      onMatchSuccessRef.current?.(targetX, targetY, hitIdx);
+    },
+    [],
+  );
 
   const layoutBounds: LayoutBounds = useMemo(
     () => ({
@@ -1210,6 +1256,60 @@ function JellyfishTableLayerInner({ table, bellImage, tentacleImage }: InnerProp
       if (hitIdx < 0) {
         return;
       }
+
+      const captured = capturedWordSv.value;
+      const hasCaptured = captured.length > 0;
+
+      if (hasCaptured) {
+        if (effectiveBubblePhase.value !== BubblePhase.Idle) {
+          return;
+        }
+        const label = cellLabelsSv.value[hitIdx] ?? '';
+        const isMatch = label === captured;
+        triggerJellyfishTintFlash(
+          hitIdx,
+          isMatch
+            ? JELLYFISH_TINT_PRESET_INDEX.success
+            : JELLYFISH_TINT_PRESET_INDEX.error,
+          tintFlashPreset,
+          tintFlashUntil,
+          clock,
+        );
+        tryFocusJellyfish(
+          hitIdx,
+          0,
+          0,
+          false,
+          cellGridColsSv,
+          cellGridRowsSv,
+          biasX,
+          biasY,
+          appliedBiasX,
+          appliedBiasY,
+          prevBiasX,
+          prevBiasY,
+          layoutParticlesSv,
+          layoutBoundsSv,
+          layoutX,
+          layoutY,
+          layoutScale,
+          lastLayoutTs,
+          isBiasCoasting,
+          biasCoastPending,
+          motionAngle,
+          motionAmp,
+          retainedLabelRotation,
+          motionLoopEngaged,
+          activateMotionLoop,
+        );
+        if (isMatch) {
+          const jx = layoutX.value[hitIdx] ?? 0;
+          const jy = layoutY.value[hitIdx] ?? 0;
+          runOnJS(handleMatchSuccessJs)(jx, jy, hitIdx);
+        }
+        return;
+      }
+
       triggerJellyfishTintFlash(
         hitIdx,
         JELLYFISH_TINT_PRESET_INDEX.primary,

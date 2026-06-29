@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -7,7 +7,7 @@ import { releaseCapturedFishWorklet } from './fishPoolSnapshot';
 import { KoiCapturedFishCanvas } from './KoiCapturedFishCanvas';
 import { KoiFishLayer, SWIM_ZONE_TOP_RATIO, type KoiImageKey } from './KoiFishLayer';
 import { KoiWordBubble } from './KoiWordBubble';
-import { useBubbleAnimation } from './useBubbleAnimation';
+import { BubblePhase, BurstIntent, useBubbleAnimation } from './useBubbleAnimation';
 import {
   useKoiFishSimulation,
   type KoiCaptureSharedState,
@@ -35,8 +35,17 @@ type BubbleSelection = {
   originY: number;
 };
 
+export type KoiCaptureBridge = {
+  capturedWord: string | null;
+  bubblePhase: SharedValue<number>;
+  onMatchSuccess: (targetX: number, targetY: number, hitIdx: number) => void;
+  overlay: React.ReactNode | null;
+  escapeOverlayActive: boolean;
+};
+
 export type KoiSwimZoneProps = {
   words: string[];
+  onCaptureBridgeChange?: (bridge: KoiCaptureBridge | null) => void;
 };
 
 type ReleaseContext = {
@@ -45,9 +54,11 @@ type ReleaseContext = {
   captureState: KoiCaptureSharedState;
 };
 
-export function KoiSwimZone({ words }: KoiSwimZoneProps) {
+export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) {
   const { width, height } = useWindowDimensions();
   const [selection, setSelection] = useState<BubbleSelection | null>(null);
+  const [eliminatedFishIndices, setEliminatedFishIndices] = useState<number[]>([]);
+  const [escapeOverlayActive, setEscapeOverlayActive] = useState(false);
   /** Pool visibility — decoupled from overlay so canvases can overlap for one frame on enter/exit. */
   const [poolHiddenFishIndex, setPoolHiddenFishIndex] = useState<number | null>(null);
   const transitionRafRef = useRef<number | null>(null);
@@ -56,6 +67,14 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
   const capturedFishIndexSv = useSharedValue(-1);
   const captureOriginXSv = useSharedValue(0);
   const captureOriginYSv = useSharedValue(0);
+  const escapeActiveSv = useSharedValue(false);
+  const escapeStageSv = useSharedValue(0);
+  const escapeTargetXSv = useSharedValue(0);
+  const escapeTargetYSv = useSharedValue(0);
+  const offScreenTargetXSv = useSharedValue(width * 0.5);
+  const offScreenTargetYSv = useSharedValue(-120 * 1.5);
+  const escapeCompleteTriggeredSv = useSharedValue(false);
+  const eliminatedFishSv = useSharedValue<number[]>([]);
 
   const koi1 = useImage(KOI_VARIANTS.koi1);
   const koi2 = useImage(KOI_VARIANTS.koi2);
@@ -72,6 +91,15 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
     () => ({ koi1: koi1Mask, koi2: koi2Mask, koi3: koi3Mask }),
     [koi1Mask, koi2Mask, koi3Mask],
   );
+
+  useEffect(() => {
+    eliminatedFishSv.value = eliminatedFishIndices;
+  }, [eliminatedFishIndices, eliminatedFishSv]);
+
+  useEffect(() => {
+    offScreenTargetXSv.value = width * 0.5;
+    offScreenTargetYSv.value = -120 * 1.5;
+  }, [width, offScreenTargetXSv, offScreenTargetYSv]);
 
   const targetDiameter = width * BUBBLE_DIAMETER_RATIO;
   const swimZoneHeight = height * (1 - SWIM_ZONE_TOP_RATIO);
@@ -98,14 +126,21 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
 
   useEffect(() => () => cancelTransitionRaf(), [cancelTransitionRaf]);
 
-  const handleBurstEnd = useCallback(() => {
-    cancelTransitionRaf();
-    setPoolHiddenFishIndex(null);
-    transitionRafRef.current = requestAnimationFrame(() => {
-      transitionRafRef.current = null;
-      setSelection(null);
-    });
-  }, [cancelTransitionRaf]);
+  const handleBurstEnd = useCallback(
+    (intent: number) => {
+      if (intent === BurstIntent.Escape) {
+        return;
+      }
+
+      cancelTransitionRaf();
+      setPoolHiddenFishIndex(null);
+      transitionRafRef.current = requestAnimationFrame(() => {
+        transitionRafRef.current = null;
+        setSelection(null);
+      });
+    },
+    [cancelTransitionRaf],
+  );
 
   const requestReleaseWorklet = useCallback(() => {
     'worklet';
@@ -142,9 +177,32 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
       bubbleAnim: anim,
       bubblePhase: phase,
       enterProgress,
+      escapeActive: escapeActiveSv,
+      escapeStage: escapeStageSv,
+      escapeTargetX: escapeTargetXSv,
+      escapeTargetY: escapeTargetYSv,
+      offScreenTargetX: offScreenTargetXSv,
+      offScreenTargetY: offScreenTargetYSv,
+      escapeCompleteTriggered: escapeCompleteTriggeredSv,
     }),
-    [anim, phase, enterProgress, capturedFishIndexSv, captureOriginXSv, captureOriginYSv],
+    [
+      anim,
+      phase,
+      enterProgress,
+      capturedFishIndexSv,
+      captureOriginXSv,
+      captureOriginYSv,
+      escapeActiveSv,
+      escapeStageSv,
+      escapeTargetXSv,
+      escapeTargetYSv,
+      offScreenTargetXSv,
+      offScreenTargetYSv,
+      escapeCompleteTriggeredSv,
+    ],
   );
+
+  const onEscapeCompleteRef = useRef<() => void>(() => {});
 
   const sim = useKoiFishSimulation({
     width,
@@ -152,7 +210,41 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
     words,
     captureState,
     releaseRequestSv,
+    eliminatedFishSv,
+    onEscapeComplete: () => onEscapeCompleteRef.current(),
   });
+
+  const handleEscapeComplete = useCallback(() => {
+    const fishIndex = capturedFishIndexSv.value;
+    cancelTransitionRaf();
+    escapeActiveSv.value = false;
+    escapeStageSv.value = 0;
+    escapeCompleteTriggeredSv.value = false;
+    capturedFishIndexSv.value = -1;
+    phase.value = BubblePhase.None;
+
+    if (fishIndex >= 0) {
+      setEliminatedFishIndices(prev =>
+        prev.includes(fishIndex) ? prev : [...prev, fishIndex],
+      );
+    }
+
+    setPoolHiddenFishIndex(null);
+    setEscapeOverlayActive(false);
+    transitionRafRef.current = requestAnimationFrame(() => {
+      transitionRafRef.current = null;
+      setSelection(null);
+    });
+  }, [
+    cancelTransitionRaf,
+    capturedFishIndexSv,
+    escapeActiveSv,
+    escapeStageSv,
+    escapeCompleteTriggeredSv,
+    phase,
+  ]);
+
+  onEscapeCompleteRef.current = handleEscapeComplete;
 
   releaseContextSv.value = {
     runtimeEntries: sim.runtimeEntries,
@@ -160,19 +252,95 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
     captureState,
   };
 
+  const handleMatchSuccess = useCallback(
+    (targetX: number, targetY: number, _hitIdx: number) => {
+      escapeTargetXSv.value = targetX;
+      escapeTargetYSv.value = targetY;
+      escapeStageSv.value = 0;
+      escapeCompleteTriggeredSv.value = false;
+      escapeActiveSv.value = true;
+      setEscapeOverlayActive(true);
+      startBurst(BurstIntent.Escape);
+    },
+    [
+      escapeCompleteTriggeredSv,
+      escapeActiveSv,
+      escapeStageSv,
+      escapeTargetXSv,
+      escapeTargetYSv,
+      startBurst,
+    ],
+  );
+
   const handleFishSelect = useCallback(
     (word: string, fishIndex: number, originX: number, originY: number) => {
       cancelTransitionRaf();
       sim.armCapture(fishIndex, originX, originY);
       setPoolHiddenFishIndex(null);
+      setEscapeOverlayActive(false);
+      escapeActiveSv.value = false;
+      escapeStageSv.value = 0;
+      escapeCompleteTriggeredSv.value = false;
       setSelection({ word, fishIndex, originX, originY });
       transitionRafRef.current = requestAnimationFrame(() => {
         transitionRafRef.current = null;
         setPoolHiddenFishIndex(fishIndex);
       });
     },
-    [cancelTransitionRaf, sim],
+    [cancelTransitionRaf, escapeActiveSv, escapeCompleteTriggeredSv, escapeStageSv, sim],
   );
+
+  const capturedEntry =
+    selection != null ? sim.runtimeEntries[selection.fishIndex] : null;
+
+  const capturedFishNode =
+    capturedEntry != null ? (
+      <KoiCapturedFishCanvas
+        entry={capturedEntry}
+        anim={anim}
+        escapeActive={escapeActiveSv}
+        image={images[capturedEntry.spawn.imageKey]!}
+        maskImage={masks[capturedEntry.spawn.imageKey]!}
+        overlayMaskImage={masks[capturedEntry.spawn.overlayMaskKey]!}
+        renderProps={sim.renderProps}
+      />
+    ) : null;
+
+  const bubbleOverlay =
+    selection != null && capturedFishNode != null ? (
+      <KoiWordBubble
+        word={selection.word}
+        anim={anim}
+        phase={phase}
+        escapeActive={escapeActiveSv}
+        startBurst={startBurst}
+        interactive={!escapeOverlayActive}
+        capturedFish={capturedFishNode}
+      />
+    ) : null;
+
+  const bubbleOverlayRef = useRef(bubbleOverlay);
+  bubbleOverlayRef.current = bubbleOverlay;
+
+  useLayoutEffect(() => {
+    onCaptureBridgeChange?.(
+      selection != null
+        ? {
+            capturedWord: selection.word,
+            bubblePhase: phase,
+            onMatchSuccess: handleMatchSuccess,
+            overlay: bubbleOverlayRef.current,
+            escapeOverlayActive,
+          }
+        : null,
+    );
+  }, [
+    escapeOverlayActive,
+    handleMatchSuccess,
+    onCaptureBridgeChange,
+    phase,
+    selection,
+  ]);
 
   if (
     words.length === 0 ||
@@ -188,9 +356,6 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
     return null;
   }
 
-  const capturedEntry =
-    selection != null ? sim.runtimeEntries[selection.fishIndex] : null;
-
   return (
     <View style={styles.container} pointerEvents="box-none">
       <KoiFishLayer
@@ -198,27 +363,11 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
         images={images as Record<KoiImageKey, NonNullable<typeof koi1>>}
         masks={masks as Record<KoiImageKey, NonNullable<typeof koi1Mask>>}
         capturedFishIndex={poolHiddenFishIndex}
+        eliminatedFishSv={eliminatedFishSv}
+        eliminatedFishIndices={eliminatedFishIndices}
         interactive={selection === null}
         onFishSelect={handleFishSelect}
       />
-      {selection != null && capturedEntry != null && (
-        <KoiWordBubble
-          word={selection.word}
-          anim={anim}
-          phase={phase}
-          startBurst={startBurst}
-          capturedFish={
-            <KoiCapturedFishCanvas
-              entry={capturedEntry}
-              anim={anim}
-              image={images[capturedEntry.spawn.imageKey]!}
-              maskImage={masks[capturedEntry.spawn.imageKey]!}
-              overlayMaskImage={masks[capturedEntry.spawn.overlayMaskKey]!}
-              renderProps={sim.renderProps}
-            />
-          }
-        />
-      )}
     </View>
   );
 }
@@ -230,6 +379,6 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
 });
