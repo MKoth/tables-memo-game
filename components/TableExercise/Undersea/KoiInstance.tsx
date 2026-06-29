@@ -81,9 +81,22 @@ type KoiRenderBaseProps = {
   turnDistort: KoiTurnDistortSettings;
   phase: number;
   state: KoiFishState;
+  /** Multiplier applied to fishW/fishH each frame (e.g. bubble capture scale). */
+  fishWScale?: SharedValue<number>;
 };
 
 export type KoiInstanceProps = KoiRenderBaseProps;
+
+function readAnimNumber(value: number | SharedValue<number> | undefined, fallback = 0): number {
+  'worklet';
+  if (value == null) {
+    return fallback;
+  }
+  if (typeof value === 'number') {
+    return value;
+  }
+  return value.value;
+}
 
 type KoiBounds = {
   x: number;
@@ -247,8 +260,8 @@ function buildKoiUniforms(
 }
 
 type KoiShaderRectProps = KoiRenderBaseProps & {
-  centerXOffset: number;
-  centerYOffset: number;
+  centerXOffset?: number | SharedValue<number>;
+  centerYOffset?: number | SharedValue<number>;
   renderMode: number;
   shadowColor: readonly [number, number, number];
   shadowOpacity: number;
@@ -275,8 +288,9 @@ function KoiShaderRect({
   turnDistort,
   phase,
   state,
-  centerXOffset,
-  centerYOffset,
+  fishWScale,
+  centerXOffset = 0,
+  centerYOffset = 0,
   renderMode,
   shadowColor,
   shadowOpacity,
@@ -294,18 +308,21 @@ function KoiShaderRect({
   const overlayColorUniform = [...overlayColor] as [number, number, number];
 
   const bounds = useDerivedValue(() => {
-    const centerX = state.x.value + centerXOffset;
-    const centerY = state.y.value + centerYOffset;
+    const scale = fishWScale?.value ?? 1;
+    const scaledFishW = fishW * scale;
+    const scaledFishH = fishH * scale;
+    const centerX = state.x.value + readAnimNumber(centerXOffset);
+    const centerY = state.y.value + readAnimNumber(centerYOffset);
     const turnT = Math.abs(state.turnArc.value);
-    const fishHAdj = fishH * (1 + turnT * turnDistort.bulgeGain);
+    const fishHAdj = scaledFishH * (1 + turnT * turnDistort.bulgeGain);
     const penumbraPx = renderMode > 0.5 ? shadowSoftness * fishHAdj * 0.8 : 0;
     return computeKoiBounds(
       swimZoneX,
       swimZoneY,
       swimZoneW,
       swimZoneH,
-      fishW,
-      fishH,
+      scaledFishW,
+      scaledFishH,
       tailFlex.tailBendScale,
       tailFlex.tailTipBendScale,
       tailFlex.headBendScale,
@@ -319,14 +336,17 @@ function KoiShaderRect({
     );
   });
 
-  const uniforms = useDerivedValue(() =>
-    buildKoiUniforms(
+  const uniforms = useDerivedValue(() => {
+    const scale = fishWScale?.value ?? 1;
+    const scaledFishW = fishW * scale;
+    const scaledFishH = fishH * scale;
+    return buildKoiUniforms(
       swimZoneX,
       swimZoneY,
       swimZoneW,
       swimZoneH,
-      fishW,
-      fishH,
+      scaledFishW,
+      scaledFishH,
       sourceAngle,
       tailFlex.tailBendScale,
       tailFlex.tailTipBendScale,
@@ -337,8 +357,8 @@ function KoiShaderRect({
       state,
       imageWidth,
       imageHeight,
-      state.x.value + centerXOffset,
-      state.y.value + centerYOffset,
+      state.x.value + readAnimNumber(centerXOffset),
+      state.y.value + readAnimNumber(centerYOffset),
       renderMode,
       shadowColorUniform,
       shadowOpacity,
@@ -348,8 +368,8 @@ function KoiShaderRect({
       bodyTintStrength,
       overlayColorUniform,
       overlayStrength,
-    ),
-  );
+    );
+  });
 
   return (
     <Rect rect={bounds}>
@@ -404,16 +424,16 @@ export function KoiInstance(props: KoiInstanceProps) {
 }
 
 export type KoiShadowInstanceProps = KoiRenderBaseProps & {
-  offsetX: number;
-  offsetY: number;
+  offsetX?: number | SharedValue<number>;
+  offsetY?: number | SharedValue<number>;
   shadowColor?: readonly [number, number, number];
   shadowOpacity?: number;
   shadowSoftness?: number;
 };
 
 export function KoiShadowInstance({
-  offsetX,
-  offsetY,
+  offsetX = 0,
+  offsetY = 0,
   shadowColor = defaultShadowColor,
   shadowOpacity = defaultShadowOpacity,
   shadowSoftness = defaultShadowSoftness,

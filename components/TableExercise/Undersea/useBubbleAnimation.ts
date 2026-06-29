@@ -22,6 +22,7 @@ import {
 } from './bubbleAnimPresets';
 
 export const BubblePhase = {
+  None: -1,
   Enter: 0,
   Idle: 1,
   Burst: 2,
@@ -31,11 +32,14 @@ export type BubbleAnimState = {
   x: number;
   y: number;
   diameter: number;
+  centerX: number;
+  centerY: number;
   wobbleAmp: number;
   wobbleSpeed: number;
   wobbleLobes: number;
   opacity: number;
   labelOpacity: number;
+  captureVisualT: number;
 };
 
 export type BubbleAnimationConfig = {
@@ -63,6 +67,22 @@ function computeBubbleAnimState(
   config: BubbleAnimationConfig,
 ): BubbleAnimState {
   'worklet';
+  if (phase === BubblePhase.None) {
+    return {
+      x: 0,
+      y: 0,
+      diameter: 0,
+      centerX: 0,
+      centerY: 0,
+      wobbleAmp: BUBBLE_IDLE_WOBBLE.wobbleAmp,
+      wobbleSpeed: BUBBLE_IDLE_WOBBLE.wobbleSpeed,
+      wobbleLobes: BUBBLE_IDLE_WOBBLE.wobbleLobes,
+      opacity: 0,
+      labelOpacity: 0,
+      captureVisualT: 0,
+    };
+  }
+
   const {
     originX,
     originY,
@@ -85,16 +105,20 @@ function computeBubbleAnimState(
     const wobbleT = clamp01(t / 0.5);
     const fadeT = t < 0.6 ? 0 : clamp01((t - 0.6) / 0.4);
     const labelFadeT = t < 0.5 ? 0 : clamp01((t - 0.5) / 0.5);
+    const captureVisualT = 1 - clamp01(t / 0.4);
 
     return {
       x: targetCenterX - diameter * 0.5,
       y: targetCenterY - diameter * 0.5,
       diameter,
+      centerX: targetCenterX,
+      centerY: targetCenterY,
       wobbleAmp: lerp(BUBBLE_IDLE_WOBBLE.wobbleAmp, BUBBLE_BURST_WOBBLE.wobbleAmp, wobbleT),
       wobbleSpeed: lerp(BUBBLE_IDLE_WOBBLE.wobbleSpeed, BUBBLE_BURST_WOBBLE.wobbleSpeed, wobbleT),
       wobbleLobes: lerp(BUBBLE_IDLE_WOBBLE.wobbleLobes, BUBBLE_BURST_WOBBLE.wobbleLobes, wobbleT),
       opacity: BUBBLE_IDLE_OPACITY * (1 - fadeT),
       labelOpacity: 1 - labelFadeT,
+      captureVisualT,
     };
   }
 
@@ -103,11 +127,14 @@ function computeBubbleAnimState(
       x: targetLeft,
       y: targetTop,
       diameter: targetDiameter,
+      centerX: targetCenterX,
+      centerY: targetCenterY,
       wobbleAmp: BUBBLE_IDLE_WOBBLE.wobbleAmp,
       wobbleSpeed: BUBBLE_IDLE_WOBBLE.wobbleSpeed,
       wobbleLobes: BUBBLE_IDLE_WOBBLE.wobbleLobes,
       opacity: BUBBLE_IDLE_OPACITY,
       labelOpacity: 1,
+      captureVisualT: 1,
     };
   }
 
@@ -120,11 +147,14 @@ function computeBubbleAnimState(
     x: lerp(spawnLeft, targetLeft, t),
     y: lerp(spawnTop, targetTop, t),
     diameter,
+    centerX: lerp(spawnLeft, targetLeft, t) + diameter * 0.5,
+    centerY: lerp(spawnTop, targetTop, t) + diameter * 0.5,
     wobbleAmp: lerp(BUBBLE_ENTER_WOBBLE.wobbleAmp, BUBBLE_IDLE_WOBBLE.wobbleAmp, t),
     wobbleSpeed: lerp(BUBBLE_ENTER_WOBBLE.wobbleSpeed, BUBBLE_IDLE_WOBBLE.wobbleSpeed, t),
     wobbleLobes: lerp(BUBBLE_ENTER_WOBBLE.wobbleLobes, BUBBLE_IDLE_WOBBLE.wobbleLobes, t),
     opacity: BUBBLE_IDLE_OPACITY * fadeInT,
     labelOpacity: labelT,
+    captureVisualT: t,
   };
 }
 
@@ -143,16 +173,19 @@ export function isTapInsideBubble(
 export type UseBubbleAnimationResult = {
   anim: SharedValue<BubbleAnimState>;
   phase: SharedValue<number>;
+  enterProgress: SharedValue<number>;
   startBurst: () => void;
 };
 
 export function useBubbleAnimation(
   config: BubbleAnimationConfig,
   onDismiss: () => void,
+  enabled = true,
+  onBurstCompleteWorklet?: () => void,
 ): UseBubbleAnimationResult {
   const enterProgress = useSharedValue(0);
   const burstProgress = useSharedValue(0);
-  const phase = useSharedValue<number>(BubblePhase.Enter);
+  const phase = useSharedValue<number>(enabled ? BubblePhase.Enter : BubblePhase.None);
 
   const anim = useDerivedValue((): BubbleAnimState =>
     computeBubbleAnimState(
@@ -166,6 +199,14 @@ export function useBubbleAnimation(
   useEffect(() => {
     cancelAnimation(enterProgress);
     cancelAnimation(burstProgress);
+
+    if (!enabled) {
+      enterProgress.value = 0;
+      burstProgress.value = 0;
+      phase.value = BubblePhase.None;
+      return;
+    }
+
     enterProgress.value = 0;
     burstProgress.value = 0;
     phase.value = BubblePhase.Enter;
@@ -185,6 +226,7 @@ export function useBubbleAnimation(
       cancelAnimation(burstProgress);
     };
   }, [
+    enabled,
     config.originX,
     config.originY,
     config.targetCenterX,
@@ -205,12 +247,14 @@ export function useBubbleAnimation(
       1,
       { duration: BUBBLE_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },
       (finished) => {
+        'worklet';
         if (finished) {
+          onBurstCompleteWorklet?.();
           runOnJS(onDismiss)();
         }
       },
     );
-  }, [burstProgress, onDismiss, phase]);
+  }, [burstProgress, onBurstCompleteWorklet, onDismiss, phase]);
 
-  return { anim, phase, startBurst };
+  return { anim, phase, enterProgress, startBurst };
 }

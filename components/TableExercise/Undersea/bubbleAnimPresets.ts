@@ -32,3 +32,11 @@ export const BUBBLE_SPAWN_OFFSET_Y = 0.55;
 export const KOI_FISH_LENGTH = 120 * KOI_SETTINGS.scale;
 
 export const BUBBLE_IDLE_OPACITY = defaults.opacity;
+
+export const BUBBLE_FISH_SCALE = 1.22;
+export const BUBBLE_SHADOW_OFFSET_MULT = 1.6;
+export const BUBBLE_FISH_CLIP_INSET = 0.08;
+/** Inward margin from the visible bubble edge (fraction of bubble radius). */
+export const BUBBLE_FISH_SWIM_MARGIN_RATIO = 0.00;
+/** Tail/shader reach beyond scaled half-body length when testing wall contact. */
+export const BUBBLE_FISH_VISUAL_REACH_MULT = 1.15;

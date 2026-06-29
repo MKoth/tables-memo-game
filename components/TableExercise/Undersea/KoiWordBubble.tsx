@@ -9,14 +9,14 @@ import {
   vec,
 } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import type { SharedValue } from 'react-native-reanimated';
 import { runOnJS, useDerivedValue } from 'react-native-reanimated';
 import { BubbleInstance } from './BubbleInstance';
-import { SWIM_ZONE_TOP_RATIO } from './KoiFishLayer';
 import { useUnderseaClock } from './UnderseaClockContext';
 import {
   BubblePhase,
   isTapInsideBubble,
-  useBubbleAnimation,
+  type BubbleAnimState,
 } from './useBubbleAnimation';
 
 const BUBBLE_DIAMETER_RATIO = 0.9;
@@ -27,33 +27,24 @@ const TAP_MAX_DISTANCE_PX = 10;
 
 export type KoiWordBubbleProps = {
   word: string;
-  originX: number;
-  originY: number;
-  onDismiss: () => void;
+  anim: SharedValue<BubbleAnimState>;
+  phase: SharedValue<number>;
+  startBurst: () => void;
+  capturedFish: React.ReactNode;
 };
 
-export function KoiWordBubble({ word, originX, originY, onDismiss }: KoiWordBubbleProps) {
+export function KoiWordBubble({
+  word,
+  anim,
+  phase,
+  startBurst,
+  capturedFish,
+}: KoiWordBubbleProps) {
   const { width, height } = useWindowDimensions();
   const clock = useUnderseaClock();
   const bubbleImage = useImage(require('../../../assets/bubble.png'));
 
   const targetDiameter = width * BUBBLE_DIAMETER_RATIO;
-  const swimZoneHeight = height * (1 - SWIM_ZONE_TOP_RATIO);
-  const targetCenterX = width * 0.5;
-  const targetCenterY = height * SWIM_ZONE_TOP_RATIO + swimZoneHeight * 0.5;
-
-  const animationConfig = useMemo(
-    () => ({
-      originX,
-      originY,
-      targetCenterX,
-      targetCenterY,
-      targetDiameter,
-    }),
-    [originX, originY, targetCenterX, targetCenterY, targetDiameter],
-  );
-
-  const { anim, phase, startBurst } = useBubbleAnimation(animationConfig, onDismiss);
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const font = useMemo(
@@ -117,6 +108,7 @@ export function KoiWordBubble({ word, originX, originY, onDismiss }: KoiWordBubb
   return (
     <View style={styles.container} pointerEvents="box-none">
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+        {capturedFish}
         <BubbleInstance image={bubbleImage} anim={anim} clock={clock} />
         <Group transform={labelTransform} opacity={labelOpacity}>
           <Group
