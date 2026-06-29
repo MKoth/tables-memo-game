@@ -603,7 +603,7 @@ export type KoiFishLayerProps = {
   masks: Record<KoiImageKey, SkImage>;
   words: string[];
   interactive?: boolean;
-  onFishSelect?: (word: string, fishIndex: number) => void;
+  onFishSelect?: (word: string, fishIndex: number, originX: number, originY: number) => void;
 };
 
 function applyFinSideSpawn(
@@ -947,10 +947,10 @@ export function KoiFishLayer({
   const swimZoneHeight = height * (1 - SWIM_ZONE_TOP_RATIO);
 
   const handleFishSelect = useCallback(
-    (fishIndex: number) => {
+    (fishIndex: number, originX: number, originY: number) => {
       const word = spawns[fishIndex]?.word;
       if (word != null) {
-        onFishSelect?.(word, fishIndex);
+        onFishSelect?.(word, fishIndex, originX, originY);
       }
     },
     [spawns, onFishSelect],
@@ -968,7 +968,11 @@ export function KoiFishLayer({
           if (hitIdx < 0) {
             return;
           }
-          runOnJS(handleFishSelect)(hitIdx);
+          runOnJS(handleFishSelect)(
+            hitIdx,
+            positions[hitIdx * 2] ?? 0,
+            positions[hitIdx * 2 + 1] ?? 0,
+          );
         }),
     [sharedPositions, swimZoneTop, koiCount, hitRadius, handleFishSelect],
   );

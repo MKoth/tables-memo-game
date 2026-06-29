@@ -15,6 +15,7 @@ import {
   BUBBLE_DEFORM_SKSL,
   bubbleDeformUniformDefaults,
 } from '../../../shaders/bubbleDeform.sksl';
+import type { BubbleAnimState } from './useBubbleAnimation';
 
 function compileBubbleEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(BUBBLE_DEFORM_SKSL);
@@ -33,10 +34,6 @@ const SPRITE_SAMPLING = {
 
 const {
   phase: defaultPhase,
-  wobbleAmp: defaultWobbleAmp,
-  wobbleSpeed: defaultWobbleSpeed,
-  wobbleLobes: defaultWobbleLobes,
-  opacity: defaultOpacity,
   bgCutoff: defaultBgCutoff,
   centerClear: defaultCenterClear,
   rimClear: defaultRimClear,
@@ -44,16 +41,9 @@ const {
 
 export type BubbleInstanceProps = {
   image: SkImage;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  anim: SharedValue<BubbleAnimState>;
   clock: SharedValue<number>;
   phase?: number;
-  wobbleAmp?: number;
-  wobbleSpeed?: number;
-  wobbleLobes?: number;
-  opacity?: number;
   bgCutoff?: number;
   centerClear?: number;
   rimClear?: number;
@@ -61,45 +51,48 @@ export type BubbleInstanceProps = {
 
 export function BubbleInstance({
   image,
-  x,
-  y,
-  width,
-  height,
+  anim,
   clock,
   phase = defaultPhase,
-  wobbleAmp = defaultWobbleAmp,
-  wobbleSpeed = defaultWobbleSpeed,
-  wobbleLobes = defaultWobbleLobes,
-  opacity = defaultOpacity,
   bgCutoff = defaultBgCutoff,
   centerClear = defaultCenterClear,
   rimClear = defaultRimClear,
 }: BubbleInstanceProps) {
-  const uniforms = useDerivedValue(() => ({
-    bubbleX: x,
-    bubbleY: y,
-    bubbleW: width,
-    bubbleH: height,
-    iTime: clock.value / 1000,
-    phase,
-    wobbleAmp,
-    wobbleSpeed,
-    wobbleLobes,
-    opacity,
-    bgCutoff,
-    centerClear,
-    rimClear,
-  }));
+  const bounds = useDerivedValue(() => {
+    const { x, y, diameter } = anim.value;
+    return Skia.XYWHRect(x, y, diameter, diameter);
+  });
+
+  const imageRect = useDerivedValue(() => {
+    const { x, y, diameter } = anim.value;
+    return Skia.XYWHRect(x, y, diameter, diameter);
+  });
+
+  const uniforms = useDerivedValue(() => {
+    const { x, y, diameter, wobbleAmp, wobbleSpeed, wobbleLobes, opacity } = anim.value;
+    return {
+      bubbleX: x,
+      bubbleY: y,
+      bubbleW: diameter,
+      bubbleH: diameter,
+      iTime: clock.value / 1000,
+      phase,
+      wobbleAmp,
+      wobbleSpeed,
+      wobbleLobes,
+      opacity,
+      bgCutoff,
+      centerClear,
+      rimClear,
+    };
+  });
 
   return (
-    <Rect x={x} y={y} width={width} height={height}>
+    <Rect rect={bounds}>
       <Shader source={bubbleEffect} uniforms={uniforms}>
         <ImageShader
           image={image}
-          x={x}
-          y={y}
-          width={width}
-          height={height}
+          rect={imageRect}
           fit="fill"
           tx="clamp"
           ty="clamp"

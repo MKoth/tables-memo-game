@@ -16,13 +16,19 @@ const KOI_MASK_VARIANTS = {
   koi3: require('../../../assets/koi3-mask.png'),
 } as const;
 
+type BubbleSelection = {
+  word: string;
+  originX: number;
+  originY: number;
+};
+
 export type KoiSwimZoneProps = {
   words: string[];
 };
 
 export function KoiSwimZone({ words }: KoiSwimZoneProps) {
   const { width, height } = useWindowDimensions();
-  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [selection, setSelection] = useState<BubbleSelection | null>(null);
 
   const koi1 = useImage(KOI_VARIANTS.koi1);
   const koi2 = useImage(KOI_VARIANTS.koi2);
@@ -40,12 +46,15 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
     [koi1Mask, koi2Mask, koi3Mask],
   );
 
-  const handleFishSelect = useCallback((word: string) => {
-    setSelectedWord(word);
-  }, []);
+  const handleFishSelect = useCallback(
+    (word: string, _fishIndex: number, originX: number, originY: number) => {
+      setSelection({ word, originX, originY });
+    },
+    [],
+  );
 
   const handleDismiss = useCallback(() => {
-    setSelectedWord(null);
+    setSelection(null);
   }, []);
 
   if (
@@ -70,11 +79,16 @@ export function KoiSwimZone({ words }: KoiSwimZoneProps) {
         words={words}
         images={images as Record<KoiImageKey, NonNullable<typeof koi1>>}
         masks={masks as Record<KoiImageKey, NonNullable<typeof koi1Mask>>}
-        interactive={selectedWord === null}
+        interactive={selection === null}
         onFishSelect={handleFishSelect}
       />
-      {selectedWord != null && (
-        <KoiWordBubble word={selectedWord} onDismiss={handleDismiss} />
+      {selection != null && (
+        <KoiWordBubble
+          word={selection.word}
+          originX={selection.originX}
+          originY={selection.originY}
+          onDismiss={handleDismiss}
+        />
       )}
     </View>
   );
