@@ -34,6 +34,10 @@ const IDLE = 1;
 const BASE_SPEED_MIN = 50;
 const BASE_SPEED_MAX = 670;
 const SPEED_PICK_BIAS = 15.5;
+/** Splash only on a clear slow → fast tier jump (normalized 0–1 speed range). */
+const SPLASH_SLOW_MAX_NORM = 0.4;
+const SPLASH_FAST_MIN_NORM = 0.6;
+const SPLASH_MIN_DELTA_NORM = 0.28;
 const SWIM_SPEED_SHADER_MIN = 2.5;
 const SWIM_SPEED_SHADER_MAX = 90.0;
 const SWIM_DURATION_MIN = 0.1;
@@ -81,6 +85,7 @@ export type UseKoiFishSimulationParams = {
   eliminatedFishSv: SharedValue<number[]>;
   onEscapeOverlayDismiss: () => void;
   onEscapeComplete: () => void;
+  onSpeedIncrease?: () => void;
 };
 
 type PersistedSimBundle = {
@@ -220,6 +225,31 @@ function pickRandomBaseSpeed(): number {
   'worklet';
   const t = Math.pow(Math.random(), SPEED_PICK_BIAS);
   return BASE_SPEED_MIN + t * (BASE_SPEED_MAX - BASE_SPEED_MIN);
+}
+
+function shouldTriggerSpeedSplash(prev: number, next: number): boolean {
+  'worklet';
+  if (next <= prev) {
+    return false;
+  }
+  const range = BASE_SPEED_MAX - BASE_SPEED_MIN;
+  const prevNorm = (prev - BASE_SPEED_MIN) / range;
+  const nextNorm = (next - BASE_SPEED_MIN) / range;
+  return (
+    prevNorm <= SPLASH_SLOW_MAX_NORM &&
+    nextNorm >= SPLASH_FAST_MIN_NORM &&
+    nextNorm - prevNorm >= SPLASH_MIN_DELTA_NORM
+  );
+}
+
+function rollTargetBaseSpeed(fish: FishRuntime, onIncrease?: () => void): void {
+  'worklet';
+  const prev = fish.targetBaseSpeed.value;
+  const next = pickRandomBaseSpeed();
+  fish.targetBaseSpeed.value = next;
+  if (onIncrease != null && shouldTriggerSpeedSplash(prev, next)) {
+    runOnJS(onIncrease)();
+  }
 }
 
 function swimSpeedForForwardSpeed(speed: number): number {
@@ -459,6 +489,7 @@ function updateFish(
   hardMaxY: number,
   centerX: number,
   centerY: number,
+  onSpeedIncrease?: () => void,
 ): void {
   'worklet';
   const cfg = fish.config;
@@ -497,7 +528,7 @@ function updateFish(
       );
 
       if (fish.wasNearEdge.value) {
-        fish.targetBaseSpeed.value = pickRandomBaseSpeed();
+        rollTargetBaseSpeed(fish, onSpeedIncrease);
         fish.stateTimer.value = swimDurationForSpeed(fish.targetBaseSpeed.value, cfg.phase);
         fish.wanderAngle.value = pickWanderAngle(fish.angle.value, cfg.phase);
       }
@@ -530,7 +561,7 @@ function updateFish(
     if (fish.stateTimer.value <= 0) {
       fish.state.value = SWIMMING;
       fish.wasNearEdge.value = false;
-      fish.targetBaseSpeed.value = pickRandomBaseSpeed();
+      rollTargetBaseSpeed(fish, onSpeedIncrease);
       fish.stateTimer.value = swimDurationForSpeed(fish.targetBaseSpeed.value, cfg.phase);
       fish.wanderAngle.value = pickWanderAngle(fish.angle.value, cfg.phase);
     }
@@ -575,6 +606,7 @@ function useFishSimulation(
   eliminatedFishSv: SharedValue<number[]>,
   onEscapeOverlayDismiss: () => void,
   onEscapeComplete: () => void,
+  onSpeedIncrease?: () => void,
 ): void {
   const lastTimestamp = useSharedValue(-1);
   const fishCount = runtimes.length;
@@ -757,6 +789,7 @@ function useFishSimulation(
           hardMaxY,
           centerX,
           centerY,
+          onSpeedIncrease,
         );
 
         if (fishRuntime.state.value === SWIMMING) {
@@ -856,6 +889,7 @@ function useFishSimulation(
       hardMaxY,
       centerX,
       centerY,
+      onSpeedIncrease,
     ],
   );
 
@@ -883,6 +917,7 @@ export function useKoiFishSimulation({
   eliminatedFishSv,
   onEscapeOverlayDismiss,
   onEscapeComplete,
+  onSpeedIncrease,
 }: UseKoiFishSimulationParams): KoiFishSimulation {
   const wordsKey = words.join('\0');
   const bundleRef = useRef<PersistedSimBundle | null>(null);
@@ -909,6 +944,7 @@ export function useKoiFishSimulation({
     eliminatedFishSv,
     onEscapeOverlayDismiss,
     onEscapeComplete,
+    onSpeedIncrease,
   );
 
   const armCapture = useCallback(

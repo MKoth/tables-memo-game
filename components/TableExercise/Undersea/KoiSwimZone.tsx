@@ -7,7 +7,8 @@ import { releaseCapturedFishWorklet } from './fishPoolSnapshot';
 import { KoiCapturedFishCanvas } from './KoiCapturedFishCanvas';
 import { KoiFishLayer, SWIM_ZONE_TOP_RATIO, type KoiImageKey } from './KoiFishLayer';
 import { KoiWordBubble } from './KoiWordBubble';
-import { BubblePhase, BurstIntent, useBubbleAnimation } from './useBubbleAnimation';
+import { BubblePhase, BurstIntent, useBubbleAnimation, type BurstIntentValue } from './useBubbleAnimation';
+import type { UnderseaSounds } from './useUnderseaSounds';
 import type { KoiSimBridge } from './underseaInstructionTypes';
 import {
   useKoiFishSimulation,
@@ -47,6 +48,7 @@ export type KoiCaptureBridge = {
 export type KoiSwimZoneProps = {
   words: string[];
   interactive?: boolean;
+  sounds?: UnderseaSounds;
   onCaptureBridgeChange?: (bridge: KoiCaptureBridge | null) => void;
   onSimBridgeChange?: (bridge: KoiSimBridge | null) => void;
 };
@@ -60,6 +62,7 @@ type ReleaseContext = {
 export function KoiSwimZone({
   words,
   interactive: interactiveProp = true,
+  sounds,
   onCaptureBridgeChange,
   onSimBridgeChange,
 }: KoiSwimZoneProps) {
@@ -84,6 +87,13 @@ export function KoiSwimZone({
   const escapeCompleteTriggeredSv = useSharedValue(false);
   const escapeOverlayDismissTriggeredSv = useSharedValue(false);
   const eliminatedFishSv = useSharedValue<number[]>([]);
+  const soundsRef = useRef(sounds);
+  soundsRef.current = sounds;
+  const fishCountRef = useRef(0);
+
+  const onSpeedIncrease = useCallback(() => {
+    soundsRef.current?.playRandomSplash();
+  }, []);
 
   const koi1 = useImage(KOI_VARIANTS.koi1);
   const koi2 = useImage(KOI_VARIANTS.koi2);
@@ -171,11 +181,19 @@ export function KoiSwimZone({
     }
   }, [releaseContextSv, releaseRequestSv]);
 
-  const { anim, phase, enterProgress, startBurst } = useBubbleAnimation(
+  const { anim, phase, enterProgress, startBurst: startBurstRaw } = useBubbleAnimation(
     bubbleConfig,
     handleBurstEnd,
     selection != null,
     requestReleaseWorklet,
+  );
+
+  const startBurst = useCallback(
+    (intent: BurstIntentValue = BurstIntent.Release) => {
+      soundsRef.current?.playBubblePop();
+      startBurstRaw(intent);
+    },
+    [startBurstRaw],
   );
 
   const captureState = useMemo(
@@ -225,7 +243,9 @@ export function KoiSwimZone({
     eliminatedFishSv,
     onEscapeOverlayDismiss: () => onEscapeOverlayDismissRef.current(),
     onEscapeComplete: () => onEscapeCompleteRef.current(),
+    onSpeedIncrease,
   });
+  fishCountRef.current = sim.runtimeEntries.length;
 
   const handleEscapeOverlayDismiss = useCallback(() => {
     setSelection(null);
@@ -243,9 +263,13 @@ export function KoiSwimZone({
     phase.value = BubblePhase.None;
 
     if (fishIndex >= 0) {
-      setEliminatedFishIndices(prev =>
-        prev.includes(fishIndex) ? prev : [...prev, fishIndex],
-      );
+      setEliminatedFishIndices(prev => {
+        const next = prev.includes(fishIndex) ? prev : [...prev, fishIndex];
+        if (next.length === fishCountRef.current) {
+          soundsRef.current?.playFanfare();
+        }
+        return next;
+      });
     }
 
     setPoolHiddenFishIndex(null);
@@ -295,6 +319,7 @@ export function KoiSwimZone({
   const handleFishSelect = useCallback(
     (word: string, fishIndex: number, originX: number, originY: number) => {
       cancelTransitionRaf();
+      soundsRef.current?.playBubbleInflate();
       sim.armCapture(fishIndex, originX, originY);
       setPoolHiddenFishIndex(null);
       setEscapeOverlayActive(false);

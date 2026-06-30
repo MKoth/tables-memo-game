@@ -1976,6 +1976,28 @@ PODS:
     - ReactNativeDependencies
     - RNWorklets
     - Yoga
+  - RNSound (0.13.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - RNWorklets (0.9.1):
     - hermes-engine
     - RCTRequired
@@ -2128,6 +2150,7 @@ DEPENDENCIES:
   - ReactNativeDependencies (from `../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
+  - RNSound (from `../node_modules/react-native-sound`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -2287,6 +2310,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-gesture-handler"
   RNReanimated:
     :path: "../node_modules/react-native-reanimated"
+  RNSound:
+    :path: "../node_modules/react-native-sound"
   RNWorklets:
     :path: "../node_modules/react-native-worklets"
   Yoga:
@@ -2370,6 +2395,7 @@ SPEC CHECKSUMS:
   ReactNativeDependencies: 2c6590c27d3934c05aea13427054600a7f8bb83d
   RNGestureHandler: ea542e5ad254ac2d234024168a8b87d723cf9463
   RNReanimated: 80a8d6e0854c9dddedc054efbce746294a8d3a3b
+  RNSound: 79fb9d0b4a20de49e65e657b563982443c1ed21b
   RNWorklets: a6ebd7b1ae53f150d747986d70bfc34932d7ffb4
   Yoga: 77dfa8673de2874e1855002ae59c68b8be9b007b
 

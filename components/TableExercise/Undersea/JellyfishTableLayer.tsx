@@ -849,11 +849,14 @@ function CellLabel({
 
 // ── JellyfishTableLayer ───────────────────────────────────────────────────
 
+export type JellyfishSoundKind = 'success' | 'error' | 'primary';
+
 export type JellyfishTableLayerProps = {
   table: TableData;
   capturedWord?: string | null;
   bubblePhase?: SharedValue<number>;
   onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;
+  onJellyfishSound?: (kind: JellyfishSoundKind) => void;
   interactive?: boolean;
   onLayoutBridgeChange?: (bridge: JellyfishLayoutBridge | null) => void;
 };
@@ -867,6 +870,7 @@ export function JellyfishTableLayer({
   capturedWord = null,
   bubblePhase,
   onMatchSuccess,
+  onJellyfishSound,
   interactive = true,
   onLayoutBridgeChange,
 }: JellyfishTableLayerProps) {
@@ -881,6 +885,7 @@ export function JellyfishTableLayer({
       capturedWord={capturedWord}
       bubblePhase={bubblePhase}
       onMatchSuccess={onMatchSuccess}
+      onJellyfishSound={onJellyfishSound}
       interactive={interactive}
       onLayoutBridgeChange={onLayoutBridgeChange}
     />
@@ -894,6 +899,7 @@ type InnerProps = {
   capturedWord: string | null;
   bubblePhase?: SharedValue<number>;
   onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;
+  onJellyfishSound?: (kind: JellyfishSoundKind) => void;
   interactive: boolean;
   onLayoutBridgeChange?: (bridge: JellyfishLayoutBridge | null) => void;
 };
@@ -907,6 +913,7 @@ function JellyfishTableLayerInner({
   capturedWord,
   bubblePhase,
   onMatchSuccess,
+  onJellyfishSound,
   interactive,
   onLayoutBridgeChange,
 }: InnerProps) {
@@ -958,10 +965,15 @@ function JellyfishTableLayerInner({
   const fallbackBubblePhase = useSharedValue(BubblePhase.None);
   const effectiveBubblePhase = bubblePhase ?? fallbackBubblePhase;
   const onMatchSuccessRef = useRef(onMatchSuccess);
+  const onJellyfishSoundRef = useRef(onJellyfishSound);
 
   useEffect(() => {
     onMatchSuccessRef.current = onMatchSuccess;
   }, [onMatchSuccess]);
+
+  useEffect(() => {
+    onJellyfishSoundRef.current = onJellyfishSound;
+  }, [onJellyfishSound]);
 
   useEffect(() => {
     setRevealedBodyIndices(new Set());
@@ -991,6 +1003,10 @@ function JellyfishTableLayerInner({
     },
     [revealBodyLabel],
   );
+
+  const handleJellyfishSoundJs = useCallback((kind: JellyfishSoundKind) => {
+    onJellyfishSoundRef.current?.(kind);
+  }, []);
 
   const layoutBounds: LayoutBounds = useMemo(
     () => ({
@@ -1324,6 +1340,7 @@ function JellyfishTableLayerInner({
           tintFlashUntil,
           clock,
         );
+        runOnJS(handleJellyfishSoundJs)(isMatch ? 'success' : 'error');
         tryFocusJellyfish(
           hitIdx,
           0,
@@ -1366,6 +1383,7 @@ function JellyfishTableLayerInner({
         tintFlashUntil,
         clock,
       );
+      runOnJS(handleJellyfishSoundJs)('primary');
       tryFocusJellyfish(
         hitIdx,
         0,
