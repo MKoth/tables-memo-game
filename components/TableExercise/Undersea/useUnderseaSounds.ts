@@ -32,6 +32,8 @@ export type UnderseaSoundController = {
   playWrongClick: () => void;
   playPrimaryClick: () => void;
   playFanfare: () => void;
+  setMuted: (muted: boolean) => void;
+  isMuted: () => boolean;
 };
 
 /** @deprecated Use UnderseaSoundController from preloaded assets instead. */
@@ -146,6 +148,7 @@ export function releaseUnderseaSounds(loaded: LoadedUnderseaSounds | null): void
 
 type SoundControllerState = {
   waterflowPlaying: boolean;
+  muted: boolean;
 };
 
 export function createUnderseaSoundController(
@@ -154,7 +157,7 @@ export function createUnderseaSoundController(
 ): UnderseaSoundController {
   return {
     startWaterflow: () => {
-      if (!loaded.waterflow.isLoaded()) {
+      if (state.muted || !loaded.waterflow.isLoaded()) {
         return;
       }
       activateAudioSession();
@@ -166,30 +169,63 @@ export function createUnderseaSoundController(
       loaded.waterflow.stop();
     },
     playRandomSplash: () => {
-      if (loaded.splash.length === 0) {
+      if (state.muted || loaded.splash.length === 0) {
         return;
       }
       const index = Math.floor(Math.random() * loaded.splash.length);
       playOneShot(loaded.splash[index] ?? null);
     },
     playBubbleInflate: () => {
+      if (state.muted) {
+        return;
+      }
       playOneShot(loaded.bubbleInflate);
     },
     playBubblePop: () => {
+      if (state.muted) {
+        return;
+      }
       playOneShot(loaded.bubblePop);
     },
     playSuccessClick: () => {
+      if (state.muted) {
+        return;
+      }
       playOneShot(loaded.successClick, SUCCESS_CLICK_VOLUME);
     },
     playWrongClick: () => {
+      if (state.muted) {
+        return;
+      }
       playOneShot(loaded.wrongClick);
     },
     playPrimaryClick: () => {
+      if (state.muted) {
+        return;
+      }
       playOneShot(loaded.primaryClick);
     },
     playFanfare: () => {
+      if (state.muted) {
+        return;
+      }
       playOneShot(loaded.fanfare);
     },
+    setMuted: (muted: boolean) => {
+      if (state.muted === muted) {
+        return;
+      }
+      state.muted = muted;
+      if (muted) {
+        loaded.waterflow.stop();
+        return;
+      }
+      if (state.waterflowPlaying && loaded.waterflow.isLoaded()) {
+        activateAudioSession();
+        loaded.waterflow.play();
+      }
+    },
+    isMuted: () => state.muted,
   };
 }
 
@@ -199,7 +235,7 @@ export function bindUnderseaSoundAppState(
 ): () => void {
   const handleAppState = (nextState: AppStateStatus) => {
     if (nextState === 'active') {
-      if (state.waterflowPlaying) {
+      if (state.waterflowPlaying && !state.muted) {
         activateAudioSession();
         loaded.waterflow.play();
       }

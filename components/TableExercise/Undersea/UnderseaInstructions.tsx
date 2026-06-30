@@ -10,8 +10,10 @@ import {
   Canvas,
   Circle,
   Line,
+  Path,
   RadialGradient,
   Rect,
+  Skia,
   vec,
 } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +31,7 @@ export const HELP_BUTTON_Z = 22;
 
 const HELP_BUTTON_SIZE = 52;
 const HELP_MARGIN = 16;
+const CORNER_BUTTON_GAP = 10;
 const TOOLTIP_MIN_WIDTH = 240;
 const TOOLTIP_CORNER_RADIUS = 22;
 const OVERLAY_DARK = 'rgba(5, 20, 40, 0.82)';
@@ -224,7 +227,142 @@ export type UnderseaHelpButtonProps = {
   disabled?: boolean;
 };
 
+type UnderseaIconButtonProps = {
+  onPress: () => void;
+  disabled?: boolean;
+  accessibilityLabel: string;
+  children: React.ReactNode;
+};
+
+function UnderseaIconButton({
+  onPress,
+  disabled = false,
+  accessibilityLabel,
+  children,
+}: UnderseaIconButtonProps) {
+  return (
+    <View style={styles.helpButtonShell}>
+      <UiDropPanel width={HELP_BUTTON_SIZE} height={HELP_BUTTON_SIZE} />
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [
+          styles.helpButtonHit,
+          pressed && !disabled && styles.helpButtonPressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}>
+        {children}
+      </Pressable>
+    </View>
+  );
+}
+
+const SOUND_ICON_COLOR = '#ffffff';
+
+function SoundIcon({ muted, size = 26 }: { muted: boolean; size?: number }) {
+  const speakerPath = useMemo(() => {
+    const path = Skia.Path.Make();
+    path.addRect({ x: 2, y: 8, width: 5, height: 10 });
+    path.moveTo(7, 9);
+    path.lineTo(12, 6);
+    path.lineTo(12, 20);
+    path.lineTo(7, 17);
+    path.close();
+    return path;
+  }, []);
+
+  const waveNearPath = useMemo(() => {
+    const path = Skia.Path.Make();
+    path.addArc({ x: 12, y: 4, width: 8, height: 18 }, -55, 110);
+    return path;
+  }, []);
+
+  const waveFarPath = useMemo(() => {
+    const path = Skia.Path.Make();
+    path.addArc({ x: 14, y: 2, width: 10, height: 22 }, -55, 110);
+    return path;
+  }, []);
+
+  return (
+    <Canvas style={{ width: size, height: size }}>
+      <Path path={speakerPath} color={SOUND_ICON_COLOR} style="fill" />
+      {!muted && (
+        <>
+          <Path
+            path={waveNearPath}
+            color={SOUND_ICON_COLOR}
+            style="stroke"
+            strokeWidth={1.8}
+            strokeCap="round"
+          />
+          <Path
+            path={waveFarPath}
+            color={SOUND_ICON_COLOR}
+            style="stroke"
+            strokeWidth={1.8}
+            strokeCap="round"
+          />
+        </>
+      )}
+      {muted && (
+        <Line
+          p1={vec(14, 6)}
+          p2={vec(23, 21)}
+          color={SOUND_ICON_COLOR}
+          style="stroke"
+          strokeWidth={2.2}
+          strokeCap="round"
+        />
+      )}
+    </Canvas>
+  );
+}
+
+export type UnderseaSoundToggleButtonProps = {
+  enabled: boolean;
+  onToggle: () => void;
+};
+
+export function UnderseaSoundToggleButton({
+  enabled,
+  onToggle,
+}: UnderseaSoundToggleButtonProps) {
+  return (
+    <UnderseaIconButton
+      onPress={onToggle}
+      accessibilityLabel={enabled ? 'Mute sound' : 'Unmute sound'}>
+      <SoundIcon muted={!enabled} />
+    </UnderseaIconButton>
+  );
+}
+
 export function UnderseaHelpButton({ onPress, disabled = false }: UnderseaHelpButtonProps) {
+  return (
+    <UnderseaIconButton
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityLabel="Show instructions">
+      <Text style={styles.helpButtonText}>?</Text>
+    </UnderseaIconButton>
+  );
+}
+
+export type UnderseaCornerControlsProps = {
+  soundEnabled: boolean;
+  onSoundToggle: () => void;
+  onHelpPress: () => void;
+  helpVisible?: boolean;
+  helpDisabled?: boolean;
+};
+
+export function UnderseaCornerControls({
+  soundEnabled,
+  onSoundToggle,
+  onHelpPress,
+  helpVisible = true,
+  helpDisabled = false,
+}: UnderseaCornerControlsProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -237,20 +375,12 @@ export function UnderseaHelpButton({ onPress, disabled = false }: UnderseaHelpBu
           zIndex: HELP_BUTTON_Z,
         },
       ]}
-      pointerEvents={disabled ? 'none' : 'box-none'}>
-      <View style={styles.helpButtonShell}>
-        <UiDropPanel width={HELP_BUTTON_SIZE} height={HELP_BUTTON_SIZE} />
-        <Pressable
-          onPress={onPress}
-          disabled={disabled}
-          style={({ pressed }) => [
-            styles.helpButtonHit,
-            pressed && !disabled && styles.helpButtonPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Show instructions">
-          <Text style={styles.helpButtonText}>?</Text>
-        </Pressable>
+      pointerEvents="box-none">
+      <View style={styles.cornerRow}>
+        <UnderseaSoundToggleButton enabled={soundEnabled} onToggle={onSoundToggle} />
+        {helpVisible && (
+          <UnderseaHelpButton onPress={onHelpPress} disabled={helpDisabled} />
+        )}
       </View>
     </View>
   );
@@ -439,6 +569,11 @@ const styles = StyleSheet.create({
   },
   helpAnchor: {
     position: 'absolute',
+  },
+  cornerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: CORNER_BUTTON_GAP,
   },
   helpButtonShell: {
     width: HELP_BUTTON_SIZE,

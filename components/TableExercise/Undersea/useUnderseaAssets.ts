@@ -116,7 +116,7 @@ export function useUnderseaAssets(): UnderseaAssets {
     null,
   );
   const loadedSoundsRef = useRef<LoadedUnderseaSounds | null>(null);
-  const soundStateRef = useRef({ waterflowPlaying: false });
+  const soundStateRef = useRef({ waterflowPlaying: false, muted: false });
   const appStateCleanupRef = useRef<(() => void) | null>(null);
   const loadedCountRef = useRef(0);
 

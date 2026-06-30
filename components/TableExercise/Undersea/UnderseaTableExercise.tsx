@@ -4,7 +4,7 @@ import { UnderseaAssetsProvider } from './UnderseaAssetsContext';
 import { UnderseaBackground } from './UnderseaBackground';
 import { UnderseaClockProvider } from './UnderseaClockContext';
 import {
-  UnderseaHelpButton,
+  UnderseaCornerControls,
   UnderseaInstructions,
 } from './UnderseaInstructions';
 import { UnderseaLoadingScreen } from './UnderseaLoadingScreen';
@@ -39,6 +39,7 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
   const [jellyBridge, setJellyBridge] = useState<JellyfishLayoutBridge | null>(null);
   const [tutorialStep, setTutorialStep] = useState<TutorialStep>('idle');
   const [helpVisible, setHelpVisible] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const handleCaptureBridgeChange = useCallback((bridge: KoiCaptureBridge | null) => {
     setCaptureBridge(prev => {
@@ -87,6 +88,14 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
       sounds.stopWaterflow();
     };
   }, [sounds]);
+
+  useEffect(() => {
+    sounds.setMuted(!soundEnabled);
+  }, [sounds, soundEnabled]);
+
+  const handleSoundToggle = useCallback(() => {
+    setSoundEnabled(prev => !prev);
+  }, []);
 
   const tutorialActive = tutorialStep !== 'idle';
 
@@ -137,12 +146,13 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
             onDismiss={handleTutorialDismiss}
           />
         )}
-        {helpVisible && (
-          <UnderseaHelpButton
-            onPress={() => setTutorialStep('fish')}
-            disabled={tutorialActive}
-          />
-        )}
+        <UnderseaCornerControls
+          soundEnabled={soundEnabled}
+          onSoundToggle={handleSoundToggle}
+          onHelpPress={() => setTutorialStep('fish')}
+          helpVisible={helpVisible}
+          helpDisabled={tutorialActive}
+        />
       </View>
     </UnderseaClockProvider>
   );
