@@ -5,13 +5,13 @@ import {
   Glyphs,
   Group,
   matchFont,
-  useImage,
   vec,
 } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { SharedValue } from 'react-native-reanimated';
 import { runOnJS, useDerivedValue } from 'react-native-reanimated';
 import { BubbleInstance } from './BubbleInstance';
+import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
 import { useUnderseaClock } from './UnderseaClockContext';
 import {
   BubblePhase,
@@ -48,7 +48,8 @@ export function KoiWordBubble({
 }: KoiWordBubbleProps) {
   const { width, height } = useWindowDimensions();
   const clock = useUnderseaClock();
-  const bubbleImage = useImage(require('../../../assets/bubble.png'));
+  const { images } = useUnderseaAssetsContext();
+  const bubbleImage = images.bubble;
 
   const targetDiameter = width * BUBBLE_DIAMETER_RATIO;
 
@@ -110,7 +111,7 @@ export function KoiWordBubble({
     [anim, escapeActive, handleBurst, phase],
   );
 
-  if (!bubbleImage || width === 0 || height === 0) {
+  if (width === 0 || height === 0) {
     return null;
   }
 

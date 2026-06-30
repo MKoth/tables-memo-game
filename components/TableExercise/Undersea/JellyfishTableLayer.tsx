@@ -17,7 +17,6 @@ import {
   matchFont,
   type SkFont,
   type SkImage,
-  useImage,
   vec,
 } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
@@ -43,6 +42,7 @@ import {
 } from './jellyfishTintPresets';
 import type { TableData } from '../../../data/tableData';
 import type { JellyfishLayoutBridge } from './underseaInstructionTypes';
+import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
 import { useUnderseaClockQuantized } from './UnderseaClockContext';
 import {
   biasForGridSlot,
@@ -54,9 +54,6 @@ import {
   type LayoutBounds,
   type LayoutParticle,
 } from './jellyfishLayout';
-
-const JELLYFISH_BELL = require('../../../assets/jellyfish-bell.png');
-const JELLYFISH_TENTACLES = require('../../../assets/jellyfish-tentacles.png');
 
 const BODY_FONT_SIZE = 13;
 const HEADER_FONT_SIZE = 14;
@@ -862,8 +859,8 @@ export type JellyfishTableLayerProps = {
 };
 
 /**
- * Thin loader shell: waits for images before mounting the stateful inner layer,
- * keeping hook call order unconditional inside each component.
+ * Thin shell: reads preloaded jellyfish images from context before mounting
+ * the stateful inner layer, keeping hook call order unconditional inside each component.
  */
 export function JellyfishTableLayer({
   table,
@@ -874,9 +871,9 @@ export function JellyfishTableLayer({
   interactive = true,
   onLayoutBridgeChange,
 }: JellyfishTableLayerProps) {
-  const bellImage = useImage(JELLYFISH_BELL);
-  const tentacleImage = useImage(JELLYFISH_TENTACLES);
-  if (!bellImage || !tentacleImage) { return null; }
+  const { images } = useUnderseaAssetsContext();
+  const bellImage = images.jellyfishBell;
+  const tentacleImage = images.jellyfishTentacles;
   return (
     <JellyfishTableLayerInner
       table={table}
@@ -894,8 +891,8 @@ export function JellyfishTableLayer({
 
 type InnerProps = {
   table: TableData;
-  bellImage: NonNullable<ReturnType<typeof useImage>>;
-  tentacleImage: NonNullable<ReturnType<typeof useImage>>;
+  bellImage: SkImage;
+  tentacleImage: SkImage;
   capturedWord: string | null;
   bubblePhase?: SharedValue<number>;
   onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;

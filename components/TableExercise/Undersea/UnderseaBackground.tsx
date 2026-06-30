@@ -1,26 +1,13 @@
 import React from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import {
-  Canvas,
-  Fill,
-  Group,
-  ImageShader,
-  Shader,
-  Skia,
-  useImage,
-} from '@shopify/react-native-skia';
-import { useDerivedValue } from 'react-native-reanimated';
+import { Canvas, Group } from '@shopify/react-native-skia';
+import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
 import { useUnderseaClock } from './UnderseaClockContext';
-import {
-  MAX_DRIFT_LAYERS,
-  UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
-  underseaSeafloorUniformDefaults,
-} from '../../../shaders/underseaSeafloorBackground.sksl';
+import { UnderseaSeafloorShaderCanvas } from './UnderseaSeafloorShaderCanvas';
+import type { SeaweedVariant, StoneVariant } from './underseaAssets';
 import { SeaweedInstance, SeaweedShadowInstance } from './SeaweedInstance';
 import { StoneInstance, StoneShadowInstance } from './StoneInstance';
 
-const BACKGROUND_RES = 0.65;
-const DEG_TO_RAD = Math.PI / 180;
 const SEAWEED_BASE_WIDTH = 120;
 const SEAWEED_BASE_HEIGHT = 160;
 const STONE_BASE_WIDTH = 72;
@@ -28,20 +15,6 @@ const STONE_BASE_HEIGHT = 56;
 const SHADOW_COLOR = [0.02, 0.06, 0.12] as const;
 const SHADOW_OPACITY = 0.70;
 const SHADOW_SOFTNESS = 0.06;
-
-const STONE_VARIANTS = {
-  1: require('../../../assets/stone1.png'),
-  2: require('../../../assets/stone2.png'),
-  3: require('../../../assets/stone3.png'),
-  4: require('../../../assets/stone4.png'),
-  5: require('../../../assets/stone5.png'),
-  6: require('../../../assets/stone6.png'),
-  7: require('../../../assets/stone7.png'),
-  8: require('../../../assets/stone8.png'),
-  9: require('../../../assets/stone9.png'),
-} as const;
-
-type StoneVariant = keyof typeof STONE_VARIANTS;
 
 const STONE_CONFIGS = [
   { variant: 1 satisfies StoneVariant, xRatio: 0.15, yRatio: 0.15, scale: 1.3, stonePhase: 0.0 },
@@ -54,15 +27,6 @@ const STONE_CONFIGS = [
   { variant: 8 satisfies StoneVariant, xRatio: 0.28, yRatio: 0.20, scale: 1.45, stonePhase: 1.0 },
   { variant: 9 satisfies StoneVariant, xRatio: 0.68, yRatio: 0.63, scale: 1.35, stonePhase: 0.0 },
 ] as const;
-
-const SEAWEED_VARIANTS = {
-  1: require('../../../assets/seaweed1.png'),
-  2: require('../../../assets/seaweed2.png'),
-  3: require('../../../assets/seaweed3.png'),
-} as const;
-
-type SeaweedVariant = keyof typeof SEAWEED_VARIANTS;
-
 
 const SEAWEED_CONFIGS = [
   {
@@ -117,186 +81,22 @@ const SEAWEED_CONFIGS = [
     beamTint: [2.8, 2.8, 2.8],
   },
 ] as const;
-const {
-  tileScale,
-  underwaterTint,
-  underwaterTintStrength,
-  underwaterDepthStrength,
-  waterDriftCount,
-  waterDriftScale,
-  waterDriftIntensity,
-  waterDriftTint,
-  waterDriftSpeed,
-  waterDriftMoveAngle,
-  waterDriftMoveSpeed,
-  waterDriftSharpness,
-  waterDriftWaveAmp,
-  waterDriftWaveFreq,
-  waterDriftWaveSpeed,
-  waterDriftClusterAmp,
-  waterDriftClusterFreq,
-  waterDriftLineVariation,
-  waterDriftIntensityVariation,
-  waterDriftFrequencyVariation,
-  waterDriftEdgeJunctionStrength,
-} = underseaSeafloorUniformDefaults;
-
-function padArray(arr: readonly number[], fill = 0): number[] {
-  return [...arr, ...Array(Math.max(0, MAX_DRIFT_LAYERS - arr.length)).fill(fill)];
-}
-
-function padTintChannel(
-  tints: readonly (readonly [number, number, number])[],
-  channel: 0 | 1 | 2,
-  fill = 1,
-): number[] {
-  return padArray(
-    tints.map((t) => t[channel]),
-    fill,
-  );
-}
-
-const paddedWaterDriftScale = padArray(waterDriftScale);
-const paddedWaterDriftIntensity = padArray(waterDriftIntensity);
-const paddedWaterDriftTintR = padTintChannel(waterDriftTint, 0);
-const paddedWaterDriftTintG = padTintChannel(waterDriftTint, 1);
-const paddedWaterDriftTintB = padTintChannel(waterDriftTint, 2);
-const paddedWaterDriftSpeed = padArray(waterDriftSpeed);
-const paddedWaterDriftMoveX = padArray(
-  waterDriftMoveAngle.map((angle) => Math.cos(angle * DEG_TO_RAD)),
-);
-const paddedWaterDriftMoveY = padArray(
-  waterDriftMoveAngle.map((angle) => Math.sin(angle * DEG_TO_RAD)),
-);
-const paddedWaterDriftMoveSpeed = padArray(waterDriftMoveSpeed);
-const paddedWaterDriftSharpness = padArray(waterDriftSharpness);
-const paddedWaterDriftWaveAmp = padArray(waterDriftWaveAmp);
-const paddedWaterDriftWaveFreq = padArray(waterDriftWaveFreq);
-const paddedWaterDriftWaveSpeed = padArray(waterDriftWaveSpeed);
-const paddedWaterDriftClusterAmp = padArray(waterDriftClusterAmp);
-const paddedWaterDriftClusterFreq = padArray(waterDriftClusterFreq);
-const paddedWaterDriftLineVariation = padArray(waterDriftLineVariation);
-const paddedWaterDriftIntensityVariation = padArray(waterDriftIntensityVariation);
-const paddedWaterDriftFrequencyVariation = padArray(waterDriftFrequencyVariation);
-const paddedWaterDriftEdgeJunctionStrength = padArray(waterDriftEdgeJunctionStrength);
-const underwaterTintUniform = [...underwaterTint] as [number, number, number];
-
-function compileSeafloorEffect() {
-  const effect = Skia.RuntimeEffect.Make(UNDERSEA_SEAFLOOR_BACKGROUND_SKSL);
-  if (!effect) {
-    throw new Error('Failed to compile undersea seafloor background shader');
-  }
-  return effect;
-}
-
-const seafloorEffect = compileSeafloorEffect();
 
 export function UnderseaBackground() {
   const { width, height } = useWindowDimensions();
-  const image = useImage(require('../../../assets/seafloor.png'));
-  const seaweed1 = useImage(SEAWEED_VARIANTS[1]);
-  const seaweed2 = useImage(SEAWEED_VARIANTS[2]);
-  const seaweed3 = useImage(SEAWEED_VARIANTS[3]);
-  const stone1 = useImage(STONE_VARIANTS[1]);
-  const stone2 = useImage(STONE_VARIANTS[2]);
-  const stone3 = useImage(STONE_VARIANTS[3]);
-  const stone4 = useImage(STONE_VARIANTS[4]);
-  const stone5 = useImage(STONE_VARIANTS[5]);
-  const stone6 = useImage(STONE_VARIANTS[6]);
-  const stone7 = useImage(STONE_VARIANTS[7]);
-  const stone8 = useImage(STONE_VARIANTS[8]);
-  const stone9 = useImage(STONE_VARIANTS[9]);
+  const { images } = useUnderseaAssetsContext();
+  const image = images.seafloor;
+  const stoneImages = images.stones;
+  const seaweedImages = images.seaweed;
   const clock = useUnderseaClock();
 
-  const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
-  const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
-
-  const uniforms = useDerivedValue(() => ({
-    iTime: clock.value / 1500,
-    iResolution: [bgWidth, bgHeight] as [number, number],
-    tileScale,
-    underwaterTint: underwaterTintUniform,
-    underwaterTintStrength,
-    underwaterDepthStrength,
-    waterDriftCount,
-    waterDriftScale: paddedWaterDriftScale,
-    waterDriftIntensity: paddedWaterDriftIntensity,
-    waterDriftTintR: paddedWaterDriftTintR,
-    waterDriftTintG: paddedWaterDriftTintG,
-    waterDriftTintB: paddedWaterDriftTintB,
-    waterDriftSpeed: paddedWaterDriftSpeed,
-    waterDriftMoveX: paddedWaterDriftMoveX,
-    waterDriftMoveY: paddedWaterDriftMoveY,
-    waterDriftMoveSpeed: paddedWaterDriftMoveSpeed,
-    waterDriftSharpness: paddedWaterDriftSharpness,
-    waterDriftWaveAmp: paddedWaterDriftWaveAmp,
-    waterDriftWaveFreq: paddedWaterDriftWaveFreq,
-    waterDriftWaveSpeed: paddedWaterDriftWaveSpeed,
-    waterDriftClusterAmp: paddedWaterDriftClusterAmp,
-    waterDriftClusterFreq: paddedWaterDriftClusterFreq,
-    waterDriftLineVariation: paddedWaterDriftLineVariation,
-    waterDriftIntensityVariation: paddedWaterDriftIntensityVariation,
-    waterDriftFrequencyVariation: paddedWaterDriftFrequencyVariation,
-    waterDriftEdgeJunctionStrength: paddedWaterDriftEdgeJunctionStrength,
-  }));
-
-  if (
-    !image ||
-    !seaweed1 ||
-    !seaweed2 ||
-    !seaweed3 ||
-    !stone1 ||
-    !stone2 ||
-    !stone3 ||
-    !stone4 ||
-    !stone5 ||
-    !stone6 ||
-    !stone7 ||
-    !stone8 ||
-    !stone9 ||
-    width === 0 ||
-    height === 0
-  ) {
+  if (width === 0 || height === 0) {
     return null;
   }
 
-  const seaweedImages = { 1: seaweed1, 2: seaweed2, 3: seaweed3 };
-  const stoneImages = {
-    1: stone1,
-    2: stone2,
-    3: stone3,
-    4: stone4,
-    5: stone5,
-    6: stone6,
-    7: stone7,
-    8: stone8,
-    9: stone9,
-  };
-
   return (
     <View style={styles.container} pointerEvents="none">
-      <Canvas
-        style={[
-          styles.backgroundCanvas,
-          {
-            width: bgWidth,
-            height: bgHeight,
-            transform: [{ scale: 1 / BACKGROUND_RES }],
-          },
-        ]}>
-        <Fill>
-          <Shader source={seafloorEffect} uniforms={uniforms}>
-            <ImageShader
-              image={image}
-              tx="repeat"
-              ty="repeat"
-              fit="none"
-              width={bgWidth}
-              height={bgHeight}
-            />
-          </Shader>
-        </Fill>
-      </Canvas>
+      <UnderseaSeafloorShaderCanvas image={image} width={width} height={height} />
       <Canvas style={styles.foregroundCanvas}>
         <Group>
           {STONE_CONFIGS.map((config, index) => {
@@ -410,12 +210,6 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     overflow: 'hidden',
-  },
-  backgroundCanvas: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    transformOrigin: 'top left',
   },
   foregroundCanvas: {
     position: 'absolute',

@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { UnderseaAssetsProvider } from './UnderseaAssetsContext';
 import { UnderseaBackground } from './UnderseaBackground';
 import { UnderseaClockProvider } from './UnderseaClockContext';
 import {
   UnderseaHelpButton,
   UnderseaInstructions,
 } from './UnderseaInstructions';
+import { UnderseaLoadingScreen } from './UnderseaLoadingScreen';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './JellyfishTableLayer';
 import { KoiSwimZone, type KoiCaptureBridge } from './KoiSwimZone';
 import type {
@@ -13,7 +15,8 @@ import type {
   KoiSimBridge,
   TutorialStep,
 } from './underseaInstructionTypes';
-import { useUnderseaSounds } from './useUnderseaSounds';
+import { useUnderseaAssets } from './useUnderseaAssets';
+import type { UnderseaSoundController } from './useUnderseaSounds';
 import { getTableBodyWords, spanishPresentTable2Singular } from '../../../data/tableData';
 
 /** Below jellyfish — bubble visible but jellyfish remain tappable for matching. */
@@ -22,10 +25,13 @@ const CAPTURE_OVERLAY_Z = 3;
 const ESCAPE_OVERLAY_Z = 10;
 const JELLYFISH_LAYER_Z = 5;
 
-export function UnderseaTableExercise() {
+type UnderseaExerciseContentProps = {
+  sounds: UnderseaSoundController;
+};
+
+function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
   const table = spanishPresentTable2Singular;
   const words = useMemo(() => getTableBodyWords(table), [table]);
-  const sounds = useUnderseaSounds();
   const soundsRef = useRef(sounds);
   soundsRef.current = sounds;
   const [captureBridge, setCaptureBridge] = useState<KoiCaptureBridge | null>(null);
@@ -76,14 +82,11 @@ export function UnderseaTableExercise() {
   }, []);
 
   useEffect(() => {
-    if (!sounds.ready) {
-      return;
-    }
     sounds.startWaterflow();
     return () => {
       sounds.stopWaterflow();
     };
-  }, [sounds.ready, sounds.startWaterflow, sounds.stopWaterflow]);
+  }, [sounds]);
 
   const tutorialActive = tutorialStep !== 'idle';
 
@@ -142,6 +145,25 @@ export function UnderseaTableExercise() {
         )}
       </View>
     </UnderseaClockProvider>
+  );
+}
+
+export function UnderseaTableExercise() {
+  const assets = useUnderseaAssets();
+
+  if (assets.phase !== 'ready') {
+    return (
+      <UnderseaLoadingScreen
+        seafloorImage={assets.seafloorImage}
+        progress={assets.progress}
+      />
+    );
+  }
+
+  return (
+    <UnderseaAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
+      <UnderseaExerciseContent sounds={assets.sounds} />
+    </UnderseaAssetsProvider>
   );
 }
 

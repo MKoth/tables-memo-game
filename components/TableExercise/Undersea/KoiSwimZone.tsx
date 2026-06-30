@@ -2,31 +2,19 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { useImage } from '@shopify/react-native-skia';
+import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
 import { releaseCapturedFishWorklet } from './fishPoolSnapshot';
 import { KoiCapturedFishCanvas } from './KoiCapturedFishCanvas';
-import { KoiFishLayer, SWIM_ZONE_TOP_RATIO, type KoiImageKey } from './KoiFishLayer';
+import { KoiFishLayer, SWIM_ZONE_TOP_RATIO } from './KoiFishLayer';
 import { KoiWordBubble } from './KoiWordBubble';
 import { BubblePhase, BurstIntent, useBubbleAnimation, type BurstIntentValue } from './useBubbleAnimation';
-import type { UnderseaSounds } from './useUnderseaSounds';
+import type { UnderseaSoundController } from './useUnderseaSounds';
 import type { KoiSimBridge } from './underseaInstructionTypes';
 import {
   useKoiFishSimulation,
   type KoiCaptureSharedState,
   type KoiRuntimeEntry,
 } from './useKoiFishSimulation';
-
-const KOI_VARIANTS = {
-  koi1: require('../../../assets/koi1.png'),
-  koi2: require('../../../assets/koi2.png'),
-  koi3: require('../../../assets/koi3.png'),
-} as const;
-
-const KOI_MASK_VARIANTS = {
-  koi1: require('../../../assets/koi1-mask.png'),
-  koi2: require('../../../assets/koi2-mask.png'),
-  koi3: require('../../../assets/koi3-mask.png'),
-} as const;
 
 const BUBBLE_DIAMETER_RATIO = 0.9;
 
@@ -48,7 +36,7 @@ export type KoiCaptureBridge = {
 export type KoiSwimZoneProps = {
   words: string[];
   interactive?: boolean;
-  sounds?: UnderseaSounds;
+  sounds?: UnderseaSoundController;
   onCaptureBridgeChange?: (bridge: KoiCaptureBridge | null) => void;
   onSimBridgeChange?: (bridge: KoiSimBridge | null) => void;
 };
@@ -67,6 +55,9 @@ export function KoiSwimZone({
   onSimBridgeChange,
 }: KoiSwimZoneProps) {
   const { width, height } = useWindowDimensions();
+  const { images: assetImages } = useUnderseaAssetsContext();
+  const images = assetImages.koi;
+  const masks = assetImages.koiMasks;
   const [selection, setSelection] = useState<BubbleSelection | null>(null);
   const [eliminatedFishIndices, setEliminatedFishIndices] = useState<number[]>([]);
   const [escapeOverlayActive, setEscapeOverlayActive] = useState(false);
@@ -94,22 +85,6 @@ export function KoiSwimZone({
   const onSpeedIncrease = useCallback(() => {
     soundsRef.current?.playRandomSplash();
   }, []);
-
-  const koi1 = useImage(KOI_VARIANTS.koi1);
-  const koi2 = useImage(KOI_VARIANTS.koi2);
-  const koi3 = useImage(KOI_VARIANTS.koi3);
-  const koi1Mask = useImage(KOI_MASK_VARIANTS.koi1);
-  const koi2Mask = useImage(KOI_MASK_VARIANTS.koi2);
-  const koi3Mask = useImage(KOI_MASK_VARIANTS.koi3);
-
-  const images = useMemo(
-    () => ({ koi1, koi2, koi3 }),
-    [koi1, koi2, koi3],
-  );
-  const masks = useMemo(
-    () => ({ koi1: koi1Mask, koi2: koi2Mask, koi3: koi3Mask }),
-    [koi1Mask, koi2Mask, koi3Mask],
-  );
 
   useEffect(() => {
     eliminatedFishSv.value = eliminatedFishIndices;
@@ -405,17 +380,7 @@ export function KoiSwimZone({
     sim.runtimeEntries,
   ]);
 
-  if (
-    words.length === 0 ||
-    !koi1 ||
-    !koi2 ||
-    !koi3 ||
-    !koi1Mask ||
-    !koi2Mask ||
-    !koi3Mask ||
-    width === 0 ||
-    height === 0
-  ) {
+  if (words.length === 0 || width === 0 || height === 0) {
     return null;
   }
 
@@ -423,8 +388,8 @@ export function KoiSwimZone({
     <View style={styles.container} pointerEvents="box-none">
       <KoiFishLayer
         sim={sim}
-        images={images as Record<KoiImageKey, NonNullable<typeof koi1>>}
-        masks={masks as Record<KoiImageKey, NonNullable<typeof koi1Mask>>}
+        images={images}
+        masks={masks}
         capturedFishIndex={poolHiddenFishIndex}
         eliminatedFishSv={eliminatedFishSv}
         eliminatedFishIndices={eliminatedFishIndices}
