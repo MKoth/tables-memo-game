@@ -69,6 +69,7 @@ export type KoiCaptureSharedState = {
   offScreenTargetX: SharedValue<number>;
   offScreenTargetY: SharedValue<number>;
   escapeCompleteTriggered: SharedValue<boolean>;
+  escapeOverlayDismissTriggered: SharedValue<boolean>;
 };
 
 export type UseKoiFishSimulationParams = {
@@ -78,6 +79,7 @@ export type UseKoiFishSimulationParams = {
   captureState: KoiCaptureSharedState;
   releaseRequestSv: SharedValue<number>;
   eliminatedFishSv: SharedValue<number[]>;
+  onEscapeOverlayDismiss: () => void;
   onEscapeComplete: () => void;
 };
 
@@ -571,6 +573,7 @@ function useFishSimulation(
   captureState: KoiCaptureSharedState,
   releaseRequestSv: SharedValue<number>,
   eliminatedFishSv: SharedValue<number[]>,
+  onEscapeOverlayDismiss: () => void,
   onEscapeComplete: () => void,
 ): void {
   const lastTimestamp = useSharedValue(-1);
@@ -685,7 +688,16 @@ function useFishSimulation(
 
             if (
               captureState.escapeStage.value === 1 &&
-              fishRuntime.y.value + FISH_BODY_INSET < 0 &&
+              fishRuntime.y.value < 0 &&
+              !captureState.escapeOverlayDismissTriggered.value
+            ) {
+              captureState.escapeOverlayDismissTriggered.value = true;
+              runOnJS(onEscapeOverlayDismiss)();
+            }
+
+            if (
+              captureState.escapeStage.value === 1 &&
+              fishRuntime.y.value + FISH_BODY_INSET * 0.35 < 0 &&
               !captureState.escapeCompleteTriggered.value
             ) {
               captureState.escapeCompleteTriggered.value = true;
@@ -824,6 +836,7 @@ function useFishSimulation(
       captureState,
       releaseRequestSv,
       eliminatedFishSv,
+      onEscapeOverlayDismiss,
       onEscapeComplete,
       screenWidth,
       screenHeight,
@@ -868,6 +881,7 @@ export function useKoiFishSimulation({
   captureState,
   releaseRequestSv,
   eliminatedFishSv,
+  onEscapeOverlayDismiss,
   onEscapeComplete,
 }: UseKoiFishSimulationParams): KoiFishSimulation {
   const wordsKey = words.join('\0');
@@ -893,6 +907,7 @@ export function useKoiFishSimulation({
     captureState,
     releaseRequestSv,
     eliminatedFishSv,
+    onEscapeOverlayDismiss,
     onEscapeComplete,
   );
 

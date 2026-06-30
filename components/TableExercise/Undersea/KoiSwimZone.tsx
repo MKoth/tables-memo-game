@@ -74,6 +74,7 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
   const offScreenTargetXSv = useSharedValue(width * 0.5);
   const offScreenTargetYSv = useSharedValue(-120 * 1.5);
   const escapeCompleteTriggeredSv = useSharedValue(false);
+  const escapeOverlayDismissTriggeredSv = useSharedValue(false);
   const eliminatedFishSv = useSharedValue<number[]>([]);
 
   const koi1 = useImage(KOI_VARIANTS.koi1);
@@ -184,6 +185,7 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
       offScreenTargetX: offScreenTargetXSv,
       offScreenTargetY: offScreenTargetYSv,
       escapeCompleteTriggered: escapeCompleteTriggeredSv,
+      escapeOverlayDismissTriggered: escapeOverlayDismissTriggeredSv,
     }),
     [
       anim,
@@ -199,9 +201,11 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
       offScreenTargetXSv,
       offScreenTargetYSv,
       escapeCompleteTriggeredSv,
+      escapeOverlayDismissTriggeredSv,
     ],
   );
 
+  const onEscapeOverlayDismissRef = useRef<() => void>(() => {});
   const onEscapeCompleteRef = useRef<() => void>(() => {});
 
   const sim = useKoiFishSimulation({
@@ -211,8 +215,14 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
     captureState,
     releaseRequestSv,
     eliminatedFishSv,
+    onEscapeOverlayDismiss: () => onEscapeOverlayDismissRef.current(),
     onEscapeComplete: () => onEscapeCompleteRef.current(),
   });
+
+  const handleEscapeOverlayDismiss = useCallback(() => {
+    setSelection(null);
+    setEscapeOverlayActive(false);
+  }, []);
 
   const handleEscapeComplete = useCallback(() => {
     const fishIndex = capturedFishIndexSv.value;
@@ -220,6 +230,7 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
     escapeActiveSv.value = false;
     escapeStageSv.value = 0;
     escapeCompleteTriggeredSv.value = false;
+    escapeOverlayDismissTriggeredSv.value = false;
     capturedFishIndexSv.value = -1;
     phase.value = BubblePhase.None;
 
@@ -231,19 +242,18 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
 
     setPoolHiddenFishIndex(null);
     setEscapeOverlayActive(false);
-    transitionRafRef.current = requestAnimationFrame(() => {
-      transitionRafRef.current = null;
-      setSelection(null);
-    });
+    setSelection(null);
   }, [
     cancelTransitionRaf,
     capturedFishIndexSv,
     escapeActiveSv,
     escapeStageSv,
     escapeCompleteTriggeredSv,
+    escapeOverlayDismissTriggeredSv,
     phase,
   ]);
 
+  onEscapeOverlayDismissRef.current = handleEscapeOverlayDismiss;
   onEscapeCompleteRef.current = handleEscapeComplete;
 
   releaseContextSv.value = {
@@ -258,12 +268,14 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
       escapeTargetYSv.value = targetY;
       escapeStageSv.value = 0;
       escapeCompleteTriggeredSv.value = false;
+      escapeOverlayDismissTriggeredSv.value = false;
       escapeActiveSv.value = true;
       setEscapeOverlayActive(true);
       startBurst(BurstIntent.Escape);
     },
     [
       escapeCompleteTriggeredSv,
+      escapeOverlayDismissTriggeredSv,
       escapeActiveSv,
       escapeStageSv,
       escapeTargetXSv,
@@ -281,13 +293,14 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
       escapeActiveSv.value = false;
       escapeStageSv.value = 0;
       escapeCompleteTriggeredSv.value = false;
+      escapeOverlayDismissTriggeredSv.value = false;
       setSelection({ word, fishIndex, originX, originY });
       transitionRafRef.current = requestAnimationFrame(() => {
         transitionRafRef.current = null;
         setPoolHiddenFishIndex(fishIndex);
       });
     },
-    [cancelTransitionRaf, escapeActiveSv, escapeCompleteTriggeredSv, escapeStageSv, sim],
+    [cancelTransitionRaf, escapeActiveSv, escapeCompleteTriggeredSv, escapeOverlayDismissTriggeredSv, escapeStageSv, sim],
   );
 
   const capturedEntry =

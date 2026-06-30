@@ -115,7 +115,7 @@ export function KoiWordBubble({
   }
 
   return (
-    <View style={styles.container} pointerEvents="box-none">
+    <View style={styles.container} pointerEvents={interactive ? 'box-none' : 'none'}>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
         {capturedFish}
         <BubbleInstance image={bubbleImage} anim={anim} clock={clock} />

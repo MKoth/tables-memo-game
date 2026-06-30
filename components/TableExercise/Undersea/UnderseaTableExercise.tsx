@@ -48,7 +48,9 @@ export function UnderseaTableExercise() {
                   : CAPTURE_OVERLAY_Z,
               },
             ]}
-            pointerEvents="box-none">
+            pointerEvents={
+              captureBridge.escapeOverlayActive ? 'none' : 'box-none'
+            }>
             {captureBridge.overlay}
           </View>
         )}
