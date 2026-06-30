@@ -8,7 +8,7 @@
  * Each jellyfish carries a text label centered on its bell (labels may overlap).
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   Canvas,
@@ -42,6 +42,7 @@ import {
   JELLYFISH_TINT_PRESETS_BY_INDEX,
 } from './jellyfishTintPresets';
 import type { TableData } from '../../../data/tableData';
+import type { JellyfishLayoutBridge } from './underseaInstructionTypes';
 import { useUnderseaClockQuantized } from './UnderseaClockContext';
 import {
   biasForGridSlot,
@@ -853,6 +854,8 @@ export type JellyfishTableLayerProps = {
   capturedWord?: string | null;
   bubblePhase?: SharedValue<number>;
   onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;
+  interactive?: boolean;
+  onLayoutBridgeChange?: (bridge: JellyfishLayoutBridge | null) => void;
 };
 
 /**
@@ -864,6 +867,8 @@ export function JellyfishTableLayer({
   capturedWord = null,
   bubblePhase,
   onMatchSuccess,
+  interactive = true,
+  onLayoutBridgeChange,
 }: JellyfishTableLayerProps) {
   const bellImage = useImage(JELLYFISH_BELL);
   const tentacleImage = useImage(JELLYFISH_TENTACLES);
@@ -876,6 +881,8 @@ export function JellyfishTableLayer({
       capturedWord={capturedWord}
       bubblePhase={bubblePhase}
       onMatchSuccess={onMatchSuccess}
+      interactive={interactive}
+      onLayoutBridgeChange={onLayoutBridgeChange}
     />
   );
 }
@@ -887,6 +894,8 @@ type InnerProps = {
   capturedWord: string | null;
   bubblePhase?: SharedValue<number>;
   onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;
+  interactive: boolean;
+  onLayoutBridgeChange?: (bridge: JellyfishLayoutBridge | null) => void;
 };
 
 const JELLYFISH_CLOCK_FPS = 15;
@@ -898,6 +907,8 @@ function JellyfishTableLayerInner({
   capturedWord,
   bubblePhase,
   onMatchSuccess,
+  interactive,
+  onLayoutBridgeChange,
 }: InnerProps) {
   const { width, height } = useWindowDimensions();
   const clock = useUnderseaClockQuantized(JELLYFISH_CLOCK_FPS);
@@ -933,6 +944,10 @@ function JellyfishTableLayerInner({
   );
 
   const cellConfigs = useMemo(() => createCellConfigs(table, sizing), [table, sizing]);
+  const bodyCellIndices = useMemo(
+    () => cellConfigs.filter(c => !c.isHeader).map(c => c.index),
+    [cellConfigs],
+  );
   const drawOrder = useMemo(() => sortDrawOrder(cellConfigs), [cellConfigs]);
   const layoutParticles = useMemo(() => buildLayoutParticles(cellConfigs), [cellConfigs]);
   const [revealedBodyIndices, setRevealedBodyIndices] = useState<ReadonlySet<number>>(
@@ -1059,6 +1074,23 @@ function JellyfishTableLayerInner({
     prevBiasX,
     prevBiasY,
     lastLayoutTs,
+  ]);
+
+  useLayoutEffect(() => {
+    onLayoutBridgeChange?.({
+      layoutX,
+      layoutY,
+      layoutScale,
+      bodyCellIndices,
+      bellSizes: cellConfigs.map(c => c.bellSize),
+    });
+  }, [
+    bodyCellIndices,
+    cellConfigs,
+    layoutScale,
+    layoutX,
+    layoutY,
+    onLayoutBridgeChange,
   ]);
 
   const motionFrameLoopRef = useRef<ReturnType<typeof useFrameCallback> | null>(null);
@@ -1414,9 +1446,11 @@ function JellyfishTableLayerInner({
         })}
       </Canvas>
 
+      {interactive && (
       <GestureDetector gesture={tableGesture}>
         <View style={[styles.gestureCapture, { top: zoneTop, height: zoneHeight }]} />
       </GestureDetector>
+      )}
     </>
   );
 }

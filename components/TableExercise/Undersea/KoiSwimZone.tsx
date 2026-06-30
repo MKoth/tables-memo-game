@@ -8,6 +8,7 @@ import { KoiCapturedFishCanvas } from './KoiCapturedFishCanvas';
 import { KoiFishLayer, SWIM_ZONE_TOP_RATIO, type KoiImageKey } from './KoiFishLayer';
 import { KoiWordBubble } from './KoiWordBubble';
 import { BubblePhase, BurstIntent, useBubbleAnimation } from './useBubbleAnimation';
+import type { KoiSimBridge } from './underseaInstructionTypes';
 import {
   useKoiFishSimulation,
   type KoiCaptureSharedState,
@@ -45,7 +46,9 @@ export type KoiCaptureBridge = {
 
 export type KoiSwimZoneProps = {
   words: string[];
+  interactive?: boolean;
   onCaptureBridgeChange?: (bridge: KoiCaptureBridge | null) => void;
+  onSimBridgeChange?: (bridge: KoiSimBridge | null) => void;
 };
 
 type ReleaseContext = {
@@ -54,7 +57,12 @@ type ReleaseContext = {
   captureState: KoiCaptureSharedState;
 };
 
-export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) {
+export function KoiSwimZone({
+  words,
+  interactive: interactiveProp = true,
+  onCaptureBridgeChange,
+  onSimBridgeChange,
+}: KoiSwimZoneProps) {
   const { width, height } = useWindowDimensions();
   const [selection, setSelection] = useState<BubbleSelection | null>(null);
   const [eliminatedFishIndices, setEliminatedFishIndices] = useState<number[]>([]);
@@ -355,6 +363,23 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
     selection,
   ]);
 
+  useLayoutEffect(() => {
+    onSimBridgeChange?.({
+      fishRuntimePositions: sim.runtimeEntries.map(entry => ({
+        x: entry.runtime.x,
+        y: entry.runtime.y,
+      })),
+      fishCount: sim.runtimeEntries.length,
+      hitRadius: sim.hitRadius,
+      eliminatedFishSv,
+    });
+  }, [
+    eliminatedFishSv,
+    onSimBridgeChange,
+    sim.hitRadius,
+    sim.runtimeEntries,
+  ]);
+
   if (
     words.length === 0 ||
     !koi1 ||
@@ -378,7 +403,7 @@ export function KoiSwimZone({ words, onCaptureBridgeChange }: KoiSwimZoneProps) 
         capturedFishIndex={poolHiddenFishIndex}
         eliminatedFishSv={eliminatedFishSv}
         eliminatedFishIndices={eliminatedFishIndices}
-        interactive={selection === null}
+        interactive={interactiveProp && selection === null}
         onFishSelect={handleFishSelect}
       />
     </View>

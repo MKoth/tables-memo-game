@@ -2,8 +2,17 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { UnderseaBackground } from './UnderseaBackground';
 import { UnderseaClockProvider } from './UnderseaClockContext';
+import {
+  UnderseaHelpButton,
+  UnderseaInstructions,
+} from './UnderseaInstructions';
 import { JellyfishTableLayer } from './JellyfishTableLayer';
 import { KoiSwimZone, type KoiCaptureBridge } from './KoiSwimZone';
+import type {
+  JellyfishLayoutBridge,
+  KoiSimBridge,
+  TutorialStep,
+} from './underseaInstructionTypes';
 import { getTableBodyWords, spanishPresentTable2Singular } from '../../../data/tableData';
 
 /** Below jellyfish — bubble visible but jellyfish remain tappable for matching. */
@@ -16,6 +25,10 @@ export function UnderseaTableExercise() {
   const table = spanishPresentTable2Singular;
   const words = useMemo(() => getTableBodyWords(table), [table]);
   const [captureBridge, setCaptureBridge] = useState<KoiCaptureBridge | null>(null);
+  const [koiBridge, setKoiBridge] = useState<KoiSimBridge | null>(null);
+  const [jellyBridge, setJellyBridge] = useState<JellyfishLayoutBridge | null>(null);
+  const [tutorialStep, setTutorialStep] = useState<TutorialStep>('idle');
+  const [helpVisible, setHelpVisible] = useState(true);
 
   const handleCaptureBridgeChange = useCallback((bridge: KoiCaptureBridge | null) => {
     setCaptureBridge(prev => {
@@ -33,11 +46,31 @@ export function UnderseaTableExercise() {
     });
   }, []);
 
+  const handleJellyfishMatchSuccess = useCallback(
+    (targetX: number, targetY: number, hitIdx: number) => {
+      setHelpVisible(false);
+      captureBridge?.onMatchSuccess?.(targetX, targetY, hitIdx);
+    },
+    [captureBridge],
+  );
+
+  const handleTutorialDismiss = useCallback(() => {
+    setTutorialStep('idle');
+    setHelpVisible(false);
+  }, []);
+
+  const tutorialActive = tutorialStep !== 'idle';
+
   return (
     <UnderseaClockProvider>
       <View style={styles.container}>
         <UnderseaBackground />
-        <KoiSwimZone words={words} onCaptureBridgeChange={handleCaptureBridgeChange} />
+        <KoiSwimZone
+          words={words}
+          interactive={!tutorialActive}
+          onCaptureBridgeChange={handleCaptureBridgeChange}
+          onSimBridgeChange={setKoiBridge}
+        />
         {captureBridge?.overlay != null && (
           <View
             style={[
@@ -59,9 +92,26 @@ export function UnderseaTableExercise() {
             table={table}
             capturedWord={captureBridge?.capturedWord ?? null}
             bubblePhase={captureBridge?.bubblePhase}
-            onMatchSuccess={captureBridge?.onMatchSuccess}
+            onMatchSuccess={handleJellyfishMatchSuccess}
+            interactive={!tutorialActive}
+            onLayoutBridgeChange={setJellyBridge}
           />
         </View>
+        {tutorialActive && (
+          <UnderseaInstructions
+            step={tutorialStep}
+            koiBridge={koiBridge}
+            jellyBridge={jellyBridge}
+            onNext={() => setTutorialStep('jellyfish')}
+            onDismiss={handleTutorialDismiss}
+          />
+        )}
+        {helpVisible && (
+          <UnderseaHelpButton
+            onPress={() => setTutorialStep('fish')}
+            disabled={tutorialActive}
+          />
+        )}
       </View>
     </UnderseaClockProvider>
   );
