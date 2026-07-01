@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Optimizes stone + seaweed PNGs for the undersea background:
+# Optimizes stone, starfish, seashell + seaweed PNGs for the undersea background:
 #   1. Downscales stones to ≤400px wide  (they display at ~100-160px on screen)
 #   2. Downscales seaweed to ≤250px wide (they display at ~96px on screen)
 #   3. Bakes a Gaussian blur (σ=2px) into each image, replacing the removed
@@ -52,8 +52,17 @@ for i in 1 2 3 4 5 6 7 8 9; do
 done
 
 echo ""
-echo "=== Seaweed (resize ≤250px wide, +${PADDING}px padding, bake σ=${BLUR_SIGMA}px blur) ==="
+echo "=== Starfish & seashells (resize ≤400px wide, +${PADDING}px padding, bake σ=${BLUR_SIGMA}px blur) ==="
 for i in 1 2 3; do
+  process "$ASSETS_DIR/starfish${i}.png" 400
+done
+for i in 1 2 3 4 5; do
+  process "$ASSETS_DIR/seashell${i}.png" 400
+done
+
+echo ""
+echo "=== Seaweed (resize ≤250px wide, +${PADDING}px padding, bake σ=${BLUR_SIGMA}px blur) ==="
+for i in 1 2 3 4 5 6; do
   process "$ASSETS_DIR/seaweed${i}.png" 250
 done
 

@@ -103,6 +103,7 @@ export type StoneInstanceProps = {
   beamSpeed?: number;
   beamPhase?: number;
   beamTint?: readonly [number, number, number];
+  shadowStrength?: number;
   clock: SharedValue<number>;
 };
 
@@ -202,6 +203,7 @@ export function StoneInstance({
   beamSpeed: beamSpeedProp = beamSpeed,
   beamPhase: beamPhaseProp = beamPhase,
   beamTint: beamTintProp = beamTint,
+  shadowStrength: shadowStrengthProp = shadowStrength,
   clock,
 }: StoneInstanceProps) {
   const beamTintUniform = [...beamTintProp] as [number, number, number];
@@ -233,7 +235,7 @@ export function StoneInstance({
     beamSpeed: beamSpeedProp,
     beamPhase: beamPhaseProp,
     beamTint: beamTintUniform,
-    shadowStrength,
+    shadowStrength: shadowStrengthProp,
     shadowStart,
     shadowEnd,
   }));

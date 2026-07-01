@@ -19,11 +19,22 @@ export const UNDERSEA_IMAGE_ASSETS = {
     7: require('../../../assets/stone7.png'),
     8: require('../../../assets/stone8.png'),
     9: require('../../../assets/stone9.png'),
+    starfish1: require('../../../assets/starfish1.png'),
+    starfish2: require('../../../assets/starfish2.png'),
+    starfish3: require('../../../assets/starfish3.png'),
+    seashell1: require('../../../assets/seashell1.png'),
+    seashell2: require('../../../assets/seashell2.png'),
+    seashell3: require('../../../assets/seashell3.png'),
+    seashell4: require('../../../assets/seashell4.png'),
+    seashell5: require('../../../assets/seashell5.png'),
   },
   seaweed: {
     1: require('../../../assets/seaweed1.png'),
     2: require('../../../assets/seaweed2.png'),
     3: require('../../../assets/seaweed3.png'),
+    4: require('../../../assets/seaweed4.png'),
+    5: require('../../../assets/seaweed5.png'),
+    6: require('../../../assets/seaweed6.png'),
   },
   koi: {
     koi1: require('../../../assets/koi1.png'),
@@ -78,12 +89,23 @@ export const UNDERSEA_STONE_SOURCES: Array<[StoneVariant, number]> = [
   [7, UNDERSEA_IMAGE_ASSETS.stones[7]],
   [8, UNDERSEA_IMAGE_ASSETS.stones[8]],
   [9, UNDERSEA_IMAGE_ASSETS.stones[9]],
+  ['starfish1', UNDERSEA_IMAGE_ASSETS.stones.starfish1],
+  ['starfish2', UNDERSEA_IMAGE_ASSETS.stones.starfish2],
+  ['starfish3', UNDERSEA_IMAGE_ASSETS.stones.starfish3],
+  ['seashell1', UNDERSEA_IMAGE_ASSETS.stones.seashell1],
+  ['seashell2', UNDERSEA_IMAGE_ASSETS.stones.seashell2],
+  ['seashell3', UNDERSEA_IMAGE_ASSETS.stones.seashell3],
+  ['seashell4', UNDERSEA_IMAGE_ASSETS.stones.seashell4],
+  ['seashell5', UNDERSEA_IMAGE_ASSETS.stones.seashell5],
 ];
 
 export const UNDERSEA_SEAWEED_SOURCES: Array<[SeaweedVariant, number]> = [
   [1, UNDERSEA_IMAGE_ASSETS.seaweed[1]],
   [2, UNDERSEA_IMAGE_ASSETS.seaweed[2]],
   [3, UNDERSEA_IMAGE_ASSETS.seaweed[3]],
+  [4, UNDERSEA_IMAGE_ASSETS.seaweed[4]],
+  [5, UNDERSEA_IMAGE_ASSETS.seaweed[5]],
+  [6, UNDERSEA_IMAGE_ASSETS.seaweed[6]],
 ];
 
 export const UNDERSEA_KOI_SOURCES: Array<[KoiImageKey, number]> = [
