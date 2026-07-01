@@ -174,23 +174,21 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
 export function UnderseaTableExercise() {
   const assets = useUnderseaAssets();
 
-  if (assets.phase !== 'ready') {
-    return (
-      <UnderseaLoadingScreen
-        seafloorImage={assets.seafloorImage}
-        stoneImages={assets.stoneImages}
-        seaweedImages={assets.seaweedImages}
-        progress={assets.progress}
-      />
-    );
-  }
-
   return (
-    <UnderseaAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
-      <UnderseaLayoutProvider>
-        <UnderseaExerciseContent sounds={assets.sounds} />
-      </UnderseaLayoutProvider>
-    </UnderseaAssetsProvider>
+    <UnderseaLayoutProvider>
+      {assets.phase !== 'ready' ? (
+        <UnderseaLoadingScreen
+          seafloorImage={assets.seafloorImage}
+          stoneImages={assets.stoneImages}
+          seaweedImages={assets.seaweedImages}
+          progress={assets.progress}
+        />
+      ) : (
+        <UnderseaAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
+          <UnderseaExerciseContent sounds={assets.sounds} />
+        </UnderseaAssetsProvider>
+      )}
+    </UnderseaLayoutProvider>
   );
 }
 

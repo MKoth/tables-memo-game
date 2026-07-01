@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Canvas, Fill, type SkImage } from '@shopify/react-native-skia';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -9,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { UnderseaImages } from './underseaAssets';
 import { UnderseaClockProvider, useUnderseaClock } from './UnderseaClockContext';
+import { useUnderseaLayout } from './UnderseaLayoutContext';
 import { UnderseaSeafloorShaderCanvas } from './UnderseaSeafloorShaderCanvas';
 import { UnderseaStonesAndSeaweedCanvas } from './UnderseaStonesAndSeaweedCanvas';
 
@@ -67,6 +69,8 @@ export function UnderseaLoadingScreen({
   progress,
 }: UnderseaLoadingScreenProps) {
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const { koiRect, screenHeight, orientation } = useUnderseaLayout();
   const animatedProgress = useSharedValue(0);
 
   useEffect(() => {
@@ -76,8 +80,28 @@ export function UnderseaLoadingScreen({
     });
   }, [animatedProgress, progress]);
 
-  const barWidth = Math.max(160, width * BAR_WIDTH_RATIO);
-  const barLeft = (width - barWidth) * 0.5;
+  const { barWidth, barLeft, barBottom, labelBottom, overlayLeft, overlayWidth } =
+    useMemo(() => {
+      const isPortrait = orientation === 'portrait';
+      const contentLeft = koiRect.x + insets.left;
+      const contentWidth = isPortrait
+        ? koiRect.w - insets.left - insets.right
+        : koiRect.w - insets.left;
+      const widthForBar = Math.min(
+        Math.max(160, contentWidth * BAR_WIDTH_RATIO),
+        contentWidth,
+      );
+      const koiBottomInset = screenHeight - (koiRect.y + koiRect.h);
+      const safeBottom = insets.bottom + koiBottomInset;
+      return {
+        barWidth: widthForBar,
+        barLeft: contentLeft + (contentWidth - widthForBar) * 0.5,
+        barBottom: safeBottom + BAR_BOTTOM_OFFSET,
+        labelBottom: safeBottom + LABEL_BOTTOM_OFFSET,
+        overlayLeft: contentLeft,
+        overlayWidth: contentWidth,
+      };
+    }, [insets.bottom, insets.left, insets.right, koiRect, orientation, screenHeight]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: (barWidth * animatedProgress.value) / 100,
@@ -101,7 +125,11 @@ export function UnderseaLoadingScreen({
         <View style={styles.fallback} />
       )}
 
-      <View style={[styles.overlay, { bottom: LABEL_BOTTOM_OFFSET }]}>
+      <View
+        style={[
+          styles.overlay,
+          { left: overlayLeft, width: overlayWidth, bottom: labelBottom },
+        ]}>
         <ActivityIndicator size="small" color="rgba(180, 240, 255, 0.95)" />
         <Text style={styles.label}>Loading… {clampedProgress}%</Text>
       </View>
@@ -112,7 +140,7 @@ export function UnderseaLoadingScreen({
           {
             width: barWidth,
             left: barLeft,
-            bottom: BAR_BOTTOM_OFFSET,
+            bottom: barBottom,
           },
         ]}>
         <Animated.View style={[styles.barFill, fillStyle]} />
@@ -132,8 +160,6 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: 'absolute',
-    left: 0,
-    right: 0,
     alignItems: 'center',
     gap: 12,
   },
