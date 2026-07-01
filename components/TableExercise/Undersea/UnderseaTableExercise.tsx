@@ -177,6 +177,8 @@ export function UnderseaTableExercise() {
     return (
       <UnderseaLoadingScreen
         seafloorImage={assets.seafloorImage}
+        stoneImages={assets.stoneImages}
+        seaweedImages={assets.seaweedImages}
         progress={assets.progress}
       />
     );

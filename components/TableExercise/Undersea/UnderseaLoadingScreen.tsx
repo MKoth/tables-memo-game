@@ -7,8 +7,10 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { UnderseaClockProvider } from './UnderseaClockContext';
+import type { UnderseaImages } from './underseaAssets';
+import { UnderseaClockProvider, useUnderseaClock } from './UnderseaClockContext';
 import { UnderseaSeafloorShaderCanvas } from './UnderseaSeafloorShaderCanvas';
+import { UnderseaStonesAndSeaweedCanvas } from './UnderseaStonesAndSeaweedCanvas';
 
 const FALLBACK_COLOR = '#061828';
 const BAR_WIDTH_RATIO = 0.55;
@@ -18,21 +20,39 @@ const LABEL_BOTTOM_OFFSET = 88;
 
 type UnderseaLoadingScreenProps = {
   seafloorImage: SkImage | null;
+  stoneImages: UnderseaImages['stones'] | null;
+  seaweedImages: UnderseaImages['seaweed'] | null;
   progress: number;
 };
 
 function UnderseaLoadingBackground({
   seafloorImage,
+  stoneImages,
+  seaweedImages,
   width,
   height,
 }: {
   seafloorImage: SkImage;
+  stoneImages: UnderseaImages['stones'] | null;
+  seaweedImages: UnderseaImages['seaweed'] | null;
   width: number;
   height: number;
 }) {
+  const clock = useUnderseaClock();
+  const showForeground = stoneImages != null && seaweedImages != null;
+
   return (
     <View style={StyleSheet.absoluteFill}>
       <UnderseaSeafloorShaderCanvas image={seafloorImage} width={width} height={height} />
+      {showForeground && (
+        <UnderseaStonesAndSeaweedCanvas
+          stoneImages={stoneImages}
+          seaweedImages={seaweedImages}
+          width={width}
+          height={height}
+          clock={clock}
+        />
+      )}
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
         <Fill color="rgba(4, 18, 32, 0.28)" />
       </Canvas>
@@ -40,7 +60,12 @@ function UnderseaLoadingBackground({
   );
 }
 
-export function UnderseaLoadingScreen({ seafloorImage, progress }: UnderseaLoadingScreenProps) {
+export function UnderseaLoadingScreen({
+  seafloorImage,
+  stoneImages,
+  seaweedImages,
+  progress,
+}: UnderseaLoadingScreenProps) {
   const { width, height } = useWindowDimensions();
   const animatedProgress = useSharedValue(0);
 
@@ -66,6 +91,8 @@ export function UnderseaLoadingScreen({ seafloorImage, progress }: UnderseaLoadi
         <UnderseaClockProvider>
           <UnderseaLoadingBackground
             seafloorImage={seafloorImage}
+            stoneImages={stoneImages}
+            seaweedImages={seaweedImages}
             width={width}
             height={height}
           />

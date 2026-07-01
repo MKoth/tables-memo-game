@@ -23,6 +23,8 @@ import {
 export type UnderseaAssetsLoading = {
   phase: 'loading';
   seafloorImage: SkImage | null;
+  stoneImages: UnderseaImages['stones'] | null;
+  seaweedImages: UnderseaImages['seaweed'] | null;
   progress: number;
 };
 
@@ -43,29 +45,69 @@ function loadTrackedImage(source: number, onLoaded: () => void): Promise<SkImage
   });
 }
 
-async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<UnderseaImages, 'seafloor'>> {
+async function loadPriorityImages(
+  onImageLoaded: () => void,
+  onPartial: (partial: {
+    seafloor?: SkImage;
+    stones?: UnderseaImages['stones'];
+    seaweed?: UnderseaImages['seaweed'];
+  }) => void,
+): Promise<{
+  seafloor: SkImage;
+  stones: UnderseaImages['stones'];
+  seaweed: UnderseaImages['seaweed'];
+}> {
+  const track = (source: number) => loadTrackedImage(source, onImageLoaded);
+
+  const seafloorPromise = track(UNDERSEA_PRIORITY_IMAGE_SOURCE).then(seafloor => {
+    onPartial({ seafloor });
+    return seafloor;
+  });
+
+  const stonesPromise = Promise.all(
+    UNDERSEA_STONE_SOURCES.map(([variant, source]) =>
+      track(source).then(image => ({ variant, image })),
+    ),
+  ).then(stoneResults => {
+    const stones = Object.fromEntries(
+      stoneResults.map(({ variant, image }) => [variant, image]),
+    ) as UnderseaImages['stones'];
+    onPartial({ stones });
+    return stones;
+  });
+
+  const seaweedPromise = Promise.all(
+    UNDERSEA_SEAWEED_SOURCES.map(([variant, source]) =>
+      track(source).then(image => ({ variant, image })),
+    ),
+  ).then(seaweedResults => {
+    const seaweed = Object.fromEntries(
+      seaweedResults.map(({ variant, image }) => [variant, image]),
+    ) as UnderseaImages['seaweed'];
+    onPartial({ seaweed });
+    return seaweed;
+  });
+
+  const [seafloor, stones, seaweed] = await Promise.all([
+    seafloorPromise,
+    stonesPromise,
+    seaweedPromise,
+  ]);
+
+  return { seafloor, stones, seaweed };
+}
+
+async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<UnderseaImages, 'seafloor' | 'stones' | 'seaweed'>> {
   const track = (source: number) => loadTrackedImage(source, onImageLoaded);
 
   const [
     bulkResults,
-    stoneResults,
-    seaweedResults,
     koiResults,
     koiMaskResults,
   ] = await Promise.all([
     Promise.all(
       UNDERSEA_BULK_IMAGE_ENTRIES.map(entry =>
         track(entry.source).then(image => ({ key: entry.key, image })),
-      ),
-    ),
-    Promise.all(
-      UNDERSEA_STONE_SOURCES.map(([variant, source]) =>
-        track(source).then(image => ({ variant, image })),
-      ),
-    ),
-    Promise.all(
-      UNDERSEA_SEAWEED_SOURCES.map(([variant, source]) =>
-        track(source).then(image => ({ variant, image })),
       ),
     ),
     Promise.all(
@@ -84,14 +126,6 @@ async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<Unde
     bulkResults.map(({ key, image }) => [key, image]),
   ) as Pick<UnderseaImages, 'jellyfishBell' | 'jellyfishTentacles' | 'bubble'>;
 
-  const stones = Object.fromEntries(
-    stoneResults.map(({ variant, image }) => [variant, image]),
-  ) as UnderseaImages['stones'];
-
-  const seaweed = Object.fromEntries(
-    seaweedResults.map(({ variant, image }) => [variant, image]),
-  ) as UnderseaImages['seaweed'];
-
   const koi = Object.fromEntries(
     koiResults.map(({ key, image }) => [key, image]),
   ) as UnderseaImages['koi'];
@@ -102,8 +136,6 @@ async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<Unde
 
   return {
     ...bulkImages,
-    stones,
-    seaweed,
     koi,
     koiMasks,
   };
@@ -111,6 +143,8 @@ async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<Unde
 
 export function useUnderseaAssets(): UnderseaAssets {
   const [seafloorImage, setSeafloorImage] = useState<SkImage | null>(null);
+  const [stoneImages, setStoneImages] = useState<UnderseaImages['stones'] | null>(null);
+  const [seaweedImages, setSeaweedImages] = useState<UnderseaImages['seaweed'] | null>(null);
   const [progress, setProgress] = useState(0);
   const [readyAssets, setReadyAssets] = useState<Omit<UnderseaAssetsReady, 'phase' | 'progress'> | null>(
     null,
@@ -137,12 +171,23 @@ export function useUnderseaAssets(): UnderseaAssets {
         loadedCountRef.current = 0;
         setProgress(0);
 
-        const seafloor = await loadUnderseaSkiaImage(UNDERSEA_PRIORITY_IMAGE_SOURCE);
+        const priority = await loadPriorityImages(tickProgress, partial => {
+          if (cancelled) {
+            return;
+          }
+          if (partial.seafloor != null) {
+            setSeafloorImage(partial.seafloor);
+          }
+          if (partial.stones != null) {
+            setStoneImages(partial.stones);
+          }
+          if (partial.seaweed != null) {
+            setSeaweedImages(partial.seaweed);
+          }
+        });
         if (cancelled) {
           return;
         }
-        tickProgress();
-        setSeafloorImage(seafloor);
 
         const [remainingImages, loadedSounds] = await Promise.all([
           loadRemainingImages(tickProgress),
@@ -163,9 +208,11 @@ export function useUnderseaAssets(): UnderseaAssets {
 
         setProgress(100);
         setReadyAssets({
-          seafloorImage: seafloor,
+          seafloorImage: priority.seafloor,
           images: {
-            seafloor,
+            seafloor: priority.seafloor,
+            stones: priority.stones,
+            seaweed: priority.seaweed,
             ...remainingImages,
           },
           sounds,
@@ -188,6 +235,8 @@ export function useUnderseaAssets(): UnderseaAssets {
       loadedSoundsRef.current = null;
       loadedCountRef.current = 0;
       setSeafloorImage(null);
+      setStoneImages(null);
+      setSeaweedImages(null);
       setProgress(0);
       setReadyAssets(null);
     };
@@ -204,6 +253,8 @@ export function useUnderseaAssets(): UnderseaAssets {
   return {
     phase: 'loading',
     seafloorImage,
+    stoneImages,
+    seaweedImages,
     progress,
   };
 }
