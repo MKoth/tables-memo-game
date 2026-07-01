@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Group, Skia } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import { useDerivedValue } from 'react-native-reanimated';
+import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import {
   BUBBLE_FISH_CLIP_INSET,
   BUBBLE_FISH_SCALE,
@@ -61,6 +61,8 @@ export function KoiCapturedFishCanvas({
   renderProps,
 }: KoiCapturedFishCanvasProps) {
   const { spawn, runtime } = entry;
+  /** Bubble clip handles visibility — never clamp captured fish to swim zone. */
+  const captureFreeBounds = useSharedValue(true);
 
   const clipPath = useDerivedValue(() => {
     if (escapeActive?.value) {
@@ -130,7 +132,7 @@ export function KoiCapturedFishCanvas({
         phase={spawn.phase}
         state={fishState}
         fishWScale={fishWScale}
-        freeBounds={escapeActive}
+        freeBounds={captureFreeBounds}
         offsetX={shadowOffsetX}
         offsetY={shadowOffsetY}
         shadowColor={KOI_SHADOW_COLOR}
@@ -150,7 +152,7 @@ export function KoiCapturedFishCanvas({
         phase={spawn.phase}
         state={fishState}
         fishWScale={fishWScale}
-        freeBounds={escapeActive}
+        freeBounds={captureFreeBounds}
       />
     </Group>
   );

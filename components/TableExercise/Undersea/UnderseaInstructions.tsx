@@ -18,6 +18,8 @@ import {
 } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
+import type { ControlsAnchor } from './underseaLayout';
+import { useUnderseaLayout } from './UnderseaLayoutContext';
 import { UiDropPanel } from './UiDropPanel';
 import type {
   JellyfishLayoutBridge,
@@ -41,6 +43,58 @@ const SPOTLIGHT_RING_COLOR = 'rgba(200, 235, 255, 0.85)';
 /** Tight spotlight around the fish body (tap uses hitRadius * 1.55). */
 const FISH_SPOTLIGHT_SCALE = 1.35;
 const JELLY_SPOTLIGHT_SCALE = 1.15;
+
+type EdgeInsets = {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
+
+function computeControlsPosition(
+  anchor: ControlsAnchor,
+  insets: EdgeInsets,
+  margin: number,
+): {
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+} {
+  switch (anchor.edge) {
+    case 'bottomRight':
+      return { bottom: insets.bottom + margin, right: insets.right + margin };
+    case 'bottomLeft':
+      return { bottom: insets.bottom + margin, left: insets.left + margin };
+    case 'topRight':
+      return { top: insets.top + margin, right: insets.right + margin };
+    case 'topLeft':
+      return { top: insets.top + margin, left: insets.left + margin };
+  }
+}
+
+function computeTooltipPosition(
+  anchor: ControlsAnchor,
+  insets: EdgeInsets,
+  margin: number,
+): {
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+} {
+  const offset = margin + HELP_BUTTON_SIZE + 12;
+  switch (anchor.edge) {
+    case 'bottomRight':
+      return { bottom: insets.bottom + offset, right: insets.right + margin };
+    case 'bottomLeft':
+      return { bottom: insets.bottom + offset, left: insets.left + margin };
+    case 'topRight':
+      return { top: insets.top + offset, right: insets.right + margin };
+    case 'topLeft':
+      return { top: insets.top + offset, left: insets.left + margin };
+  }
+}
 
 function pickRandomFishIndex(bridge: KoiSimBridge): number | null {
   const eliminated = bridge.eliminatedFishSv.value;
@@ -376,16 +430,15 @@ export function UnderseaCornerControls({
   helpDisabled = false,
 }: UnderseaCornerControlsProps) {
   const insets = useSafeAreaInsets();
+  const { controlsAnchor } = useUnderseaLayout();
+  const position = computeControlsPosition(controlsAnchor, insets, HELP_MARGIN);
 
   return (
     <View
       style={[
         styles.helpAnchor,
-        {
-          bottom: insets.bottom + HELP_MARGIN,
-          right: insets.right + HELP_MARGIN,
-          zIndex: HELP_BUTTON_Z,
-        },
+        position,
+        { zIndex: HELP_BUTTON_Z },
       ]}
       pointerEvents="box-none">
       <View style={styles.cornerRow}>
@@ -403,8 +456,10 @@ type InstructionTooltipProps = {
   stepLabel?: string;
   actionLabel: string;
   onAction: () => void;
-  bottom: number;
-  right: number;
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
 };
 
 function InstructionTooltip({
@@ -412,14 +467,16 @@ function InstructionTooltip({
   stepLabel,
   actionLabel,
   onAction,
+  top,
   bottom,
+  left,
   right,
 }: InstructionTooltipProps) {
   const [panelSize, setPanelSize] = useState({ width: TOOLTIP_MIN_WIDTH, height: 120 });
 
   return (
     <View
-      style={[styles.tooltipAnchor, { bottom, right }]}
+      style={[styles.tooltipAnchor, { top, bottom, left, right }]}
       pointerEvents="box-none">
       <View
         style={styles.tooltipShell}
@@ -468,6 +525,7 @@ export function UnderseaInstructions({
 }: UnderseaInstructionsProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const { controlsAnchor } = useUnderseaLayout();
   const [fishTargetIndex, setFishTargetIndex] = useState<number | null>(null);
   const [jellyTargetIndex, setJellyTargetIndex] = useState<number | null>(null);
   const [headerTargetIndex, setHeaderTargetIndex] = useState<number | null>(null);
@@ -530,9 +588,7 @@ export function UnderseaInstructions({
       ? koiBridge.fishRuntimePositions[fishTargetIndex] ?? null
       : null;
 
-  const tooltipBottom =
-    insets.bottom + HELP_MARGIN + HELP_BUTTON_SIZE + 12;
-  const tooltipRight = insets.right + HELP_MARGIN;
+  const tooltipPosition = computeTooltipPosition(controlsAnchor, insets, HELP_MARGIN);
 
   const message =
     step === 'fish'
@@ -591,8 +647,7 @@ export function UnderseaInstructions({
         stepLabel={stepLabel}
         actionLabel={actionLabel}
         onAction={onAction}
-        bottom={tooltipBottom}
-        right={tooltipRight}
+        {...tooltipPosition}
       />
     </View>
   );

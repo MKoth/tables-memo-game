@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect } from 'react';
 import {
   cancelAnimation,
   Easing,
@@ -194,13 +194,18 @@ export function useBubbleAnimation(
   const burstProgress = useSharedValue(0);
   const burstIntent = useSharedValue<BurstIntentValue>(BurstIntent.Release);
   const phase = useSharedValue<number>(enabled ? BubblePhase.Enter : BubblePhase.None);
+  const configSv = useSharedValue(config);
+
+  useLayoutEffect(() => {
+    configSv.value = config;
+  }, [config, configSv]);
 
   const anim = useDerivedValue((): BubbleAnimState =>
     computeBubbleAnimState(
       phase.value,
       enterProgress.value,
       burstProgress.value,
-      config,
+      configSv.value,
     ),
   );
 
@@ -233,17 +238,7 @@ export function useBubbleAnimation(
       cancelAnimation(enterProgress);
       cancelAnimation(burstProgress);
     };
-  }, [
-    enabled,
-    config.originX,
-    config.originY,
-    config.targetCenterX,
-    config.targetCenterY,
-    config.targetDiameter,
-    enterProgress,
-    burstProgress,
-    phase,
-  ]);
+  }, [enabled, enterProgress, burstProgress, phase]);
 
   const startBurst = useCallback(
     (intent: BurstIntentValue = BurstIntent.Release) => {

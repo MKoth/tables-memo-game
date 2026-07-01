@@ -12,7 +12,7 @@ import {
   type FinSideSpawn,
   type KoiImageKey,
 } from './KoiFishLayer';
-import { SWIM_ZONE_TOP_RATIO } from './KoiFishLayer';
+import type { ZoneRect } from './underseaLayout';
 import {
   advanceFishCosmetics,
   applyEnterFishPosition,
@@ -72,6 +72,8 @@ export type KoiCaptureSharedState = {
   escapeTargetY: SharedValue<number>;
   offScreenTargetX: SharedValue<number>;
   offScreenTargetY: SharedValue<number>;
+  /** 0=top, 1=bottom, 2=left, 3=right */
+  escapeExitEdge: SharedValue<number>;
   escapeCompleteTriggered: SharedValue<boolean>;
   escapeOverlayDismissTriggered: SharedValue<boolean>;
 };
@@ -79,6 +81,8 @@ export type KoiCaptureSharedState = {
 export type UseKoiFishSimulationParams = {
   width: number;
   height: number;
+  koiRect: ZoneRect;
+  layoutKey: string;
   words: string[];
   captureState: KoiCaptureSharedState;
   releaseRequestSv: SharedValue<number>;
@@ -90,6 +94,7 @@ export type UseKoiFishSimulationParams = {
 
 type PersistedSimBundle = {
   wordsKey: string;
+  layoutKey: string;
   width: number;
   height: number;
   swimZone: SwimZone;
@@ -97,12 +102,18 @@ type PersistedSimBundle = {
   sharedPositions: SharedValue<number[]>;
 };
 
-function buildSimBundle(words: string[], width: number, height: number): PersistedSimBundle {
+function buildSimBundle(
+  words: string[],
+  width: number,
+  height: number,
+  koiRect: ZoneRect,
+  layoutKey: string,
+): PersistedSimBundle {
   const swimZone: SwimZone = {
-    x: width * SWIM_ZONE_MARGIN,
-    y: height * SWIM_ZONE_TOP_RATIO,
-    w: width * (1 - SWIM_ZONE_MARGIN * 2),
-    h: height * (1 - SWIM_ZONE_TOP_RATIO),
+    x: koiRect.x,
+    y: koiRect.y,
+    w: koiRect.w,
+    h: koiRect.h,
   };
   const spawns = createSpawnsFromWords(words);
   const runtimeEntries = spawns.map((spawn) => ({
@@ -117,12 +128,52 @@ function buildSimBundle(words: string[], width: number, height: number): Persist
 
   return {
     wordsKey: words.join('\0'),
+    layoutKey,
     width,
     height,
     swimZone,
     runtimeEntries,
     sharedPositions: makeMutable(posArr),
   };
+}
+
+function relayoutSimBundle(
+  bundle: PersistedSimBundle,
+  koiRect: ZoneRect,
+  width: number,
+  height: number,
+  layoutKey: string,
+  capturedFishIndex: number,
+  eliminated: number[],
+): void {
+  const swimZone: SwimZone = {
+    x: koiRect.x,
+    y: koiRect.y,
+    w: koiRect.w,
+    h: koiRect.h,
+  };
+  const minX = swimZone.x + FISH_BODY_INSET;
+  const maxX = swimZone.x + swimZone.w - FISH_BODY_INSET;
+  const minY = swimZone.y + FISH_BODY_INSET;
+  const maxY = swimZone.y + swimZone.h - FISH_BODY_INSET;
+
+  const pos = bundle.sharedPositions.value.slice();
+  for (let i = 0; i < bundle.runtimeEntries.length; i++) {
+    if (i === capturedFishIndex || eliminated.includes(i)) {
+      continue;
+    }
+    const fish = bundle.runtimeEntries[i]!.runtime;
+    fish.x.value = Math.min(maxX, Math.max(minX, fish.x.value));
+    fish.y.value = Math.min(maxY, Math.max(minY, fish.y.value));
+    pos[i * 2] = fish.x.value;
+    pos[i * 2 + 1] = fish.y.value;
+  }
+
+  bundle.sharedPositions.value = pos;
+  bundle.swimZone = swimZone;
+  bundle.width = width;
+  bundle.height = height;
+  bundle.layoutKey = layoutKey;
 }
 
 export type KoiFishSimulation = {
@@ -134,6 +185,8 @@ export type KoiFishSimulation = {
   fishThickness: number;
   swimZoneTop: number;
   swimZoneHeight: number;
+  swimZoneLeft: number;
+  swimZoneWidth: number;
   hitRadius: number;
   renderProps: {
     swimZoneX: number;
@@ -595,6 +648,46 @@ function isFishEliminated(eliminated: number[], fishIndex: number): boolean {
   return false;
 }
 
+function fishCrossedExitDismiss(
+  fish: FishRuntime,
+  exitEdge: number,
+  screenW: number,
+  screenH: number,
+): boolean {
+  'worklet';
+  if (exitEdge === 0) {
+    return fish.y.value < 0;
+  }
+  if (exitEdge === 1) {
+    return fish.y.value > screenH;
+  }
+  if (exitEdge === 2) {
+    return fish.x.value < 0;
+  }
+  return fish.x.value > screenW;
+}
+
+function fishCrossedExitComplete(
+  fish: FishRuntime,
+  exitEdge: number,
+  fishBodyInset: number,
+  screenW: number,
+  screenH: number,
+): boolean {
+  'worklet';
+  const threshold = fishBodyInset * 0.35;
+  if (exitEdge === 0) {
+    return fish.y.value + threshold < 0;
+  }
+  if (exitEdge === 1) {
+    return fish.y.value - threshold > screenH;
+  }
+  if (exitEdge === 2) {
+    return fish.x.value + threshold < 0;
+  }
+  return fish.x.value - threshold > screenW;
+}
+
 function useFishSimulation(
   runtimes: KoiRuntimeEntry[],
   swimZone: SwimZone,
@@ -710,6 +803,7 @@ function useFishSimulation(
               FISH_BODY_INSET,
               screenWidth,
               screenHeight,
+              captureState.escapeExitEdge.value,
             );
 
             if (captureState.escapeStage.value === 0 && arrived) {
@@ -718,9 +812,10 @@ function useFishSimulation(
               captureState.escapeTargetY.value = captureState.offScreenTargetY.value;
             }
 
+            const exitEdge = captureState.escapeExitEdge.value;
             if (
               captureState.escapeStage.value === 1 &&
-              fishRuntime.y.value < 0 &&
+              fishCrossedExitDismiss(fishRuntime, exitEdge, screenWidth, screenHeight) &&
               !captureState.escapeOverlayDismissTriggered.value
             ) {
               captureState.escapeOverlayDismissTriggered.value = true;
@@ -729,7 +824,13 @@ function useFishSimulation(
 
             if (
               captureState.escapeStage.value === 1 &&
-              fishRuntime.y.value + FISH_BODY_INSET * 0.35 < 0 &&
+              fishCrossedExitComplete(
+                fishRuntime,
+                exitEdge,
+                FISH_BODY_INSET,
+                screenWidth,
+                screenHeight,
+              ) &&
               !captureState.escapeCompleteTriggered.value
             ) {
               captureState.escapeCompleteTriggered.value = true;
@@ -911,6 +1012,8 @@ function useFishSimulation(
 export function useKoiFishSimulation({
   width,
   height,
+  koiRect,
+  layoutKey,
   words,
   captureState,
   releaseRequestSv,
@@ -922,13 +1025,22 @@ export function useKoiFishSimulation({
   const wordsKey = words.join('\0');
   const bundleRef = useRef<PersistedSimBundle | null>(null);
 
-  if (
-    bundleRef.current == null ||
-    bundleRef.current.wordsKey !== wordsKey ||
+  if (bundleRef.current == null || bundleRef.current.wordsKey !== wordsKey) {
+    bundleRef.current = buildSimBundle(words, width, height, koiRect, layoutKey);
+  } else if (
+    bundleRef.current.layoutKey !== layoutKey ||
     bundleRef.current.width !== width ||
     bundleRef.current.height !== height
   ) {
-    bundleRef.current = buildSimBundle(words, width, height);
+    relayoutSimBundle(
+      bundleRef.current,
+      koiRect,
+      width,
+      height,
+      layoutKey,
+      captureState.capturedFishIndex.value,
+      eliminatedFishSv.value,
+    );
   }
 
   const { runtimeEntries, sharedPositions, swimZone } = bundleRef.current;
@@ -958,8 +1070,10 @@ export function useKoiFishSimulation({
 
   const fishLength = KOI_BASE_LENGTH * KOI_SETTINGS.scale;
   const fishThickness = KOI_BASE_THICKNESS * KOI_SETTINGS.scale;
-  const swimZoneTop = height * SWIM_ZONE_TOP_RATIO;
-  const swimZoneHeight = height * (1 - SWIM_ZONE_TOP_RATIO);
+  const swimZoneTop = swimZone.y;
+  const swimZoneHeight = swimZone.h;
+  const swimZoneLeft = swimZone.x;
+  const swimZoneWidth = swimZone.w;
   const hitRadius = fishLength * 0.55 * 1.55;
 
   const renderProps = useMemo(
@@ -993,6 +1107,8 @@ export function useKoiFishSimulation({
     fishThickness,
     swimZoneTop,
     swimZoneHeight,
+    swimZoneLeft,
+    swimZoneWidth,
     hitRadius,
     renderProps,
   };

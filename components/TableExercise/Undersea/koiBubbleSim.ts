@@ -323,12 +323,28 @@ function clampFishEscapeToScreen(
   fishBodyInset: number,
   screenW: number,
   screenH: number,
+  exitEdge: number,
 ): void {
   'worklet';
   const margin = Math.max(ESCAPE_SCREEN_MARGIN, fishBodyInset * 0.5);
-  fish.x.value = clamp(fish.x.value, margin, screenW - margin);
-  // Bottom and sides only — no top clamp so the fish can exit upward.
-  fish.y.value = Math.min(fish.y.value, screenH - margin);
+  // exitEdge: 0=top, 1=bottom, 2=left, 3=right — leave the exit edge unclamped.
+  if (exitEdge === 0) {
+    fish.x.value = clamp(fish.x.value, margin, screenW - margin);
+    fish.y.value = Math.min(fish.y.value, screenH - margin);
+    return;
+  }
+  if (exitEdge === 1) {
+    fish.x.value = clamp(fish.x.value, margin, screenW - margin);
+    fish.y.value = Math.max(fish.y.value, margin);
+    return;
+  }
+  if (exitEdge === 2) {
+    fish.y.value = clamp(fish.y.value, margin, screenH - margin);
+    fish.x.value = Math.min(fish.x.value, screenW - margin);
+    return;
+  }
+  fish.y.value = clamp(fish.y.value, margin, screenH - margin);
+  fish.x.value = Math.max(fish.x.value, margin);
 }
 
 /** Directed swim toward a target at fixed speed; returns true when within arrival threshold. */
@@ -341,6 +357,7 @@ export function updateFishDirectedEscape(
   fishBodyInset: number,
   screenW: number,
   screenH: number,
+  exitEdge: number,
 ): boolean {
   'worklet';
   const cfg = fish.config;
@@ -369,7 +386,7 @@ export function updateFishDirectedEscape(
   fish.x.value += Math.cos(fish.angle.value) * fish.speed.value * dt;
   fish.y.value += Math.sin(fish.angle.value) * fish.speed.value * dt;
 
-  clampFishEscapeToScreen(fish, fishBodyInset, screenW, screenH);
+  clampFishEscapeToScreen(fish, fishBodyInset, screenW, screenH, exitEdge);
   advanceFishCosmetics(fish, dt);
   return dist <= ESCAPE_ARRIVAL_THRESHOLD;
 }

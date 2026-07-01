@@ -3,9 +3,11 @@ import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
+import { useUnderseaLayout } from './UnderseaLayoutContext';
+import { computeOffScreenEscapeTarget, escapeExitEdgeCode } from './underseaLayout';
 import { releaseCapturedFishWorklet } from './fishPoolSnapshot';
 import { KoiCapturedFishCanvas } from './KoiCapturedFishCanvas';
-import { KoiFishLayer, SWIM_ZONE_TOP_RATIO } from './KoiFishLayer';
+import { KoiFishLayer } from './KoiFishLayer';
 import { KoiWordBubble } from './KoiWordBubble';
 import { BubblePhase, BurstIntent, useBubbleAnimation, type BurstIntentValue } from './useBubbleAnimation';
 import type { UnderseaSoundController } from './useUnderseaSounds';
@@ -55,6 +57,8 @@ export function KoiSwimZone({
   onSimBridgeChange,
 }: KoiSwimZoneProps) {
   const { width, height } = useWindowDimensions();
+  const layout = useUnderseaLayout();
+  const { koiRect, jellyRect, orientation, layoutKey } = layout;
   const { images: assetImages } = useUnderseaAssetsContext();
   const images = assetImages.koi;
   const masks = assetImages.koiMasks;
@@ -75,6 +79,7 @@ export function KoiSwimZone({
   const escapeTargetYSv = useSharedValue(0);
   const offScreenTargetXSv = useSharedValue(width * 0.5);
   const offScreenTargetYSv = useSharedValue(-120 * 1.5);
+  const escapeExitEdgeSv = useSharedValue(0);
   const escapeCompleteTriggeredSv = useSharedValue(false);
   const escapeOverlayDismissTriggeredSv = useSharedValue(false);
   const eliminatedFishSv = useSharedValue<number[]>([]);
@@ -91,14 +96,29 @@ export function KoiSwimZone({
   }, [eliminatedFishIndices, eliminatedFishSv]);
 
   useEffect(() => {
-    offScreenTargetXSv.value = width * 0.5;
-    offScreenTargetYSv.value = -120 * 1.5;
-  }, [width, offScreenTargetXSv, offScreenTargetYSv]);
+    const escape = computeOffScreenEscapeTarget(
+      koiRect,
+      width,
+      height,
+      orientation,
+    );
+    offScreenTargetXSv.value = escape.x;
+    offScreenTargetYSv.value = escape.y;
+    escapeExitEdgeSv.value = escapeExitEdgeCode(escape.exitEdge);
+  }, [
+    koiRect,
+    width,
+    height,
+    orientation,
+    offScreenTargetXSv,
+    offScreenTargetYSv,
+    escapeExitEdgeSv,
+  ]);
 
-  const targetDiameter = width * BUBBLE_DIAMETER_RATIO;
-  const swimZoneHeight = height * (1 - SWIM_ZONE_TOP_RATIO);
-  const targetCenterX = width * 0.5;
-  const targetCenterY = height * SWIM_ZONE_TOP_RATIO + swimZoneHeight * 0.5;
+  const targetDiameter =
+    Math.min(koiRect.w, koiRect.h) * BUBBLE_DIAMETER_RATIO;
+  const targetCenterX = koiRect.x + koiRect.w * 0.5;
+  const targetCenterY = koiRect.y + koiRect.h * 0.5;
 
   const bubbleConfig = useMemo(
     () => ({
@@ -185,6 +205,7 @@ export function KoiSwimZone({
       escapeTargetY: escapeTargetYSv,
       offScreenTargetX: offScreenTargetXSv,
       offScreenTargetY: offScreenTargetYSv,
+      escapeExitEdge: escapeExitEdgeSv,
       escapeCompleteTriggered: escapeCompleteTriggeredSv,
       escapeOverlayDismissTriggered: escapeOverlayDismissTriggeredSv,
     }),
@@ -201,6 +222,7 @@ export function KoiSwimZone({
       escapeTargetYSv,
       offScreenTargetXSv,
       offScreenTargetYSv,
+      escapeExitEdgeSv,
       escapeCompleteTriggeredSv,
       escapeOverlayDismissTriggeredSv,
     ],
@@ -212,6 +234,8 @@ export function KoiSwimZone({
   const sim = useKoiFishSimulation({
     width,
     height,
+    koiRect,
+    layoutKey,
     words,
     captureState,
     releaseRequestSv,
@@ -262,6 +286,39 @@ export function KoiSwimZone({
 
   onEscapeOverlayDismissRef.current = handleEscapeOverlayDismiss;
   onEscapeCompleteRef.current = handleEscapeComplete;
+
+  useLayoutEffect(() => {
+    if (selection == null) {
+      return;
+    }
+    const fishIndex = selection.fishIndex;
+    const entry = sim.runtimeEntries[fishIndex];
+    if (entry == null) {
+      return;
+    }
+    const bubblePhase = phase.value;
+    if (
+      bubblePhase === BubblePhase.Idle ||
+      bubblePhase === BubblePhase.Burst ||
+      escapeActiveSv.value
+    ) {
+      entry.runtime.x.value = targetCenterX;
+      entry.runtime.y.value = targetCenterY;
+      const pos = sim.sharedPositions.value.slice();
+      pos[fishIndex * 2] = targetCenterX;
+      pos[fishIndex * 2 + 1] = targetCenterY;
+      sim.sharedPositions.value = pos;
+    }
+  }, [
+    layoutKey,
+    targetCenterX,
+    targetCenterY,
+    selection,
+    sim.runtimeEntries,
+    sim.sharedPositions,
+    phase,
+    escapeActiveSv,
+  ]);
 
   releaseContextSv.value = {
     runtimeEntries: sim.runtimeEntries,
@@ -337,6 +394,7 @@ export function KoiSwimZone({
         startBurst={startBurst}
         interactive={!escapeOverlayActive}
         capturedFish={capturedFishNode}
+        targetDiameter={targetDiameter}
       />
     ) : null;
 

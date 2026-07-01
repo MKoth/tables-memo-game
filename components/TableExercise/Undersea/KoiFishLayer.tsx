@@ -160,6 +160,8 @@ export function KoiFishLayer({
     hitRadius,
     swimZoneTop,
     swimZoneHeight,
+    swimZoneLeft,
+    swimZoneWidth,
   } = sim;
   const koiCount = runtimeEntries.length;
   const emptyEliminatedSv = useSharedValue<number[]>([]);
@@ -182,9 +184,10 @@ export function KoiFishLayer({
         .onEnd((e) => {
           'worklet';
           const positions = sharedPositions.value;
+          const tapX = e.x + swimZoneLeft;
           const tapY = e.y + swimZoneTop;
           const hitIdx = findKoiIndexAtTap(
-            e.x,
+            tapX,
             tapY,
             positions,
             koiCount,
@@ -200,7 +203,7 @@ export function KoiFishLayer({
             positions[hitIdx * 2 + 1] ?? 0,
           );
         }),
-    [sharedPositions, swimZoneTop, koiCount, hitRadius, handleFishSelect, eliminatedSv],
+    [sharedPositions, swimZoneLeft, swimZoneTop, koiCount, hitRadius, handleFishSelect, eliminatedSv],
   );
 
   const isHidden = useCallback(
@@ -295,7 +298,12 @@ export function KoiFishLayer({
           <View
             style={[
               styles.gestureCapture,
-              { top: swimZoneTop, height: swimZoneHeight },
+              {
+                left: swimZoneLeft,
+                top: swimZoneTop,
+                width: swimZoneWidth,
+                height: swimZoneHeight,
+              },
             ]}
           />
         </GestureDetector>
@@ -314,7 +322,5 @@ const styles = StyleSheet.create({
   },
   gestureCapture: {
     position: 'absolute',
-    left: 0,
-    right: 0,
   },
 });

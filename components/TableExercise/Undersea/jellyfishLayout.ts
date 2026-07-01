@@ -17,10 +17,13 @@ export const LAYOUT_ZONE_TOP_RATIO = 0.05;
 export const LAYOUT_ZONE_HEIGHT_RATIO = 0.45;
 
 export type LayoutBounds = {
+  /** Width of the jelly layout zone (not necessarily full screen). */
   width: number;
   height: number;
   nGridCols: number;
   nGridRows: number;
+  /** Left edge of the layout zone in px. */
+  zoneLeft: number;
   /** Top edge of the layout zone in px. */
   zoneTop: number;
   /** Height of the layout zone in px. */
@@ -55,8 +58,8 @@ export type JellyfishSizing = {
 };
 
 export type JellyfishSizingInput = {
-  width: number;
-  height: number;
+  zoneWidth: number;
+  zoneHeight: number;
   nGridCols: number;
   nGridRows: number;
 };
@@ -82,10 +85,9 @@ function lerp(a: number, b: number, t: number): number {
  * in least space) as the constraining dimension.
  */
 export function computeJellyfishSizing(input: JellyfishSizingInput): JellyfishSizing {
-  const { width, height, nGridCols, nGridRows } = input;
-  const zoneHeight = height * LAYOUT_ZONE_HEIGHT_RATIO;
+  const { zoneWidth, zoneHeight, nGridCols, nGridRows } = input;
 
-  const pitchX = width / nGridCols;
+  const pitchX = zoneWidth / nGridCols;
   const pitchY = zoneHeight / nGridRows;
   const pitch = Math.min(pitchX, pitchY);
   const dominantCount = pitchX <= pitchY ? nGridCols : nGridRows;
@@ -251,6 +253,7 @@ export function computeLayoutPositions(
   'worklet';
   const {
     width,
+    zoneLeft,
     zoneTop,
     zoneHeight,
     nGridCols,
@@ -269,7 +272,7 @@ export function computeLayoutPositions(
     }
   }
 
-  const xMin = maxR;
+  const xMin = zoneLeft + maxR;
   const xSpan = width - 2 * maxR;
   const yMin = zoneTop + maxR;
   const ySpan = zoneHeight - 2 * maxR;

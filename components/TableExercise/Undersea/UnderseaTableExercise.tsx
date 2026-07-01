@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { UnderseaAssetsProvider } from './UnderseaAssetsContext';
+import { UnderseaLayoutProvider } from './UnderseaLayoutContext';
 import { UnderseaBackground } from './UnderseaBackground';
 import { UnderseaClockProvider } from './UnderseaClockContext';
 import {
@@ -186,7 +187,9 @@ export function UnderseaTableExercise() {
 
   return (
     <UnderseaAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
-      <UnderseaExerciseContent sounds={assets.sounds} />
+      <UnderseaLayoutProvider>
+        <UnderseaExerciseContent sounds={assets.sounds} />
+      </UnderseaLayoutProvider>
     </UnderseaAssetsProvider>
   );
 }

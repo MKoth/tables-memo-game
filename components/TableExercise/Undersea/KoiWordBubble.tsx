@@ -12,6 +12,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import { runOnJS, useDerivedValue } from 'react-native-reanimated';
 import { BubbleInstance } from './BubbleInstance';
 import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
+import { useUnderseaLayout } from './UnderseaLayoutContext';
 import { useUnderseaClock } from './UnderseaClockContext';
 import {
   BubblePhase,
@@ -21,7 +22,6 @@ import {
   type BurstIntentValue,
 } from './useBubbleAnimation';
 
-const BUBBLE_DIAMETER_RATIO = 0.9;
 const LABEL_STROKE_WIDTH = 2;
 const LABEL_FILL_COLOR = '#ffffff';
 const LABEL_STROKE_COLOR = '#0a2840';
@@ -35,6 +35,7 @@ export type KoiWordBubbleProps = {
   startBurst: (intent?: BurstIntentValue) => void;
   capturedFish: React.ReactNode;
   interactive?: boolean;
+  targetDiameter: number;
 };
 
 export function KoiWordBubble({
@@ -45,13 +46,13 @@ export function KoiWordBubble({
   startBurst,
   capturedFish,
   interactive = true,
+  targetDiameter,
 }: KoiWordBubbleProps) {
   const { width, height } = useWindowDimensions();
+  const { labelRotationRad } = useUnderseaLayout();
   const clock = useUnderseaClock();
   const { images } = useUnderseaAssetsContext();
   const bubbleImage = images.bubble;
-
-  const targetDiameter = width * BUBBLE_DIAMETER_RATIO;
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const font = useMemo(
@@ -80,10 +81,16 @@ export function KoiWordBubble({
     });
   }, [font, word, targetDiameter]);
 
-  const labelTransform = useDerivedValue(() => [
-    { translateX: anim.value.x },
-    { translateY: anim.value.y },
-  ]);
+  const labelTransform = useDerivedValue(() => {
+    const { centerX, centerY, diameter } = anim.value;
+    return [
+      { translateX: centerX },
+      { translateY: centerY },
+      { rotate: labelRotationRad },
+      { translateX: -diameter * 0.5 },
+      { translateY: -diameter * 0.5 },
+    ];
+  });
 
   const labelOpacity = useDerivedValue(() => anim.value.labelOpacity);
 

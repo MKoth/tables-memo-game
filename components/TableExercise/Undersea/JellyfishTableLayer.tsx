@@ -43,13 +43,12 @@ import {
 import type { TableData } from '../../../data/tableData';
 import type { JellyfishLayoutBridge } from './underseaInstructionTypes';
 import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
+import { useUnderseaLayout } from './UnderseaLayoutContext';
 import { useUnderseaClockQuantized } from './UnderseaClockContext';
 import {
   biasForGridSlot,
   computeJellyfishSizing,
   computeLayoutPositions,
-  LAYOUT_ZONE_HEIGHT_RATIO,
-  LAYOUT_ZONE_TOP_RATIO,
   type JellyfishSizing,
   type LayoutBounds,
   type LayoutParticle,
@@ -760,6 +759,7 @@ type CellLabelProps = {
   tintFlashPreset: SharedValue<number[]>;
   tintFlashUntil: SharedValue<number[]>;
   clock: SharedValue<number>;
+  labelBaseRotation: number;
 };
 
 function CellLabel({
@@ -775,6 +775,7 @@ function CellLabel({
   tintFlashPreset,
   tintFlashUntil,
   clock,
+  labelBaseRotation,
 }: CellLabelProps) {
   const idx = config.index;
   const defaultFillColor = config.labelFillColor;
@@ -815,7 +816,7 @@ function CellLabel({
       { translateX: pivotX },
       { translateY: pivotY },
       { scale },
-      { rotate: retainedLabelRotation.value },
+      { rotate: labelBaseRotation + retainedLabelRotation.value },
     ];
   });
 
@@ -930,14 +931,21 @@ function JellyfishTableLayerInner({
   translationDisplayMs,
 }: InnerProps) {
   const { width, height } = useWindowDimensions();
+  const { jellyRect, labelRotationRad } = useUnderseaLayout();
   const clock = useUnderseaClockQuantized(JELLYFISH_CLOCK_FPS);
 
   const nGridCols = table.colHeaders.length + 1;
   const nGridRows = table.rowHeaders.length + 1;
 
   const sizing = useMemo(
-    () => computeJellyfishSizing({ width, height, nGridCols, nGridRows }),
-    [width, height, nGridCols, nGridRows],
+    () =>
+      computeJellyfishSizing({
+        zoneWidth: jellyRect.w,
+        zoneHeight: jellyRect.h,
+        nGridCols,
+        nGridRows,
+      }),
+    [jellyRect.w, jellyRect.h, nGridCols, nGridRows],
   );
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
@@ -1054,18 +1062,19 @@ function JellyfishTableLayerInner({
 
   const layoutBounds: LayoutBounds = useMemo(
     () => ({
-      width,
+      width: jellyRect.w,
       height,
       nGridCols,
       nGridRows,
-      zoneTop: height * LAYOUT_ZONE_TOP_RATIO,
-      zoneHeight: height * LAYOUT_ZONE_HEIGHT_RATIO,
+      zoneLeft: jellyRect.x,
+      zoneTop: jellyRect.y,
+      zoneHeight: jellyRect.h,
       scaleMin: sizing.scaleMin,
       scaleMax: sizing.scaleMax,
       edgeSqueeze: sizing.edgeSqueeze,
       spreadBoost: sizing.spreadBoost,
     }),
-    [width, height, nGridCols, nGridRows, sizing],
+    [height, jellyRect, nGridCols, nGridRows, sizing],
   );
 
   // ── Layout state ────────────────────────────────────────────────────────
@@ -1355,9 +1364,10 @@ function JellyfishTableLayerInner({
     .onEnd((e) => {
       'worklet';
       const bounds = layoutBoundsSv.value;
+      const tapX = e.x + bounds.zoneLeft;
       const tapY = e.y + bounds.zoneTop;
       const hitIdx = findJellyfishIndexAtTap(
-        e.x,
+        tapX,
         tapY,
         cellBellSizesSv.value,
         layoutX.value,
@@ -1463,9 +1473,6 @@ function JellyfishTableLayerInner({
 
   const tableGesture = Gesture.Exclusive(tapGesture, panGesture);
 
-  const zoneTop = height * LAYOUT_ZONE_TOP_RATIO;
-  const zoneHeight = height * LAYOUT_ZONE_HEIGHT_RATIO;
-
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -1510,6 +1517,7 @@ function JellyfishTableLayerInner({
             tintFlashPreset={tintFlashPreset}
             tintFlashUntil={tintFlashUntil}
             clock={clock}
+            labelBaseRotation={labelRotationRad}
           />
           );
         })}
@@ -1517,7 +1525,17 @@ function JellyfishTableLayerInner({
 
       {interactive && (
       <GestureDetector gesture={tableGesture}>
-        <View style={[styles.gestureCapture, { top: zoneTop, height: zoneHeight }]} />
+        <View
+          style={[
+            styles.gestureCapture,
+            {
+              left: jellyRect.x,
+              top: jellyRect.y,
+              width: jellyRect.w,
+              height: jellyRect.h,
+            },
+          ]}
+        />
       </GestureDetector>
       )}
     </>
@@ -1534,9 +1552,5 @@ const styles = StyleSheet.create({
   },
   gestureCapture: {
     position: 'absolute',
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
   },
 });
