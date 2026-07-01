@@ -1,3 +1,5 @@
+export type TableTranslationRule = 'spanish-present';
+
 export type TableData = {
   id: string;
   title: string;
@@ -7,11 +9,90 @@ export type TableData = {
   colHeaders: string[];
   /** body[rowIndex][colIndex] = conjugated form. */
   body: string[][];
+  /** English gloss for each row header (same order as rowHeaders). */
+  rowHeaderTranslations: string[];
+  /** English gloss for each column header (same order as colHeaders). */
+  colHeaderTranslations: string[];
+  /** bodyTranslations[rowIndex][colIndex] = contextual English gloss. */
+  bodyTranslations: string[][];
 };
 
 /** All body cell strings in row-major order — one entry per table body cell. */
 export function getTableBodyWords(table: TableData): string[] {
   return table.body.flat();
+}
+
+const SPANISH_PRONOUN_EN: Record<string, string> = {
+  Yo: 'I',
+  Tú: 'you',
+  'Él/Ella': 'he/she',
+  Nosotros: 'we',
+  Vosotros: 'you all',
+  'Ellos/Ellas': 'they',
+};
+
+const SPANISH_VERB_EN: Record<string, string> = {
+  hablar: 'speak',
+  comer: 'eat',
+  vivir: 'live',
+  cantar: 'sing',
+  bailar: 'dance',
+  correr: 'run',
+  saltar: 'jump',
+};
+
+function englishThirdPersonSingular(verb: string): string {
+  if (verb.endsWith('s') || verb.endsWith('x') || verb.endsWith('ch') || verb.endsWith('sh')) {
+    return `${verb}es`;
+  }
+  if (verb.endsWith('y') && !/[aeiou]y$/i.test(verb)) {
+    return `${verb.slice(0, -1)}ies`;
+  }
+  return `${verb}s`;
+}
+
+function buildSpanishPresentBodyTranslation(subjectEn: string, verbBase: string): string {
+  const verb =
+    subjectEn === 'he/she' ? englishThirdPersonSingular(verbBase) : verbBase;
+  return `${subjectEn} ${verb}`;
+}
+
+function buildSpanishPresentTranslations(
+  rowHeaders: string[],
+  colHeaders: string[],
+  body: string[][],
+): Pick<TableData, 'rowHeaderTranslations' | 'colHeaderTranslations' | 'bodyTranslations'> {
+  const rowHeaderTranslations = rowHeaders.map(
+    header => SPANISH_PRONOUN_EN[header] ?? header,
+  );
+  const colHeaderTranslations = colHeaders.map(infinitive => {
+    const verb = SPANISH_VERB_EN[infinitive];
+    return verb != null ? `to ${verb}` : infinitive;
+  });
+  const bodyTranslations = body.map((row, r) =>
+    row.map((_cell, c) => {
+      const subjectEn = rowHeaderTranslations[r] ?? rowHeaders[r];
+      const infinitive = colHeaders[c];
+      const verbBase = SPANISH_VERB_EN[infinitive];
+      if (verbBase == null) {
+        return body[r][c];
+      }
+      return buildSpanishPresentBodyTranslation(subjectEn, verbBase);
+    }),
+  );
+  return { rowHeaderTranslations, colHeaderTranslations, bodyTranslations };
+}
+
+function buildEmptyTranslations(
+  rowHeaders: string[],
+  colHeaders: string[],
+  body: string[][],
+): Pick<TableData, 'rowHeaderTranslations' | 'colHeaderTranslations' | 'bodyTranslations'> {
+  return {
+    rowHeaderTranslations: rowHeaders.map(() => ''),
+    colHeaderTranslations: colHeaders.map(() => ''),
+    bodyTranslations: body.map(row => row.map(() => '')),
+  };
 }
 
 export function createTableData(
@@ -20,6 +101,7 @@ export function createTableData(
   rowHeaders: string[],
   colHeaders: string[],
   body: string[][],
+  translationRule?: TableTranslationRule,
 ): TableData {
   if (body.length !== rowHeaders.length) {
     throw new Error(
@@ -33,7 +115,13 @@ export function createTableData(
       );
     }
   }
-  return { id, title, rowHeaders, colHeaders, body };
+
+  const translations =
+    translationRule === 'spanish-present'
+      ? buildSpanishPresentTranslations(rowHeaders, colHeaders, body)
+      : buildEmptyTranslations(rowHeaders, colHeaders, body);
+
+  return { id, title, rowHeaders, colHeaders, body, ...translations };
 }
 
 const SPANISH_ROW_HEADERS = [
@@ -63,6 +151,7 @@ export const spanishPresentTable1 = createTableData(
   [...SPANISH_ROW_HEADERS],
   ['hablar', 'comer', 'vivir'],
   SPANISH_BODY_FULL.map(row => row.slice(0, 3)),
+  'spanish-present',
 );
 
 /** Present tense — cantar, bailar, correr, saltar (all pronouns). */
@@ -72,6 +161,7 @@ export const spanishPresentTable2 = createTableData(
   [...SPANISH_ROW_HEADERS],
   ['cantar', 'bailar', 'correr', 'saltar'],
   SPANISH_BODY_FULL.map(row => row.slice(3, 7)),
+  'spanish-present',
 );
 
 export const spanishPresentTable1Singular = createTableData(
@@ -80,6 +170,7 @@ export const spanishPresentTable1Singular = createTableData(
   [...SPANISH_SINGULAR_ROW_HEADERS],
   ['hablar', 'comer', 'vivir'],
   SPANISH_BODY_FULL.slice(0, 3).map(row => row.slice(0, 3)),
+  'spanish-present',
 );
 
 export const spanishPresentTable2Singular = createTableData(
@@ -88,6 +179,7 @@ export const spanishPresentTable2Singular = createTableData(
   [...SPANISH_SINGULAR_ROW_HEADERS],
   ['cantar', 'bailar', 'correr', 'saltar'],
   SPANISH_BODY_FULL.slice(0, 3).map(row => row.slice(3, 7)),
+  'spanish-present',
 );
 
 /** Full present tense table (original). */
@@ -97,4 +189,5 @@ export const sampleSpanishTable = createTableData(
   [...SPANISH_ROW_HEADERS],
   ['hablar', 'comer', 'vivir', 'cantar', 'bailar', 'correr', 'saltar'],
   SPANISH_BODY_FULL.map(row => [...row]),
+  'spanish-present',
 );

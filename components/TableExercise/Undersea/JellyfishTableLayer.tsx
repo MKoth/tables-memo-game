@@ -77,6 +77,7 @@ const PAN_MIN_DISTANCE_PX = 10;
 const TAP_MAX_DISTANCE_PX = 10;
 /** Click flash: preset tint duration before reverting to spawn colors. */
 const TINT_FLASH_MS = 800;
+const DEFAULT_TRANSLATION_DISPLAY_MS = 1000;
 
 /**
  * Coalesce bias-driven layout recomputes to ~60fps. Pointer events on
@@ -548,6 +549,7 @@ type CellConfig = {
   gridRow: number;
   isHeader: boolean;
   label: string;
+  translation: string;
   bellSize: number;
   phase: number;
   pulseSpeed: number;
@@ -557,7 +559,8 @@ type CellConfig = {
 
 function createCellConfigs(table: TableData, sizing: JellyfishSizing): CellConfig[] {
   const configs: CellConfig[] = [];
-  const { rowHeaders, colHeaders, body } = table;
+  const { rowHeaders, colHeaders, body, rowHeaderTranslations, colHeaderTranslations, bodyTranslations } =
+    table;
   const { bodyBellSize, headerBellSize } = sizing;
 
   colHeaders.forEach((verb, c) => {
@@ -568,6 +571,7 @@ function createCellConfigs(table: TableData, sizing: JellyfishSizing): CellConfi
       gridRow: 0,
       isHeader: true,
       label: verb,
+      translation: colHeaderTranslations[c] ?? '',
       bellSize: headerBellSize,
       phase: sr(0, c + 1) * Math.PI * 2,
       pulseSpeed: 2.2 + sr(10, c) * 2.0,
@@ -590,6 +594,7 @@ function createCellConfigs(table: TableData, sizing: JellyfishSizing): CellConfi
       gridRow: r + 1,
       isHeader: true,
       label: pronoun,
+      translation: rowHeaderTranslations[r] ?? '',
       bellSize: headerBellSize,
       phase: sr(r + 1, 0) * Math.PI * 2,
       pulseSpeed: 2.2 + sr(r, 10) * 2.0,
@@ -614,6 +619,7 @@ function createCellConfigs(table: TableData, sizing: JellyfishSizing): CellConfi
         gridRow: r + 1,
         isHeader: false,
         label: cell,
+        translation: bodyTranslations[r]?.[c] ?? '',
         bellSize: bodyBellSize,
         phase: sr(r + 5, c + 7) * Math.PI * 2,
         pulseSpeed: 2.0 + sr(r, c + 33) * 2.2,
@@ -743,6 +749,7 @@ function CellJellyfish({
 
 type CellLabelProps = {
   config: CellConfig;
+  displayLabel?: string;
   font: SkFont;
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
@@ -757,6 +764,7 @@ type CellLabelProps = {
 
 function CellLabel({
   config,
+  displayLabel,
   font,
   layoutX,
   layoutY,
@@ -771,13 +779,14 @@ function CellLabel({
   const idx = config.index;
   const defaultFillColor = config.labelFillColor;
   const defaultStrokeColor = config.labelStrokeColor;
+  const text = displayLabel ?? config.label;
 
   const staticGlyphs = useMemo(() => {
-    const textWidth = font.getTextWidth(config.label);
+    const textWidth = font.getTextWidth(text);
     const metrics = font.getMetrics();
     const labelOffsetX = -textWidth / 2;
     const labelOffsetY = -(metrics.ascent + metrics.descent) / 2;
-    const ids = font.getGlyphIDs(config.label);
+    const ids = font.getGlyphIDs(text);
     const widths = font.getGlyphWidths(ids);
     let x = labelOffsetX;
     return ids.map((id, i) => {
@@ -785,7 +794,7 @@ function CellLabel({
       x += widths[i] ?? 0;
       return { id, pos };
     });
-  }, [font, config.label]);
+  }, [font, text]);
 
   const labelTransform = useDerivedValue(() => {
     const cx = layoutX.value[idx] ?? 0;
@@ -856,6 +865,8 @@ export type JellyfishTableLayerProps = {
   onJellyfishSound?: (kind: JellyfishSoundKind) => void;
   interactive?: boolean;
   onLayoutBridgeChange?: (bridge: JellyfishLayoutBridge | null) => void;
+  /** How long (ms) a tapped visible label shows its translation before reverting. */
+  translationDisplayMs?: number;
 };
 
 /**
@@ -870,6 +881,7 @@ export function JellyfishTableLayer({
   onJellyfishSound,
   interactive = true,
   onLayoutBridgeChange,
+  translationDisplayMs = DEFAULT_TRANSLATION_DISPLAY_MS,
 }: JellyfishTableLayerProps) {
   const { images } = useUnderseaAssetsContext();
   const bellImage = images.jellyfishBell;
@@ -885,6 +897,7 @@ export function JellyfishTableLayer({
       onJellyfishSound={onJellyfishSound}
       interactive={interactive}
       onLayoutBridgeChange={onLayoutBridgeChange}
+      translationDisplayMs={translationDisplayMs}
     />
   );
 }
@@ -899,6 +912,7 @@ type InnerProps = {
   onJellyfishSound?: (kind: JellyfishSoundKind) => void;
   interactive: boolean;
   onLayoutBridgeChange?: (bridge: JellyfishLayoutBridge | null) => void;
+  translationDisplayMs: number;
 };
 
 const JELLYFISH_CLOCK_FPS = 15;
@@ -913,6 +927,7 @@ function JellyfishTableLayerInner({
   onJellyfishSound,
   interactive,
   onLayoutBridgeChange,
+  translationDisplayMs,
 }: InnerProps) {
   const { width, height } = useWindowDimensions();
   const clock = useUnderseaClockQuantized(JELLYFISH_CLOCK_FPS);
@@ -957,6 +972,9 @@ function JellyfishTableLayerInner({
   const [revealedBodyIndices, setRevealedBodyIndices] = useState<ReadonlySet<number>>(
     () => new Set(),
   );
+  const [translatedIndices, setTranslatedIndices] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
   const cellLabelsSv = useSharedValue<string[]>([]);
   const capturedWordSv = useSharedValue('');
   const fallbackBubblePhase = useSharedValue(BubblePhase.None);
@@ -974,6 +992,7 @@ function JellyfishTableLayerInner({
 
   useEffect(() => {
     setRevealedBodyIndices(new Set());
+    setTranslatedIndices(new Set());
   }, [table]);
 
   useEffect(() => {
@@ -992,6 +1011,30 @@ function JellyfishTableLayerInner({
       return new Set(prev).add(hitIdx);
     });
   }, []);
+
+  const flashTranslationJs = useCallback(
+    (hitIdx: number) => {
+      const config = cellConfigs[hitIdx];
+      if (config == null || config.translation.length === 0) {
+        return;
+      }
+      if (!config.isHeader && !revealedBodyIndices.has(hitIdx)) {
+        return;
+      }
+      setTranslatedIndices(prev => new Set(prev).add(hitIdx));
+      setTimeout(() => {
+        setTranslatedIndices(prev => {
+          if (!prev.has(hitIdx)) {
+            return prev;
+          }
+          const next = new Set(prev);
+          next.delete(hitIdx);
+          return next;
+        });
+      }, translationDisplayMs);
+    },
+    [cellConfigs, revealedBodyIndices, translationDisplayMs],
+  );
 
   const handleMatchSuccessJs = useCallback(
     (targetX: number, targetY: number, hitIdx: number) => {
@@ -1373,6 +1416,8 @@ function JellyfishTableLayerInner({
         return;
       }
 
+      runOnJS(flashTranslationJs)(hitIdx);
+
       triggerJellyfishTintFlash(
         hitIdx,
         JELLYFISH_TINT_PRESET_INDEX.primary,
@@ -1446,6 +1491,9 @@ function JellyfishTableLayerInner({
           <CellLabel
             key={`${config.key}-label`}
             config={config}
+            displayLabel={
+              translatedIndices.has(config.index) ? config.translation : undefined
+            }
             font={config.isHeader ? headerFont : bodyFont}
             layoutX={layoutX}
             layoutY={layoutY}
