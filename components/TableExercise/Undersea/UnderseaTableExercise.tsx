@@ -70,6 +70,18 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
     setHelpVisible(false);
   }, []);
 
+  const handleTutorialNext = useCallback(() => {
+    setTutorialStep(prev => {
+      if (prev === 'fish') {
+        return 'jellyfish';
+      }
+      if (prev === 'jellyfish') {
+        return 'translate';
+      }
+      return prev;
+    });
+  }, []);
+
   const handleJellyfishSound = useCallback((kind: JellyfishSoundKind) => {
     if (kind === 'success') {
       soundsRef.current.playSuccessClick();
@@ -142,7 +154,7 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
             step={tutorialStep}
             koiBridge={koiBridge}
             jellyBridge={jellyBridge}
-            onNext={() => setTutorialStep('jellyfish')}
+            onNext={handleTutorialNext}
             onDismiss={handleTutorialDismiss}
           />
         )}

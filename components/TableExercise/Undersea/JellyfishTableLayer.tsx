@@ -967,6 +967,10 @@ function JellyfishTableLayerInner({
     () => cellConfigs.filter(c => !c.isHeader).map(c => c.index),
     [cellConfigs],
   );
+  const headerCellIndices = useMemo(
+    () => cellConfigs.filter(c => c.isHeader).map(c => c.index),
+    [cellConfigs],
+  );
   const drawOrder = useMemo(() => sortDrawOrder(cellConfigs), [cellConfigs]);
   const layoutParticles = useMemo(() => buildLayoutParticles(cellConfigs), [cellConfigs]);
   const [revealedBodyIndices, setRevealedBodyIndices] = useState<ReadonlySet<number>>(
@@ -1138,10 +1142,12 @@ function JellyfishTableLayerInner({
       layoutY,
       layoutScale,
       bodyCellIndices,
+      headerCellIndices,
       bellSizes: cellConfigs.map(c => c.bellSize),
     });
   }, [
     bodyCellIndices,
+    headerCellIndices,
     cellConfigs,
     layoutScale,
     layoutX,

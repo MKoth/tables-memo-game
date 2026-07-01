@@ -17,7 +17,8 @@ export type JellyfishLayoutBridge = {
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
   bodyCellIndices: number[];
+  headerCellIndices: number[];
   bellSizes: number[];
 };
 
-export type TutorialStep = 'idle' | 'fish' | 'jellyfish';
+export type TutorialStep = 'idle' | 'fish' | 'jellyfish' | 'translate';

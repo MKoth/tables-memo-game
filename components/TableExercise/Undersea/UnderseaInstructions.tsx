@@ -71,6 +71,14 @@ function pickRandomJellyIndex(bridge: JellyfishLayoutBridge): number | null {
   return bodyCellIndices[Math.floor(Math.random() * bodyCellIndices.length)]!;
 }
 
+function pickRandomHeaderJellyIndex(bridge: JellyfishLayoutBridge): number | null {
+  const { headerCellIndices } = bridge;
+  if (headerCellIndices.length === 0) {
+    return null;
+  }
+  return headerCellIndices[Math.floor(Math.random() * headerCellIndices.length)]!;
+}
+
 type SpotlightDimProps = {
   width: number;
   height: number;
@@ -182,12 +190,14 @@ function JellySpotlight({
   width,
   height,
   gradientRadius,
+  showGuideLines = true,
 }: {
   bridge: JellyfishLayoutBridge;
   jellyIndex: number;
   width: number;
   height: number;
   gradientRadius: number;
+  showGuideLines?: boolean;
 }) {
   const center = useDerivedValue(() => ({
     x: bridge.layoutX.value[jellyIndex] ?? width * 0.5,
@@ -212,12 +222,14 @@ function JellySpotlight({
         center={center}
         holeRadius={holeRadius}
       />
-      <JellyGuideLines
-        centerX={guideLineX}
-        centerY={guideLineY}
-        width={width}
-        height={height}
-      />
+      {showGuideLines && (
+        <JellyGuideLines
+          centerX={guideLineX}
+          centerY={guideLineY}
+          width={width}
+          height={height}
+        />
+      )}
     </>
   );
 }
@@ -458,6 +470,7 @@ export function UnderseaInstructions({
   const insets = useSafeAreaInsets();
   const [fishTargetIndex, setFishTargetIndex] = useState<number | null>(null);
   const [jellyTargetIndex, setJellyTargetIndex] = useState<number | null>(null);
+  const [headerTargetIndex, setHeaderTargetIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (step !== 'fish') {
@@ -491,6 +504,22 @@ export function UnderseaInstructions({
     }
   }, [step, jellyBridge, jellyTargetIndex]);
 
+  useEffect(() => {
+    if (step !== 'translate') {
+      setHeaderTargetIndex(null);
+      return;
+    }
+    if (jellyBridge != null) {
+      setHeaderTargetIndex(pickRandomHeaderJellyIndex(jellyBridge));
+    }
+  }, [step, jellyBridge]);
+
+  useEffect(() => {
+    if (step === 'translate' && jellyBridge != null && headerTargetIndex == null) {
+      setHeaderTargetIndex(pickRandomHeaderJellyIndex(jellyBridge));
+    }
+  }, [step, jellyBridge, headerTargetIndex]);
+
   const gradientRadius = useMemo(
     () => Math.hypot(width, height) * 0.75,
     [width, height],
@@ -508,10 +537,15 @@ export function UnderseaInstructions({
   const message =
     step === 'fish'
       ? 'Tap any fish to catch it in a bubble.'
-      : 'Select the matching jellyfish using the table rules.';
+      : step === 'jellyfish'
+        ? 'Select the matching jellyfish using the table rules.'
+        : 'Tap any row or column header jellyfish to see its English translation.';
 
-  const actionLabel = step === 'fish' ? 'Next' : 'Got it!';
-  const onAction = step === 'fish' ? onNext : onDismiss;
+  const stepLabel =
+    step === 'fish' ? '1/3' : step === 'jellyfish' ? '2/3' : '3/3';
+
+  const actionLabel = step === 'translate' ? 'Got it!' : 'Next';
+  const onAction = step === 'translate' ? onDismiss : onNext;
 
   return (
     <View style={[styles.overlayRoot, { zIndex: INSTRUCTIONS_Z }]} pointerEvents="box-none">
@@ -537,12 +571,24 @@ export function UnderseaInstructions({
                 gradientRadius={gradientRadius}
               />
             )}
+          {step === 'translate' &&
+            jellyBridge != null &&
+            headerTargetIndex != null && (
+              <JellySpotlight
+                bridge={jellyBridge}
+                jellyIndex={headerTargetIndex}
+                width={width}
+                height={height}
+                gradientRadius={gradientRadius}
+                showGuideLines={false}
+              />
+            )}
         </Canvas>
       </View>
 
       <InstructionTooltip
         message={message}
-        stepLabel={step === 'fish' ? '1/2' : undefined}
+        stepLabel={stepLabel}
         actionLabel={actionLabel}
         onAction={onAction}
         bottom={tooltipBottom}
