@@ -95,26 +95,6 @@ export function KoiSwimZone({
     eliminatedFishSv.value = eliminatedFishIndices;
   }, [eliminatedFishIndices, eliminatedFishSv]);
 
-  useEffect(() => {
-    const escape = computeOffScreenEscapeTarget(
-      koiRect,
-      width,
-      height,
-      orientation,
-    );
-    offScreenTargetXSv.value = escape.x;
-    offScreenTargetYSv.value = escape.y;
-    escapeExitEdgeSv.value = escapeExitEdgeCode(escape.exitEdge);
-  }, [
-    koiRect,
-    width,
-    height,
-    orientation,
-    offScreenTargetXSv,
-    offScreenTargetYSv,
-    escapeExitEdgeSv,
-  ]);
-
   const targetDiameter =
     Math.min(koiRect.w, koiRect.h) * BUBBLE_DIAMETER_RATIO;
   const targetCenterX = koiRect.x + koiRect.w * 0.5;
@@ -286,6 +266,55 @@ export function KoiSwimZone({
 
   onEscapeOverlayDismissRef.current = handleEscapeOverlayDismiss;
   onEscapeCompleteRef.current = handleEscapeComplete;
+
+  useLayoutEffect(() => {
+    const escape = computeOffScreenEscapeTarget(
+      koiRect,
+      width,
+      height,
+      orientation,
+    );
+    offScreenTargetXSv.value = escape.x;
+    offScreenTargetYSv.value = escape.y;
+    escapeExitEdgeSv.value = escapeExitEdgeCode(escape.exitEdge);
+
+    if (!escapeActiveSv.value) {
+      return;
+    }
+
+    const bubblePhase = phase.value;
+    if (escapeStageSv.value === 1 || bubblePhase === BubblePhase.Burst) {
+      escapeTargetXSv.value = escape.x;
+      escapeTargetYSv.value = escape.y;
+      if (bubblePhase === BubblePhase.Burst) {
+        escapeStageSv.value = 1;
+      }
+      escapeCompleteTriggeredSv.value = false;
+      escapeOverlayDismissTriggeredSv.value = false;
+      return;
+    }
+
+    escapeTargetXSv.value = targetCenterX;
+    escapeTargetYSv.value = targetCenterY;
+  }, [
+    escapeActiveSv,
+    escapeCompleteTriggeredSv,
+    escapeOverlayDismissTriggeredSv,
+    escapeExitEdgeSv,
+    escapeStageSv,
+    escapeTargetXSv,
+    escapeTargetYSv,
+    koiRect,
+    layoutKey,
+    offScreenTargetXSv,
+    offScreenTargetYSv,
+    orientation,
+    phase,
+    targetCenterX,
+    targetCenterY,
+    width,
+    height,
+  ]);
 
   useLayoutEffect(() => {
     if (selection == null) {
