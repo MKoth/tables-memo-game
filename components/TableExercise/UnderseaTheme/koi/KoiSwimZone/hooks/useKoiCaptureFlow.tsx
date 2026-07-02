@@ -1,35 +1,25 @@
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SkImage } from '@shopify/react-native-skia';
-import { useSharedValue } from 'react-native-reanimated';
-import {
-  computeOffScreenEscapeTarget,
-  escapeExitEdgeCode,
-  type ZoneRect,
-  type UnderseaThemeOrientation,
-} from '../../../core/layout/computeUnderseaThemeLayout';
 import type { UnderseaThemeSoundController } from '../../../core/assets/useUnderseaThemeSounds';
-import { useUnderseaThemeRuntime } from '../../../core/providers/UnderseaThemeRuntimeProvider';
+import type {
+  UnderseaThemeOrientation,
+  ZoneRect,
+} from '../../../core/layout/computeUnderseaThemeLayout';
+import { KoiCaptureOverlay } from '../../capture/KoiCaptureOverlay';
 import { releaseCapturedFishWorklet } from '../../fishPoolSnapshot';
-import { KoiCapturedFishCanvas } from '../../KoiCapturedFishCanvas';
-import { KoiWordBubble } from '../../KoiWordBubble';
 import {
-  BubblePhase,
   BurstIntent,
   useBubbleAnimation,
   type BurstIntentValue,
-} from '../../useBubbleAnimation';
+} from '../../bubbles/useBubbleAnimation';
 import {
   useKoiFishSimulation,
   type KoiCaptureSharedState,
 } from '../../simulation/useKoiFishSimulation';
 import { BUBBLE_DIAMETER_RATIO, type BubbleSelection } from '../types';
+import { useKoiCaptureSharedState } from './useKoiCaptureSharedState';
+import { useKoiEscapeFlow } from './useKoiEscapeFlow';
+import { useKoiRuntimeBridge } from './useKoiRuntimeBridge';
 
 type UseKoiCaptureFlowParams = {
   words: string[];
@@ -54,47 +44,42 @@ export function useKoiCaptureFlow({
   masks,
   sounds,
 }: UseKoiCaptureFlowParams) {
-  const { publishCaptureBridge, publishKoiBridge } = useUnderseaThemeRuntime();
   const [selection, setSelection] = useState<BubbleSelection | null>(null);
-  const [eliminatedFishIndices, setEliminatedFishIndices] = useState<number[]>([]);
   const [escapeOverlayActive, setEscapeOverlayActive] = useState(false);
   const [poolHiddenFishIndex, setPoolHiddenFishIndex] = useState<number | null>(null);
   const transitionRafRef = useRef<number | null>(null);
-  const releaseRequestSv = useSharedValue(0);
-  const releaseContextSv = useSharedValue<{
-    runtimeEntries: ReturnType<typeof useKoiFishSimulation>['runtimeEntries'];
-    sharedPositions: ReturnType<typeof useKoiFishSimulation>['sharedPositions'];
-    captureState: KoiCaptureSharedState;
-  } | null>(null);
-  const capturedFishIndexSv = useSharedValue(-1);
-  const captureOriginXSv = useSharedValue(0);
-  const captureOriginYSv = useSharedValue(0);
-  const escapeActiveSv = useSharedValue(false);
-  const escapeStageSv = useSharedValue(0);
-  const escapeTargetXSv = useSharedValue(0);
-  const escapeTargetYSv = useSharedValue(0);
-  const offScreenTargetXSv = useSharedValue(width * 0.5);
-  const offScreenTargetYSv = useSharedValue(-120 * 1.5);
-  const escapeExitEdgeSv = useSharedValue(0);
-  const escapeCompleteTriggeredSv = useSharedValue(false);
-  const escapeOverlayDismissTriggeredSv = useSharedValue(false);
-  const eliminatedFishSv = useSharedValue<number[]>([]);
   const soundsRef = useRef(sounds);
   soundsRef.current = sounds;
-  const fishCountRef = useRef(0);
-  const onEscapeOverlayDismissRef = useRef<() => void>(() => {});
-  const onEscapeCompleteRef = useRef<() => void>(() => {});
+
+  const shared = useKoiCaptureSharedState(width);
+  const {
+    capturedFishIndexSv,
+    captureOriginXSv,
+    captureOriginYSv,
+    escapeActiveSv,
+    escapeStageSv,
+    escapeTargetXSv,
+    escapeTargetYSv,
+    offScreenTargetXSv,
+    offScreenTargetYSv,
+    escapeExitEdgeSv,
+    escapeCompleteTriggeredSv,
+    escapeOverlayDismissTriggeredSv,
+    releaseRequestSv,
+    releaseContextSv,
+    eliminatedFishSv,
+    eliminatedFishIndices,
+    setEliminatedFishIndices,
+    fishCountRef,
+    onEscapeOverlayDismissRef,
+    onEscapeCompleteRef,
+  } = shared;
 
   const onSpeedIncrease = useCallback(() => {
     soundsRef.current?.playRandomSplash();
   }, []);
 
-  useEffect(() => {
-    eliminatedFishSv.value = eliminatedFishIndices;
-  }, [eliminatedFishIndices, eliminatedFishSv]);
-
-  const targetDiameter =
-    Math.min(koiRect.w, koiRect.h) * BUBBLE_DIAMETER_RATIO;
+  const targetDiameter = Math.min(koiRect.w, koiRect.h) * BUBBLE_DIAMETER_RATIO;
   const targetCenterX = koiRect.x + koiRect.w * 0.5;
   const targetCenterY = koiRect.y + koiRect.h * 0.5;
 
@@ -221,128 +206,24 @@ export function useKoiCaptureFlow({
   });
   fishCountRef.current = sim.runtimeEntries.length;
 
-  const handleEscapeOverlayDismiss = useCallback(() => {
-    setSelection(null);
-    setEscapeOverlayActive(false);
-  }, []);
-
-  const handleEscapeComplete = useCallback(() => {
-    const fishIndex = capturedFishIndexSv.value;
-    cancelTransitionRaf();
-    escapeActiveSv.value = false;
-    escapeStageSv.value = 0;
-    escapeCompleteTriggeredSv.value = false;
-    escapeOverlayDismissTriggeredSv.value = false;
-    capturedFishIndexSv.value = -1;
-    phase.value = BubblePhase.None;
-
-    if (fishIndex >= 0) {
-      setEliminatedFishIndices(prev => {
-        const next = prev.includes(fishIndex) ? prev : [...prev, fishIndex];
-        if (next.length === fishCountRef.current) {
-          soundsRef.current?.playFanfare();
-        }
-        return next;
-      });
-    }
-
-    setPoolHiddenFishIndex(null);
-    setEscapeOverlayActive(false);
-    setSelection(null);
-  }, [
-    cancelTransitionRaf,
-    capturedFishIndexSv,
-    escapeActiveSv,
-    escapeStageSv,
-    escapeCompleteTriggeredSv,
-    escapeOverlayDismissTriggeredSv,
-    phase,
-  ]);
-
-  onEscapeOverlayDismissRef.current = handleEscapeOverlayDismiss;
-  onEscapeCompleteRef.current = handleEscapeComplete;
-
-  useLayoutEffect(() => {
-    const escape = computeOffScreenEscapeTarget(
-      koiRect,
-      width,
-      height,
-      orientation,
-    );
-    offScreenTargetXSv.value = escape.x;
-    offScreenTargetYSv.value = escape.y;
-    escapeExitEdgeSv.value = escapeExitEdgeCode(escape.exitEdge);
-
-    if (!escapeActiveSv.value) {
-      return;
-    }
-
-    const bubblePhase = phase.value;
-    if (escapeStageSv.value === 1 || bubblePhase === BubblePhase.Burst) {
-      escapeTargetXSv.value = escape.x;
-      escapeTargetYSv.value = escape.y;
-      if (bubblePhase === BubblePhase.Burst) {
-        escapeStageSv.value = 1;
-      }
-      escapeCompleteTriggeredSv.value = false;
-      escapeOverlayDismissTriggeredSv.value = false;
-      return;
-    }
-
-    escapeTargetXSv.value = targetCenterX;
-    escapeTargetYSv.value = targetCenterY;
-  }, [
-    escapeActiveSv,
-    escapeCompleteTriggeredSv,
-    escapeOverlayDismissTriggeredSv,
-    escapeExitEdgeSv,
-    escapeStageSv,
-    escapeTargetXSv,
-    escapeTargetYSv,
-    koiRect,
-    layoutKey,
-    offScreenTargetXSv,
-    offScreenTargetYSv,
-    orientation,
-    phase,
-    targetCenterX,
-    targetCenterY,
+  useKoiEscapeFlow({
+    ...shared,
     width,
     height,
-  ]);
-
-  useLayoutEffect(() => {
-    if (selection == null) {
-      return;
-    }
-    const fishIndex = selection.fishIndex;
-    const entry = sim.runtimeEntries[fishIndex];
-    if (entry == null) {
-      return;
-    }
-    const bubblePhase = phase.value;
-    if (
-      bubblePhase === BubblePhase.Idle ||
-      bubblePhase === BubblePhase.Burst ||
-      escapeActiveSv.value
-    ) {
-      entry.runtime.x.value = targetCenterX;
-      entry.runtime.y.value = targetCenterY;
-      const pos = sim.sharedPositions.value.slice();
-      pos[fishIndex * 2] = targetCenterX;
-      pos[fishIndex * 2 + 1] = targetCenterY;
-      sim.sharedPositions.value = pos;
-    }
-  }, [
+    koiRect,
+    orientation,
     layoutKey,
     targetCenterX,
     targetCenterY,
-    selection,
-    sim.runtimeEntries,
-    sim.sharedPositions,
     phase,
-    escapeActiveSv,
-  ]);
+    selection,
+    setSelection,
+    setEscapeOverlayActive,
+    setPoolHiddenFishIndex,
+    cancelTransitionRaf,
+    soundsRef,
+    sim,
+  });
 
   releaseContextSv.value = {
     runtimeEntries: sim.runtimeEntries,
@@ -362,9 +243,9 @@ export function useKoiCaptureFlow({
       startBurst(BurstIntent.Escape);
     },
     [
+      escapeActiveSv,
       escapeCompleteTriggeredSv,
       escapeOverlayDismissTriggeredSv,
-      escapeActiveSv,
       escapeStageSv,
       escapeTargetXSv,
       escapeTargetYSv,
@@ -402,72 +283,32 @@ export function useKoiCaptureFlow({
   const capturedEntry =
     selection != null ? sim.runtimeEntries[selection.fishIndex] : null;
 
-  const capturedFishNode =
-    capturedEntry != null ? (
-      <KoiCapturedFishCanvas
-        entry={capturedEntry}
+  const bubbleOverlay =
+    selection != null && capturedEntry != null ? (
+      <KoiCaptureOverlay
+        selection={selection}
+        capturedEntry={capturedEntry}
         anim={anim}
+        phase={phase}
         escapeActive={escapeActiveSv}
-        image={images[capturedEntry.spawn.imageKey]!}
-        maskImage={masks[capturedEntry.spawn.imageKey]!}
-        overlayMaskImage={masks[capturedEntry.spawn.overlayMaskKey]!}
+        escapeOverlayActive={escapeOverlayActive}
+        startBurst={startBurst}
+        targetDiameter={targetDiameter}
+        images={images}
+        masks={masks}
         renderProps={sim.renderProps}
       />
     ) : null;
 
-  const bubbleOverlay =
-    selection != null && capturedFishNode != null ? (
-      <KoiWordBubble
-        word={selection.word}
-        anim={anim}
-        phase={phase}
-        escapeActive={escapeActiveSv}
-        startBurst={startBurst}
-        interactive={!escapeOverlayActive}
-        capturedFish={capturedFishNode}
-        targetDiameter={targetDiameter}
-      />
-    ) : null;
-
-  const bubbleOverlayRef = useRef(bubbleOverlay);
-  bubbleOverlayRef.current = bubbleOverlay;
-
-  useLayoutEffect(() => {
-    publishCaptureBridge(
-      selection != null
-        ? {
-            capturedWord: selection.word,
-            bubblePhase: phase,
-            onMatchSuccess: handleMatchSuccess,
-            overlay: bubbleOverlayRef.current,
-            escapeOverlayActive,
-          }
-        : null,
-    );
-  }, [
+  useKoiRuntimeBridge({
+    selection,
+    phase,
     escapeOverlayActive,
     handleMatchSuccess,
-    publishCaptureBridge,
-    phase,
-    selection,
-  ]);
-
-  useLayoutEffect(() => {
-    publishKoiBridge({
-      fishRuntimePositions: sim.runtimeEntries.map(entry => ({
-        x: entry.runtime.x,
-        y: entry.runtime.y,
-      })),
-      fishCount: sim.runtimeEntries.length,
-      hitRadius: sim.hitRadius,
-      eliminatedFishSv,
-    });
-  }, [
+    bubbleOverlay,
+    sim,
     eliminatedFishSv,
-    publishKoiBridge,
-    sim.hitRadius,
-    sim.runtimeEntries,
-  ]);
+  });
 
   return {
     sim,

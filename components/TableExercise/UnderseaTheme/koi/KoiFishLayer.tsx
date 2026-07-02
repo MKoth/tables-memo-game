@@ -6,7 +6,7 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
 import { useKoiTapGesture } from './gestures/useKoiTapGesture';
-import { KoiInstance, KoiShadowInstance } from './KoiInstance';
+import { KoiInstance, KoiShadowInstance } from './fish/KoiInstance';
 import type { KoiFishSimulation } from './simulation/useKoiFishSimulation';
 import {
   KOI_SHADOW_COLOR,

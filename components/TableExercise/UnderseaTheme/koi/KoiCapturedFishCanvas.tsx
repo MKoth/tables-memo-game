@@ -15,7 +15,7 @@ import {
   KOI_SHADOW_OPACITY,
   KOI_SHADOW_SOFTNESS,
 } from './config/koiFishLayerConfig';
-import { KoiInstance, KoiShadowInstance } from './KoiInstance';
+import { KoiInstance, KoiShadowInstance } from './fish/KoiInstance';
 import type { KoiRuntimeEntry } from './simulation/types';
 import type { BubbleAnimState } from './useBubbleAnimation';
 
