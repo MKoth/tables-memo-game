@@ -6,7 +6,7 @@ import type {
   ZoneRect,
 } from '../../../core/layout/computeUnderseaThemeLayout';
 import { KoiCaptureOverlay } from '../../capture/KoiCaptureOverlay';
-import { releaseCapturedFishWorklet } from '../../fishPoolSnapshot';
+import { releaseCapturedFishWorklet } from '../../capture/fishPoolSnapshot';
 import {
   BurstIntent,
   useBubbleAnimation,

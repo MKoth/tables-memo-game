@@ -6,7 +6,7 @@ import {
   usePanGesture,
   useTapGesture,
 } from 'react-native-gesture-handler';
-import { BubblePhase } from '../../../koi/useBubbleAnimation';
+import { BubblePhase } from '../../../koi/bubbles';
 import { JELLYFISH_TINT_PRESET_INDEX } from '../presets/jellyfishTintPresets';
 import {
   BIAS_DRAG_SENS,

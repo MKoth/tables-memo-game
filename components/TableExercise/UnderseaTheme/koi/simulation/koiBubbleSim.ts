@@ -1,10 +1,10 @@
-import type { FishRuntime } from './simulation/types';
+import type { FishRuntime } from './types';
 import {
   BUBBLE_FISH_CLIP_INSET,
   BUBBLE_FISH_SCALE,
   BUBBLE_FISH_SWIM_MARGIN_RATIO,
   BUBBLE_FISH_VISUAL_REACH_MULT,
-} from './bubbleAnimPresets';
+} from '../bubbles/bubbleAnimPresets';
 import {
   KOI_BUBBLE_CLAMP_EPSILON,
   KOI_BUBBLE_ESCAPE_ANGLE_LERP,
@@ -14,7 +14,7 @@ import {
   KOI_BUBBLE_ESCAPE_SPEED_LERP_FACTOR,
   KOI_BUBBLE_ESCAPE_STATE_TIMER,
   KOI_BUBBLE_HARD_RADIUS_MIN_BODY_RATIO,
-} from './config/koiBubbleSimConfig';
+} from '../config/koiBubbleSimConfig';
 import {
   KOI_AMPLITUDE_LERP,
   KOI_ANGLE_LERP,
@@ -27,7 +27,7 @@ import {
   KOI_SPEED_LERP_FACTOR,
   KOI_TURN_ARC_LERP,
   KOI_WANDER_LERP,
-} from './config/koiSimConfig';
+} from '../config/koiSimConfig';
 import {
   clamp,
   idleDurationForPhase,
@@ -39,9 +39,9 @@ import {
   swimSpeedForForwardSpeed,
   updateFinBehavior,
   updateTurnArc,
-} from './simulation/fishSimCommon';
+} from './fishSimCommon';
 
-export { KOI_BASE_SPEED_MAX } from './config/koiSimConfig';
+export { KOI_BASE_SPEED_MAX } from '../config/koiSimConfig';
 
 function clampToCircle(
   fish: FishRuntime,

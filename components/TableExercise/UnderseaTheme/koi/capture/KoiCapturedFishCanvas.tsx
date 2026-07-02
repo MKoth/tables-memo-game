@@ -7,17 +7,17 @@ import {
   BUBBLE_FISH_CLIP_INSET,
   BUBBLE_FISH_SCALE,
   BUBBLE_SHADOW_OFFSET_MULT,
-} from './bubbleAnimPresets';
+} from '../bubbles/bubbleAnimPresets';
 import {
   KOI_SHADOW_COLOR,
   KOI_SHADOW_OFFSET_X,
   KOI_SHADOW_OFFSET_Y,
   KOI_SHADOW_OPACITY,
   KOI_SHADOW_SOFTNESS,
-} from './config/koiFishLayerConfig';
-import { KoiInstance, KoiShadowInstance } from './fish/KoiInstance';
-import type { KoiRuntimeEntry } from './simulation/types';
-import type { BubbleAnimState } from './useBubbleAnimation';
+} from '../config/koiFishLayerConfig';
+import { KoiInstance, KoiShadowInstance } from '../fish/KoiInstance';
+import type { KoiRuntimeEntry } from '../simulation/types';
+import type { BubbleAnimState } from '../bubbles/bubbleAnimTypes';
 
 function lerp(a: number, b: number, t: number): number {
   'worklet';

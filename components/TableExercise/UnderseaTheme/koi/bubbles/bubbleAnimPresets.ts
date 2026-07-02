@@ -1,4 +1,4 @@
-import { bubbleDeformUniformDefaults } from '../../../../shaders/bubbleDeform.sksl';
+import { bubbleDeformUniformDefaults } from '../../../../../shaders/bubbleDeform.sksl';
 
 const defaults = bubbleDeformUniformDefaults;
 
@@ -27,7 +27,7 @@ export const BUBBLE_START_DIAMETER_RATIO = 0.18;
 export const BUBBLE_BURST_SCALE = 1.12;
 export const BUBBLE_SPAWN_OFFSET_Y = 0.55;
 
-export { KOI_FISH_LENGTH } from './config/koiInstanceConfig';
+export { KOI_FISH_LENGTH } from '../config/koiInstanceConfig';
 
 export const BUBBLE_IDLE_OPACITY = defaults.opacity;
 

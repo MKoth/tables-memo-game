@@ -7,7 +7,7 @@ import {
   BUBBLE_SPAWN_OFFSET_Y,
   BUBBLE_START_DIAMETER_RATIO,
   KOI_FISH_LENGTH,
-} from '../bubbleAnimPresets';
+} from './bubbleAnimPresets';
 import {
   BubblePhase,
   type BubbleAnimState,

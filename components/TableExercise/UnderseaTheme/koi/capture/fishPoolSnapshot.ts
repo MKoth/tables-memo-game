@@ -1,6 +1,6 @@
 import type { SharedValue } from 'react-native-reanimated';
-import { BubblePhase } from './useBubbleAnimation';
-import type { FishRuntime } from './simulation/types';
+import { BubblePhase } from '../bubbles/bubbleAnimTypes';
+import type { FishRuntime } from '../simulation/types';
 
 export type PoolReleaseCaptureState = {
   capturedFishIndex: SharedValue<number>;

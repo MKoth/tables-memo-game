@@ -7,7 +7,7 @@ import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useSharedValue } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
-import { BubblePhase } from '../../koi/useBubbleAnimation';
+import { BubblePhase } from '../../koi/bubbles';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
 import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
 import { useUnderseaThemeClockQuantized } from '../../core/clock/UnderseaThemeClockProvider';

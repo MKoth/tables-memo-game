@@ -5,9 +5,9 @@ import type { SkImage } from '@shopify/react-native-skia';
 import { GestureDetector } from 'react-native-gesture-handler';
 import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
-import { useKoiTapGesture } from './gestures/useKoiTapGesture';
-import { KoiInstance, KoiShadowInstance } from './fish/KoiInstance';
-import type { KoiFishSimulation } from './simulation/useKoiFishSimulation';
+import { useKoiTapGesture } from '../gestures/useKoiTapGesture';
+import { KoiInstance, KoiShadowInstance } from './KoiInstance';
+import type { KoiFishSimulation } from '../simulation/useKoiFishSimulation';
 import {
   KOI_SHADOW_COLOR,
   KOI_SHADOW_OFFSET_X,
@@ -15,40 +15,7 @@ import {
   KOI_SHADOW_OPACITY,
   KOI_SHADOW_SOFTNESS,
   type KoiImageKey,
-} from './config/koiFishLayerConfig';
-
-export function findKoiIndexAtTap(
-  tapX: number,
-  tapY: number,
-  positions: number[],
-  count: number,
-  hitRadius: number,
-  eliminated: number[],
-): number {
-  'worklet';
-  let bestIdx = -1;
-  let bestDist = Infinity;
-  for (let i = 0; i < count; i++) {
-    let isEliminated = false;
-    for (let e = 0; e < eliminated.length; e++) {
-      if (eliminated[e] === i) {
-        isEliminated = true;
-        break;
-      }
-    }
-    if (isEliminated) {
-      continue;
-    }
-    const cx = positions[i * 2] ?? 0;
-    const cy = positions[i * 2 + 1] ?? 0;
-    const dist = Math.hypot(tapX - cx, tapY - cy);
-    if (dist <= hitRadius && dist < bestDist) {
-      bestDist = dist;
-      bestIdx = i;
-    }
-  }
-  return bestIdx;
-}
+} from '../config/koiFishLayerConfig';
 
 export type KoiFishLayerProps = {
   sim: KoiFishSimulation;

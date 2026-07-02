@@ -1,7 +1,7 @@
 import type { SharedValue } from 'react-native-reanimated';
 import { useTapGesture } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
-import { findKoiIndexAtTap } from '../KoiFishLayer';
+import { findKoiIndexAtTap } from './koiTapWorklets';
 
 const TAP_MAX_DISTANCE_PX = 10;
 

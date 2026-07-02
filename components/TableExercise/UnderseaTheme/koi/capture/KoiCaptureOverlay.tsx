@@ -1,9 +1,9 @@
 import React from 'react';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import { KoiCapturedFishCanvas } from '../KoiCapturedFishCanvas';
-import { KoiWordBubble } from '../KoiWordBubble';
-import type { BubbleAnimState, BurstIntentValue } from '../bubbles/useBubbleAnimation';
+import { KoiCapturedFishCanvas } from './KoiCapturedFishCanvas';
+import { KoiWordBubble } from '../bubbles/KoiWordBubble';
+import type { BubbleAnimState, BurstIntentValue } from '../bubbles/bubbleAnimTypes';
 import type { KoiFishSimulation } from '../simulation/captureTypes';
 import type { KoiRuntimeEntry } from '../simulation/types';
 

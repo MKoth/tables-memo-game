@@ -10,11 +10,11 @@ import {
 import { GestureDetector } from 'react-native-gesture-handler';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import { useBubbleTapGesture } from './gestures/useBubbleTapGesture';
+import { useBubbleTapGesture } from '../gestures/useBubbleTapGesture';
 import { BubbleInstance } from './BubbleInstance';
-import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeLayout } from '../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeClock } from '../core/clock/UnderseaThemeClockProvider';
+import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
+import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
 import {
   type BubbleAnimState,
   type BurstIntentValue,

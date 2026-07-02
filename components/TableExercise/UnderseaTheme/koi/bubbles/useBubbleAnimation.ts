@@ -10,7 +10,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import {
   BUBBLE_BURST_DURATION_MS,
   BUBBLE_ENTER_DURATION_MS,
-} from '../bubbleAnimPresets';
+} from './bubbleAnimPresets';
 import { computeBubbleAnimState } from './bubbleAnimWorklets';
 import {
   BubblePhase,

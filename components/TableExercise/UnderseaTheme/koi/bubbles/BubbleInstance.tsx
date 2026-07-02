@@ -14,8 +14,8 @@ import { useDerivedValue } from 'react-native-reanimated';
 import {
   BUBBLE_DEFORM_SKSL,
   bubbleDeformUniformDefaults,
-} from '../../../../shaders/bubbleDeform.sksl';
-import type { BubbleAnimState } from './useBubbleAnimation';
+} from '../../../../../shaders/bubbleDeform.sksl';
+import type { BubbleAnimState } from './bubbleAnimTypes';
 
 function compileBubbleEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(BUBBLE_DEFORM_SKSL);

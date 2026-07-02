@@ -8,7 +8,7 @@ import {
   isTapInsideBubble,
   type BubbleAnimState,
   type BurstIntentValue,
-} from '../useBubbleAnimation';
+} from '../bubbles';
 
 const TAP_MAX_DISTANCE_PX = 10;
 

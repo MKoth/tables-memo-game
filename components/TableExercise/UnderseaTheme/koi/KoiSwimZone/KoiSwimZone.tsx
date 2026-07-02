@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { KoiFishLayer } from '../KoiFishLayer';
+import { KoiFishLayer } from '../fish/KoiFishLayer';
 import { useKoiCaptureFlow } from './hooks/useKoiCaptureFlow';
 import type { KoiSwimZoneProps } from './types';
 
