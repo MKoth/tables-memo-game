@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { UnderseaThemeAssetsProvider } from './core/providers/UnderseaThemeAssetsProvider';
 import { UnderseaThemeLayoutProvider } from './core/providers/UnderseaThemeLayoutProvider';
+import { UnderseaThemeRuntimeProvider } from './core/providers/UnderseaThemeRuntimeProvider';
 import { UnderseaThemeBackground } from './background/UnderseaThemeBackground';
 import { UnderseaThemeClockProvider } from './core/clock/UnderseaThemeClockProvider';
 import {
@@ -9,21 +10,14 @@ import {
   UnderseaThemeInstructions,
 } from './ui/instructions/UnderseaThemeInstructions';
 import { UnderseaThemeLoadingScreen } from './ui/loading/UnderseaThemeLoadingScreen';
+import { CaptureOverlay } from './ui/CaptureOverlay';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
-import { KoiSwimZone, type KoiCaptureBridge } from './koi';
-import type {
-  JellyfishLayoutBridge,
-  KoiSimBridge,
-  TutorialStep,
-} from './core/types/tutorialTypes';
+import { KoiSwimZone } from './koi';
+import { useUnderseaThemeExerciseStore } from './core/store/underseaThemeExerciseStore';
 import { useUnderseaThemeAssets } from './core/assets/useUnderseaThemeAssets';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { getTableBodyWords, spanishPresentTable2Singular } from '../../../data/tableData';
 
-/** Below jellyfish — bubble visible but jellyfish remain tappable for matching. */
-const CAPTURE_OVERLAY_Z = 3;
-/** Above jellyfish — fish stays visible while swimming through the table zone. */
-const ESCAPE_OVERLAY_Z = 10;
 const JELLYFISH_LAYER_Z = 5;
 
 type UnderseaThemeExerciseContentProps = {
@@ -33,67 +27,21 @@ type UnderseaThemeExerciseContentProps = {
 function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentProps) {
   const table = spanishPresentTable2Singular;
   const words = useMemo(() => getTableBodyWords(table), [table]);
-  const soundsRef = useRef(sounds);
-  soundsRef.current = sounds;
-  const [captureBridge, setCaptureBridge] = useState<KoiCaptureBridge | null>(null);
-  const [koiBridge, setKoiBridge] = useState<KoiSimBridge | null>(null);
-  const [jellyBridge, setJellyBridge] = useState<JellyfishLayoutBridge | null>(null);
-  const [tutorialStep, setTutorialStep] = useState<TutorialStep>('idle');
-  const [helpVisible, setHelpVisible] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-
-  const handleCaptureBridgeChange = useCallback((bridge: KoiCaptureBridge | null) => {
-    setCaptureBridge(prev => {
-      if (bridge == null) {
-        return null;
-      }
-      if (
-        prev != null &&
-        prev.capturedWord === bridge.capturedWord &&
-        prev.overlay != null
-      ) {
-        return { ...bridge, overlay: prev.overlay };
-      }
-      return bridge;
-    });
-  }, []);
-
-  const handleJellyfishMatchSuccess = useCallback(
-    (targetX: number, targetY: number, hitIdx: number) => {
-      setHelpVisible(false);
-      captureBridge?.onMatchSuccess?.(targetX, targetY, hitIdx);
-    },
-    [captureBridge],
-  );
-
-  const handleTutorialDismiss = useCallback(() => {
-    setTutorialStep('idle');
-    setHelpVisible(false);
-  }, []);
-
-  const handleTutorialNext = useCallback(() => {
-    setTutorialStep(prev => {
-      if (prev === 'fish') {
-        return 'jellyfish';
-      }
-      if (prev === 'jellyfish') {
-        return 'translate';
-      }
-      return prev;
-    });
-  }, []);
+  const tutorialStep = useUnderseaThemeExerciseStore((state) => state.tutorialStep);
+  const soundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
+  const tutorialActive = tutorialStep !== 'idle';
 
   const handleJellyfishSound = useCallback((kind: JellyfishSoundKind) => {
     if (kind === 'success') {
-      soundsRef.current.playSuccessClick();
+      sounds.playSuccessClick();
       return;
     }
     if (kind === 'error') {
-      soundsRef.current.playWrongClick();
+      sounds.playWrongClick();
       return;
     }
-    soundsRef.current.playPrimaryClick();
-  }, []);
+    sounds.playPrimaryClick();
+  }, [sounds]);
 
   useEffect(() => {
     sounds.startWaterflow();
@@ -106,68 +54,29 @@ function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentPr
     sounds.setMuted(!soundEnabled);
   }, [sounds, soundEnabled]);
 
-  const handleSoundToggle = useCallback(() => {
-    setSoundEnabled(prev => !prev);
-  }, []);
-
-  const tutorialActive = tutorialStep !== 'idle';
-
   return (
-    <UnderseaThemeClockProvider>
-      <View style={styles.container}>
-        <UnderseaThemeBackground />
-        <KoiSwimZone
-          words={words}
-          interactive={!tutorialActive}
-          sounds={sounds}
-          onCaptureBridgeChange={handleCaptureBridgeChange}
-          onSimBridgeChange={setKoiBridge}
-        />
-        {captureBridge?.overlay != null && (
-          <View
-            style={[
-              styles.captureOverlay,
-              {
-                zIndex: captureBridge.escapeOverlayActive
-                  ? ESCAPE_OVERLAY_Z
-                  : CAPTURE_OVERLAY_Z,
-              },
-            ]}
-            pointerEvents={
-              captureBridge.escapeOverlayActive ? 'none' : 'box-none'
-            }>
-            {captureBridge.overlay}
-          </View>
-        )}
-        <View style={styles.jellyfishLayer} pointerEvents="box-none">
-          <JellyfishTableLayer
-            table={table}
-            capturedWord={captureBridge?.capturedWord ?? null}
-            bubblePhase={captureBridge?.bubblePhase}
-            onMatchSuccess={handleJellyfishMatchSuccess}
-            onJellyfishSound={handleJellyfishSound}
+    <UnderseaThemeRuntimeProvider>
+      <UnderseaThemeClockProvider>
+        <View style={styles.container}>
+          <UnderseaThemeBackground />
+          <KoiSwimZone
+            words={words}
             interactive={!tutorialActive}
-            onLayoutBridgeChange={setJellyBridge}
+            sounds={sounds}
           />
+          <CaptureOverlay />
+          <View style={styles.jellyfishLayer} pointerEvents="box-none">
+            <JellyfishTableLayer
+              table={table}
+              onJellyfishSound={handleJellyfishSound}
+              interactive={!tutorialActive}
+            />
+          </View>
+          {tutorialActive && <UnderseaThemeInstructions />}
+          <UnderseaThemeCornerControls />
         </View>
-        {tutorialActive && (
-          <UnderseaThemeInstructions
-            step={tutorialStep}
-            koiBridge={koiBridge}
-            jellyBridge={jellyBridge}
-            onNext={handleTutorialNext}
-            onDismiss={handleTutorialDismiss}
-          />
-        )}
-        <UnderseaThemeCornerControls
-          soundEnabled={soundEnabled}
-          onSoundToggle={handleSoundToggle}
-          onHelpPress={() => setTutorialStep('fish')}
-          helpVisible={helpVisible}
-          helpDisabled={tutorialActive}
-        />
-      </View>
-    </UnderseaThemeClockProvider>
+      </UnderseaThemeClockProvider>
+    </UnderseaThemeRuntimeProvider>
   );
 }
 
@@ -195,14 +104,6 @@ export function UnderseaThemeTableExercise() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  captureOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    overflow: 'visible',
   },
   jellyfishLayer: {
     position: 'absolute',

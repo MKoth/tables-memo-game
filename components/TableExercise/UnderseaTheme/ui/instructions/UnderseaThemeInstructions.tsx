@@ -3,11 +3,8 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Canvas } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import type {
-  JellyfishLayoutBridge,
-  KoiSimBridge,
-  TutorialStep,
-} from '../../core/types/tutorialTypes';
+import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
+import { useUnderseaThemeExerciseStore } from '../../core/store/underseaThemeExerciseStore';
 import { TutorialSpotlightOverlay } from './components/TutorialSpotlightOverlay';
 import {
   InstructionTooltip,
@@ -35,21 +32,11 @@ export {
   type UnderseaThemeSoundToggleButtonProps,
 } from './components/UnderseaThemeCornerControls';
 
-export type UnderseaThemeInstructionsProps = {
-  step: Exclude<TutorialStep, 'idle'>;
-  koiBridge: KoiSimBridge | null;
-  jellyBridge: JellyfishLayoutBridge | null;
-  onNext: () => void;
-  onDismiss: () => void;
-};
-
-export function UnderseaThemeInstructions({
-  step,
-  koiBridge,
-  jellyBridge,
-  onNext,
-  onDismiss,
-}: UnderseaThemeInstructionsProps) {
+export function UnderseaThemeInstructions() {
+  const step = useUnderseaThemeExerciseStore((state) => state.tutorialStep);
+  const nextTutorialStep = useUnderseaThemeExerciseStore((state) => state.nextTutorialStep);
+  const dismissTutorial = useUnderseaThemeExerciseStore((state) => state.dismissTutorial);
+  const { koiBridge, jellyBridge } = useUnderseaThemeRuntime();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { controlsAnchor } = useUnderseaThemeLayout();
@@ -65,7 +52,7 @@ export function UnderseaThemeInstructions({
     if (koiBridge != null) {
       setFishTargetIndex(pickRandomFishIndex(koiBridge));
     }
-  }, [step]);
+  }, [step, koiBridge]);
 
   useEffect(() => {
     if (step !== 'jellyfish') {
@@ -75,7 +62,7 @@ export function UnderseaThemeInstructions({
     if (jellyBridge != null) {
       setJellyTargetIndex(pickRandomJellyIndex(jellyBridge));
     }
-  }, [step]);
+  }, [step, jellyBridge]);
 
   useEffect(() => {
     if (step === 'fish' && koiBridge != null && fishTargetIndex == null) {
@@ -123,7 +110,11 @@ export function UnderseaThemeInstructions({
     step === 'fish' ? '1/3' : step === 'jellyfish' ? '2/3' : '3/3';
 
   const actionLabel = step === 'translate' ? 'Got it!' : 'Next';
-  const onAction = step === 'translate' ? onDismiss : onNext;
+  const onAction = step === 'translate' ? dismissTutorial : nextTutorialStep;
+
+  if (step === 'idle') {
+    return null;
+  }
 
   return (
     <View style={[styles.overlayRoot, { zIndex: INSTRUCTIONS_Z }]} pointerEvents="box-none">

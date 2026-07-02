@@ -12,8 +12,6 @@ export function KoiSwimZone({
   words,
   interactive: interactiveProp = true,
   sounds,
-  onCaptureBridgeChange,
-  onSimBridgeChange,
 }: KoiSwimZoneProps) {
   const { width, height } = useWindowDimensions();
   const layout = useUnderseaThemeLayout();
@@ -39,8 +37,6 @@ export function KoiSwimZone({
     images,
     masks,
     sounds,
-    onCaptureBridgeChange,
-    onSimBridgeChange,
   });
 
   if (words.length === 0 || width === 0 || height === 0) {

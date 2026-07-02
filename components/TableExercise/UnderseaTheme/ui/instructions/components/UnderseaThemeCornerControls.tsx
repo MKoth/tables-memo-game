@@ -9,6 +9,7 @@ import {
 } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUnderseaThemeLayout } from '../../../core/providers/UnderseaThemeLayoutProvider';
+import { useUnderseaThemeExerciseStore } from '../../../core/store/underseaThemeExerciseStore';
 import { UiDropPanel } from '../UiDropPanel';
 import {
   CORNER_BUTTON_GAP,
@@ -147,20 +148,31 @@ export function UnderseaHelpButton({ onPress, disabled = false }: UnderseaHelpBu
 }
 
 export type UnderseaThemeCornerControlsProps = {
-  soundEnabled: boolean;
-  onSoundToggle: () => void;
-  onHelpPress: () => void;
+  soundEnabled?: boolean;
+  onSoundToggle?: () => void;
+  onHelpPress?: () => void;
   helpVisible?: boolean;
   helpDisabled?: boolean;
 };
 
 export function UnderseaThemeCornerControls({
-  soundEnabled,
-  onSoundToggle,
-  onHelpPress,
-  helpVisible = true,
-  helpDisabled = false,
-}: UnderseaThemeCornerControlsProps) {
+  soundEnabled: soundEnabledProp,
+  onSoundToggle: onSoundToggleProp,
+  onHelpPress: onHelpPressProp,
+  helpVisible: helpVisibleProp,
+  helpDisabled: helpDisabledProp,
+}: UnderseaThemeCornerControlsProps = {}) {
+  const storeSoundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
+  const storeToggleSound = useUnderseaThemeExerciseStore((state) => state.toggleSound);
+  const storeHelpVisible = useUnderseaThemeExerciseStore((state) => state.helpVisible);
+  const storeStartTutorial = useUnderseaThemeExerciseStore((state) => state.startTutorial);
+  const tutorialStep = useUnderseaThemeExerciseStore((state) => state.tutorialStep);
+
+  const soundEnabled = soundEnabledProp ?? storeSoundEnabled;
+  const onSoundToggle = onSoundToggleProp ?? storeToggleSound;
+  const helpVisible = helpVisibleProp ?? storeHelpVisible;
+  const onHelpPress = onHelpPressProp ?? storeStartTutorial;
+  const helpDisabled = helpDisabledProp ?? tutorialStep !== 'idle';
   const insets = useSafeAreaInsets();
   const { controlsAnchor } = useUnderseaThemeLayout();
   const position = computeControlsPosition(controlsAnchor, insets, HELP_MARGIN);

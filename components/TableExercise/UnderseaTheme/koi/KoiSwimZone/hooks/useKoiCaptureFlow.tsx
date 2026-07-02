@@ -15,7 +15,7 @@ import {
   type UnderseaThemeOrientation,
 } from '../../../core/layout/computeUnderseaThemeLayout';
 import type { UnderseaThemeSoundController } from '../../../core/assets/useUnderseaThemeSounds';
-import type { KoiSimBridge } from '../../../core/types/tutorialTypes';
+import { useUnderseaThemeRuntime } from '../../../core/providers/UnderseaThemeRuntimeProvider';
 import { releaseCapturedFishWorklet } from '../../fishPoolSnapshot';
 import { KoiCapturedFishCanvas } from '../../KoiCapturedFishCanvas';
 import { KoiWordBubble } from '../../KoiWordBubble';
@@ -29,7 +29,7 @@ import {
   useKoiFishSimulation,
   type KoiCaptureSharedState,
 } from '../../simulation/useKoiFishSimulation';
-import { BUBBLE_DIAMETER_RATIO, type BubbleSelection, type KoiCaptureBridge } from '../types';
+import { BUBBLE_DIAMETER_RATIO, type BubbleSelection } from '../types';
 
 type UseKoiCaptureFlowParams = {
   words: string[];
@@ -41,8 +41,6 @@ type UseKoiCaptureFlowParams = {
   images: Record<'koi1' | 'koi2' | 'koi3', SkImage>;
   masks: Record<'koi1' | 'koi2' | 'koi3', SkImage>;
   sounds?: UnderseaThemeSoundController;
-  onCaptureBridgeChange?: (bridge: KoiCaptureBridge | null) => void;
-  onSimBridgeChange?: (bridge: KoiSimBridge | null) => void;
 };
 
 export function useKoiCaptureFlow({
@@ -55,9 +53,8 @@ export function useKoiCaptureFlow({
   images,
   masks,
   sounds,
-  onCaptureBridgeChange,
-  onSimBridgeChange,
 }: UseKoiCaptureFlowParams) {
+  const { publishCaptureBridge, publishKoiBridge } = useUnderseaThemeRuntime();
   const [selection, setSelection] = useState<BubbleSelection | null>(null);
   const [eliminatedFishIndices, setEliminatedFishIndices] = useState<number[]>([]);
   const [escapeOverlayActive, setEscapeOverlayActive] = useState(false);
@@ -436,7 +433,7 @@ export function useKoiCaptureFlow({
   bubbleOverlayRef.current = bubbleOverlay;
 
   useLayoutEffect(() => {
-    onCaptureBridgeChange?.(
+    publishCaptureBridge(
       selection != null
         ? {
             capturedWord: selection.word,
@@ -450,13 +447,13 @@ export function useKoiCaptureFlow({
   }, [
     escapeOverlayActive,
     handleMatchSuccess,
-    onCaptureBridgeChange,
+    publishCaptureBridge,
     phase,
     selection,
   ]);
 
   useLayoutEffect(() => {
-    onSimBridgeChange?.({
+    publishKoiBridge({
       fishRuntimePositions: sim.runtimeEntries.map(entry => ({
         x: entry.runtime.x,
         y: entry.runtime.y,
@@ -467,7 +464,7 @@ export function useKoiCaptureFlow({
     });
   }, [
     eliminatedFishSv,
-    onSimBridgeChange,
+    publishKoiBridge,
     sim.hitRadius,
     sim.runtimeEntries,
   ]);

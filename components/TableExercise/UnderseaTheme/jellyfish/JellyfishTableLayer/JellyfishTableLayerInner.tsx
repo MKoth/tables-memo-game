@@ -9,6 +9,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { BubblePhase } from '../../koi/useBubbleAnimation';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
 import { useUnderseaThemeClockQuantized } from '../../core/clock/UnderseaThemeClockProvider';
 import {
   BODY_FONT_SIZE,
@@ -43,9 +44,9 @@ export function JellyfishTableLayerInner({
   onMatchSuccess,
   onJellyfishSound,
   interactive,
-  onLayoutBridgeChange,
   translationDisplayMs,
 }: JellyfishTableLayerInnerProps) {
+  const { publishJellyBridge } = useUnderseaThemeRuntime();
   const { width, height } = useWindowDimensions();
   const { jellyRect, labelRotationRad } = useUnderseaThemeLayout();
   const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
@@ -262,7 +263,7 @@ export function JellyfishTableLayerInner({
   ]);
 
   useLayoutEffect(() => {
-    onLayoutBridgeChange?.({
+    publishJellyBridge({
       layoutX,
       layoutY,
       layoutScale,
@@ -277,7 +278,7 @@ export function JellyfishTableLayerInner({
     layoutScale,
     layoutX,
     layoutY,
-    onLayoutBridgeChange,
+    publishJellyBridge,
   ]);
   const { motionLoopEngaged, activateMotionLoop, deactivateMotionLoop } = useJellyfishMotionLoop({
     biasX,
