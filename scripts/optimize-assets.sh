@@ -14,6 +14,7 @@
 set -euo pipefail
 
 ASSETS_DIR="$(cd "$(dirname "$0")/../assets" && pwd)"
+THEME_IMAGES_DIR="$ASSETS_DIR/images/undersea_theme"
 
 if command -v magick &>/dev/null; then
   IM="magick"
@@ -48,22 +49,22 @@ process() {
 
 echo "=== Stones  (resize ≤400px wide, +${PADDING}px padding, bake σ=${BLUR_SIGMA}px blur) ==="
 for i in 1 2 3 4 5 6 7 8 9; do
-  process "$ASSETS_DIR/stone${i}.png" 400
+  process "$THEME_IMAGES_DIR/stones/stone${i}.png" 400
 done
 
 echo ""
 echo "=== Starfish & seashells (resize ≤400px wide, +${PADDING}px padding, bake σ=${BLUR_SIGMA}px blur) ==="
 for i in 1 2 3; do
-  process "$ASSETS_DIR/starfish${i}.png" 400
+  process "$THEME_IMAGES_DIR/stones/starfish${i}.png" 400
 done
 for i in 1 2 3 4 5; do
-  process "$ASSETS_DIR/seashell${i}.png" 400
+  process "$THEME_IMAGES_DIR/stones/seashell${i}.png" 400
 done
 
 echo ""
 echo "=== Seaweed (resize ≤250px wide, +${PADDING}px padding, bake σ=${BLUR_SIGMA}px blur) ==="
 for i in 1 2 3 4 5 6; do
-  process "$ASSETS_DIR/seaweed${i}.png" 250
+  process "$THEME_IMAGES_DIR/seaweed/seaweed${i}.png" 250
 done
 
 echo ""
@@ -71,7 +72,7 @@ echo "=== Seafloor (resize ≤512px, bake σ=${BLUR_SIGMA}px blur, no padding �
 # Seafloor is a tiling texture: skip padding, use -virtual-pixel tile so the
 # blur samples across the wrap boundary and keeps the seam invisible.
 for name in seafloor.png seafloor3.png; do
-  f="$ASSETS_DIR/$name"
+  f="$THEME_IMAGES_DIR/seafloor/$name"
   [[ -f "$f" ]] || continue
   before=$(bytes "$f")
   $IM "$f" \
