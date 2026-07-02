@@ -47,7 +47,7 @@ export function JellyfishTableLayerInner({
   translationDisplayMs,
 }: JellyfishTableLayerInnerProps) {
   const { publishJellyBridge } = useUnderseaThemeRuntime();
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
   const { jellyRect, labelRotationRad } = useUnderseaThemeLayout();
   const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
 
@@ -280,7 +280,7 @@ export function JellyfishTableLayerInner({
     layoutY,
     publishJellyBridge,
   ]);
-  const { motionLoopEngaged, activateMotionLoop, deactivateMotionLoop } = useJellyfishMotionLoop({
+  const { motionLoopEngaged, activateMotionLoop } = useJellyfishMotionLoop({
     biasX,
     biasY,
     appliedBiasX,

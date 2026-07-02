@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 import { useTapGesture } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';

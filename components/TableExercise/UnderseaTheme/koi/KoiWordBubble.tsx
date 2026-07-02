@@ -16,7 +16,6 @@ import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAs
 import { useUnderseaThemeLayout } from '../core/providers/UnderseaThemeLayoutProvider';
 import { useUnderseaThemeClock } from '../core/clock/UnderseaThemeClockProvider';
 import {
-  BubblePhase,
   type BubbleAnimState,
   type BurstIntentValue,
 } from './useBubbleAnimation';

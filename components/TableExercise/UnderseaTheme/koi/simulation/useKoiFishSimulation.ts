@@ -25,33 +25,11 @@ import {
 
 const KOI_BASE_LENGTH = 120;
 const KOI_BASE_THICKNESS = 38;
-const SWIM_ZONE_MARGIN = 0;
 const FISH_BODY_INSET = (KOI_BASE_LENGTH * KOI_SETTINGS.scale) / 2;
 
 const SWIMMING = 0;
-const IDLE = 1;
-
-const BASE_SPEED_MIN = 50;
 const BASE_SPEED_MAX = 670;
-const SPEED_PICK_BIAS = 15.5;
-/** Splash only on a clear slow → fast tier jump (normalized 0–1 speed range). */
-const SPLASH_SLOW_MAX_NORM = 0.4;
-const SPLASH_FAST_MIN_NORM = 0.6;
-const SPLASH_MIN_DELTA_NORM = 0.28;
-const SWIM_SPEED_SHADER_MIN = 2.5;
-const SWIM_SPEED_SHADER_MAX = 90.0;
-const SWIM_DURATION_MIN = 0.1;
-const SWIM_DURATION_MAX = 12.0;
-const SWIM_DURATION_JITTER = 1.5;
-const IDLE_DURATION_BASE = 2.0;
-const IDLE_DURATION_JITTER = 0.6;
-const AMPLITUDE_LERP = 3.5;
-const ANGLE_LERP = 2.5;
-const TURN_ARC_LERP = 3.5;
-const TURN_ARC_MAX = 0.4;
-const WANDER_LERP = 0.6;
 const BOUNDARY_MARGIN_RATIO = 0.18;
-const BOUNDARY_TURN_OFFSET = Math.PI * 0.25;
 const SEPARATION_RADIUS = 75;
 const SEPARATION_STEER = 10.0;
 const SIM_FPS = 30;

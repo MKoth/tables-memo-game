@@ -133,15 +133,6 @@ export type KoiFishLayerProps = {
   onFishSelect?: (word: string, fishIndex: number, originX: number, originY: number) => void;
 };
 
-function isFishEliminated(eliminated: number[], fishIndex: number): boolean {
-  for (let i = 0; i < eliminated.length; i++) {
-    if (eliminated[i] === fishIndex) {
-      return true;
-    }
-  }
-  return false;
-}
-
 export function KoiFishLayer({
   sim,
   images,

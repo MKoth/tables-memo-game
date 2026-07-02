@@ -27,10 +27,7 @@ const ANGLE_LERP = 2.5;
 const TURN_ARC_LERP = 3.5;
 const TURN_ARC_MAX = 0.4;
 const WANDER_LERP = 0.6;
-const BOUNDARY_MARGIN_RATIO = 0.18;
 const BOUNDARY_TURN_OFFSET = Math.PI * 0.25;
-const SEPARATION_RADIUS = 75;
-const SEPARATION_STEER = 10.0;
 const FISH_BODY_INSET = (KOI_BASE_LENGTH * KOI_SETTINGS.scale) / 2;
 
 export function lerp(a: number, b: number, t: number): number {

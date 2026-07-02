@@ -32,8 +32,6 @@ const {
   shadowSoftness: defaultShadowSoftness,
 } = koiFishDeformUniformDefaults;
 
-const defaultShadowColorUniform = [...defaultShadowColor] as [number, number, number];
-
 /** Extra px around the analytic fish AABB so bent fins/tails are not clipped. */
 const RENDER_BOUNDS_MARGIN = 10;
 

@@ -2,14 +2,12 @@ import type { SharedValue } from 'react-native-reanimated';
 import { cancelAnimation, Easing, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import {
-  BIAS_SETTLE_EPS,
   FOCUS_ANIM_BIAS_SCALE,
   FOCUS_ANIM_MAX_MS,
   FOCUS_ANIM_MIN_MS,
   LABEL_ROTATION_MAX_RAD,
   TAP_HIT_RADIUS_PAD,
   TILT_AMP_MAX,
-  TILT_BIAS_VEL_SCALE,
   TILT_DECAY,
   TILT_DRAG_SCALE,
   TINT_FLASH_MS,

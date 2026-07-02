@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Canvas,
   Circle,
   Line,
   RadialGradient,

@@ -6,10 +6,7 @@ import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayout
 import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
 import { useUnderseaThemeExerciseStore } from '../../core/store/underseaThemeExerciseStore';
 import { TutorialSpotlightOverlay } from './components/TutorialSpotlightOverlay';
-import {
-  InstructionTooltip,
-  UnderseaThemeCornerControls,
-} from './components/UnderseaThemeCornerControls';
+import { InstructionTooltip } from './components/UnderseaThemeCornerControls';
 import { HELP_MARGIN, INSTRUCTIONS_Z } from './constants';
 import { computeTooltipPosition } from './helpers/controlsPosition';
 import {
