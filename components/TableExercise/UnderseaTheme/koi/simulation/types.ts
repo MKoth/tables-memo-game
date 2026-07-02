@@ -1,5 +1,5 @@
 import type { SharedValue } from 'react-native-reanimated';
-import type { KoiImageKey, KoiSharedSettings } from '../KoiFishLayer';
+import type { KoiImageKey, KoiSharedSettings } from '../config/koiFishLayerConfig';
 
 export type KoiSpawn = {
   word: string;

@@ -1,5 +1,5 @@
 import { bubbleDeformUniformDefaults } from '../../../../shaders/bubbleDeform.sksl';
-import { KOI_SETTINGS } from './KoiFishLayer';
+import { KOI_SETTINGS } from './config/koiFishLayerConfig';
 
 const defaults = bubbleDeformUniformDefaults;
 

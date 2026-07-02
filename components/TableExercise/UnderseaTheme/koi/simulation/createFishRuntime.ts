@@ -4,7 +4,7 @@ import {
   KOI_BODY_PALETTE,
   KOI_SPOT_PALETTE,
   type KoiImageKey,
-} from '../KoiFishLayer';
+} from '../config/koiFishLayerConfig';
 import type { KoiSpawn } from './types';
 
 const KOI_IMAGE_KEYS: KoiImageKey[] = ['koi1', 'koi2', 'koi3'];

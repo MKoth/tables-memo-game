@@ -15,6 +15,7 @@ import {
   KOI_FISH_DEFORM_SKSL,
   koiFishDeformUniformDefaults,
 } from '../../../../shaders/koiFishDeform.sksl';
+import { RENDER_BOUNDS_MARGIN } from './config/koiInstanceConfig';
 
 function compileKoiEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(KOI_FISH_DEFORM_SKSL);
@@ -31,9 +32,6 @@ const {
   shadowOpacity: defaultShadowOpacity,
   shadowSoftness: defaultShadowSoftness,
 } = koiFishDeformUniformDefaults;
-
-/** Extra px around the analytic fish AABB so bent fins/tails are not clipped. */
-const RENDER_BOUNDS_MARGIN = 10;
 
 export type KoiFishState = {
   x: SharedValue<number>;

@@ -3,7 +3,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import {
   KOI_SETTINGS,
   type FinSideSpawn,
-} from '../KoiFishLayer';
+} from '../config/koiFishLayerConfig';
 import type { FishConfig, FishRuntime, SwimZone } from './types';
 
 const KOI_BASE_LENGTH = 120;

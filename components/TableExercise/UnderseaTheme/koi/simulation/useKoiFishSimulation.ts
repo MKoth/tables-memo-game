@@ -3,7 +3,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import { makeMutable, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { KOI_SETTINGS } from '../KoiFishLayer';
+import { KOI_SETTINGS } from '../config/koiFishLayerConfig';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
 import {
   advanceFishCosmetics,
