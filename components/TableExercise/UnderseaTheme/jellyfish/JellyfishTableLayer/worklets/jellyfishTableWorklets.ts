@@ -12,7 +12,7 @@ import {
   TILT_DRAG_SCALE,
   TINT_FLASH_MS,
   TILT_VEL_SCALE,
-} from '../constants';
+} from '../config/jellyfishTableLayerConfig';
 import {
   biasForGridSlot,
   computeLayoutPositions,

@@ -8,7 +8,7 @@ import {
   TILT_AMP_MAX,
   TILT_BIAS_VEL_SCALE,
   TILT_STOP_BIAS_VEL,
-} from '../constants';
+} from '../config/jellyfishTableLayerConfig';
 import {
   computeLayoutPositions,
   type LayoutBounds,

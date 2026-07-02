@@ -15,7 +15,7 @@ import {
   MIN_FLING_MS,
   PAN_MIN_DISTANCE_PX,
   TAP_MAX_DISTANCE_PX,
-} from '../constants';
+} from '../config/jellyfishTableLayerConfig';
 import type { LayoutBounds, LayoutParticle } from '../layout/computeJellyfishLayout';
 import type { JellyfishSoundKind } from '../types';
 import {

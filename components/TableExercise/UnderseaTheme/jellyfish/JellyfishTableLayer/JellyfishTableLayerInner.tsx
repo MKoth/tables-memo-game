@@ -15,7 +15,7 @@ import {
   BODY_FONT_SIZE,
   HEADER_FONT_SIZE,
   JELLYFISH_CLOCK_FPS,
-} from './constants';
+} from './config/jellyfishTableLayerConfig';
 import { CellJellyfish } from './components/CellJellyfish';
 import { CellLabel } from './components/CellLabel';
 import {

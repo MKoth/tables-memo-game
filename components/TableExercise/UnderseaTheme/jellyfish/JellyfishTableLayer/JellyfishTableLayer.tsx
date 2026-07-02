@@ -2,7 +2,7 @@ import React from 'react';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
 import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
 import { JellyfishTableLayerInner } from './JellyfishTableLayerInner';
-import { DEFAULT_TRANSLATION_DISPLAY_MS } from './constants';
+import { DEFAULT_TRANSLATION_DISPLAY_MS } from './config/jellyfishTableLayerConfig';
 import type { JellyfishTableLayerProps } from './types';
 
 export type { JellyfishSoundKind, JellyfishTableLayerProps } from './types';

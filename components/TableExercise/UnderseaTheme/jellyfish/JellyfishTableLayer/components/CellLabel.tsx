@@ -3,7 +3,7 @@ import { Glyphs, Group, vec, type SkFont } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { JELLYFISH_LABEL_COLORS_BY_INDEX } from '../presets/jellyfishTintPresets';
-import { LABEL_STROKE_WIDTH, LABEL_TILT_PX } from '../constants';
+import { LABEL_STROKE_WIDTH, LABEL_TILT_PX } from '../config/jellyfishTableLayerConfig';
 import type { CellConfig } from '../helpers/cellConfigBuilders';
 
 export type CellLabelProps = {
