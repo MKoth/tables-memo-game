@@ -23,13 +23,18 @@ import type { SharedValue } from 'react-native-reanimated';
 import {
   cancelAnimation,
   Easing,
-  runOnJS,
   useDerivedValue,
   useFrameCallback,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { scheduleOnRN } from 'react-native-worklets';
+import {
+  GestureDetector,
+  useExclusiveGestures,
+  usePanGesture,
+  useTapGesture,
+} from 'react-native-gesture-handler';
 import { JellyfishInstance, type JellyfishDynamicOverrides } from './JellyfishInstance';
 import { BubblePhase } from './useBubbleAnimation';
 import {
@@ -314,7 +319,7 @@ function tryFocusJellyfish(
   }
 
   motionLoopEngaged.value = 1;
-  runOnJS(activateMotionLoop)();
+  scheduleOnRN(activateMotionLoop);
   motionAngle.value = Math.atan2(-dy, -dx);
   motionAmp.value = TILT_AMP_MAX * 0.6;
   updateRetainedLabelRotation(
@@ -1236,7 +1241,7 @@ function JellyfishTableLayerInner({
         motionLoopEngaged.value
       ) {
         motionLoopEngaged.value = 0;
-        runOnJS(deactivateMotionLoop)();
+        scheduleOnRN(deactivateMotionLoop);
       }
     },
     [
@@ -1270,26 +1275,26 @@ function JellyfishTableLayerInner({
   const prevTX = useSharedValue(0);
   const prevTY = useSharedValue(0);
 
-  const panGesture = Gesture.Pan()
-    .minDistance(PAN_MIN_DISTANCE_PX)
-    .onBegin(() => {
+  const panGesture = usePanGesture({
+    minDistance: PAN_MIN_DISTANCE_PX,
+    onBegin: () => {
       'worklet';
       cancelAnimation(biasX);
       cancelAnimation(biasY);
       isBiasCoasting.value = 0;
       biasCoastPending.value = 0;
-    })
-    .onStart(() => {
+    },
+    onActivate: () => {
       'worklet';
       motionLoopEngaged.value = 1;
-      runOnJS(activateMotionLoop)();
+      scheduleOnRN(activateMotionLoop);
       isDragging.value = 1;
       prevTX.value = 0;
       prevTY.value = 0;
       prevBiasX.value = biasX.value;
       prevBiasY.value = biasY.value;
-    })
-    .onUpdate((e) => {
+    },
+    onUpdate: (e) => {
       'worklet';
       const dX = e.translationX - prevTX.value;
       const dY = e.translationY - prevTY.value;
@@ -1310,11 +1315,11 @@ function JellyfishTableLayerInner({
         motionAngle.value,
         motionAmp.value,
       );
-    })
-    .onEnd((e) => {
+    },
+    onDeactivate: (e) => {
       'worklet';
       motionLoopEngaged.value = 1;
-      runOnJS(activateMotionLoop)();
+      scheduleOnRN(activateMotionLoop);
       isDragging.value = 0;
 
       const flingMsX = clampW(Math.abs(e.velocityX) * 0.35, MIN_FLING_MS, MAX_FLING_MS);
@@ -1355,13 +1360,14 @@ function JellyfishTableLayerInner({
         isBiasCoasting,
         biasCoastPending,
       );
-    });
+    },
+  });
 
-  const tapGesture = Gesture.Tap()
-    .numberOfTaps(1)
-    .maxDuration(400)
-    .maxDistance(TAP_MAX_DISTANCE_PX)
-    .onEnd((e) => {
+  const tapGesture = useTapGesture({
+    numberOfTaps: 1,
+    maxDuration: 400,
+    maxDistance: TAP_MAX_DISTANCE_PX,
+    onDeactivate: (e) => {
       'worklet';
       const bounds = layoutBoundsSv.value;
       const tapX = e.x + bounds.zoneLeft;
@@ -1396,7 +1402,7 @@ function JellyfishTableLayerInner({
           tintFlashUntil,
           clock,
         );
-        runOnJS(handleJellyfishSoundJs)(isMatch ? 'success' : 'error');
+        scheduleOnRN(handleJellyfishSoundJs, isMatch ? 'success' : 'error');
         tryFocusJellyfish(
           hitIdx,
           0,
@@ -1427,12 +1433,12 @@ function JellyfishTableLayerInner({
         if (isMatch) {
           const jx = layoutX.value[hitIdx] ?? 0;
           const jy = layoutY.value[hitIdx] ?? 0;
-          runOnJS(handleMatchSuccessJs)(jx, jy, hitIdx);
+          scheduleOnRN(handleMatchSuccessJs, jx, jy, hitIdx);
         }
         return;
       }
 
-      runOnJS(flashTranslationJs)(hitIdx);
+      scheduleOnRN(flashTranslationJs, hitIdx);
 
       triggerJellyfishTintFlash(
         hitIdx,
@@ -1441,7 +1447,7 @@ function JellyfishTableLayerInner({
         tintFlashUntil,
         clock,
       );
-      runOnJS(handleJellyfishSoundJs)('primary');
+      scheduleOnRN(handleJellyfishSoundJs, 'primary');
       tryFocusJellyfish(
         hitIdx,
         0,
@@ -1469,9 +1475,10 @@ function JellyfishTableLayerInner({
         motionLoopEngaged,
         activateMotionLoop,
       );
-    });
+    },
+  });
 
-  const tableGesture = Gesture.Exclusive(tapGesture, panGesture);
+  const tableGesture = useExclusiveGestures(tapGesture, panGesture);
 
   // ── Render ───────────────────────────────────────────────────────────────
 

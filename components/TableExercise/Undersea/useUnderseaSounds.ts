@@ -36,11 +36,6 @@ export type UnderseaSoundController = {
   isMuted: () => boolean;
 };
 
-/** @deprecated Use UnderseaSoundController from preloaded assets instead. */
-export type UnderseaSounds = UnderseaSoundController & {
-  ready: boolean;
-};
-
 function resolveSoundUri(source: number): string {
   const resolved = Image.resolveAssetSource(source);
   if (resolved?.uri == null || resolved.uri.length === 0) {

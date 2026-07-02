@@ -7,9 +7,10 @@ import {
   matchFont,
   vec,
 } from '@shopify/react-native-skia';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector, useTapGesture } from 'react-native-gesture-handler';
 import type { SharedValue } from 'react-native-reanimated';
-import { runOnJS, useDerivedValue } from 'react-native-reanimated';
+import { useDerivedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { BubbleInstance } from './BubbleInstance';
 import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
 import { useUnderseaLayout } from './UnderseaLayoutContext';
@@ -98,25 +99,22 @@ export function KoiWordBubble({
     startBurst(BurstIntent.Release);
   }, [startBurst]);
 
-  const tapGesture = useMemo(
-    () =>
-      Gesture.Tap()
-        .maxDistance(TAP_MAX_DISTANCE_PX)
-        .onEnd((e) => {
-          'worklet';
-          if (phase.value !== BubblePhase.Idle) {
-            return;
-          }
-          if (escapeActive != null && escapeActive.value) {
-            return;
-          }
-          if (!isTapInsideBubble(e.x, e.y, anim.value)) {
-            return;
-          }
-          runOnJS(handleBurst)();
-        }),
-    [anim, escapeActive, handleBurst, phase],
-  );
+  const tapGesture = useTapGesture({
+    maxDistance: TAP_MAX_DISTANCE_PX,
+    onDeactivate: (e) => {
+      'worklet';
+      if (phase.value !== BubblePhase.Idle) {
+        return;
+      }
+      if (escapeActive != null && escapeActive.value) {
+        return;
+      }
+      if (!isTapInsideBubble(e.x, e.y, anim.value)) {
+        return;
+      }
+      scheduleOnRN(handleBurst);
+    },
+  });
 
   if (width === 0 || height === 0) {
     return null;

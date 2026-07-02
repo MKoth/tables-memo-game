@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import { makeMutable, runOnJS, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import { makeMutable, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import {
   KOI_BODY_TINT_PROBABILITY,
   KOI_OVERLAY_PROBABILITY,
@@ -301,7 +302,7 @@ function rollTargetBaseSpeed(fish: FishRuntime, onIncrease?: () => void): void {
   const next = pickRandomBaseSpeed();
   fish.targetBaseSpeed.value = next;
   if (onIncrease != null && shouldTriggerSpeedSplash(prev, next)) {
-    runOnJS(onIncrease)();
+    scheduleOnRN(onIncrease);
   }
 }
 
@@ -389,6 +390,7 @@ function applyFinSideSpawn(
   fish.finRerollTimerRight.value = rerollDelay;
 }
 
+// makeMutable is intentional here: fish count is dynamic and values are created in a factory loop.
 function createFishRuntime(config: FishConfig, swimZone: SwimZone): FishRuntime {
   const initSpeed = pickRandomBaseSpeed();
   const initFinLeft = rollFinSideSpawn(config, config.phase * 2.3);
@@ -819,7 +821,7 @@ function useFishSimulation(
               !captureState.escapeOverlayDismissTriggered.value
             ) {
               captureState.escapeOverlayDismissTriggered.value = true;
-              runOnJS(onEscapeOverlayDismiss)();
+              scheduleOnRN(onEscapeOverlayDismiss);
             }
 
             if (
@@ -834,7 +836,7 @@ function useFishSimulation(
               !captureState.escapeCompleteTriggered.value
             ) {
               captureState.escapeCompleteTriggered.value = true;
-              runOnJS(onEscapeComplete)();
+              scheduleOnRN(onEscapeComplete);
             }
 
             pos[fishIndex * 2] = fishRuntime.x.value;

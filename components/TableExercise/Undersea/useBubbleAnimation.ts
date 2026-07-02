@@ -2,12 +2,12 @@ import { useCallback, useEffect, useLayoutEffect } from 'react';
 import {
   cancelAnimation,
   Easing,
-  runOnJS,
   useDerivedValue,
   useSharedValue,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import {
   BUBBLE_BURST_DURATION_MS,
   BUBBLE_BURST_SCALE,
@@ -258,7 +258,7 @@ export function useBubbleAnimation(
             if (completedIntent === BurstIntent.Release) {
               onBurstCompleteWorklet?.();
             }
-            runOnJS(onDismiss)(completedIntent);
+            scheduleOnRN(onDismiss, completedIntent);
           }
         },
       );
