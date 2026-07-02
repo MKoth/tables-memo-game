@@ -5,57 +5,57 @@ export {
   SUCCESS_CLICK_VOLUME,
   UNDERSEA_SOUND_ASSETS,
   WATERFLOW_VOLUME,
-} from './underseaSoundAssets';
+} from './underseaThemeSoundAssets';
 
 export const UNDERSEA_IMAGE_ASSETS = {
-  seafloor: require('../../../assets/seafloor.png'),
+  seafloor: require('../../../../../assets/seafloor.png'),
   stones: {
-    1: require('../../../assets/stone1.png'),
-    2: require('../../../assets/stone2.png'),
-    3: require('../../../assets/stone3.png'),
-    4: require('../../../assets/stone4.png'),
-    5: require('../../../assets/stone5.png'),
-    6: require('../../../assets/stone6.png'),
-    7: require('../../../assets/stone7.png'),
-    8: require('../../../assets/stone8.png'),
-    9: require('../../../assets/stone9.png'),
-    starfish1: require('../../../assets/starfish1.png'),
-    starfish2: require('../../../assets/starfish2.png'),
-    starfish3: require('../../../assets/starfish3.png'),
-    seashell1: require('../../../assets/seashell1.png'),
-    seashell2: require('../../../assets/seashell2.png'),
-    seashell3: require('../../../assets/seashell3.png'),
-    seashell4: require('../../../assets/seashell4.png'),
-    seashell5: require('../../../assets/seashell5.png'),
+    1: require('../../../../../assets/stone1.png'),
+    2: require('../../../../../assets/stone2.png'),
+    3: require('../../../../../assets/stone3.png'),
+    4: require('../../../../../assets/stone4.png'),
+    5: require('../../../../../assets/stone5.png'),
+    6: require('../../../../../assets/stone6.png'),
+    7: require('../../../../../assets/stone7.png'),
+    8: require('../../../../../assets/stone8.png'),
+    9: require('../../../../../assets/stone9.png'),
+    starfish1: require('../../../../../assets/starfish1.png'),
+    starfish2: require('../../../../../assets/starfish2.png'),
+    starfish3: require('../../../../../assets/starfish3.png'),
+    seashell1: require('../../../../../assets/seashell1.png'),
+    seashell2: require('../../../../../assets/seashell2.png'),
+    seashell3: require('../../../../../assets/seashell3.png'),
+    seashell4: require('../../../../../assets/seashell4.png'),
+    seashell5: require('../../../../../assets/seashell5.png'),
   },
   seaweed: {
-    1: require('../../../assets/seaweed1.png'),
-    2: require('../../../assets/seaweed2.png'),
-    3: require('../../../assets/seaweed3.png'),
-    4: require('../../../assets/seaweed4.png'),
-    5: require('../../../assets/seaweed5.png'),
-    6: require('../../../assets/seaweed6.png'),
+    1: require('../../../../../assets/seaweed1.png'),
+    2: require('../../../../../assets/seaweed2.png'),
+    3: require('../../../../../assets/seaweed3.png'),
+    4: require('../../../../../assets/seaweed4.png'),
+    5: require('../../../../../assets/seaweed5.png'),
+    6: require('../../../../../assets/seaweed6.png'),
   },
   koi: {
-    koi1: require('../../../assets/koi1.png'),
-    koi2: require('../../../assets/koi2.png'),
-    koi3: require('../../../assets/koi3.png'),
+    koi1: require('../../../../../assets/koi1.png'),
+    koi2: require('../../../../../assets/koi2.png'),
+    koi3: require('../../../../../assets/koi3.png'),
   },
   koiMasks: {
-    koi1: require('../../../assets/koi1-mask.png'),
-    koi2: require('../../../assets/koi2-mask.png'),
-    koi3: require('../../../assets/koi3-mask.png'),
+    koi1: require('../../../../../assets/koi1-mask.png'),
+    koi2: require('../../../../../assets/koi2-mask.png'),
+    koi3: require('../../../../../assets/koi3-mask.png'),
   },
-  jellyfishBell: require('../../../assets/jellyfish-bell.png'),
-  jellyfishTentacles: require('../../../assets/jellyfish-tentacles.png'),
-  bubble: require('../../../assets/bubble.png'),
+  jellyfishBell: require('../../../../../assets/jellyfish-bell.png'),
+  jellyfishTentacles: require('../../../../../assets/jellyfish-tentacles.png'),
+  bubble: require('../../../../../assets/bubble.png'),
 } as const;
 
 export type StoneVariant = keyof typeof UNDERSEA_IMAGE_ASSETS.stones;
 export type SeaweedVariant = keyof typeof UNDERSEA_IMAGE_ASSETS.seaweed;
 export type KoiImageKey = keyof typeof UNDERSEA_IMAGE_ASSETS.koi;
 
-export type UnderseaImages = {
+export type UnderseaThemeImages = {
   seafloor: SkImage;
   stones: Record<StoneVariant, SkImage>;
   seaweed: Record<SeaweedVariant, SkImage>;
@@ -67,7 +67,7 @@ export type UnderseaImages = {
 };
 
 type ImageLoadEntry = {
-  key: keyof Omit<UnderseaImages, 'stones' | 'seaweed' | 'koi' | 'koiMasks'>;
+  key: keyof Omit<UnderseaThemeImages, 'stones' | 'seaweed' | 'koi' | 'koiMasks'>;
   source: number;
 };
 

@@ -3,13 +3,13 @@
  * Koi and jellyfish zones split the screen; controls anchor to the koi outer corner.
  */
 
-import type { LayoutBounds } from './jellyfishLayout';
+import type { LayoutBounds } from '../../jellyfish/jellyfishLayout';
 import {
   LAYOUT_ZONE_HEIGHT_RATIO,
   LAYOUT_ZONE_TOP_RATIO,
-} from './jellyfishLayout';
+} from '../../jellyfish/jellyfishLayout';
 
-export type UnderseaOrientation =
+export type UnderseaThemeOrientation =
   | 'portrait'
   | 'landscapeLeft'
   | 'landscapeRight';
@@ -26,8 +26,8 @@ export type ControlsAnchor = {
   edge: 'bottomRight' | 'bottomLeft' | 'topRight' | 'topLeft';
 };
 
-export type UnderseaLayout = {
-  orientation: UnderseaOrientation;
+export type UnderseaThemeLayout = {
+  orientation: UnderseaThemeOrientation;
   screenWidth: number;
   screenHeight: number;
   koiRect: ZoneRect;
@@ -76,7 +76,7 @@ function landscapeLayout(width: number, height: number): {
   };
 }
 
-function computeControlsAnchor(orientation: UnderseaOrientation): ControlsAnchor {
+function computeControlsAnchor(orientation: UnderseaThemeOrientation): ControlsAnchor {
   if (orientation === 'portrait') {
     return { edge: 'bottomRight' };
   }
@@ -99,11 +99,11 @@ export function escapeExitEdgeCode(edge: EscapeExitEdge): number {
   }
 }
 
-export function computeUnderseaLayout(
+export function computeUnderseaThemeLayout(
   screenWidth: number,
   screenHeight: number,
-  orientation: UnderseaOrientation,
-): UnderseaLayout {
+  orientation: UnderseaThemeOrientation,
+): UnderseaThemeLayout {
   let koiRect: ZoneRect;
   let jellyRect: ZoneRect;
 
@@ -123,7 +123,7 @@ export function computeUnderseaLayout(
     }
   }
 
-  const jellyLayoutBounds: UnderseaLayout['jellyLayoutBounds'] = {
+  const jellyLayoutBounds: UnderseaThemeLayout['jellyLayoutBounds'] = {
     width: jellyRect.w,
     height: screenHeight,
     nGridCols: 0,
@@ -151,7 +151,7 @@ export function computeOffScreenEscapeTarget(
   koiRect: ZoneRect,
   screenWidth: number,
   screenHeight: number,
-  orientation: UnderseaOrientation,
+  orientation: UnderseaThemeOrientation,
 ): { x: number; y: number; exitEdge: EscapeExitEdge } {
   const margin = 120 * 1.5;
   const cx = koiRect.x + koiRect.w * 0.5;

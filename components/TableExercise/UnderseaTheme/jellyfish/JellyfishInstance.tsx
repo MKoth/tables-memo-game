@@ -11,8 +11,8 @@ import {
 } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import { JELLYFISH_COMBINED_DEFORM_SKSL } from '../../../shaders/jellyfishCombinedDeform.sksl';
-import { jellyfishDeformUniformDefaults } from '../../../shaders/jellyfishDeform.sksl';
+import { JELLYFISH_COMBINED_DEFORM_SKSL } from '../../../../shaders/jellyfishCombinedDeform.sksl';
+import { jellyfishDeformUniformDefaults } from '../../../../shaders/jellyfishDeform.sksl';
 
 function compileJellyfishCombinedEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(JELLYFISH_COMBINED_DEFORM_SKSL);

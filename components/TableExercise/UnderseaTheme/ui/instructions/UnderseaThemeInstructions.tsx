@@ -18,15 +18,15 @@ import {
 } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
-import type { ControlsAnchor } from './underseaLayout';
-import { useUnderseaLayout } from './UnderseaLayoutContext';
+import type { ControlsAnchor } from '../../core/layout/computeUnderseaThemeLayout';
+import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
 import { UiDropPanel } from './UiDropPanel';
 import type {
   JellyfishLayoutBridge,
   KoiFishRuntimePosition,
   KoiSimBridge,
   TutorialStep,
-} from './underseaInstructionTypes';
+} from '../../core/types/tutorialTypes';
 
 export const INSTRUCTIONS_Z = 20;
 export const HELP_BUTTON_Z = 22;
@@ -385,15 +385,15 @@ function SoundIcon({ muted, size = 26 }: { muted: boolean; size?: number }) {
   );
 }
 
-export type UnderseaSoundToggleButtonProps = {
+export type UnderseaThemeSoundToggleButtonProps = {
   enabled: boolean;
   onToggle: () => void;
 };
 
-export function UnderseaSoundToggleButton({
+export function UnderseaThemeSoundToggleButton({
   enabled,
   onToggle,
-}: UnderseaSoundToggleButtonProps) {
+}: UnderseaThemeSoundToggleButtonProps) {
   return (
     <UnderseaIconButton
       onPress={onToggle}
@@ -414,7 +414,7 @@ export function UnderseaHelpButton({ onPress, disabled = false }: UnderseaHelpBu
   );
 }
 
-export type UnderseaCornerControlsProps = {
+export type UnderseaThemeCornerControlsProps = {
   soundEnabled: boolean;
   onSoundToggle: () => void;
   onHelpPress: () => void;
@@ -422,15 +422,15 @@ export type UnderseaCornerControlsProps = {
   helpDisabled?: boolean;
 };
 
-export function UnderseaCornerControls({
+export function UnderseaThemeCornerControls({
   soundEnabled,
   onSoundToggle,
   onHelpPress,
   helpVisible = true,
   helpDisabled = false,
-}: UnderseaCornerControlsProps) {
+}: UnderseaThemeCornerControlsProps) {
   const insets = useSafeAreaInsets();
-  const { controlsAnchor } = useUnderseaLayout();
+  const { controlsAnchor } = useUnderseaThemeLayout();
   const position = computeControlsPosition(controlsAnchor, insets, HELP_MARGIN);
 
   return (
@@ -442,7 +442,7 @@ export function UnderseaCornerControls({
       ]}
       pointerEvents="box-none">
       <View style={styles.cornerRow}>
-        <UnderseaSoundToggleButton enabled={soundEnabled} onToggle={onSoundToggle} />
+        <UnderseaThemeSoundToggleButton enabled={soundEnabled} onToggle={onSoundToggle} />
         {helpVisible && (
           <UnderseaHelpButton onPress={onHelpPress} disabled={helpDisabled} />
         )}
@@ -508,7 +508,7 @@ function InstructionTooltip({
   );
 }
 
-export type UnderseaInstructionsProps = {
+export type UnderseaThemeInstructionsProps = {
   step: Exclude<TutorialStep, 'idle'>;
   koiBridge: KoiSimBridge | null;
   jellyBridge: JellyfishLayoutBridge | null;
@@ -516,16 +516,16 @@ export type UnderseaInstructionsProps = {
   onDismiss: () => void;
 };
 
-export function UnderseaInstructions({
+export function UnderseaThemeInstructions({
   step,
   koiBridge,
   jellyBridge,
   onNext,
   onDismiss,
-}: UnderseaInstructionsProps) {
+}: UnderseaThemeInstructionsProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { controlsAnchor } = useUnderseaLayout();
+  const { controlsAnchor } = useUnderseaThemeLayout();
   const [fishTargetIndex, setFishTargetIndex] = useState<number | null>(null);
   const [jellyTargetIndex, setJellyTargetIndex] = useState<number | null>(null);
   const [headerTargetIndex, setHeaderTargetIndex] = useState<number | null>(null);

@@ -14,7 +14,7 @@ import {
   KOI_FIN_OUTER,
   KOI_FISH_DEFORM_SKSL,
   koiFishDeformUniformDefaults,
-} from '../../../shaders/koiFishDeform.sksl';
+} from '../../../../shaders/koiFishDeform.sksl';
 
 function compileKoiEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(KOI_FISH_DEFORM_SKSL);

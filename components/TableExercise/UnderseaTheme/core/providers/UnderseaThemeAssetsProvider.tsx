@@ -1,31 +1,34 @@
 import React, { createContext, useContext } from 'react';
-import type { UnderseaImages } from './underseaAssets';
-import type { UnderseaSoundController } from './useUnderseaSounds';
+import type { UnderseaThemeImages } from '../assets/underseaThemeAssets';
+import type { UnderseaThemeSoundController } from '../assets/useUnderseaThemeSounds';
 
-export type UnderseaAssetsContextValue = {
-  images: UnderseaImages;
-  sounds: UnderseaSoundController;
+export type UnderseaThemeAssetsContextValue = {
+  images: UnderseaThemeImages;
+  sounds: UnderseaThemeSoundController;
 };
 
-const UnderseaAssetsContext = createContext<UnderseaAssetsContextValue | null>(null);
+const UnderseaThemeAssetsContext = createContext<UnderseaThemeAssetsContextValue | null>(null);
 
-type UnderseaAssetsProviderProps = {
-  value: UnderseaAssetsContextValue;
+type UnderseaThemeAssetsProviderProps = {
+  value: UnderseaThemeAssetsContextValue;
   children: React.ReactNode;
 };
 
-export function UnderseaAssetsProvider({ value, children }: UnderseaAssetsProviderProps) {
+export function UnderseaThemeAssetsProvider({
+  value,
+  children,
+}: UnderseaThemeAssetsProviderProps) {
   return (
-    <UnderseaAssetsContext.Provider value={value}>
+    <UnderseaThemeAssetsContext.Provider value={value}>
       {children}
-    </UnderseaAssetsContext.Provider>
+    </UnderseaThemeAssetsContext.Provider>
   );
 }
 
-export function useUnderseaAssetsContext(): UnderseaAssetsContextValue {
-  const context = useContext(UnderseaAssetsContext);
+export function useUnderseaThemeAssetsContext(): UnderseaThemeAssetsContextValue {
+  const context = useContext(UnderseaThemeAssetsContext);
   if (context == null) {
-    throw new Error('useUnderseaAssetsContext must be used within UnderseaAssetsProvider');
+    throw new Error('useUnderseaThemeAssetsContext must be used within UnderseaThemeAssetsProvider');
   }
   return context;
 }

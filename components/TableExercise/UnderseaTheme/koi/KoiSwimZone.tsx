@@ -2,16 +2,19 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
-import { useUnderseaLayout } from './UnderseaLayoutContext';
-import { computeOffScreenEscapeTarget, escapeExitEdgeCode } from './underseaLayout';
+import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAssetsProvider';
+import { useUnderseaThemeLayout } from '../core/providers/UnderseaThemeLayoutProvider';
+import {
+  computeOffScreenEscapeTarget,
+  escapeExitEdgeCode,
+} from '../core/layout/computeUnderseaThemeLayout';
 import { releaseCapturedFishWorklet } from './fishPoolSnapshot';
 import { KoiCapturedFishCanvas } from './KoiCapturedFishCanvas';
 import { KoiFishLayer } from './KoiFishLayer';
 import { KoiWordBubble } from './KoiWordBubble';
 import { BubblePhase, BurstIntent, useBubbleAnimation, type BurstIntentValue } from './useBubbleAnimation';
-import type { UnderseaSoundController } from './useUnderseaSounds';
-import type { KoiSimBridge } from './underseaInstructionTypes';
+import type { UnderseaThemeSoundController } from '../core/assets/useUnderseaThemeSounds';
+import type { KoiSimBridge } from '../core/types/tutorialTypes';
 import {
   useKoiFishSimulation,
   type KoiCaptureSharedState,
@@ -38,7 +41,7 @@ export type KoiCaptureBridge = {
 export type KoiSwimZoneProps = {
   words: string[];
   interactive?: boolean;
-  sounds?: UnderseaSoundController;
+  sounds?: UnderseaThemeSoundController;
   onCaptureBridgeChange?: (bridge: KoiCaptureBridge | null) => void;
   onSimBridgeChange?: (bridge: KoiSimBridge | null) => void;
 };
@@ -57,9 +60,9 @@ export function KoiSwimZone({
   onSimBridgeChange,
 }: KoiSwimZoneProps) {
   const { width, height } = useWindowDimensions();
-  const layout = useUnderseaLayout();
+  const layout = useUnderseaThemeLayout();
   const { koiRect, jellyRect, orientation, layoutKey } = layout;
-  const { images: assetImages } = useUnderseaAssetsContext();
+  const { images: assetImages } = useUnderseaThemeAssetsContext();
   const images = assetImages.koi;
   const masks = assetImages.koiMasks;
   const [selection, setSelection] = useState<BubbleSelection | null>(null);

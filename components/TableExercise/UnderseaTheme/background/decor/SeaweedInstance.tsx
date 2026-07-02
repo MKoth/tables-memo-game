@@ -12,7 +12,7 @@ import { useDerivedValue } from 'react-native-reanimated';
 import {
   SEAWEED_DEFORM_SKSL,
   seaweedDeformUniformDefaults,
-} from '../../../shaders/seaweedDeform.sksl';
+} from '../../../../../shaders/seaweedDeform.sksl';
 
 function compileSeaweedEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(SEAWEED_DEFORM_SKSL);

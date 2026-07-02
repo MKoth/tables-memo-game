@@ -1,17 +1,17 @@
 import React from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
-import { useUnderseaClock } from './UnderseaClockContext';
-import { UnderseaSeafloorShaderCanvas } from './UnderseaSeafloorShaderCanvas';
-import { UnderseaStonesAndSeaweedCanvas } from './UnderseaStonesAndSeaweedCanvas';
+import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAssetsProvider';
+import { useUnderseaThemeClock } from '../core/clock/UnderseaThemeClockProvider';
+import { UnderseaThemeSeafloorCanvas } from './seafloor/UnderseaThemeSeafloorCanvas';
+import { UnderseaThemeStonesSeaweedCanvas } from './decor/UnderseaThemeStonesSeaweedCanvas';
 
-export function UnderseaBackground() {
+export function UnderseaThemeBackground() {
   const { width, height } = useWindowDimensions();
-  const { images } = useUnderseaAssetsContext();
+  const { images } = useUnderseaThemeAssetsContext();
   const image = images.seafloor;
   const stoneImages = images.stones;
   const seaweedImages = images.seaweed;
-  const clock = useUnderseaClock();
+  const clock = useUnderseaThemeClock();
 
   if (width === 0 || height === 0) {
     return null;
@@ -19,8 +19,8 @@ export function UnderseaBackground() {
 
   return (
     <View style={styles.container} pointerEvents="none">
-      <UnderseaSeafloorShaderCanvas image={image} width={width} height={height} />
-      <UnderseaStonesAndSeaweedCanvas
+      <UnderseaThemeSeafloorCanvas image={image} width={width} height={height} />
+      <UnderseaThemeStonesSeaweedCanvas
         stoneImages={stoneImages}
         seaweedImages={seaweedImages}
         width={width}

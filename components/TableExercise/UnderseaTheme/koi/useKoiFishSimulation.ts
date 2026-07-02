@@ -13,7 +13,7 @@ import {
   type FinSideSpawn,
   type KoiImageKey,
 } from './KoiFishLayer';
-import type { ZoneRect } from './underseaLayout';
+import type { ZoneRect } from '../core/layout/computeUnderseaThemeLayout';
 import {
   advanceFishCosmetics,
   applyEnterFishPosition,

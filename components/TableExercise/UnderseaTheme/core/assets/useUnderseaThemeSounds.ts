@@ -5,13 +5,13 @@ import {
   SUCCESS_CLICK_VOLUME,
   UNDERSEA_SOUND_ASSETS,
   WATERFLOW_VOLUME,
-} from './underseaSoundAssets';
+} from './underseaThemeSoundAssets';
 
 Sound.setCategory('Playback', true);
 
 type LoadedSound = Sound;
 
-export type LoadedUnderseaSounds = {
+export type LoadedUnderseaThemeSounds = {
   waterflow: LoadedSound;
   splash: LoadedSound[];
   bubbleInflate: LoadedSound;
@@ -22,7 +22,7 @@ export type LoadedUnderseaSounds = {
   fanfare: LoadedSound;
 };
 
-export type UnderseaSoundController = {
+export type UnderseaThemeSoundController = {
   startWaterflow: () => void;
   stopWaterflow: () => void;
   playRandomSplash: () => void;
@@ -72,9 +72,9 @@ function playOneShot(sound: LoadedSound | null, volume = SFX_VOLUME): void {
   sound.play();
 }
 
-export async function loadAllUnderseaSounds(
+export async function loadAllUnderseaThemeSounds(
   onItemLoaded?: () => void,
-): Promise<LoadedUnderseaSounds> {
+): Promise<LoadedUnderseaThemeSounds> {
   const tick = () => {
     onItemLoaded?.();
   };
@@ -124,7 +124,7 @@ export async function loadAllUnderseaSounds(
   };
 }
 
-export function releaseUnderseaSounds(loaded: LoadedUnderseaSounds | null): void {
+export function releaseUnderseaThemeSounds(loaded: LoadedUnderseaThemeSounds | null): void {
   if (loaded == null) {
     return;
   }
@@ -146,10 +146,10 @@ type SoundControllerState = {
   muted: boolean;
 };
 
-export function createUnderseaSoundController(
-  loaded: LoadedUnderseaSounds,
+export function createUnderseaThemeSoundController(
+  loaded: LoadedUnderseaThemeSounds,
   state: SoundControllerState,
-): UnderseaSoundController {
+): UnderseaThemeSoundController {
   return {
     startWaterflow: () => {
       if (state.muted || !loaded.waterflow.isLoaded()) {
@@ -224,8 +224,8 @@ export function createUnderseaSoundController(
   };
 }
 
-export function bindUnderseaSoundAppState(
-  loaded: LoadedUnderseaSounds,
+export function bindUnderseaThemeSoundAppState(
+  loaded: LoadedUnderseaThemeSounds,
   state: SoundControllerState,
 ): () => void {
   const handleAppState = (nextState: AppStateStatus) => {

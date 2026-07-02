@@ -9,12 +9,12 @@ import {
   type SkImage,
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
-import { useUnderseaClock } from './UnderseaClockContext';
+import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
 import {
   MAX_DRIFT_LAYERS,
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
   underseaSeafloorUniformDefaults,
-} from '../../../shaders/underseaSeafloorBackground.sksl';
+} from '../../../../../shaders/underseaSeafloorBackground.sksl';
 
 const BACKGROUND_RES = 0.65;
 const DEG_TO_RAD = Math.PI / 180;
@@ -93,18 +93,18 @@ function compileSeafloorEffect() {
 
 const seafloorEffect = compileSeafloorEffect();
 
-type UnderseaSeafloorShaderCanvasProps = {
+type UnderseaThemeSeafloorCanvasProps = {
   image: SkImage;
   width: number;
   height: number;
 };
 
-export function UnderseaSeafloorShaderCanvas({
+export function UnderseaThemeSeafloorCanvas({
   image,
   width,
   height,
-}: UnderseaSeafloorShaderCanvasProps) {
-  const clock = useUnderseaClock();
+}: UnderseaThemeSeafloorCanvasProps) {
+  const clock = useUnderseaThemeClock();
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
   const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
 

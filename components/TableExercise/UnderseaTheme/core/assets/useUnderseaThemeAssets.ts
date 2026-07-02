@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SkImage } from '@shopify/react-native-skia';
-import { loadUnderseaSkiaImage } from './loadUnderseaSkiaImage';
-import type { UnderseaImages } from './underseaAssets';
+import { loadSkiaImage } from './loadSkiaImage';
+import type { UnderseaThemeImages } from './underseaThemeAssets';
 import {
   UNDERSEA_BULK_IMAGE_ENTRIES,
   UNDERSEA_KOI_MASK_SOURCES,
@@ -10,36 +10,36 @@ import {
   UNDERSEA_PRIORITY_IMAGE_SOURCE,
   UNDERSEA_SEAWEED_SOURCES,
   UNDERSEA_STONE_SOURCES,
-} from './underseaAssets';
+} from './underseaThemeAssets';
 import {
-  bindUnderseaSoundAppState,
-  createUnderseaSoundController,
-  loadAllUnderseaSounds,
-  releaseUnderseaSounds,
-  type LoadedUnderseaSounds,
-  type UnderseaSoundController,
-} from './useUnderseaSounds';
+  bindUnderseaThemeSoundAppState,
+  createUnderseaThemeSoundController,
+  loadAllUnderseaThemeSounds,
+  releaseUnderseaThemeSounds,
+  type LoadedUnderseaThemeSounds,
+  type UnderseaThemeSoundController,
+} from './useUnderseaThemeSounds';
 
-export type UnderseaAssetsLoading = {
+export type UnderseaThemeAssetsLoading = {
   phase: 'loading';
   seafloorImage: SkImage | null;
-  stoneImages: UnderseaImages['stones'] | null;
-  seaweedImages: UnderseaImages['seaweed'] | null;
+  stoneImages: UnderseaThemeImages['stones'] | null;
+  seaweedImages: UnderseaThemeImages['seaweed'] | null;
   progress: number;
 };
 
-export type UnderseaAssetsReady = {
+export type UnderseaThemeAssetsReady = {
   phase: 'ready';
   seafloorImage: SkImage;
-  images: UnderseaImages;
-  sounds: UnderseaSoundController;
+  images: UnderseaThemeImages;
+  sounds: UnderseaThemeSoundController;
   progress: 100;
 };
 
-export type UnderseaAssets = UnderseaAssetsLoading | UnderseaAssetsReady;
+export type UnderseaThemeAssets = UnderseaThemeAssetsLoading | UnderseaThemeAssetsReady;
 
 function loadTrackedImage(source: number, onLoaded: () => void): Promise<SkImage> {
-  return loadUnderseaSkiaImage(source).then(image => {
+  return loadSkiaImage(source).then(image => {
     onLoaded();
     return image;
   });
@@ -49,13 +49,13 @@ async function loadPriorityImages(
   onImageLoaded: () => void,
   onPartial: (partial: {
     seafloor?: SkImage;
-    stones?: UnderseaImages['stones'];
-    seaweed?: UnderseaImages['seaweed'];
+    stones?: UnderseaThemeImages['stones'];
+    seaweed?: UnderseaThemeImages['seaweed'];
   }) => void,
 ): Promise<{
   seafloor: SkImage;
-  stones: UnderseaImages['stones'];
-  seaweed: UnderseaImages['seaweed'];
+  stones: UnderseaThemeImages['stones'];
+  seaweed: UnderseaThemeImages['seaweed'];
 }> {
   const track = (source: number) => loadTrackedImage(source, onImageLoaded);
 
@@ -71,7 +71,7 @@ async function loadPriorityImages(
   ).then(stoneResults => {
     const stones = Object.fromEntries(
       stoneResults.map(({ variant, image }) => [variant, image]),
-    ) as UnderseaImages['stones'];
+    ) as UnderseaThemeImages['stones'];
     onPartial({ stones });
     return stones;
   });
@@ -83,7 +83,7 @@ async function loadPriorityImages(
   ).then(seaweedResults => {
     const seaweed = Object.fromEntries(
       seaweedResults.map(({ variant, image }) => [variant, image]),
-    ) as UnderseaImages['seaweed'];
+    ) as UnderseaThemeImages['seaweed'];
     onPartial({ seaweed });
     return seaweed;
   });
@@ -97,7 +97,7 @@ async function loadPriorityImages(
   return { seafloor, stones, seaweed };
 }
 
-async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<UnderseaImages, 'seafloor' | 'stones' | 'seaweed'>> {
+async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<UnderseaThemeImages, 'seafloor' | 'stones' | 'seaweed'>> {
   const track = (source: number) => loadTrackedImage(source, onImageLoaded);
 
   const [
@@ -124,15 +124,15 @@ async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<Unde
 
   const bulkImages = Object.fromEntries(
     bulkResults.map(({ key, image }) => [key, image]),
-  ) as Pick<UnderseaImages, 'jellyfishBell' | 'jellyfishTentacles' | 'bubble'>;
+  ) as Pick<UnderseaThemeImages, 'jellyfishBell' | 'jellyfishTentacles' | 'bubble'>;
 
   const koi = Object.fromEntries(
     koiResults.map(({ key, image }) => [key, image]),
-  ) as UnderseaImages['koi'];
+  ) as UnderseaThemeImages['koi'];
 
   const koiMasks = Object.fromEntries(
     koiMaskResults.map(({ key, image }) => [key, image]),
-  ) as UnderseaImages['koiMasks'];
+  ) as UnderseaThemeImages['koiMasks'];
 
   return {
     ...bulkImages,
@@ -141,15 +141,15 @@ async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<Unde
   };
 }
 
-export function useUnderseaAssets(): UnderseaAssets {
+export function useUnderseaThemeAssets(): UnderseaThemeAssets {
   const [seafloorImage, setSeafloorImage] = useState<SkImage | null>(null);
-  const [stoneImages, setStoneImages] = useState<UnderseaImages['stones'] | null>(null);
-  const [seaweedImages, setSeaweedImages] = useState<UnderseaImages['seaweed'] | null>(null);
+  const [stoneImages, setStoneImages] = useState<UnderseaThemeImages['stones'] | null>(null);
+  const [seaweedImages, setSeaweedImages] = useState<UnderseaThemeImages['seaweed'] | null>(null);
   const [progress, setProgress] = useState(0);
-  const [readyAssets, setReadyAssets] = useState<Omit<UnderseaAssetsReady, 'phase' | 'progress'> | null>(
+  const [readyAssets, setReadyAssets] = useState<Omit<UnderseaThemeAssetsReady, 'phase' | 'progress'> | null>(
     null,
   );
-  const loadedSoundsRef = useRef<LoadedUnderseaSounds | null>(null);
+  const loadedSoundsRef = useRef<LoadedUnderseaThemeSounds | null>(null);
   const soundStateRef = useRef({ waterflowPlaying: false, muted: false });
   const appStateCleanupRef = useRef<(() => void) | null>(null);
   const loadedCountRef = useRef(0);
@@ -191,17 +191,17 @@ export function useUnderseaAssets(): UnderseaAssets {
 
         const [remainingImages, loadedSounds] = await Promise.all([
           loadRemainingImages(tickProgress),
-          loadAllUnderseaSounds(tickProgress),
+          loadAllUnderseaThemeSounds(tickProgress),
         ]);
 
         if (cancelled) {
-          releaseUnderseaSounds(loadedSounds);
+          releaseUnderseaThemeSounds(loadedSounds);
           return;
         }
 
         loadedSoundsRef.current = loadedSounds;
-        const sounds = createUnderseaSoundController(loadedSounds, soundStateRef.current);
-        appStateCleanupRef.current = bindUnderseaSoundAppState(
+        const sounds = createUnderseaThemeSoundController(loadedSounds, soundStateRef.current);
+        appStateCleanupRef.current = bindUnderseaThemeSoundAppState(
           loadedSounds,
           soundStateRef.current,
         );
@@ -219,7 +219,7 @@ export function useUnderseaAssets(): UnderseaAssets {
         });
       } catch (error) {
         if (__DEV__) {
-          console.warn('[useUnderseaAssets] Failed to preload assets:', error);
+          console.warn('[useUnderseaThemeAssets] Failed to preload assets:', error);
         }
       }
     };
@@ -231,7 +231,7 @@ export function useUnderseaAssets(): UnderseaAssets {
       appStateCleanupRef.current?.();
       appStateCleanupRef.current = null;
       soundStateRef.current.waterflowPlaying = false;
-      releaseUnderseaSounds(loadedSoundsRef.current);
+      releaseUnderseaThemeSounds(loadedSoundsRef.current);
       loadedSoundsRef.current = null;
       loadedCountRef.current = 0;
       setSeafloorImage(null);

@@ -12,9 +12,9 @@ import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { BubbleInstance } from './BubbleInstance';
-import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
-import { useUnderseaLayout } from './UnderseaLayoutContext';
-import { useUnderseaClock } from './UnderseaClockContext';
+import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAssetsProvider';
+import { useUnderseaThemeLayout } from '../core/providers/UnderseaThemeLayoutProvider';
+import { useUnderseaThemeClock } from '../core/clock/UnderseaThemeClockProvider';
 import {
   BubblePhase,
   BurstIntent,
@@ -50,9 +50,9 @@ export function KoiWordBubble({
   targetDiameter,
 }: KoiWordBubbleProps) {
   const { width, height } = useWindowDimensions();
-  const { labelRotationRad } = useUnderseaLayout();
-  const clock = useUnderseaClock();
-  const { images } = useUnderseaAssetsContext();
+  const { labelRotationRad } = useUnderseaThemeLayout();
+  const clock = useUnderseaThemeClock();
+  const { images } = useUnderseaThemeAssetsContext();
   const bubbleImage = images.bubble;
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });

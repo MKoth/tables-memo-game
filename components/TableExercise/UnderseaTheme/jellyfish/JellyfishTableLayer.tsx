@@ -36,7 +36,7 @@ import {
   useTapGesture,
 } from 'react-native-gesture-handler';
 import { JellyfishInstance, type JellyfishDynamicOverrides } from './JellyfishInstance';
-import { BubblePhase } from './useBubbleAnimation';
+import { BubblePhase } from '../koi/useBubbleAnimation';
 import {
   JELLYFISH_DEFAULT_WOBBLE,
   JELLYFISH_FLASH_TINT_WAVE_SPEED,
@@ -45,11 +45,11 @@ import {
   JELLYFISH_TINT_PRESET_INDEX,
   JELLYFISH_TINT_PRESETS_BY_INDEX,
 } from './jellyfishTintPresets';
-import type { TableData } from '../../../data/tableData';
-import type { JellyfishLayoutBridge } from './underseaInstructionTypes';
-import { useUnderseaAssetsContext } from './UnderseaAssetsContext';
-import { useUnderseaLayout } from './UnderseaLayoutContext';
-import { useUnderseaClockQuantized } from './UnderseaClockContext';
+import type { TableData } from '../../../../data/tableData';
+import type { JellyfishLayoutBridge } from '../core/types/tutorialTypes';
+import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAssetsProvider';
+import { useUnderseaThemeLayout } from '../core/providers/UnderseaThemeLayoutProvider';
+import { useUnderseaThemeClockQuantized } from '../core/clock/UnderseaThemeClockProvider';
 import {
   biasForGridSlot,
   computeJellyfishSizing,
@@ -889,7 +889,7 @@ export function JellyfishTableLayer({
   onLayoutBridgeChange,
   translationDisplayMs = DEFAULT_TRANSLATION_DISPLAY_MS,
 }: JellyfishTableLayerProps) {
-  const { images } = useUnderseaAssetsContext();
+  const { images } = useUnderseaThemeAssetsContext();
   const bellImage = images.jellyfishBell;
   const tentacleImage = images.jellyfishTentacles;
   return (
@@ -936,8 +936,8 @@ function JellyfishTableLayerInner({
   translationDisplayMs,
 }: InnerProps) {
   const { width, height } = useWindowDimensions();
-  const { jellyRect, labelRotationRad } = useUnderseaLayout();
-  const clock = useUnderseaClockQuantized(JELLYFISH_CLOCK_FPS);
+  const { jellyRect, labelRotationRad } = useUnderseaThemeLayout();
+  const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
 
   const nGridCols = table.colHeaders.length + 1;
   const nGridRows = table.rowHeaders.length + 1;

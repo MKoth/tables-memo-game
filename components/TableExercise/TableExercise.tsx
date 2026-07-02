@@ -1,6 +1,6 @@
 import React from 'react';
-import { UnderseaTableExercise } from './Undersea/UnderseaTableExercise';
+import { UnderseaThemeTableExercise } from './UnderseaTheme';
 
 export function TableExercise() {
-  return <UnderseaTableExercise />;
+  return <UnderseaThemeTableExercise />;
 }

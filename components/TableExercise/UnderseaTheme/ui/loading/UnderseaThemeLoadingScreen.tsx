@@ -8,11 +8,14 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import type { UnderseaImages } from './underseaAssets';
-import { UnderseaClockProvider, useUnderseaClock } from './UnderseaClockContext';
-import { useUnderseaLayout } from './UnderseaLayoutContext';
-import { UnderseaSeafloorShaderCanvas } from './UnderseaSeafloorShaderCanvas';
-import { UnderseaStonesAndSeaweedCanvas } from './UnderseaStonesAndSeaweedCanvas';
+import type { UnderseaThemeImages } from '../../core/assets/underseaThemeAssets';
+import {
+  UnderseaThemeClockProvider,
+  useUnderseaThemeClock,
+} from '../../core/clock/UnderseaThemeClockProvider';
+import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { UnderseaThemeSeafloorCanvas } from '../../background/seafloor/UnderseaThemeSeafloorCanvas';
+import { UnderseaThemeStonesSeaweedCanvas } from '../../background/decor/UnderseaThemeStonesSeaweedCanvas';
 
 const FALLBACK_COLOR = '#061828';
 const BAR_WIDTH_RATIO = 0.55;
@@ -20,14 +23,14 @@ const BAR_HEIGHT = 6;
 const BAR_BOTTOM_OFFSET = 56;
 const LABEL_BOTTOM_OFFSET = 88;
 
-type UnderseaLoadingScreenProps = {
+type UnderseaThemeLoadingScreenProps = {
   seafloorImage: SkImage | null;
-  stoneImages: UnderseaImages['stones'] | null;
-  seaweedImages: UnderseaImages['seaweed'] | null;
+  stoneImages: UnderseaThemeImages['stones'] | null;
+  seaweedImages: UnderseaThemeImages['seaweed'] | null;
   progress: number;
 };
 
-function UnderseaLoadingBackground({
+function UnderseaThemeLoadingBackground({
   seafloorImage,
   stoneImages,
   seaweedImages,
@@ -35,19 +38,19 @@ function UnderseaLoadingBackground({
   height,
 }: {
   seafloorImage: SkImage;
-  stoneImages: UnderseaImages['stones'] | null;
-  seaweedImages: UnderseaImages['seaweed'] | null;
+  stoneImages: UnderseaThemeImages['stones'] | null;
+  seaweedImages: UnderseaThemeImages['seaweed'] | null;
   width: number;
   height: number;
 }) {
-  const clock = useUnderseaClock();
+  const clock = useUnderseaThemeClock();
   const showForeground = stoneImages != null && seaweedImages != null;
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <UnderseaSeafloorShaderCanvas image={seafloorImage} width={width} height={height} />
+      <UnderseaThemeSeafloorCanvas image={seafloorImage} width={width} height={height} />
       {showForeground && (
-        <UnderseaStonesAndSeaweedCanvas
+        <UnderseaThemeStonesSeaweedCanvas
           stoneImages={stoneImages}
           seaweedImages={seaweedImages}
           width={width}
@@ -62,15 +65,15 @@ function UnderseaLoadingBackground({
   );
 }
 
-export function UnderseaLoadingScreen({
+export function UnderseaThemeLoadingScreen({
   seafloorImage,
   stoneImages,
   seaweedImages,
   progress,
-}: UnderseaLoadingScreenProps) {
+}: UnderseaThemeLoadingScreenProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { koiRect, screenHeight, orientation } = useUnderseaLayout();
+  const { koiRect, screenHeight, orientation } = useUnderseaThemeLayout();
   const animatedProgress = useSharedValue(0);
 
   useEffect(() => {
@@ -112,15 +115,15 @@ export function UnderseaLoadingScreen({
   return (
     <View style={styles.container} pointerEvents="none">
       {seafloorImage != null ? (
-        <UnderseaClockProvider>
-          <UnderseaLoadingBackground
+        <UnderseaThemeClockProvider>
+          <UnderseaThemeLoadingBackground
             seafloorImage={seafloorImage}
             stoneImages={stoneImages}
             seaweedImages={seaweedImages}
             width={width}
             height={height}
           />
-        </UnderseaClockProvider>
+        </UnderseaThemeClockProvider>
       ) : (
         <View style={styles.fallback} />
       )}

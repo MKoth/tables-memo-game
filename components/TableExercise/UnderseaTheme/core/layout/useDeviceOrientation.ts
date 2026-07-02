@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
-import type { UnderseaOrientation } from './underseaLayout';
+import type { UnderseaThemeOrientation } from './computeUnderseaThemeLayout';
 
 type OrientationApi = {
   getOrientation: (cb: (type: string) => void) => void;
@@ -27,7 +27,7 @@ function loadOrientationApi(): OrientationApi | null {
 function inferOrientationFromWindow(
   width: number,
   height: number,
-): UnderseaOrientation {
+): UnderseaThemeOrientation {
   return width > height ? 'landscapeLeft' : 'portrait';
 }
 
@@ -36,7 +36,7 @@ function isUpsideDown(type: string): boolean {
 }
 
 /** Returns null for orientations we ignore (upside-down, unknown). */
-function mapOrientation(type: string): UnderseaOrientation | null {
+function mapOrientation(type: string): UnderseaThemeOrientation | null {
   if (isUpsideDown(type)) {
     return null;
   }
@@ -52,10 +52,10 @@ function mapOrientation(type: string): UnderseaOrientation | null {
   }
 }
 
-export function useDeviceOrientation(): UnderseaOrientation {
+export function useDeviceOrientation(): UnderseaThemeOrientation {
   const { width, height } = useWindowDimensions();
   const hasNativeApiRef = useRef(false);
-  const [orientation, setOrientation] = useState<UnderseaOrientation>(() =>
+  const [orientation, setOrientation] = useState<UnderseaThemeOrientation>(() =>
     inferOrientationFromWindow(width, height),
   );
 

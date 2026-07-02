@@ -13,11 +13,11 @@ import {
   MAX_STONE_VORONOI_LAYERS,
   STONE_UNDERWATER_SKSL,
   stoneUnderwaterDefaults,
-} from '../../../shaders/stoneUnderwater.sksl';
+} from '../../../../../shaders/stoneUnderwater.sksl';
 import {
   SPRITE_SHADOW_SKSL,
   spriteShadowDefaults,
-} from '../../../shaders/spriteShadow.sksl';
+} from '../../../../../shaders/spriteShadow.sksl';
 
 function compileStoneEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(STONE_UNDERWATER_SKSL);

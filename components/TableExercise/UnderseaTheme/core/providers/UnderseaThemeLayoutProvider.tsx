@@ -1,33 +1,33 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import {
-  computeUnderseaLayout,
-  type UnderseaLayout,
-} from './underseaLayout';
-import { useDeviceOrientation } from './useDeviceOrientation';
+  computeUnderseaThemeLayout,
+  type UnderseaThemeLayout,
+} from '../layout/computeUnderseaThemeLayout';
+import { useDeviceOrientation } from '../layout/useDeviceOrientation';
 
-const UnderseaLayoutContext = createContext<UnderseaLayout | null>(null);
+const UnderseaThemeLayoutContext = createContext<UnderseaThemeLayout | null>(null);
 
-export function UnderseaLayoutProvider({ children }: { children: React.ReactNode }) {
+export function UnderseaThemeLayoutProvider({ children }: { children: React.ReactNode }) {
   const { width, height } = useWindowDimensions();
   const orientation = useDeviceOrientation();
 
   const layout = useMemo(
-    () => computeUnderseaLayout(width, height, orientation),
+    () => computeUnderseaThemeLayout(width, height, orientation),
     [width, height, orientation],
   );
 
   return (
-    <UnderseaLayoutContext.Provider value={layout}>
+    <UnderseaThemeLayoutContext.Provider value={layout}>
       {children}
-    </UnderseaLayoutContext.Provider>
+    </UnderseaThemeLayoutContext.Provider>
   );
 }
 
-export function useUnderseaLayout(): UnderseaLayout {
-  const layout = useContext(UnderseaLayoutContext);
+export function useUnderseaThemeLayout(): UnderseaThemeLayout {
+  const layout = useContext(UnderseaThemeLayoutContext);
   if (layout == null) {
-    throw new Error('useUnderseaLayout must be used within UnderseaLayoutProvider');
+    throw new Error('useUnderseaThemeLayout must be used within UnderseaThemeLayoutProvider');
   }
   return layout;
 }

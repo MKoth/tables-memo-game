@@ -1,23 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { UnderseaAssetsProvider } from './UnderseaAssetsContext';
-import { UnderseaLayoutProvider } from './UnderseaLayoutContext';
-import { UnderseaBackground } from './UnderseaBackground';
-import { UnderseaClockProvider } from './UnderseaClockContext';
+import { UnderseaThemeAssetsProvider } from './core/providers/UnderseaThemeAssetsProvider';
+import { UnderseaThemeLayoutProvider } from './core/providers/UnderseaThemeLayoutProvider';
+import { UnderseaThemeBackground } from './background/UnderseaThemeBackground';
+import { UnderseaThemeClockProvider } from './core/clock/UnderseaThemeClockProvider';
 import {
-  UnderseaCornerControls,
-  UnderseaInstructions,
-} from './UnderseaInstructions';
-import { UnderseaLoadingScreen } from './UnderseaLoadingScreen';
-import { JellyfishTableLayer, type JellyfishSoundKind } from './JellyfishTableLayer';
-import { KoiSwimZone, type KoiCaptureBridge } from './KoiSwimZone';
+  UnderseaThemeCornerControls,
+  UnderseaThemeInstructions,
+} from './ui/instructions/UnderseaThemeInstructions';
+import { UnderseaThemeLoadingScreen } from './ui/loading/UnderseaThemeLoadingScreen';
+import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish/JellyfishTableLayer';
+import { KoiSwimZone, type KoiCaptureBridge } from './koi/KoiSwimZone';
 import type {
   JellyfishLayoutBridge,
   KoiSimBridge,
   TutorialStep,
-} from './underseaInstructionTypes';
-import { useUnderseaAssets } from './useUnderseaAssets';
-import type { UnderseaSoundController } from './useUnderseaSounds';
+} from './core/types/tutorialTypes';
+import { useUnderseaThemeAssets } from './core/assets/useUnderseaThemeAssets';
+import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { getTableBodyWords, spanishPresentTable2Singular } from '../../../data/tableData';
 
 /** Below jellyfish — bubble visible but jellyfish remain tappable for matching. */
@@ -26,11 +26,11 @@ const CAPTURE_OVERLAY_Z = 3;
 const ESCAPE_OVERLAY_Z = 10;
 const JELLYFISH_LAYER_Z = 5;
 
-type UnderseaExerciseContentProps = {
-  sounds: UnderseaSoundController;
+type UnderseaThemeExerciseContentProps = {
+  sounds: UnderseaThemeSoundController;
 };
 
-function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
+function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentProps) {
   const table = spanishPresentTable2Singular;
   const words = useMemo(() => getTableBodyWords(table), [table]);
   const soundsRef = useRef(sounds);
@@ -113,9 +113,9 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
   const tutorialActive = tutorialStep !== 'idle';
 
   return (
-    <UnderseaClockProvider>
+    <UnderseaThemeClockProvider>
       <View style={styles.container}>
-        <UnderseaBackground />
+        <UnderseaThemeBackground />
         <KoiSwimZone
           words={words}
           interactive={!tutorialActive}
@@ -151,7 +151,7 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
           />
         </View>
         {tutorialActive && (
-          <UnderseaInstructions
+          <UnderseaThemeInstructions
             step={tutorialStep}
             koiBridge={koiBridge}
             jellyBridge={jellyBridge}
@@ -159,7 +159,7 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
             onDismiss={handleTutorialDismiss}
           />
         )}
-        <UnderseaCornerControls
+        <UnderseaThemeCornerControls
           soundEnabled={soundEnabled}
           onSoundToggle={handleSoundToggle}
           onHelpPress={() => setTutorialStep('fish')}
@@ -167,28 +167,28 @@ function UnderseaExerciseContent({ sounds }: UnderseaExerciseContentProps) {
           helpDisabled={tutorialActive}
         />
       </View>
-    </UnderseaClockProvider>
+    </UnderseaThemeClockProvider>
   );
 }
 
-export function UnderseaTableExercise() {
-  const assets = useUnderseaAssets();
+export function UnderseaThemeTableExercise() {
+  const assets = useUnderseaThemeAssets();
 
   return (
-    <UnderseaLayoutProvider>
+    <UnderseaThemeLayoutProvider>
       {assets.phase !== 'ready' ? (
-        <UnderseaLoadingScreen
+        <UnderseaThemeLoadingScreen
           seafloorImage={assets.seafloorImage}
           stoneImages={assets.stoneImages}
           seaweedImages={assets.seaweedImages}
           progress={assets.progress}
         />
       ) : (
-        <UnderseaAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
-          <UnderseaExerciseContent sounds={assets.sounds} />
-        </UnderseaAssetsProvider>
+        <UnderseaThemeAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
+          <UnderseaThemeExerciseContent sounds={assets.sounds} />
+        </UnderseaThemeAssetsProvider>
       )}
-    </UnderseaLayoutProvider>
+    </UnderseaThemeLayoutProvider>
   );
 }
 

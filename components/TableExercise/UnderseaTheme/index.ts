@@ -1,0 +1,1 @@
+export { UnderseaThemeTableExercise } from './UnderseaThemeTableExercise';

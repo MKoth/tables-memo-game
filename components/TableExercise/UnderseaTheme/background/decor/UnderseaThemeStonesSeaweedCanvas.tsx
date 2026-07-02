@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import type { SeaweedVariant, StoneVariant, UnderseaImages } from './underseaAssets';
+import type { SeaweedVariant, StoneVariant, UnderseaThemeImages } from '../../core/assets/underseaThemeAssets';
 import { SeaweedInstance, SeaweedShadowInstance } from './SeaweedInstance';
 import { StoneInstance, StoneShadowInstance } from './StoneInstance';
 
@@ -250,21 +250,21 @@ const SEAWEED_CONFIGS = [
   },
 ] as const;
 
-type UnderseaStonesAndSeaweedCanvasProps = {
-  stoneImages: UnderseaImages['stones'];
-  seaweedImages: UnderseaImages['seaweed'];
+type UnderseaThemeStonesSeaweedCanvasProps = {
+  stoneImages: UnderseaThemeImages['stones'];
+  seaweedImages: UnderseaThemeImages['seaweed'];
   width: number;
   height: number;
   clock: SharedValue<number>;
 };
 
-export function UnderseaStonesAndSeaweedCanvas({
+export function UnderseaThemeStonesSeaweedCanvas({
   stoneImages,
   seaweedImages,
   width,
   height,
   clock,
-}: UnderseaStonesAndSeaweedCanvasProps) {
+}: UnderseaThemeStonesSeaweedCanvasProps) {
   if (width === 0 || height === 0) {
     return null;
   }

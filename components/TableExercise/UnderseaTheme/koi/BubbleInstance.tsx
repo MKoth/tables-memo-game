@@ -14,7 +14,7 @@ import { useDerivedValue } from 'react-native-reanimated';
 import {
   BUBBLE_DEFORM_SKSL,
   bubbleDeformUniformDefaults,
-} from '../../../shaders/bubbleDeform.sksl';
+} from '../../../../shaders/bubbleDeform.sksl';
 import type { BubbleAnimState } from './useBubbleAnimation';
 
 function compileBubbleEffect(): SkRuntimeEffect {
