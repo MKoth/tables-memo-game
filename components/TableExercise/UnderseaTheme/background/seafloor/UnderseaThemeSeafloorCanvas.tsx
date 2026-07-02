@@ -16,7 +16,7 @@ import {
   underseaSeafloorUniformDefaults,
 } from '../../shaders/underseaSeafloorBackground.sksl';
 
-const BACKGROUND_RES = 0.65;
+const BACKGROUND_RES = 0.85;
 const DEG_TO_RAD = Math.PI / 180;
 
 const {
