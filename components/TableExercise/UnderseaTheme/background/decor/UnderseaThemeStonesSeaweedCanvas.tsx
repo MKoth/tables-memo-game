@@ -15,7 +15,7 @@ import {
   STONE_BASE_HEIGHT,
   STONE_BASE_WIDTH,
   STONE_CONFIGS,
-} from './stonesSeaweedLayoutConfig';
+} from './config/stonesSeaweedLayoutConfig';
 
 type UnderseaThemeStonesSeaweedCanvasProps = {
   stoneImages: UnderseaThemeImages['stones'];

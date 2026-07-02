@@ -1,4 +1,4 @@
-import type { SeaweedVariant, StoneVariant } from '../../core/assets/underseaThemeAssets';
+import type { SeaweedVariant, StoneVariant } from '../../../core/assets/underseaThemeAssets';
 
 export const SEAWEED_BASE_WIDTH = 120;
 export const SEAWEED_BASE_HEIGHT = 160;
