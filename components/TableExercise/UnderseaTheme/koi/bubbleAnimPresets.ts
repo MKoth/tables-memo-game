@@ -1,5 +1,4 @@
 import { bubbleDeformUniformDefaults } from '../../../../shaders/bubbleDeform.sksl';
-import { KOI_SETTINGS } from './config/koiFishLayerConfig';
 
 const defaults = bubbleDeformUniformDefaults;
 
@@ -28,8 +27,7 @@ export const BUBBLE_START_DIAMETER_RATIO = 0.18;
 export const BUBBLE_BURST_SCALE = 1.12;
 export const BUBBLE_SPAWN_OFFSET_Y = 0.55;
 
-/** Screen-space fish body length used to offset spawn above the clicked fish. */
-export const KOI_FISH_LENGTH = 120 * KOI_SETTINGS.scale;
+export { KOI_FISH_LENGTH } from './config/koiInstanceConfig';
 
 export const BUBBLE_IDLE_OPACITY = defaults.opacity;
 

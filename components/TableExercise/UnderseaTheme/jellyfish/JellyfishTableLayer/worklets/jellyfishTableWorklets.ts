@@ -15,15 +15,13 @@ import {
 } from '../config/jellyfishTableLayerConfig';
 import {
   biasForGridSlot,
+  clampW,
   computeLayoutPositions,
   type LayoutBounds,
   type LayoutParticle,
 } from '../layout/computeJellyfishLayout';
 
-export function clampW(val: number, lo: number, hi: number): number {
-  'worklet';
-  return Math.max(lo, Math.min(hi, val));
-}
+export { clampW } from '../layout/computeJellyfishLayout';
 
 export function updateRetainedLabelRotation(
   retained: { value: number },

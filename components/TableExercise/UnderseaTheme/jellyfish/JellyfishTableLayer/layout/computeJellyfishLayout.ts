@@ -116,7 +116,7 @@ export function computeJellyfishSizing(input: JellyfishSizingInput): JellyfishSi
   };
 }
 
-function clampW(val: number, lo: number, hi: number): number {
+export function clampW(val: number, lo: number, hi: number): number {
   'worklet';
   return Math.max(lo, Math.min(hi, val));
 }

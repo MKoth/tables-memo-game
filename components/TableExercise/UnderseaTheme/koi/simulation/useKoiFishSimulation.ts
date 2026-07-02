@@ -4,6 +4,20 @@ import type { SharedValue } from 'react-native-reanimated';
 import { makeMutable, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { KOI_SETTINGS } from '../config/koiFishLayerConfig';
+import {
+  KOI_BASE_LENGTH,
+  KOI_BASE_THICKNESS,
+  KOI_FISH_BODY_INSET,
+} from '../config/koiInstanceConfig';
+import {
+  KOI_BASE_SPEED_MAX,
+  KOI_BOUNDARY_MARGIN_RATIO,
+  KOI_FISH_STATE_SWIMMING,
+  KOI_SEPARATION_MIN_DIST_SQ,
+  KOI_SEPARATION_RADIUS,
+  KOI_SEPARATION_STEER,
+  KOI_SIM_STEP_MS,
+} from '../config/koiSimConfig';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
 import {
   advanceFishCosmetics,
@@ -22,18 +36,6 @@ import {
   lerpAngle,
   updateFish,
 } from './koiSimWorklets';
-
-const KOI_BASE_LENGTH = 120;
-const KOI_BASE_THICKNESS = 38;
-const FISH_BODY_INSET = (KOI_BASE_LENGTH * KOI_SETTINGS.scale) / 2;
-
-const SWIMMING = 0;
-const BASE_SPEED_MAX = 670;
-const BOUNDARY_MARGIN_RATIO = 0.18;
-const SEPARATION_RADIUS = 75;
-const SEPARATION_STEER = 10.0;
-const SIM_FPS = 30;
-const SIM_STEP_MS = 1000 / SIM_FPS;
 
 export type KoiCaptureSharedState = {
   capturedFishIndex: SharedValue<number>;
@@ -128,10 +130,10 @@ function relayoutSimBundle(
     w: koiRect.w,
     h: koiRect.h,
   };
-  const minX = swimZone.x + FISH_BODY_INSET;
-  const maxX = swimZone.x + swimZone.w - FISH_BODY_INSET;
-  const minY = swimZone.y + FISH_BODY_INSET;
-  const maxY = swimZone.y + swimZone.h - FISH_BODY_INSET;
+  const minX = swimZone.x + KOI_FISH_BODY_INSET;
+  const maxX = swimZone.x + swimZone.w - KOI_FISH_BODY_INSET;
+  const minY = swimZone.y + KOI_FISH_BODY_INSET;
+  const maxY = swimZone.y + swimZone.h - KOI_FISH_BODY_INSET;
 
   const pos = bundle.sharedPositions.value.slice();
   for (let i = 0; i < bundle.runtimeEntries.length; i++) {
@@ -200,18 +202,18 @@ function useFishSimulation(
   const lastTimestamp = useSharedValue(-1);
   const fishCount = runtimes.length;
 
-  const steerMinX = swimZone.x + swimZone.w * BOUNDARY_MARGIN_RATIO;
-  const steerMaxX = swimZone.x + swimZone.w * (1 - BOUNDARY_MARGIN_RATIO);
-  const steerMinY = swimZone.y + swimZone.h * BOUNDARY_MARGIN_RATIO;
-  const steerMaxY = swimZone.y + swimZone.h * (1 - BOUNDARY_MARGIN_RATIO);
-  const hardMinX = swimZone.x + FISH_BODY_INSET;
-  const hardMaxX = swimZone.x + swimZone.w - FISH_BODY_INSET;
-  const hardMinY = swimZone.y + FISH_BODY_INSET;
-  const hardMaxY = swimZone.y + swimZone.h - FISH_BODY_INSET;
+  const steerMinX = swimZone.x + swimZone.w * KOI_BOUNDARY_MARGIN_RATIO;
+  const steerMaxX = swimZone.x + swimZone.w * (1 - KOI_BOUNDARY_MARGIN_RATIO);
+  const steerMinY = swimZone.y + swimZone.h * KOI_BOUNDARY_MARGIN_RATIO;
+  const steerMaxY = swimZone.y + swimZone.h * (1 - KOI_BOUNDARY_MARGIN_RATIO);
+  const hardMinX = swimZone.x + KOI_FISH_BODY_INSET;
+  const hardMaxX = swimZone.x + swimZone.w - KOI_FISH_BODY_INSET;
+  const hardMinY = swimZone.y + KOI_FISH_BODY_INSET;
+  const hardMaxY = swimZone.y + swimZone.h - KOI_FISH_BODY_INSET;
   const centerX = swimZone.x + swimZone.w * 0.5;
   const centerY = swimZone.y + swimZone.h * 0.5;
 
-  const cellSize = SEPARATION_RADIUS;
+  const cellSize = KOI_SEPARATION_RADIUS;
   const gridCols = Math.max(1, Math.ceil(swimZone.w / cellSize));
   const gridRows = Math.max(1, Math.ceil(swimZone.h / cellSize));
   const gridMinX = swimZone.x;
@@ -235,7 +237,7 @@ function useFishSimulation(
       }
 
       const elapsed = frameInfo.timestamp - lastTimestamp.value;
-      if (elapsed < SIM_STEP_MS) {
+      if (elapsed < KOI_SIM_STEP_MS) {
         return;
       }
       const dt = Math.min(elapsed / 1000, 0.05);
@@ -295,8 +297,8 @@ function useFishSimulation(
               dt,
               captureState.escapeTargetX.value,
               captureState.escapeTargetY.value,
-              BASE_SPEED_MAX,
-              FISH_BODY_INSET,
+              KOI_BASE_SPEED_MAX,
+              KOI_FISH_BODY_INSET,
               screenWidth,
               screenHeight,
               captureState.escapeExitEdge.value,
@@ -323,7 +325,7 @@ function useFishSimulation(
               fishCrossedExitComplete(
                 fishRuntime,
                 exitEdge,
-                FISH_BODY_INSET,
+                KOI_FISH_BODY_INSET,
                 screenWidth,
                 screenHeight,
               ) &&
@@ -364,7 +366,7 @@ function useFishSimulation(
               bubbleCenterX,
               bubbleCenterY,
               bubbleRadius,
-              FISH_BODY_INSET,
+              KOI_FISH_BODY_INSET,
             );
           }
 
@@ -389,7 +391,7 @@ function useFishSimulation(
           onSpeedIncrease,
         );
 
-        if (fishRuntime.state.value === SWIMMING) {
+        if (fishRuntime.state.value === KOI_FISH_STATE_SWIMMING) {
           const fx = fishRuntime.x.value;
           const fy = fishRuntime.y.value;
 
@@ -413,11 +415,11 @@ function useFishSimulation(
                     const dx = fx - pos[i * 2];
                     const dy = fy - pos[i * 2 + 1];
                     const distSq = dx * dx + dy * dy;
-                    if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
+                    if (distSq < KOI_SEPARATION_RADIUS * KOI_SEPARATION_RADIUS && distSq > KOI_SEPARATION_MIN_DIST_SQ) {
                       const dist = Math.sqrt(distSq);
-                      const overlap = 1 - dist / SEPARATION_RADIUS;
+                      const overlap = 1 - dist / KOI_SEPARATION_RADIUS;
                       const awayAngle = Math.atan2(dy, dx);
-                      const str = Math.min(1, overlap * SEPARATION_STEER * dt);
+                      const str = Math.min(1, overlap * KOI_SEPARATION_STEER * dt);
                       fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
                       fishRuntime.wanderAngle.value = lerpAngle(
                         fishRuntime.wanderAngle.value,
@@ -438,11 +440,11 @@ function useFishSimulation(
               const dx = fx - pos[i * 2];
               const dy = fy - pos[i * 2 + 1];
               const distSq = dx * dx + dy * dy;
-              if (distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.25) {
+              if (distSq < KOI_SEPARATION_RADIUS * KOI_SEPARATION_RADIUS && distSq > KOI_SEPARATION_MIN_DIST_SQ) {
                 const dist = Math.sqrt(distSq);
-                const overlap = 1 - dist / SEPARATION_RADIUS;
+                const overlap = 1 - dist / KOI_SEPARATION_RADIUS;
                 const awayAngle = Math.atan2(dy, dx);
-                const str = Math.min(1, overlap * SEPARATION_STEER * dt);
+                const str = Math.min(1, overlap * KOI_SEPARATION_STEER * dt);
                 fishRuntime.angle.value = lerpAngle(fishRuntime.angle.value, awayAngle, str);
                 fishRuntime.wanderAngle.value = lerpAngle(fishRuntime.wanderAngle.value, awayAngle, str);
               }

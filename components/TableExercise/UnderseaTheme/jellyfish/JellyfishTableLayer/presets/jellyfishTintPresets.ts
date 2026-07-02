@@ -1,4 +1,5 @@
 import { jellyfishDeformUniformDefaults } from '../../../../../../shaders/jellyfishDeform.sksl';
+import { darkenTint, lightenTint, tintToRgba } from '../helpers/tintPalette';
 
 export type JellyfishTintRgb = readonly [number, number, number];
 
@@ -58,23 +59,6 @@ export const JELLYFISH_TINT_PRESETS_BY_INDEX: ReadonlyArray<JellyfishTintPreset>
   JELLYFISH_TINT_PRESETS.error,
   JELLYFISH_TINT_PRESETS.success,
 ];
-
-function lightenTint(c: JellyfishTintRgb, amount: number): JellyfishTintRgb {
-  return [
-    c[0] + (1 - c[0]) * amount,
-    c[1] + (1 - c[1]) * amount,
-    c[2] + (1 - c[2]) * amount,
-  ];
-}
-
-function darkenTint(c: JellyfishTintRgb, amount: number): JellyfishTintRgb {
-  return [c[0] * (1 - amount), c[1] * (1 - amount), c[2] * (1 - amount)];
-}
-
-function tintToRgba(c: JellyfishTintRgb, alpha: number): string {
-  const ch = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255);
-  return `rgba(${ch(c[0])}, ${ch(c[1])}, ${ch(c[2])}, ${alpha})`;
-}
 
 export type JellyfishLabelColors = {
   labelFillColor: string;
