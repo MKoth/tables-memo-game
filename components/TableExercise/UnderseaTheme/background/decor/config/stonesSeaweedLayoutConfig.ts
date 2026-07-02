@@ -9,15 +9,15 @@ export const SHADOW_OPACITY = 0.70;
 export const SHADOW_SOFTNESS = 0.06;
 
 export const STONE_CONFIGS = [
-  { variant: 1 satisfies StoneVariant, xRatio: 0.15, yRatio: 0.15, scale: 1.3, stonePhase: 0.0 },
-  { variant: 2 satisfies StoneVariant, xRatio: 0.04, yRatio: 0.22, scale: 1.3, stonePhase: 0.5 },
-  { variant: 3 satisfies StoneVariant, xRatio: 0.22, yRatio: 0.28, scale: 1.4, stonePhase: 0.3 },
-  { variant: 4 satisfies StoneVariant, xRatio: 0.48, yRatio: 0.56, scale: 1.4, stonePhase: 0.7 },
-  { variant: 5 satisfies StoneVariant, xRatio: 0.45, yRatio: 0.40, scale: 1.5, stonePhase: 2.0 },
-  { variant: 6 satisfies StoneVariant, xRatio: 0.26, yRatio: 0.47, scale: 1.7, stonePhase: 0.0 },
-  { variant: 7 satisfies StoneVariant, xRatio: 0.58, yRatio: 0.48, scale: 1.4, stonePhase: 3.0 },
-  { variant: 8 satisfies StoneVariant, xRatio: 0.28, yRatio: 0.20, scale: 1.45, stonePhase: 1.0 },
-  { variant: 9 satisfies StoneVariant, xRatio: 0.68, yRatio: 0.63, scale: 1.35, stonePhase: 0.0 },
+  { variant: 1 satisfies StoneVariant, xRatio: 0.15, yRatio: 0.15, scale: 1.0, stonePhase: 0.0, offsetX: -2, offsetY: 4 },
+  { variant: 2 satisfies StoneVariant, xRatio: 0.04, yRatio: 0.22, scale: 1.0, stonePhase: 0.5, offsetX: -2, offsetY: 4 },
+  { variant: 3 satisfies StoneVariant, xRatio: 0.62, yRatio: 0.07, scale: 1.0, stonePhase: 0.3, offsetX: -2, offsetY: 4 },
+  { variant: 4 satisfies StoneVariant, xRatio: 0.48, yRatio: 0.56, scale: 1.0, stonePhase: 0.7, offsetX: -2, offsetY: 4 },
+  { variant: 5 satisfies StoneVariant, xRatio: 0.45, yRatio: 0.40, scale: 1.0, stonePhase: 2.0, offsetX: -2, offsetY: 4 },
+  { variant: 6 satisfies StoneVariant, xRatio: 0.26, yRatio: 0.47, scale: 1.0, stonePhase: 0.0, offsetX: -2, offsetY: 4 },
+  { variant: 7 satisfies StoneVariant, xRatio: 0.58, yRatio: 0.48, scale: 1.0, stonePhase: 3.0, offsetX: -2, offsetY: 4 },
+  { variant: 8 satisfies StoneVariant, xRatio: 0.5, yRatio: 0.24, scale: 1.3, stonePhase: 1.0, offsetX: -2, offsetY: 4 },
+  { variant: 9 satisfies StoneVariant, xRatio: 0.68, yRatio: 0.63, scale: 1.0, stonePhase: 0.0, offsetX: -2, offsetY: 4 },
   {
     variant: 'starfish1' satisfies StoneVariant,
     xRatio: 0.63,

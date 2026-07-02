@@ -221,7 +221,7 @@ export const stoneUnderwaterDefaults = {
   /** RGB multiplier for the traveling beam. */
   beamTint: [2.8, 2.8, 2.8] as const,
   /** Bottom contact shadow — darkens toward the base of the stone. */
-  shadowStrength: 0.9,
+  shadowStrength: 0.4,
   /** Local Y where the shadow gradient begins (0 = top, 1 = bottom). */
   shadowStart: 0.65,
   /** Local Y where the shadow reaches full strength. */
