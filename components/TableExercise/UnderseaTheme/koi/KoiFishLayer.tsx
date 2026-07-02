@@ -2,19 +2,17 @@ import React, { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import type { SkImage } from '@shopify/react-native-skia';
-import { GestureDetector, useTapGesture } from 'react-native-gesture-handler';
+import { GestureDetector } from 'react-native-gesture-handler';
 import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { useKoiTapGesture } from './gestures/useKoiTapGesture';
 import { KoiInstance, KoiShadowInstance } from './KoiInstance';
-import type { KoiFishSimulation } from './useKoiFishSimulation';
+import type { KoiFishSimulation } from './simulation/useKoiFishSimulation';
 
 export const SWIM_ZONE_TOP_RATIO = 0.5;
 
 /** Legacy default count — production uses `words.length`. */
 export const KOI_COUNT = 20;
-
-const TAP_MAX_DISTANCE_PX = 10;
 
 /** Shared settings applied to every fish. */
 export const KOI_SETTINGS = {
@@ -91,7 +89,7 @@ export const KOI_BODY_PALETTE: ReadonlyArray<readonly [number, number, number]> 
 
 export type KoiSharedSettings = typeof KOI_SETTINGS;
 
-function findKoiIndexAtTap(
+export function findKoiIndexAtTap(
   tapX: number,
   tapY: number,
   positions: number[],
@@ -178,31 +176,14 @@ export function KoiFishLayer({
     [runtimeEntries, onFishSelect],
   );
 
-  const tapGesture = useTapGesture({
-    maxDistance: TAP_MAX_DISTANCE_PX,
-    onDeactivate: (e) => {
-      'worklet';
-      const positions = sharedPositions.value;
-      const tapX = e.x + swimZoneLeft;
-      const tapY = e.y + swimZoneTop;
-      const hitIdx = findKoiIndexAtTap(
-        tapX,
-        tapY,
-        positions,
-        koiCount,
-        hitRadius,
-        eliminatedSv.value,
-      );
-      if (hitIdx < 0) {
-        return;
-      }
-      scheduleOnRN(
-        handleFishSelect,
-        hitIdx,
-        positions[hitIdx * 2] ?? 0,
-        positions[hitIdx * 2 + 1] ?? 0,
-      );
-    },
+  const tapGesture = useKoiTapGesture({
+    sharedPositions,
+    koiCount,
+    hitRadius,
+    eliminatedSv,
+    swimZoneLeft,
+    swimZoneTop,
+    onFishSelect: handleFishSelect,
   });
 
   const isHidden = useCallback(

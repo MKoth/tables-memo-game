@@ -16,7 +16,7 @@ import {
   KOI_SHADOW_SOFTNESS,
 } from './KoiFishLayer';
 import { KoiInstance, KoiShadowInstance } from './KoiInstance';
-import type { KoiRuntimeEntry } from './koiFishTypes';
+import type { KoiRuntimeEntry } from './simulation/types';
 import type { BubbleAnimState } from './useBubbleAnimation';
 
 function lerp(a: number, b: number, t: number): number {

@@ -1,2 +1,2 @@
-export { JellyfishTableLayer, type JellyfishSoundKind } from './JellyfishTableLayer';
-export { JellyfishInstance, type JellyfishDynamicOverrides } from './JellyfishInstance';
+export { JellyfishTableLayer, type JellyfishSoundKind, type JellyfishTableLayerProps } from './JellyfishTableLayer/JellyfishTableLayer';
+export { JellyfishInstance, type JellyfishDynamicOverrides } from './JellyfishTableLayer/components/JellyfishInstance/JellyfishInstance';

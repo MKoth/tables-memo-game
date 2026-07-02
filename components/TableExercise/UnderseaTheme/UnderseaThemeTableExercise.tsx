@@ -9,8 +9,8 @@ import {
   UnderseaThemeInstructions,
 } from './ui/instructions/UnderseaThemeInstructions';
 import { UnderseaThemeLoadingScreen } from './ui/loading/UnderseaThemeLoadingScreen';
-import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish/JellyfishTableLayer';
-import { KoiSwimZone, type KoiCaptureBridge } from './koi/KoiSwimZone';
+import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
+import { KoiSwimZone, type KoiCaptureBridge } from './koi';
 import type {
   JellyfishLayoutBridge,
   KoiSimBridge,

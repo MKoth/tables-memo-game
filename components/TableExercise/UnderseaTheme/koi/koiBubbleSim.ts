@@ -1,4 +1,4 @@
-import type { FishRuntime } from './koiFishTypes';
+import type { FishRuntime } from './simulation/types';
 import {
   BUBBLE_FISH_CLIP_INSET,
   BUBBLE_FISH_SCALE,

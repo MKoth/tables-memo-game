@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   Canvas,
@@ -7,18 +7,16 @@ import {
   matchFont,
   vec,
 } from '@shopify/react-native-skia';
-import { GestureDetector, useTapGesture } from 'react-native-gesture-handler';
+import { GestureDetector } from 'react-native-gesture-handler';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { useBubbleTapGesture } from './gestures/useBubbleTapGesture';
 import { BubbleInstance } from './BubbleInstance';
 import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAssetsProvider';
 import { useUnderseaThemeLayout } from '../core/providers/UnderseaThemeLayoutProvider';
 import { useUnderseaThemeClock } from '../core/clock/UnderseaThemeClockProvider';
 import {
   BubblePhase,
-  BurstIntent,
-  isTapInsideBubble,
   type BubbleAnimState,
   type BurstIntentValue,
 } from './useBubbleAnimation';
@@ -26,7 +24,6 @@ import {
 const LABEL_STROKE_WIDTH = 2;
 const LABEL_FILL_COLOR = '#ffffff';
 const LABEL_STROKE_COLOR = '#0a2840';
-const TAP_MAX_DISTANCE_PX = 10;
 
 export type KoiWordBubbleProps = {
   word: string;
@@ -95,25 +92,11 @@ export function KoiWordBubble({
 
   const labelOpacity = useDerivedValue(() => anim.value.labelOpacity);
 
-  const handleBurst = useCallback(() => {
-    startBurst(BurstIntent.Release);
-  }, [startBurst]);
-
-  const tapGesture = useTapGesture({
-    maxDistance: TAP_MAX_DISTANCE_PX,
-    onDeactivate: (e) => {
-      'worklet';
-      if (phase.value !== BubblePhase.Idle) {
-        return;
-      }
-      if (escapeActive != null && escapeActive.value) {
-        return;
-      }
-      if (!isTapInsideBubble(e.x, e.y, anim.value)) {
-        return;
-      }
-      scheduleOnRN(handleBurst);
-    },
+  const tapGesture = useBubbleTapGesture({
+    anim,
+    phase,
+    escapeActive,
+    startBurst,
   });
 
   if (width === 0 || height === 0) {
