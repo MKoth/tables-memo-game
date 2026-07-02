@@ -185,7 +185,7 @@ export const stoneUnderwaterDefaults = {
   /** RGB multiplier for underwater color cast — matches seafloor. */
   underwaterTint: [0.68, 0.84, 1.18] as const,
   /** Underwater tint intensity — 0 = none, 1 = full. */
-  underwaterTintStrength: 0.7,
+  underwaterTintStrength: 0.4,
   /** Vertical depth gradient — bluer toward top of screen. */
   underwaterDepthStrength: 3,
   /** Stacked voronoi layers (max MAX_STONE_VORONOI_LAYERS). */

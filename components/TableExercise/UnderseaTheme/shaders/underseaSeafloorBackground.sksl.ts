@@ -172,7 +172,7 @@ export const underseaSeafloorUniformDefaults = {
   /** RGB multiplier for underwater color cast — lower R, higher B = bluer. */
   underwaterTint: [0.68, 0.84, 1.18] as const,
   /** Underwater tint intensity — 0 = no tint, 1 = full tint. */
-  underwaterTintStrength: 0.7,
+  underwaterTintStrength: 0.58,
   /** Vertical depth gradient when tint is active — 0 = uniform tint, 1 = bluer toward top. */
   underwaterDepthStrength: 1.5,
   /** Number of stacked waterDrift layers (max MAX_DRIFT_LAYERS). */

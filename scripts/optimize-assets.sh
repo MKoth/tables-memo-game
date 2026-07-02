@@ -26,6 +26,7 @@ else
 fi
 
 BLUR_SIGMA=2   # half as strong as the previous run (was 4)
+SEAFLOOR3_BLUR_SIGMA=1.5  # slightly softer than other seafloor tiles
 PADDING=10     # transparent pixels added each side before blurring
 
 bytes() { stat -f%z "$1" 2>/dev/null || stat -c%s "$1"; }
@@ -71,17 +72,19 @@ echo ""
 echo "=== Seafloor (resize ≤512px, bake σ=${BLUR_SIGMA}px blur, no padding — seamless tile) ==="
 # Seafloor is a tiling texture: skip padding, use -virtual-pixel tile so the
 # blur samples across the wrap boundary and keeps the seam invisible.
-for name in seafloor.png seafloor3.png; do
+for name in seafloor.png seafloor2.png seafloor3.png; do
   f="$THEME_IMAGES_DIR/seafloor/$name"
   [[ -f "$f" ]] || continue
+  sigma=$BLUR_SIGMA
+  [[ "$name" == "seafloor3.png" ]] && sigma=$SEAFLOOR3_BLUR_SIGMA
   before=$(bytes "$f")
   $IM "$f" \
     -resize '512x>' \
     -virtual-pixel tile \
-    -channel RGBA -blur "0x${BLUR_SIGMA}" \
+    -channel RGBA -blur "0x${sigma}" \
     "$f"
   after=$(bytes "$f")
-  printf "  %-20s %6dK → %6dK\n" "$name" $((before/1024)) $((after/1024))
+  printf "  %-20s %6dK → %6dK  (σ=%s)\n" "$name" $((before/1024)) $((after/1024)) "$sigma"
 done
 
 echo ""
