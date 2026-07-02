@@ -1,7 +1,7 @@
 import {
   KOI_BODY_FIT_SCALE,
   KOI_FIN_OUTER,
-} from '../../../../../../shaders/koiFishDeform.sksl';
+} from '../../../shaders/koiFishDeform.sksl';
 import type { KoiBounds, KoiFishState, KoiUniforms } from './koiInstanceTypes';
 
 export function readAnimNumber(value: number | import('react-native-reanimated').SharedValue<number> | undefined, fallback = 0): number {

@@ -1,4 +1,4 @@
-import { bubbleDeformUniformDefaults } from '../../../../../shaders/bubbleDeform.sksl';
+import { bubbleDeformUniformDefaults } from '../../shaders/bubbleDeform.sksl';
 
 const defaults = bubbleDeformUniformDefaults;
 

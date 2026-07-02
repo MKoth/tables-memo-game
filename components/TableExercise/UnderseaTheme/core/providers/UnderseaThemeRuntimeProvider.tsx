@@ -6,9 +6,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import type { KoiCaptureBridge } from '../../koi/KoiSwimZone/types';
 import type {
   JellyfishLayoutBridge,
+  KoiCaptureBridge,
   KoiSimBridge,
 } from '../types/bridgeTypes';
 import { useUnderseaThemeExerciseStore } from '../store/underseaThemeExerciseStore';

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { Canvas, Fill, type SkImage } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { SkImage } from '@shopify/react-native-skia';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -14,8 +14,7 @@ import {
   useUnderseaThemeClock,
 } from '../../core/clock/UnderseaThemeClockProvider';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { UnderseaThemeSeafloorCanvas } from '../../background/seafloor/UnderseaThemeSeafloorCanvas';
-import { UnderseaThemeStonesSeaweedCanvas } from '../../background/decor/UnderseaThemeStonesSeaweedCanvas';
+import { UnderseaThemeSceneBackground } from '../../background/UnderseaThemeSceneBackground';
 
 const FALLBACK_COLOR = '#061828';
 const BAR_WIDTH_RATIO = 0.55;
@@ -44,24 +43,17 @@ function UnderseaThemeLoadingBackground({
   height: number;
 }) {
   const clock = useUnderseaThemeClock();
-  const showForeground = stoneImages != null && seaweedImages != null;
 
   return (
-    <View style={StyleSheet.absoluteFill}>
-      <UnderseaThemeSeafloorCanvas image={seafloorImage} width={width} height={height} />
-      {showForeground && (
-        <UnderseaThemeStonesSeaweedCanvas
-          stoneImages={stoneImages}
-          seaweedImages={seaweedImages}
-          width={width}
-          height={height}
-          clock={clock}
-        />
-      )}
-      <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Fill color="rgba(4, 18, 32, 0.28)" />
-      </Canvas>
-    </View>
+    <UnderseaThemeSceneBackground
+      seafloorImage={seafloorImage}
+      stoneImages={stoneImages}
+      seaweedImages={seaweedImages}
+      width={width}
+      height={height}
+      clock={clock}
+      dimOverlay
+    />
   );
 }
 

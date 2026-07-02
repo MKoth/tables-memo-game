@@ -10,7 +10,7 @@ import { useDerivedValue } from 'react-native-reanimated';
 import {
   KOI_FISH_DEFORM_SKSL,
   koiFishDeformUniformDefaults,
-} from '../../../../../../shaders/koiFishDeform.sksl';
+} from '../../../shaders/koiFishDeform.sksl';
 import { RENDER_BOUNDS_MARGIN } from '../../config/koiInstanceConfig';
 import {
   buildKoiUniforms,

@@ -3,11 +3,11 @@
  * Koi and jellyfish zones split the screen; controls anchor to the koi outer corner.
  */
 
-import type { LayoutBounds } from '../../jellyfish/JellyfishTableLayer/layout/computeJellyfishLayout';
+import type { LayoutBounds } from './layoutBounds';
 import {
   LAYOUT_ZONE_HEIGHT_RATIO,
   LAYOUT_ZONE_TOP_RATIO,
-} from '../../jellyfish/JellyfishTableLayer/layout/computeJellyfishLayout';
+} from './zoneLayoutConstants';
 
 export type UnderseaThemeOrientation =
   | 'portrait'

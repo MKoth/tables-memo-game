@@ -6,36 +6,18 @@
  * a jellyfish at gridCol 2 is always between cols 1 and 3 on screen.
  */
 
+import type { LayoutBounds } from '../../../core/layout/layoutBounds';
+
+export type { LayoutBounds } from '../../../core/layout/layoutBounds';
+export {
+  LAYOUT_ZONE_HEIGHT_RATIO,
+  LAYOUT_ZONE_TOP_RATIO,
+} from '../../../core/layout/zoneLayoutConstants';
+
 export type LayoutParticle = {
   gridCol: number;
   gridRow: number;
   bellRadius: number;
-};
-
-/** Jellyfish occupy the top 40% — leaves room for camera/notch; koi use bottom half. */
-export const LAYOUT_ZONE_TOP_RATIO = 0.05;
-export const LAYOUT_ZONE_HEIGHT_RATIO = 0.45;
-
-export type LayoutBounds = {
-  /** Width of the jelly layout zone (not necessarily full screen). */
-  width: number;
-  height: number;
-  nGridCols: number;
-  nGridRows: number;
-  /** Left edge of the layout zone in px. */
-  zoneLeft: number;
-  /** Top edge of the layout zone in px. */
-  zoneTop: number;
-  /** Height of the layout zone in px. */
-  zoneHeight: number;
-  /** Jellyfish/tentacle scale when packed tight (overlap). */
-  scaleMin: number;
-  /** Jellyfish/tentacle scale when spread apart. */
-  scaleMax: number;
-  /** How strongly edges compress toward overlap (0 = uniform, 1 = max squeeze at edges). */
-  edgeSqueeze: number;
-  /** Extra spread multiplier at the spacing peak (center + bias). */
-  spreadBoost: number;
 };
 
 /** Default fallbacks when sizing is not computed dynamically. */

@@ -1,22 +1,24 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { UnderseaThemeAssetsProvider } from './core/providers/UnderseaThemeAssetsProvider';
-import { UnderseaThemeLayoutProvider } from './core/providers/UnderseaThemeLayoutProvider';
-import { UnderseaThemeRuntimeProvider } from './core/providers/UnderseaThemeRuntimeProvider';
-import { UnderseaThemeBackground } from './background/UnderseaThemeBackground';
-import { UnderseaThemeClockProvider } from './core/clock/UnderseaThemeClockProvider';
+import { getTableBodyWords, spanishPresentTable2Singular } from '../../../data/tableData';
+import { UnderseaThemeBackground } from './background';
 import {
-  UnderseaThemeCornerControls,
-  UnderseaThemeInstructions,
-} from './ui/instructions/UnderseaThemeInstructions';
-import { UnderseaThemeLoadingScreen } from './ui/loading/UnderseaThemeLoadingScreen';
-import { CaptureOverlay } from './ui/CaptureOverlay';
+  UnderseaThemeClockProvider,
+  UnderseaThemeLayoutProvider,
+  UnderseaThemeAssetsProvider,
+  UnderseaThemeRuntimeProvider,
+  useUnderseaThemeAssets,
+  useUnderseaThemeExerciseStore,
+} from './core';
+import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
 import { KoiSwimZone } from './koi';
-import { useUnderseaThemeExerciseStore } from './core/store/underseaThemeExerciseStore';
-import { useUnderseaThemeAssets } from './core/assets/useUnderseaThemeAssets';
-import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
-import { getTableBodyWords, spanishPresentTable2Singular } from '../../../data/tableData';
+import {
+  CaptureOverlay,
+  UnderseaThemeCornerControls,
+  UnderseaThemeInstructions,
+  UnderseaThemeLoadingScreen,
+} from './ui';
 
 const JELLYFISH_LAYER_Z = 5;
 

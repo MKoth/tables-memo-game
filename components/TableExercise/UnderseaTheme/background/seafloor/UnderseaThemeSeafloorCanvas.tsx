@@ -14,7 +14,7 @@ import {
   MAX_DRIFT_LAYERS,
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
   underseaSeafloorUniformDefaults,
-} from '../../../../../shaders/underseaSeafloorBackground.sksl';
+} from '../../shaders/underseaSeafloorBackground.sksl';
 
 const BACKGROUND_RES = 0.65;
 const DEG_TO_RAD = Math.PI / 180;

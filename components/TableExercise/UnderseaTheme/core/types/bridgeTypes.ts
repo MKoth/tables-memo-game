@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 
 export type KoiFishRuntimePosition = {
@@ -19,6 +20,14 @@ export type JellyfishLayoutBridge = {
   bodyCellIndices: number[];
   headerCellIndices: number[];
   bellSizes: number[];
+};
+
+export type KoiCaptureBridge = {
+  capturedWord: string | null;
+  bubblePhase: SharedValue<number>;
+  onMatchSuccess: (targetX: number, targetY: number, hitIdx: number) => void;
+  overlay: ReactNode | null;
+  escapeOverlayActive: boolean;
 };
 
 export type TutorialStep = 'idle' | 'fish' | 'jellyfish' | 'translate';

@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-import type { SharedValue } from 'react-native-reanimated';
 import type { UnderseaThemeSoundController } from '../../core/assets/useUnderseaThemeSounds';
 
 export const BUBBLE_DIAMETER_RATIO = 0.9;
@@ -11,13 +9,7 @@ export type BubbleSelection = {
   originY: number;
 };
 
-export type KoiCaptureBridge = {
-  capturedWord: string | null;
-  bubblePhase: SharedValue<number>;
-  onMatchSuccess: (targetX: number, targetY: number, hitIdx: number) => void;
-  overlay: ReactNode | null;
-  escapeOverlayActive: boolean;
-};
+export type { KoiCaptureBridge } from '../../core/types/bridgeTypes';
 
 export type KoiSwimZoneProps = {
   words: string[];

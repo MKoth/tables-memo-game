@@ -1,4 +1,4 @@
-import { jellyfishDeformUniformDefaults } from '../../../../../../shaders/jellyfishDeform.sksl';
+import { jellyfishDeformUniformDefaults } from '../../../shaders/jellyfishDeform.sksl';
 import { darkenTint, lightenTint, tintToRgba } from '../helpers/tintPalette';
 
 export type JellyfishTintRgb = readonly [number, number, number];

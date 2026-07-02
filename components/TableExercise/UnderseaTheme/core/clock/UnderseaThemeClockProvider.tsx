@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, type ReactNode } from 'rea
 import { AppState, type AppStateStatus } from 'react-native';
 import { useDerivedValue } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
-import { useThrottledClock } from '../../../../../hooks/useThrottledClock';
+import { useThrottledClock } from './useThrottledClock';
 
 /** Master scene clock rate — consumers down-sample for slower layers. */
 export const UNDERSEA_SCENE_CLOCK_FPS = 30;
