@@ -6,7 +6,7 @@ import type {
   ZoneRect,
 } from '../../../core/layout/computeUnderseaThemeLayout';
 import { KoiCaptureOverlay } from '../../capture/KoiCaptureOverlay';
-import { releaseCapturedFishWorklet } from '../../capture/fishPoolSnapshot';
+import { releaseCapturedFishWorklet } from '../../capture/releaseFishToPool';
 import {
   BurstIntent,
   useBubbleAnimation,
@@ -69,7 +69,6 @@ export function useKoiCaptureFlow({
     releaseContextSv,
     eliminatedFishSv,
     eliminatedFishIndices,
-    setEliminatedFishIndices,
     fishCountRef,
     onEscapeOverlayDismissRef,
     onEscapeCompleteRef,

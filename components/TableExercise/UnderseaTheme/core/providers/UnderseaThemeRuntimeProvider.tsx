@@ -10,7 +10,7 @@ import type { KoiCaptureBridge } from '../../koi/KoiSwimZone/types';
 import type {
   JellyfishLayoutBridge,
   KoiSimBridge,
-} from '../types/tutorialTypes';
+} from '../types/bridgeTypes';
 import { useUnderseaThemeExerciseStore } from '../store/underseaThemeExerciseStore';
 
 type UnderseaThemeRuntimeContextValue = {

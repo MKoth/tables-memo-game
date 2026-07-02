@@ -22,9 +22,9 @@ export {
 
 export {
   UnderseaThemeCornerControls,
-  UnderseaHelpButton,
+  UnderseaThemeHelpButton,
   UnderseaThemeSoundToggleButton,
-  type UnderseaHelpButtonProps,
+  type UnderseaThemeHelpButtonProps,
   type UnderseaThemeCornerControlsProps,
   type UnderseaThemeSoundToggleButtonProps,
 } from './components/UnderseaThemeCornerControls';

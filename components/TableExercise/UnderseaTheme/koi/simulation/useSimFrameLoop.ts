@@ -19,7 +19,7 @@ import {
   updateFishDirectedEscape,
   updateFishInBubble,
 } from './koiBubbleSim';
-import { releaseCapturedFishWorklet } from '../capture/fishPoolSnapshot';
+import { releaseCapturedFishWorklet } from '../capture/releaseFishToPool';
 import { BubblePhase } from '../bubbles/bubbleAnimTypes';
 import type { KoiRuntimeEntry, SwimZone } from './types';
 import type { KoiCaptureSharedState } from './captureTypes';

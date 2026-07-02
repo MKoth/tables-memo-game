@@ -1,11 +1,10 @@
 import { useCallback, useMemo, useRef } from 'react';
-import { KOI_SETTINGS } from '../config/koiFishLayerConfig';
+import { KOI_SETTINGS } from '../config/koiFishSettings';
 import {
   KOI_BASE_LENGTH,
   KOI_BASE_THICKNESS,
 } from '../config/koiInstanceConfig';
 import type {
-  KoiCaptureSharedState,
   KoiFishSimulation,
   UseKoiFishSimulationParams,
 } from './captureTypes';

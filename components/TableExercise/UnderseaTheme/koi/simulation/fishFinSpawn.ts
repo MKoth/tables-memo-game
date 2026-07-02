@@ -1,7 +1,7 @@
 import {
   KOI_SETTINGS,
   type FinSideSpawn,
-} from '../config/koiFishLayerConfig';
+} from '../config/koiFishSettings';
 import type { FishConfig, FishRuntime } from './types';
 
 export function nextFinRerollDelay(interval: number, jitter: number): number {

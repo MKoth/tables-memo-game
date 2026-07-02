@@ -4,13 +4,13 @@ import {
   computeUnderseaThemeLayout,
   type UnderseaThemeLayout,
 } from '../layout/computeUnderseaThemeLayout';
-import { useDeviceOrientation } from '../layout/useDeviceOrientation';
+import { useUnderseaThemeDeviceOrientation } from '../layout/useUnderseaThemeDeviceOrientation';
 
 const UnderseaThemeLayoutContext = createContext<UnderseaThemeLayout | null>(null);
 
 export function UnderseaThemeLayoutProvider({ children }: { children: React.ReactNode }) {
   const { width, height } = useWindowDimensions();
-  const orientation = useDeviceOrientation();
+  const orientation = useUnderseaThemeDeviceOrientation();
 
   const layout = useMemo(
     () => computeUnderseaThemeLayout(width, height, orientation),

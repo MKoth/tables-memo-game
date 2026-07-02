@@ -21,19 +21,19 @@ import {
 } from '../constants';
 import { computeControlsPosition } from '../helpers/controlsPosition';
 
-type UnderseaIconButtonProps = {
+type UnderseaThemeIconButtonProps = {
   onPress: () => void;
   disabled?: boolean;
   accessibilityLabel: string;
   children: React.ReactNode;
 };
 
-function UnderseaIconButton({
+function UnderseaThemeIconButton({
   onPress,
   disabled = false,
   accessibilityLabel,
   children,
-}: UnderseaIconButtonProps) {
+}: UnderseaThemeIconButtonProps) {
   return (
     <View style={styles.helpButtonShell}>
       <UiDropPanel width={HELP_BUTTON_SIZE} height={HELP_BUTTON_SIZE} />
@@ -113,7 +113,7 @@ function SoundIcon({ muted, size = 26 }: { muted: boolean; size?: number }) {
   );
 }
 
-export type UnderseaHelpButtonProps = {
+export type UnderseaThemeHelpButtonProps = {
   onPress: () => void;
   disabled?: boolean;
 };
@@ -128,22 +128,25 @@ export function UnderseaThemeSoundToggleButton({
   onToggle,
 }: UnderseaThemeSoundToggleButtonProps) {
   return (
-    <UnderseaIconButton
+    <UnderseaThemeIconButton
       onPress={onToggle}
       accessibilityLabel={enabled ? 'Mute sound' : 'Unmute sound'}>
       <SoundIcon muted={!enabled} />
-    </UnderseaIconButton>
+    </UnderseaThemeIconButton>
   );
 }
 
-export function UnderseaHelpButton({ onPress, disabled = false }: UnderseaHelpButtonProps) {
+export function UnderseaThemeHelpButton({
+  onPress,
+  disabled = false,
+}: UnderseaThemeHelpButtonProps) {
   return (
-    <UnderseaIconButton
+    <UnderseaThemeIconButton
       onPress={onPress}
       disabled={disabled}
       accessibilityLabel="Show instructions">
       <Text style={styles.helpButtonText}>?</Text>
-    </UnderseaIconButton>
+    </UnderseaThemeIconButton>
   );
 }
 
@@ -188,7 +191,7 @@ export function UnderseaThemeCornerControls({
       <View style={styles.cornerRow}>
         <UnderseaThemeSoundToggleButton enabled={soundEnabled} onToggle={onSoundToggle} />
         {helpVisible && (
-          <UnderseaHelpButton onPress={onHelpPress} disabled={helpDisabled} />
+          <UnderseaThemeHelpButton onPress={onHelpPress} disabled={helpDisabled} />
         )}
       </View>
     </View>

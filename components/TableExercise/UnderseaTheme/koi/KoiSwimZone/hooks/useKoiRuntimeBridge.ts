@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 import { useUnderseaThemeRuntime } from '../../../core/providers/UnderseaThemeRuntimeProvider';
-import { BubblePhase } from '../../bubbles/useBubbleAnimation';
 import type { BubbleSelection } from '../types';
 
 type UseKoiRuntimeBridgeParams = {

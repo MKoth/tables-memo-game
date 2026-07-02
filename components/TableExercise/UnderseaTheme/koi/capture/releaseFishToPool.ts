@@ -2,7 +2,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import { BubblePhase } from '../bubbles/bubbleAnimTypes';
 import type { FishRuntime } from '../simulation/types';
 
-export type PoolReleaseCaptureState = {
+export type ReleaseFishToPoolCaptureState = {
   capturedFishIndex: SharedValue<number>;
   bubblePhase: SharedValue<number>;
 };
@@ -12,7 +12,7 @@ export function releaseCapturedFishWorklet(
   fishIndex: number,
   runtime: FishRuntime,
   sharedPositions: SharedValue<number[]>,
-  captureState: PoolReleaseCaptureState,
+  captureState: ReleaseFishToPoolCaptureState,
 ): void {
   'worklet';
   if (fishIndex < 0) {

@@ -26,7 +26,7 @@ function readInitialOrientation(): UnderseaThemeOrientation {
   return mapOrientation(Orientation.getInitialOrientation()) ?? 'portrait';
 }
 
-export function useDeviceOrientation(): UnderseaThemeOrientation {
+export function useUnderseaThemeDeviceOrientation(): UnderseaThemeOrientation {
   const [orientation, setOrientation] = useState<UnderseaThemeOrientation>(readInitialOrientation);
 
   const applyOrientation = useCallback((type: string) => {

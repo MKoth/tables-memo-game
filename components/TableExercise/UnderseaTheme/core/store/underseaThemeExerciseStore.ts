@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { TutorialStep } from '../types/tutorialTypes';
+import type { TutorialStep } from '../types/bridgeTypes';
 
 type UnderseaThemeExerciseState = {
   tutorialStep: TutorialStep;

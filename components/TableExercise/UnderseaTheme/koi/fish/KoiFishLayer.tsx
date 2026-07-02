@@ -8,14 +8,14 @@ import { useSharedValue } from 'react-native-reanimated';
 import { useKoiTapGesture } from '../gestures/useKoiTapGesture';
 import { KoiInstance, KoiShadowInstance } from './KoiInstance';
 import type { KoiFishSimulation } from '../simulation/useKoiFishSimulation';
+import type { KoiImageKey } from '../config/koiFishSettings';
 import {
   KOI_SHADOW_COLOR,
   KOI_SHADOW_OFFSET_X,
   KOI_SHADOW_OFFSET_Y,
   KOI_SHADOW_OPACITY,
   KOI_SHADOW_SOFTNESS,
-  type KoiImageKey,
-} from '../config/koiFishLayerConfig';
+} from '../config/koiShadowConfig';
 
 export type KoiFishLayerProps = {
   sim: KoiFishSimulation;

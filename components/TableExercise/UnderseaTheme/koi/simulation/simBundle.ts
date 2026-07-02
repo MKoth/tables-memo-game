@@ -1,9 +1,10 @@
 import { makeMutable, type SharedValue } from 'react-native-reanimated';
-import { KOI_SETTINGS } from '../config/koiFishLayerConfig';
+import { KOI_SETTINGS } from '../config/koiFishSettings';
 import { KOI_FISH_BODY_INSET } from '../config/koiInstanceConfig';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
 import type { KoiRuntimeEntry, SwimZone } from './types';
-import { createFishRuntime, createSpawnsFromWords } from './createFishRuntime';
+import { createFishRuntime } from './createFishRuntime';
+import { createKoiSpawnsFromWords } from './createKoiSpawns';
 
 export type PersistedSimBundle = {
   wordsKey: string;
@@ -28,7 +29,7 @@ export function buildSimBundle(
     w: koiRect.w,
     h: koiRect.h,
   };
-  const spawns = createSpawnsFromWords(words);
+  const spawns = createKoiSpawnsFromWords(words);
   const runtimeEntries = spawns.map(spawn => ({
     spawn,
     runtime: createFishRuntime({ ...KOI_SETTINGS, ...spawn }, swimZone),
