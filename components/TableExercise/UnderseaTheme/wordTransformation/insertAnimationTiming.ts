@@ -3,6 +3,8 @@ import { BUBBLE_BURST_DURATION_MS } from '../koi/bubbles/bubbleAnimPresets';
 export const INSERT_RESERVE_MS = 320;
 /** Selected variant glide from picker row into the word slot. */
 export const INSERT_FLY_MS = 680;
+/** Keep flight bubble visible briefly after land so the word-row bubble can take over. */
+export const INSERT_LAND_HANDOFF_MS = 48;
 /** Gap after one wrong-variant burst finishes before the next starts. */
 export const VARIANT_POP_GAP_MS = 60;
 export const VARIANT_POP_STAGGER_MS = BUBBLE_BURST_DURATION_MS + VARIANT_POP_GAP_MS;

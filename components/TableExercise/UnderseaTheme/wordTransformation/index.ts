@@ -27,6 +27,7 @@ export {
 export {
   TransformationVariantPicker,
   type TransformationVariantPickerProps,
+  type VariantPickerItem,
   type VariantPickerSourceLayout,
 } from './components/TransformationVariantPicker';
 export { LetterBubble, type LetterBubbleStatus } from './components/LetterBubble';

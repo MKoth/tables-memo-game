@@ -7,15 +7,20 @@ import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayout
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
 import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from './TransformationWordBubbles';
 
+export type VariantPickerItem = {
+  id: string;
+  label: string;
+};
+
 function statusFor(
-  variant: string,
-  wrongVariant: string | null,
-  poppedVariants: ReadonlySet<string> | undefined,
+  itemId: string,
+  wrongItemId: string | null,
+  poppedItemIds: ReadonlySet<string> | undefined,
 ): LetterBubbleStatus {
-  if (poppedVariants?.has(variant)) {
+  if (poppedItemIds?.has(itemId)) {
     return 'popped';
   }
-  if (wrongVariant === variant) {
+  if (wrongItemId === itemId) {
     return 'wrong';
   }
   return 'idle';
@@ -28,19 +33,19 @@ export type VariantPickerSourceLayout = {
 };
 
 export type TransformationVariantPickerProps = {
-  variants: string[];
-  wrongVariant: string | null;
-  hiddenVariant?: string | null;
-  poppedVariants?: ReadonlySet<string>;
+  items: VariantPickerItem[];
+  wrongItemId?: string | null;
+  hiddenItemIds?: ReadonlySet<string>;
+  poppedItemIds?: ReadonlySet<string>;
   interactive?: boolean;
-  onSelect: (variant: string, source: VariantPickerSourceLayout) => void;
+  onSelect: (item: VariantPickerItem, source: VariantPickerSourceLayout) => void;
 };
 
 export function TransformationVariantPicker({
-  variants,
-  wrongVariant,
-  hiddenVariant = null,
-  poppedVariants,
+  items,
+  wrongItemId = null,
+  hiddenItemIds,
+  poppedItemIds,
   interactive = true,
   onSelect,
 }: TransformationVariantPickerProps) {
@@ -49,14 +54,14 @@ export function TransformationVariantPicker({
   const clock = useUnderseaThemeClock();
 
   const layout = useMemo(
-    () => computeLetterLayout(koiRect, variants.length, TRANSFORMATION_VARIANT_ROW_Y_RATIO),
-    [koiRect, variants.length],
+    () => computeLetterLayout(koiRect, items.length, TRANSFORMATION_VARIANT_ROW_Y_RATIO),
+    [items.length, koiRect],
   );
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
-  const maxVariantLength = useMemo(
-    () => variants.reduce((max, variant) => Math.max(max, variant.length), 1),
-    [variants],
+  const maxLabelLength = useMemo(
+    () => items.reduce((max, item) => Math.max(max, item.label.length), 1),
+    [items],
   );
   const font = useMemo(
     () =>
@@ -64,32 +69,32 @@ export function TransformationVariantPicker({
         fontFamily,
         fontSize: Math.max(
           14,
-          (layout.diameter * 0.5) / Math.max(1, maxVariantLength * 0.52),
+          (layout.diameter * 0.5) / Math.max(1, maxLabelLength * 0.52),
         ),
         fontWeight: '700',
       }),
-    [fontFamily, layout.diameter, maxVariantLength],
+    [fontFamily, layout.diameter, maxLabelLength],
   );
 
-  if (variants.length === 0) {
+  if (items.length === 0) {
     return null;
   }
 
   return (
     <>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-        {variants.map((variant, i) => {
-          if (variant === hiddenVariant) {
+        {items.map((item, i) => {
+          if (hiddenItemIds?.has(item.id)) {
             return null;
           }
           return (
             <LetterBubble
-              key={variant}
-              char={variant}
+              key={item.id}
+              char={item.label}
               centerX={layout.centers[i] ?? 0}
               centerY={layout.rowY}
               diameter={layout.diameter}
-              status={statusFor(variant, wrongVariant, poppedVariants)}
+              status={statusFor(item.id, wrongItemId ?? null, poppedItemIds)}
               image={images.bubble}
               font={font}
               clock={clock}
@@ -98,24 +103,24 @@ export function TransformationVariantPicker({
         })}
       </Canvas>
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        {variants.map((variant, i) => {
-          if (variant === hiddenVariant || poppedVariants?.has(variant)) {
+        {items.map((item, i) => {
+          if (hiddenItemIds?.has(item.id) || poppedItemIds?.has(item.id)) {
             return null;
           }
           const cx = layout.centers[i] ?? 0;
           return (
             <Pressable
-              key={variant}
+              key={item.id}
               disabled={!interactive}
               onPress={() =>
-                onSelect(variant, {
+                onSelect(item, {
                   centerX: cx,
                   centerY: layout.rowY,
                   diameter: layout.diameter,
                 })
               }
               accessibilityRole="button"
-              accessibilityLabel={`Insert ${variant}`}
+              accessibilityLabel={`Insert ${item.label}`}
               style={[
                 styles.hit,
                 {

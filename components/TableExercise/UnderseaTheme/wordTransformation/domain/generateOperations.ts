@@ -8,6 +8,11 @@ import {
 
 const VARIANT_CHARS = 'abcdefghijklmnopqrstuvwxyz';
 
+export type LetterChoice = {
+  id: string;
+  char: string;
+};
+
 function shuffleArray<T>(items: T[]): T[] {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {
@@ -57,6 +62,30 @@ export function generateWrongVariants(
   }
 
   return shuffleArray([correctText, ...Array.from(wrongVariants)]).slice(0, maxVariants);
+}
+
+/** Required insert letters plus random distractors, shuffled for sequential pick. */
+export function generateSequentialLetterChoices(
+  correctText: string,
+  extraCount = 3,
+): LetterChoice[] {
+  const required = correctText.split('').map((char, index) => ({
+    id: `req-${index}-${char}`,
+    char,
+  }));
+  const correctChars = new Set(correctText.split(''));
+  const extras: LetterChoice[] = [];
+  let guard = 0;
+
+  while (extras.length < extraCount && guard < 200) {
+    const char = VARIANT_CHARS.charAt(Math.floor(Math.random() * VARIANT_CHARS.length));
+    if (!correctChars.has(char)) {
+      extras.push({ id: `extra-${extras.length}-${char}`, char });
+    }
+    guard += 1;
+  }
+
+  return shuffleArray([...required, ...extras]);
 }
 
 export function diffToOps(diffs: [number, string][]): DiffOp[] {

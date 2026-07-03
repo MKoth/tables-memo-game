@@ -5,6 +5,7 @@ import { computeLetterLayout } from '../components/TransformationWordBubbles';
 import {
   BUBBLE_BURST_DURATION_MS,
   INSERT_FLY_MS,
+  INSERT_LAND_HANDOFF_MS,
   INSERT_RESERVE_MS,
   VARIANT_POP_STAGGER_MS,
   WORD_LETTER_ENTER_DURATION_MS,
@@ -14,9 +15,12 @@ import {
 import {
   OPERATION_TYPES,
   createWordTransformationExercise,
+  generateSequentialLetterChoices,
+  type LetterChoice,
   type Operation,
   type WordOperationSequence,
 } from '../domain';
+import type { VariantPickerItem } from '../components/TransformationVariantPicker';
 
 export type LetterBubbleModel = {
   key: string;
@@ -40,6 +44,8 @@ export type InsertAnimationPhase = 'reserve' | 'fly' | 'dismiss';
 export type InsertAnimationState = {
   phase: InsertAnimationPhase;
   selectedVariant: string;
+  /** Picker item id — sequential multi-letter insert. */
+  selectedChoiceId?: string;
   allVariants: string[];
   wrongVariants: string[];
   poppedWrongVariants: ReadonlySet<string>;
@@ -54,6 +60,8 @@ export type InsertAnimationState = {
   nextWord: string;
   insertIndex: number;
   insertLength: number;
+  /** When true, `wrongVariants` / popped sets use picker item ids. */
+  sequential?: boolean;
 };
 
 /** @deprecated Use InsertAnimationState */
@@ -84,15 +92,17 @@ export type WordTransformationGame = {
   operation: Operation | null;
   mode: TransformationMode | null;
   letters: LetterBubbleModel[];
-  variants: string[];
-  wrongVariant: string | null;
+  variantPickerItems: VariantPickerItem[];
+  pickerHiddenItemIds: ReadonlySet<string>;
+  wrongItemId: string | null;
+  poppedPickerItemIds: ReadonlySet<string> | undefined;
   instruction: string;
   highlightedCellIndex: number;
   revealedCellIndices: ReadonlySet<number>;
   solvedCount: number;
   totalCount: number;
   handleLetterPress: (position: number) => void;
-  handleVariantPress: (variant: string, source: VariantSourceLayout) => void;
+  handleVariantPress: (item: VariantPickerItem, source: VariantSourceLayout) => void;
 };
 
 const WRONG_FEEDBACK_MS = 1000;
@@ -152,7 +162,11 @@ export function useWordTransformationGame({
   const [wrongPositions, setWrongPositions] = useState<ReadonlySet<number>>(
     () => new Set(),
   );
-  const [wrongVariant, setWrongVariant] = useState<string | null>(null);
+  const [wrongChoiceId, setWrongChoiceId] = useState<string | null>(null);
+  const [sequentialInsertProgress, setSequentialInsertProgress] = useState(0);
+  const [hiddenLetterChoiceIds, setHiddenLetterChoiceIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [transitioning, setTransitioning] = useState(false);
   const [insertAnimation, setInsertAnimation] = useState<InsertAnimationState | null>(null);
   const [wordTransition, setWordTransition] = useState<WordTransitionState | null>(null);
@@ -232,6 +246,8 @@ export function useWordTransformationGame({
     setOpIndex(0);
     setPoppedPositions(new Set());
     setSkipEnterPositions(new Set());
+    setHiddenLetterChoiceIds(new Set());
+    setSequentialInsertProgress(0);
     clearInsertTimers();
     clearWordTransitionTimers();
     setInsertAnimation(null);
@@ -273,16 +289,31 @@ export function useWordTransformationGame({
     }, WRONG_FEEDBACK_MS);
   }, []);
 
-  const flashWrongVariant = useCallback((variant: string) => {
-    setWrongVariant(variant);
+  const flashWrongChoice = useCallback((choiceId: string) => {
+    setWrongChoiceId(choiceId);
     if (wrongVariantTimerRef.current != null) {
       clearTimeout(wrongVariantTimerRef.current);
     }
     wrongVariantTimerRef.current = setTimeout(() => {
-      setWrongVariant(null);
+      setWrongChoiceId(null);
       wrongVariantTimerRef.current = null;
     }, WRONG_FEEDBACK_MS);
   }, []);
+
+  const isSequentialInsert =
+    operation?.type === OPERATION_TYPES.INSERT && (operation.text.length ?? 0) > 1;
+
+  const sequentialLetterChoices = useMemo((): LetterChoice[] | null => {
+    if (!isSequentialInsert || operation == null) {
+      return null;
+    }
+    return generateSequentialLetterChoices(operation.text);
+  }, [isSequentialInsert, operation, opIndex, orderPos]);
+
+  useEffect(() => {
+    setSequentialInsertProgress(0);
+    setHiddenLetterChoiceIds(new Set());
+  }, [isSequentialInsert, operation, opIndex, orderPos]);
 
   const startWordEnterTransition = useCallback(() => {
       const nextPos = orderPos + 1;
@@ -494,21 +525,54 @@ export function useWordTransformationGame({
     [clearInsertTimers, opIndex, sequence, startWordExitTransition],
   );
 
-  const handleVariantPress = useCallback(
-    (variant: string, source: VariantSourceLayout) => {
-      if (
-        applyingRef.current ||
-        transitioning ||
-        wordTransition != null ||
-        insertAnimation != null ||
-        operation == null ||
-        mode !== 'insert'
-      ) {
-        return;
-      }
-      if (variant !== operation.text) {
-        playWrong?.();
-        flashWrongVariant(variant);
+  const scheduleInsertDismissAndFinalize = useCallback(
+    (
+      wrongIds: string[],
+      onLand: () => void,
+      sequential: boolean,
+    ) => {
+      scheduleInsertTimer(() => {
+        onLand();
+        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'dismiss' }));
+
+        wrongIds.forEach((wrongId, index) => {
+          scheduleInsertTimer(() => {
+            playPop?.();
+            setInsertAnimation((prev) => {
+              if (prev == null) {
+                return null;
+              }
+              return {
+                ...prev,
+                poppedWrongVariants: new Set(prev.poppedWrongVariants).add(wrongId),
+              };
+            });
+          }, index * VARIANT_POP_STAGGER_MS);
+        });
+      }, INSERT_RESERVE_MS + INSERT_FLY_MS);
+
+      const lastPopStartMs =
+        wrongIds.length > 0 ? (wrongIds.length - 1) * VARIANT_POP_STAGGER_MS : 0;
+      const finalizeDelay =
+        INSERT_RESERVE_MS +
+        INSERT_FLY_MS +
+        lastPopStartMs +
+        BUBBLE_BURST_DURATION_MS;
+
+      scheduleInsertTimer(() => {
+        if (sequential) {
+          setHiddenLetterChoiceIds(new Set());
+          setSequentialInsertProgress(0);
+        }
+        finalizeInsertOperation();
+      }, finalizeDelay);
+    },
+    [finalizeInsertOperation, playPop, scheduleInsertTimer],
+  );
+
+  const startWholeWordInsertAnimation = useCallback(
+    (item: VariantPickerItem, source: VariantSourceLayout) => {
+      if (operation == null) {
         return;
       }
 
@@ -519,7 +583,7 @@ export function useWordTransformationGame({
       const nextWord = applyInsert(currentWord, operation.index, operation.text);
       const insertLength = operation.text.length;
       const allVariants = operation.variants ?? [];
-      const wrongVariants = allVariants.filter((item) => item !== operation.text);
+      const wrongVariants = allVariants.filter((variant) => variant !== operation.text);
       const targetLayout = computeLetterLayout(koiRect, nextWord.length);
       const targetCenters = targetLayout.centers.slice(
         operation.index,
@@ -533,6 +597,7 @@ export function useWordTransformationGame({
       const animationBase: InsertAnimationState = {
         phase: 'reserve',
         selectedVariant: operation.text,
+        selectedChoiceId: item.id,
         allVariants,
         wrongVariants,
         poppedWrongVariants: new Set(),
@@ -555,57 +620,166 @@ export function useWordTransformationGame({
         setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'fly' }));
       }, INSERT_RESERVE_MS);
 
-      scheduleInsertTimer(() => {
-        setSkipEnterPositions(
-          new Set(
-            Array.from({ length: insertLength }, (_, i) => operation.index + i),
-          ),
-        );
-        currentWordRef.current = nextWord;
-        setCurrentWord(nextWord);
-        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'dismiss' }));
-
-        wrongVariants.forEach((wrongVariant, index) => {
-          scheduleInsertTimer(() => {
-            playPop?.();
-            setInsertAnimation((prev) => {
-              if (prev == null) {
-                return null;
-              }
-              return {
-                ...prev,
-                poppedWrongVariants: new Set(prev.poppedWrongVariants).add(wrongVariant),
-              };
-            });
-          }, index * VARIANT_POP_STAGGER_MS);
-        });
-      }, INSERT_RESERVE_MS + INSERT_FLY_MS);
-
-      const lastPopStartMs =
-        wrongVariants.length > 0 ? (wrongVariants.length - 1) * VARIANT_POP_STAGGER_MS : 0;
-      const finalizeDelay =
-        INSERT_RESERVE_MS +
-        INSERT_FLY_MS +
-        lastPopStartMs +
-        BUBBLE_BURST_DURATION_MS;
-
-      scheduleInsertTimer(() => {
-        finalizeInsertOperation();
-      }, finalizeDelay);
+      scheduleInsertDismissAndFinalize(
+        wrongVariants,
+        () => {
+          setSkipEnterPositions(
+            new Set(
+              Array.from({ length: insertLength }, (_, i) => operation.index + i),
+            ),
+          );
+          currentWordRef.current = nextWord;
+          setCurrentWord(nextWord);
+        },
+        false,
+      );
     },
     [
       clearInsertTimers,
       currentWord,
-      finalizeInsertOperation,
-      flashWrongVariant,
-      insertAnimation,
       koiRect,
-      mode,
       operation,
       playInflate,
-      playPop,
-      playWrong,
+      scheduleInsertDismissAndFinalize,
       scheduleInsertTimer,
+    ],
+  );
+
+  const startSequentialLetterInsertAnimation = useCallback(
+    (item: VariantPickerItem, source: VariantSourceLayout) => {
+      if (operation == null || sequentialLetterChoices == null) {
+        return;
+      }
+
+      const expectedChar = operation.text[sequentialInsertProgress];
+      if (item.label !== expectedChar) {
+        playWrong?.();
+        flashWrongChoice(item.id);
+        return;
+      }
+
+      playInflate?.();
+      applyingRef.current = true;
+      clearInsertTimers();
+
+      const slotIndex = operation.index + sequentialInsertProgress;
+      const partialNextWord = applyInsert(currentWord, slotIndex, expectedChar);
+      const targetLayout = computeLetterLayout(koiRect, partialNextWord.length);
+      const toCenterX = targetLayout.centers[slotIndex] ?? 0;
+      const isLastLetter = sequentialInsertProgress + 1 >= operation.text.length;
+      const nextHiddenIds = new Set(hiddenLetterChoiceIds).add(item.id);
+      const remainingWrongIds = isLastLetter
+        ? sequentialLetterChoices
+            .filter((choice) => !nextHiddenIds.has(choice.id))
+            .map((choice) => choice.id)
+        : [];
+
+      const animationBase: InsertAnimationState = {
+        phase: 'reserve',
+        selectedVariant: item.label,
+        selectedChoiceId: item.id,
+        allVariants: sequentialLetterChoices.map((choice) => choice.id),
+        wrongVariants: remainingWrongIds,
+        poppedWrongVariants: new Set(),
+        char: item.label,
+        fromCenterX: source.centerX,
+        fromCenterY: source.centerY,
+        fromDiameter: source.diameter,
+        toCenterX,
+        toCenterY: targetLayout.rowY,
+        toDiameter: targetLayout.diameter,
+        flyDurationMs: INSERT_FLY_MS,
+        nextWord: partialNextWord,
+        insertIndex: slotIndex,
+        insertLength: 1,
+        sequential: true,
+      };
+
+      setInsertAnimation(animationBase);
+
+      scheduleInsertTimer(() => {
+        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'fly' }));
+      }, INSERT_RESERVE_MS);
+
+      if (isLastLetter) {
+        scheduleInsertDismissAndFinalize(
+          remainingWrongIds,
+          () => {
+            setHiddenLetterChoiceIds(nextHiddenIds);
+            setSkipEnterPositions((prev) => new Set(prev).add(slotIndex));
+            currentWordRef.current = partialNextWord;
+            setCurrentWord(partialNextWord);
+            setSequentialInsertProgress(sequentialInsertProgress + 1);
+          },
+          true,
+        );
+        return;
+      }
+
+      scheduleInsertTimer(() => {
+        setHiddenLetterChoiceIds(nextHiddenIds);
+        setSkipEnterPositions((prev) => new Set(prev).add(slotIndex));
+        currentWordRef.current = partialNextWord;
+        setCurrentWord(partialNextWord);
+        setSequentialInsertProgress(sequentialInsertProgress + 1);
+        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'dismiss' }));
+        applyingRef.current = false;
+      }, INSERT_RESERVE_MS + INSERT_FLY_MS);
+
+      scheduleInsertTimer(() => {
+        setInsertAnimation(null);
+      }, INSERT_RESERVE_MS + INSERT_FLY_MS + INSERT_LAND_HANDOFF_MS);
+    },
+    [
+      clearInsertTimers,
+      currentWord,
+      flashWrongChoice,
+      hiddenLetterChoiceIds,
+      koiRect,
+      sequentialLetterChoices,
+      operation,
+      playInflate,
+      playWrong,
+      scheduleInsertDismissAndFinalize,
+      scheduleInsertTimer,
+      sequentialInsertProgress,
+    ],
+  );
+
+  const handleVariantPress = useCallback(
+    (item: VariantPickerItem, source: VariantSourceLayout) => {
+      if (
+        applyingRef.current ||
+        transitioning ||
+        wordTransition != null ||
+        insertAnimation != null ||
+        operation == null ||
+        mode !== 'insert'
+      ) {
+        return;
+      }
+
+      if (operation.text.length > 1) {
+        startSequentialLetterInsertAnimation(item, source);
+        return;
+      }
+
+      if (item.label !== operation.text) {
+        playWrong?.();
+        flashWrongChoice(item.id);
+        return;
+      }
+
+      startWholeWordInsertAnimation(item, source);
+    },
+    [
+      insertAnimation,
+      mode,
+      operation,
+      playWrong,
+      flashWrongChoice,
+      startSequentialLetterInsertAnimation,
+      startWholeWordInsertAnimation,
       transitioning,
       wordTransition,
     ],
@@ -646,6 +820,37 @@ export function useWordTransformationGame({
     ],
   );
 
+  const variantPickerItems = useMemo((): VariantPickerItem[] => {
+    if (insertAnimation?.sequential && sequentialLetterChoices != null) {
+      return sequentialLetterChoices.map((choice) => ({ id: choice.id, label: choice.char }));
+    }
+    if (insertAnimation != null) {
+      return insertAnimation.allVariants.map((variant) => ({ id: variant, label: variant }));
+    }
+    if (isSequentialInsert) {
+      return (sequentialLetterChoices ?? []).map((choice) => ({
+        id: choice.id,
+        label: choice.char,
+      }));
+    }
+    if (mode === 'insert') {
+      return (operation?.variants ?? []).map((variant) => ({ id: variant, label: variant }));
+    }
+    return [];
+  }, [insertAnimation, isSequentialInsert, mode, operation?.variants, sequentialLetterChoices]);
+
+  const pickerHiddenItemIds = useMemo(() => {
+    const hidden = new Set(hiddenLetterChoiceIds);
+    if (
+      insertAnimation != null &&
+      insertAnimation.phase !== 'reserve' &&
+      insertAnimation.selectedChoiceId != null
+    ) {
+      hidden.add(insertAnimation.selectedChoiceId);
+    }
+    return hidden;
+  }, [hiddenLetterChoiceIds, insertAnimation]);
+
   const instruction = useMemo(() => {
     if (isCompleted) {
       return 'All words transformed!';
@@ -657,10 +862,10 @@ export function useWordTransformationGame({
       return 'Pop the bubbles to remove';
     }
     if (mode === 'insert') {
-      return 'Choose the letters to add';
+      return isSequentialInsert ? 'Add the letters in order' : 'Choose the letters to add';
     }
     return '';
-  }, [isCompleted, mode, transitioning]);
+  }, [isCompleted, isSequentialInsert, mode, transitioning]);
 
   return {
     isCompleted,
@@ -671,8 +876,10 @@ export function useWordTransformationGame({
     operation,
     mode,
     letters,
-    variants: mode === 'insert' ? operation?.variants ?? [] : [],
-    wrongVariant,
+    variantPickerItems,
+    pickerHiddenItemIds,
+    wrongItemId: wrongChoiceId,
+    poppedPickerItemIds: insertAnimation?.poppedWrongVariants,
     instruction,
     highlightedCellIndex: transitioning || sequence == null ? -1 : sequence.cellIndex,
     revealedCellIndices,

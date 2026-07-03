@@ -179,14 +179,10 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
           !game.transitioning &&
           game.wordTransition == null && (
           <TransformationVariantPicker
-            variants={game.insertAnimation?.allVariants ?? game.variants}
-            wrongVariant={game.wrongVariant}
-            hiddenVariant={
-              game.insertAnimation != null && game.insertAnimation.phase !== 'reserve'
-                ? game.insertAnimation.selectedVariant
-                : null
-            }
-            poppedVariants={game.insertAnimation?.poppedWrongVariants}
+            items={game.variantPickerItems}
+            wrongItemId={game.wrongItemId}
+            hiddenItemIds={game.pickerHiddenItemIds}
+            poppedItemIds={game.poppedPickerItemIds}
             interactive={game.insertAnimation == null}
             onSelect={game.handleVariantPress}
           />

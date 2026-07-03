@@ -8,8 +8,10 @@ export {
 } from './types';
 export {
   diffToOps,
+  generateSequentialLetterChoices,
   generateWordOperations,
   generateWrongVariants,
+  type LetterChoice,
 } from './generateOperations';
 export {
   bodyCellIndex,
