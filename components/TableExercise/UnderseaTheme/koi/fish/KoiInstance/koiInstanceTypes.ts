@@ -48,6 +48,10 @@ export type KoiRenderBaseProps = {
   fishWScale?: SharedValue<number>;
   /** When true, render bounds follow the fish anywhere on screen (escape mode). */
   freeBounds?: SharedValue<boolean>;
+  /** Fish index for pool-layer direct escape unclamping. */
+  fishIndex?: number;
+  escapeActive?: SharedValue<boolean>;
+  capturedFishIndexSv?: SharedValue<number>;
 };
 
 export type KoiInstanceProps = KoiRenderBaseProps;

@@ -24,7 +24,9 @@ import {
 } from './wordTransformation';
 
 const JELLYFISH_LAYER_Z = 5;
-/** Delay after capture starts before the koi bubble bursts and swims to its jellyfish. */
+/** Above jellyfish so escaping koi swim over table cells. */
+const KOI_SWIM_ZONE_Z = 10;
+/** Brief pause after a sequence is solved before the koi swims to its jellyfish. */
 const KOI_ESCAPE_DELAY_MS = 700;
 
 type WordTransformationContentProps = {
@@ -122,6 +124,8 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
         words={words}
         interactive={false}
         captureEnabled={false}
+        bubbleCaptureEnabled={false}
+        swimZoneZIndex={KOI_SWIM_ZONE_Z}
         sounds={sounds}
         controllerRef={koiControllerRef}
       />

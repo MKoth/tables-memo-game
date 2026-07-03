@@ -19,6 +19,8 @@ export const KoiSwimZone = forwardRef<KoiSwimZoneController, KoiSwimZoneProps>(
       words,
       interactive: interactiveProp = true,
       captureEnabled = true,
+      bubbleCaptureEnabled = true,
+      swimZoneZIndex,
       bubbleTarget,
       sounds,
       controllerRef,
@@ -36,6 +38,8 @@ export const KoiSwimZone = forwardRef<KoiSwimZoneController, KoiSwimZoneProps>(
       sim,
       selection,
       poolHiddenFishIndex,
+      escapeActiveSv,
+      capturedFishIndexSv,
       eliminatedFishIndices,
       eliminatedFishSv,
       handleFishSelect,
@@ -53,6 +57,7 @@ export const KoiSwimZone = forwardRef<KoiSwimZoneController, KoiSwimZoneProps>(
       masks,
       sounds,
       bubbleTarget,
+      bubbleCaptureEnabled,
     });
 
     const controller = useMemo<KoiSwimZoneController>(
@@ -80,12 +85,19 @@ export const KoiSwimZone = forwardRef<KoiSwimZoneController, KoiSwimZoneProps>(
       interactiveProp && captureEnabled && selection === null;
 
     return (
-      <View style={styles.container} pointerEvents="box-none">
+      <View
+        style={[
+          styles.container,
+          swimZoneZIndex != null && { zIndex: swimZoneZIndex },
+        ]}
+        pointerEvents="box-none">
         <KoiFishLayer
           sim={sim}
           images={images}
           masks={masks}
           capturedFishIndex={poolHiddenFishIndex}
+          escapeActive={bubbleCaptureEnabled ? undefined : escapeActiveSv}
+          capturedFishIndexSv={bubbleCaptureEnabled ? undefined : capturedFishIndexSv}
           eliminatedFishSv={eliminatedFishSv}
           eliminatedFishIndices={eliminatedFishIndices}
           interactive={fishInteractive}

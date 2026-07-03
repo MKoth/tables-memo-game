@@ -31,6 +31,8 @@ type UseKoiCaptureFlowParams = {
   images: Record<'koi1' | 'koi2' | 'koi3', SkImage>;
   masks: Record<'koi1' | 'koi2' | 'koi3', SkImage>;
   sounds?: UnderseaThemeSoundController;
+  /** When false, fish swim directly to jellyfish without bubble inflate/pop. */
+  bubbleCaptureEnabled?: boolean;
   /** Override bubble travel target (defaults to koi zone center). */
   bubbleTarget?: {
     centerX: number;
@@ -49,9 +51,14 @@ export function useKoiCaptureFlow({
   images,
   masks,
   sounds,
+  bubbleCaptureEnabled = true,
   bubbleTarget,
 }: UseKoiCaptureFlowParams) {
   const [selection, setSelection] = useState<BubbleSelection | null>(null);
+  const pendingDirectCaptureRef = useRef<{
+    word: string;
+    fishIndex: number;
+  } | null>(null);
   const [escapeOverlayActive, setEscapeOverlayActive] = useState(false);
   const [poolHiddenFishIndex, setPoolHiddenFishIndex] = useState<number | null>(null);
   const transitionRafRef = useRef<number | null>(null);
@@ -151,7 +158,7 @@ export function useKoiCaptureFlow({
   const { anim, phase, enterProgress, startBurst: startBurstRaw } = useBubbleAnimation(
     bubbleConfig,
     handleBurstEnd,
-    selection != null,
+    bubbleCaptureEnabled && selection != null,
     requestReleaseWorklet,
   );
 
@@ -225,6 +232,7 @@ export function useKoiCaptureFlow({
     targetCenterX,
     targetCenterY,
     phase,
+    bubbleCaptureEnabled,
     selection,
     setSelection,
     setEscapeOverlayActive,
@@ -264,6 +272,10 @@ export function useKoiCaptureFlow({
 
   const handleFishSelect = useCallback(
     (word: string, fishIndex: number, originX: number, originY: number) => {
+      if (!bubbleCaptureEnabled) {
+        return;
+      }
+
       cancelTransitionRaf();
       soundsRef.current?.playBubbleInflate();
       sim.armCapture(fishIndex, originX, originY);
@@ -280,6 +292,7 @@ export function useKoiCaptureFlow({
       });
     },
     [
+      bubbleCaptureEnabled,
       cancelTransitionRaf,
       escapeActiveSv,
       escapeCompleteTriggeredSv,
@@ -293,7 +306,7 @@ export function useKoiCaptureFlow({
     selection != null ? sim.runtimeEntries[selection.fishIndex] : null;
 
   const bubbleOverlay =
-    selection != null && capturedEntry != null ? (
+    bubbleCaptureEnabled && selection != null && capturedEntry != null ?
       <KoiCaptureOverlay
         selection={selection}
         capturedEntry={capturedEntry}
@@ -307,7 +320,7 @@ export function useKoiCaptureFlow({
         masks={masks}
         renderProps={sim.renderProps}
       />
-    ) : null;
+    : null;
 
   useKoiRuntimeBridge({
     selection,
@@ -331,6 +344,11 @@ export function useKoiCaptureFlow({
         return false;
       }
 
+      if (!bubbleCaptureEnabled) {
+        pendingDirectCaptureRef.current = { word, fishIndex };
+        return true;
+      }
+
       const positions = sim.sharedPositions.value;
       const originX = positions[fishIndex * 2] ?? 0;
       const originY = positions[fishIndex * 2 + 1] ?? 0;
@@ -338,20 +356,57 @@ export function useKoiCaptureFlow({
       handleFishSelect(word, fishIndex, originX, originY);
       return true;
     },
-    [getFishIndexForWord, handleFishSelect, sim.sharedPositions],
+    [bubbleCaptureEnabled, getFishIndexForWord, handleFishSelect, sim.sharedPositions],
   );
 
   const dispatchEscapeTo = useCallback(
     (targetX: number, targetY: number, hitIdx = -1) => {
+      if (!bubbleCaptureEnabled) {
+        const pending = pendingDirectCaptureRef.current;
+        if (pending == null) {
+          return;
+        }
+
+        const { fishIndex } = pending;
+        const positions = sim.sharedPositions.value;
+        const originX = positions[fishIndex * 2] ?? 0;
+        const originY = positions[fishIndex * 2 + 1] ?? 0;
+
+        cancelTransitionRaf();
+        sim.armCapture(fishIndex, originX, originY);
+        pendingDirectCaptureRef.current = null;
+
+        escapeTargetXSv.value = targetX;
+        escapeTargetYSv.value = targetY;
+        escapeStageSv.value = 0;
+        escapeCompleteTriggeredSv.value = false;
+        escapeOverlayDismissTriggeredSv.value = false;
+        escapeActiveSv.value = true;
+        return;
+      }
+
       handleMatchSuccess(targetX, targetY, hitIdx);
     },
-    [handleMatchSuccess],
+    [
+      bubbleCaptureEnabled,
+      cancelTransitionRaf,
+      escapeActiveSv,
+      escapeCompleteTriggeredSv,
+      escapeOverlayDismissTriggeredSv,
+      escapeStageSv,
+      escapeTargetXSv,
+      escapeTargetYSv,
+      handleMatchSuccess,
+      sim,
+    ],
   );
 
   return {
     sim,
     selection,
     poolHiddenFishIndex,
+    escapeActiveSv,
+    capturedFishIndexSv,
     eliminatedFishIndices,
     eliminatedFishSv,
     handleFishSelect,

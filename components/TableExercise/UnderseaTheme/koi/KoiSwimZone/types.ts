@@ -33,6 +33,13 @@ export type KoiSwimZoneProps = {
   sounds?: UnderseaThemeSoundController;
   /** When false, fish taps are ignored even if `interactive` is true. */
   captureEnabled?: boolean;
+  /**
+   * When false, captured fish swim directly to the jellyfish without a bubble
+   * inflate/pop sequence (table exercise keeps the default `true`).
+   */
+  bubbleCaptureEnabled?: boolean;
+  /** Fixed z-index for the swim zone (e.g. above jellyfish during direct escape). */
+  swimZoneZIndex?: number;
   /** Override where the capture bubble travels (defaults to koi zone center). */
   bubbleTarget?: KoiSwimZoneBubbleTarget;
   controllerRef?: RefObject<KoiSwimZoneController | null>;

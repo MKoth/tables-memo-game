@@ -61,6 +61,9 @@ function KoiShaderRect({
   state,
   fishWScale,
   freeBounds,
+  fishIndex,
+  escapeActive,
+  capturedFishIndexSv,
   centerXOffset = 0,
   centerYOffset = 0,
   renderMode,
@@ -79,6 +82,17 @@ function KoiShaderRect({
   const bodyColorUniform = [...bodyColor] as [number, number, number];
   const overlayColorUniform = [...overlayColor] as [number, number, number];
 
+  const escapeFreeBounds = useDerivedValue(() => {
+    if (
+      escapeActive == null ||
+      capturedFishIndexSv == null ||
+      fishIndex == null
+    ) {
+      return false;
+    }
+    return escapeActive.value && capturedFishIndexSv.value === fishIndex;
+  });
+
   const bounds = useDerivedValue(() => {
     const scale = fishWScale?.value ?? 1;
     const scaledFishW = fishW * scale;
@@ -88,6 +102,7 @@ function KoiShaderRect({
     const turnT = Math.abs(state.turnArc.value);
     const fishHAdj = scaledFishH * (1 + turnT * turnDistort.bulgeGain);
     const penumbraPx = renderMode > 0.5 ? shadowSoftness * fishHAdj * 0.8 : 0;
+    const unclamped = (freeBounds?.value ?? false) || escapeFreeBounds.value;
     return computeKoiBounds(
       swimZoneX,
       swimZoneY,
@@ -105,7 +120,7 @@ function KoiShaderRect({
       centerY,
       RENDER_BOUNDS_MARGIN,
       penumbraPx,
-      !(freeBounds?.value ?? false),
+      !unclamped,
     );
   });
 

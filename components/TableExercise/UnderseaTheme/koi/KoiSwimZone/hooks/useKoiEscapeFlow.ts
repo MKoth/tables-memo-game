@@ -19,6 +19,7 @@ type UseKoiEscapeFlowParams = KoiCaptureSharedStateBundle & {
   targetCenterX: number;
   targetCenterY: number;
   phase: SharedValue<number>;
+  bubbleCaptureEnabled?: boolean;
   selection: BubbleSelection | null;
   setSelection: (value: BubbleSelection | null) => void;
   setEscapeOverlayActive: (value: boolean) => void;
@@ -42,6 +43,7 @@ export function useKoiEscapeFlow({
   targetCenterX,
   targetCenterY,
   phase,
+  bubbleCaptureEnabled = true,
   selection,
   setSelection,
   setEscapeOverlayActive,
@@ -133,9 +135,15 @@ export function useKoiEscapeFlow({
       return;
     }
 
-    escapeTargetXSv.value = targetCenterX;
-    escapeTargetYSv.value = targetCenterY;
+    if (
+      bubbleCaptureEnabled &&
+      (bubblePhase === BubblePhase.Idle || bubblePhase === BubblePhase.Enter)
+    ) {
+      escapeTargetXSv.value = targetCenterX;
+      escapeTargetYSv.value = targetCenterY;
+    }
   }, [
+    bubbleCaptureEnabled,
     escapeActiveSv,
     escapeCompleteTriggeredSv,
     escapeOverlayDismissTriggeredSv,
@@ -167,8 +175,7 @@ export function useKoiEscapeFlow({
     const bubblePhase = phase.value;
     if (
       bubblePhase === BubblePhase.Idle ||
-      bubblePhase === BubblePhase.Burst ||
-      escapeActiveSv.value
+      bubblePhase === BubblePhase.Burst
     ) {
       entry.runtime.x.value = targetCenterX;
       entry.runtime.y.value = targetCenterY;

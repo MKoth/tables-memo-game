@@ -26,6 +26,8 @@ export type KoiFishLayerProps = {
   eliminatedFishIndices?: number[];
   interactive?: boolean;
   onFishSelect?: (word: string, fishIndex: number, originX: number, originY: number) => void;
+  escapeActive?: SharedValue<boolean>;
+  capturedFishIndexSv?: SharedValue<number>;
 };
 
 export function KoiFishLayer({
@@ -37,6 +39,8 @@ export function KoiFishLayer({
   eliminatedFishIndices = [],
   interactive = true,
   onFishSelect,
+  escapeActive,
+  capturedFishIndexSv,
 }: KoiFishLayerProps) {
   const {
     runtimeEntries,
@@ -93,6 +97,9 @@ export function KoiFishLayer({
             return (
               <KoiShadowInstance
                 key={`shadow-${index}`}
+                fishIndex={index}
+                escapeActive={escapeActive}
+                capturedFishIndexSv={capturedFishIndexSv}
                 image={images[spawn.imageKey]}
                 maskImage={masks[spawn.imageKey]}
                 overlayMaskImage={masks[spawn.overlayMaskKey]}
@@ -132,6 +139,9 @@ export function KoiFishLayer({
             return (
               <KoiInstance
                 key={`fish-${index}`}
+                fishIndex={index}
+                escapeActive={escapeActive}
+                capturedFishIndexSv={capturedFishIndexSv}
                 image={images[spawn.imageKey]}
                 maskImage={masks[spawn.imageKey]}
                 overlayMaskImage={masks[spawn.overlayMaskKey]}
