@@ -8,6 +8,8 @@ export {
 export {
   TransformationWordBubbles,
   computeLetterLayout,
+  TRANSFORMATION_VARIANT_ROW_Y_RATIO,
+  TRANSFORMATION_WORD_ROW_Y_RATIO,
   type LetterLayout,
 } from './components/TransformationWordBubbles';
 export {

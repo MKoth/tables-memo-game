@@ -5,9 +5,7 @@ import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThem
 import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
-import { computeLetterLayout } from './TransformationWordBubbles';
-
-const VARIANT_ROW_Y_RATIO = 0.58;
+import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from './TransformationWordBubbles';
 
 function statusFor(variant: string, wrongVariant: string | null): LetterBubbleStatus {
   if (wrongVariant === variant) {
@@ -34,7 +32,7 @@ export function TransformationVariantPicker({
   const clock = useUnderseaThemeClock();
 
   const layout = useMemo(
-    () => computeLetterLayout(koiRect, variants.length, VARIANT_ROW_Y_RATIO),
+    () => computeLetterLayout(koiRect, variants.length, TRANSFORMATION_VARIANT_ROW_Y_RATIO),
     [koiRect, variants.length],
   );
 

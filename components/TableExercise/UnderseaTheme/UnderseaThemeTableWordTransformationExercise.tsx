@@ -19,6 +19,8 @@ import { CaptureOverlay, TransformationInstructionBar, UnderseaThemeCornerContro
 import {
   TransformationVariantPicker,
   TransformationWordBubbles,
+  TRANSFORMATION_VARIANT_ROW_Y_RATIO,
+  TRANSFORMATION_WORD_ROW_Y_RATIO,
   useWordTransformationGame,
   type WordOperationSequence,
 } from './wordTransformation';
@@ -26,6 +28,8 @@ import {
 const JELLYFISH_LAYER_Z = 5;
 /** Above jellyfish so escaping koi swim over table cells. */
 const KOI_SWIM_ZONE_Z = 10;
+/** Above koi fish so letter bubbles stay readable and tappable. */
+const BUBBLE_LAYER_Z = 15;
 /** Brief pause after a sequence is solved before the koi swims to its jellyfish. */
 const KOI_ESCAPE_DELAY_MS = 700;
 
@@ -39,7 +43,7 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
   const soundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
 
   const { jellyBridge } = useUnderseaThemeRuntime();
-  const { jellyRect } = useUnderseaThemeLayout();
+  const { jellyRect, koiRect } = useUnderseaThemeLayout();
   const jellyBridgeRef = useRef(jellyBridge);
   jellyBridgeRef.current = jellyBridge;
   const jellyRectRef = useRef(jellyRect);
@@ -117,6 +121,11 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
     playSuccess: sounds.playSuccessClick,
   });
 
+  const instructionCenterY =
+    koiRect.y +
+    koiRect.h *
+      ((TRANSFORMATION_WORD_ROW_Y_RATIO + TRANSFORMATION_VARIANT_ROW_Y_RATIO) * 0.5);
+
   return (
     <View style={styles.container}>
       <UnderseaThemeBackground />
@@ -139,22 +148,27 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
           extraRevealedBodyIndices={game.revealedCellIndices}
         />
       </View>
-      {!game.isCompleted && (
-        <TransformationWordBubbles
-          letters={game.letters}
-          interactive={!game.transitioning}
-          onLetterPress={game.handleLetterPress}
-        />
-      )}
-      {game.mode === 'insert' && !game.transitioning && (
-        <TransformationVariantPicker
-          variants={game.variants}
-          wrongVariant={game.wrongVariant}
-          interactive={!game.transitioning}
-          onSelect={game.handleVariantPress}
-        />
-      )}
-      <TransformationInstructionBar message={game.instruction} />
+      <View style={styles.bubbleLayer} pointerEvents="box-none">
+        {!game.isCompleted && (
+          <TransformationWordBubbles
+            letters={game.letters}
+            interactive={!game.transitioning}
+            onLetterPress={game.handleLetterPress}
+          />
+        )}
+        {game.mode === 'insert' && !game.transitioning && (
+          <TransformationVariantPicker
+            variants={game.variants}
+            wrongVariant={game.wrongVariant}
+            interactive={!game.transitioning}
+            onSelect={game.handleVariantPress}
+          />
+        )}
+      </View>
+      <TransformationInstructionBar
+        message={game.instruction}
+        centerY={instructionCenterY}
+      />
       <UnderseaThemeCornerControls helpVisible={false} />
     </View>
   );
@@ -190,5 +204,13 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     zIndex: JELLYFISH_LAYER_Z,
+  },
+  bubbleLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: BUBBLE_LAYER_Z,
   },
 });

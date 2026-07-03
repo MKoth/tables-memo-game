@@ -12,6 +12,11 @@ const MIN_DIAMETER = 34;
 const MAX_DIAMETER = 74;
 const GAP_RATIO = 0.26;
 
+/** Vertical placement of the current-word bubble row inside the koi zone. */
+export const TRANSFORMATION_WORD_ROW_Y_RATIO = 0.2;
+/** Vertical placement of the insert-variant bubble row inside the koi zone. */
+export const TRANSFORMATION_VARIANT_ROW_Y_RATIO = 0.65;
+
 export type LetterLayout = {
   diameter: number;
   rowY: number;
@@ -21,7 +26,7 @@ export type LetterLayout = {
 export function computeLetterLayout(
   koiRect: ZoneRect,
   count: number,
-  rowYRatio = 0.4,
+  rowYRatio = TRANSFORMATION_WORD_ROW_Y_RATIO,
 ): LetterLayout {
   const rowY = koiRect.y + koiRect.h * rowYRatio;
   if (count <= 0) {

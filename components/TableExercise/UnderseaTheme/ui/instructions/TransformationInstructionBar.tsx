@@ -9,20 +9,24 @@ import { computeInstructionBarPosition } from './helpers/controlsPosition';
 export type TransformationInstructionBarProps = {
   message: string;
   zIndex?: number;
+  /** When set, vertically centers the bar on this screen Y instead of the default bottom anchor. */
+  centerY?: number;
 };
 
 /**
- * Non-interactive instruction text anchored to the bottom of the koi zone.
- * Orientation-aware via `computeUnderseaThemeLayout` zone rects.
+ * Non-interactive instruction text in the koi zone.
+ * Defaults to the bottom anchor; pass `centerY` to place between bubble rows.
  */
 export function TransformationInstructionBar({
   message,
   zIndex = INSTRUCTION_BAR_Z,
+  centerY,
 }: TransformationInstructionBarProps) {
   const insets = useSafeAreaInsets();
   const layout = useUnderseaThemeLayout();
   const position = computeInstructionBarPosition(layout, insets);
   const [panelHeight, setPanelHeight] = useState(72);
+  const top = centerY != null ? centerY - panelHeight * 0.5 : position.top;
 
   return (
     <View
@@ -30,7 +34,7 @@ export function TransformationInstructionBar({
         styles.anchor,
         {
           left: position.left,
-          top: position.top,
+          top,
           width: position.width,
           zIndex,
         },
