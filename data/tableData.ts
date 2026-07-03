@@ -135,6 +135,8 @@ const SPANISH_ROW_HEADERS = [
 
 const SPANISH_SINGULAR_ROW_HEADERS = SPANISH_ROW_HEADERS.slice(0, 3);
 
+const SPANISH_PLURAL_ROW_HEADERS = SPANISH_ROW_HEADERS.slice(3, 6);
+
 const SPANISH_BODY_FULL = [
   ['hablo', 'como', 'vivo', 'canto', 'bailo', 'corro', 'salto'],
   ['hablas', 'comes', 'vives', 'cantas', 'bailas', 'corres', 'saltas'],
@@ -179,6 +181,24 @@ export const spanishPresentTable2Singular = createTableData(
   [...SPANISH_SINGULAR_ROW_HEADERS],
   ['cantar', 'bailar', 'correr', 'saltar'],
   SPANISH_BODY_FULL.slice(0, 3).map(row => row.slice(3, 7)),
+  'spanish-present',
+);
+
+export const spanishPresentTable1Plural = createTableData(
+  'spanish-present-part-1-plural',
+  'Spanish Present — hablar, comer, vivir (plural)',
+  [...SPANISH_PLURAL_ROW_HEADERS],
+  ['hablar', 'comer', 'vivir'],
+  SPANISH_BODY_FULL.slice(3, 6).map(row => row.slice(0, 3)),
+  'spanish-present',
+);
+
+export const spanishPresentTable2Plural = createTableData(
+  'spanish-present-part-2-plural',
+  'Spanish Present — cantar, bailar, correr, saltar (plural)',
+  [...SPANISH_PLURAL_ROW_HEADERS],
+  ['cantar', 'bailar', 'correr', 'saltar'],
+  SPANISH_BODY_FULL.slice(3, 6).map(row => row.slice(3, 7)),
   'spanish-present',
 );
 

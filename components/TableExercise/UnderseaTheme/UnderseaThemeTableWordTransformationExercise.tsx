@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { getTableBodyWords, spanishPresentTable2Singular } from '../../../data/tableData';
+import { getTableBodyWords, spanishPresentTable2Plural } from '../../../data/tableData';
 import { UnderseaThemeBackground } from './background';
 import {
   UnderseaThemeClockProvider,
@@ -39,7 +39,7 @@ type WordTransformationContentProps = {
 };
 
 function WordTransformationContent({ sounds }: WordTransformationContentProps) {
-  const table = spanishPresentTable2Singular;
+  const table = spanishPresentTable2Plural;
   const words = useMemo(() => getTableBodyWords(table), [table]);
   const soundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
 
