@@ -62,18 +62,42 @@ export function useKoiEscapeFlow({
   escapeCompleteTriggeredSv,
   escapeOverlayDismissTriggeredSv,
   setEliminatedFishIndices,
+  eliminatedFishSv,
   fishCountRef,
   onEscapeOverlayDismissRef,
   onEscapeCompleteRef,
 }: UseKoiEscapeFlowParams) {
   const handleEscapeOverlayDismiss = useCallback(() => {
+    if (!bubbleCaptureEnabled) {
+      const fishIndex = capturedFishIndexSv.value;
+      if (fishIndex >= 0) {
+        setPoolHiddenFishIndex(fishIndex);
+      }
+    }
     setSelection(null);
     setEscapeOverlayActive(false);
-  }, [setEscapeOverlayActive, setSelection]);
+  }, [
+    bubbleCaptureEnabled,
+    capturedFishIndexSv,
+    setEscapeOverlayActive,
+    setPoolHiddenFishIndex,
+    setSelection,
+  ]);
 
   const handleEscapeComplete = useCallback(() => {
     const fishIndex = capturedFishIndexSv.value;
     cancelTransitionRaf();
+
+    if (fishIndex >= 0) {
+      const current = eliminatedFishSv.value;
+      if (!current.includes(fishIndex)) {
+        eliminatedFishSv.value = [...current, fishIndex];
+      }
+      if (!bubbleCaptureEnabled) {
+        setPoolHiddenFishIndex(fishIndex);
+      }
+    }
+
     escapeActiveSv.value = false;
     escapeStageSv.value = 0;
     escapeCompleteTriggeredSv.value = false;
@@ -91,12 +115,16 @@ export function useKoiEscapeFlow({
       });
     }
 
-    setPoolHiddenFishIndex(null);
+    if (bubbleCaptureEnabled) {
+      setPoolHiddenFishIndex(null);
+    }
     setEscapeOverlayActive(false);
     setSelection(null);
   }, [
+    bubbleCaptureEnabled,
     cancelTransitionRaf,
     capturedFishIndexSv,
+    eliminatedFishSv,
     escapeActiveSv,
     escapeStageSv,
     escapeCompleteTriggeredSv,

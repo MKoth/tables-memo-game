@@ -119,6 +119,15 @@ export function useKoiCaptureFlow({
 
   useEffect(() => () => cancelTransitionRaf(), [cancelTransitionRaf]);
 
+  useEffect(() => {
+    if (
+      poolHiddenFishIndex != null &&
+      eliminatedFishIndices.includes(poolHiddenFishIndex)
+    ) {
+      setPoolHiddenFishIndex(null);
+    }
+  }, [eliminatedFishIndices, poolHiddenFishIndex]);
+
   const handleBurstEnd = useCallback(
     (intent: number) => {
       if (intent === BurstIntent.Escape) {
