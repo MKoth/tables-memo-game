@@ -29,8 +29,10 @@ export type LetterBubbleModel = {
   popped: boolean;
   wrong: boolean;
   skipEnter?: boolean;
-  /** Hidden until revealed during the post-solve enter sequence. */
-  pendingEnter?: boolean;
+  /** Per-letter pop delay (ms) so the exit cascade staggers on the UI thread. */
+  popDelayMs?: number;
+  /** Per-letter enter delay (ms) so the inflate cascade staggers on the UI thread. */
+  enterDelayMs?: number;
 };
 
 export type VariantSourceLayout = {
@@ -351,25 +353,13 @@ export function useWordTransformationGame({
         return;
       }
 
+      // Single state update: every letter mounts at once and each inflates after
+      // its own UI-thread delay (see LetterBubble.enterDelayMs). The inflate sound
+      // is fired from the Reanimated animation callback so it stays frame-synced.
       setWordTransition({
         phase: 'enter',
         revealOrder,
         revealedPositions: new Set(),
-      });
-
-      revealOrder.forEach((position, index) => {
-        scheduleWordTransitionTimer(() => {
-          playInflate?.();
-          setWordTransition((prev) => {
-            if (prev?.phase !== 'enter') {
-              return prev;
-            }
-            return {
-              ...prev,
-              revealedPositions: new Set(prev.revealedPositions).add(revealOrder[index]!),
-            };
-          });
-        }, index * WORD_LETTER_ENTER_STAGGER_MS);
       });
 
       const enterCompleteDelay =
@@ -385,7 +375,6 @@ export function useWordTransformationGame({
       exercise.sequences,
       order,
       orderPos,
-      playInflate,
       scheduleWordTransitionTimer,
     ],
   );
@@ -406,25 +395,13 @@ export function useWordTransformationGame({
         return;
       }
 
+      // Single state update: every letter is marked popped at once and each bursts
+      // after its own UI-thread delay (see LetterBubble.popDelayMs). The pop sound
+      // is fired from the Reanimated animation callback so it stays frame-synced.
       setWordTransition({
         phase: 'exit',
         popOrder,
         poppedPositions: new Set(),
-      });
-
-      popOrder.forEach((position, index) => {
-        scheduleWordTransitionTimer(() => {
-          playPop?.();
-          setWordTransition((prev) => {
-            if (prev?.phase !== 'exit') {
-              return prev;
-            }
-            return {
-              ...prev,
-              poppedPositions: new Set(prev.poppedPositions).add(popOrder[index]!),
-            };
-          });
-        }, index * WORD_LETTER_EXIT_STAGGER_MS);
       });
 
       const exitCompleteDelay =
@@ -438,7 +415,6 @@ export function useWordTransformationGame({
     [
       clearWordTransitionTimers,
       onSequenceSolved,
-      playPop,
       scheduleWordTransitionTimer,
       startWordEnterTransition,
     ],
@@ -788,15 +764,11 @@ export function useWordTransformationGame({
   const letters = useMemo<LetterBubbleModel[]>(
     () =>
       currentWord.split('').map((char, position) => {
-        const exitPopped =
-          wordTransition?.phase === 'exit' && wordTransition.poppedPositions.has(position);
-        const pendingEnter =
-          wordTransition?.phase === 'enter' &&
-          !wordTransition.revealedPositions.has(position);
-        const popped =
-          wordTransition?.phase === 'exit'
-            ? exitPopped
-            : poppedPositions.has(position);
+        const isExit = wordTransition?.phase === 'exit';
+        const isEnter = wordTransition?.phase === 'enter';
+        const popIndex = isExit ? wordTransition.popOrder.indexOf(position) : -1;
+        const enterIndex = isEnter ? wordTransition.revealOrder.indexOf(position) : -1;
+        const popped = isExit ? true : poppedPositions.has(position);
 
         return {
           // Stable per sequence + index so surviving letters keep their instance
@@ -807,7 +779,9 @@ export function useWordTransformationGame({
           popped,
           wrong: wrongPositions.has(position),
           skipEnter: skipEnterPositions.has(position),
-          pendingEnter,
+          popDelayMs: popIndex >= 0 ? popIndex * WORD_LETTER_EXIT_STAGGER_MS : undefined,
+          enterDelayMs:
+            enterIndex >= 0 ? enterIndex * WORD_LETTER_ENTER_STAGGER_MS : undefined,
         };
       }),
     [

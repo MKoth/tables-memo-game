@@ -58,8 +58,23 @@ export function loadSound(source: number, volume: number): Promise<LoadedSound> 
   });
 }
 
+/**
+ * The audio session only needs activating once per foreground session. Calling
+ * `Sound.setActive(true)` on every one-shot (e.g. each bubble pop in a staggered
+ * cascade) is a redundant bridge round-trip that piles onto the JS thread.
+ */
+let audioSessionActive = false;
+
 function activateAudioSession(): void {
+  if (audioSessionActive) {
+    return;
+  }
   Sound.setActive(true);
+  audioSessionActive = true;
+}
+
+function deactivateAudioSessionFlag(): void {
+  audioSessionActive = false;
 }
 
 function playOneShot(sound: LoadedSound | null, volume = SFX_VOLUME): void {
@@ -238,6 +253,8 @@ export function bindUnderseaThemeSoundAppState(
     }
     if (nextState === 'background' || nextState === 'inactive') {
       loaded.waterflow.pause();
+      // Force re-activation of the audio session when we return to foreground.
+      deactivateAudioSessionFlag();
     }
   };
 

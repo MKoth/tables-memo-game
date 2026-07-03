@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Glyphs,
   Group,
@@ -10,6 +10,7 @@ import {
   Easing,
   useDerivedValue,
   useSharedValue,
+  withDelay,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -85,10 +86,18 @@ export type LetterBubbleProps = {
   moveDurationMs?: number;
   /** Bubble shader tint while status is wrong (hex). */
   wrongTintColor?: string;
+  /** Delay (ms) before the pop burst starts — drives staggered pops on the UI thread. */
+  popDelayMs?: number;
+  /** Delay (ms) before the enter/inflate animation starts. */
+  enterDelayMs?: number;
+  /** Fired on the UI thread at the frame the pop becomes visible (kept in sync with audio). */
+  onPopSound?: () => void;
+  /** Fired on the UI thread at the frame the enter/inflate becomes visible. */
+  onEnterSound?: () => void;
   onPopComplete?: () => void;
 };
 
-export function LetterBubble({
+function LetterBubbleComponent({
   char,
   centerX,
   centerY,
@@ -103,6 +112,10 @@ export function LetterBubble({
   skipEnter = false,
   moveDurationMs = MOVE_DURATION_MS,
   wrongTintColor = LABEL_WRONG_COLOR,
+  popDelayMs,
+  enterDelayMs,
+  onPopSound,
+  onEnterSound,
   onPopComplete,
 }: LetterBubbleProps) {
   const posX = useSharedValue(initialCenterX ?? centerX);
@@ -111,6 +124,19 @@ export function LetterBubble({
   const popT = useSharedValue(0);
   const enterT = useSharedValue(skipEnter ? 1 : 0);
   const wrongT = useSharedValue(0);
+  const popSoundTrigger = useSharedValue(0);
+  const enterSoundTrigger = useSharedValue(0);
+
+  // Read latest delay / sound callbacks without retriggering the status-driven
+  // effects (which must only fire when the bubble enters/pops, not on every prop tick).
+  const popDelayRef = useRef(popDelayMs ?? 0);
+  popDelayRef.current = popDelayMs ?? 0;
+  const enterDelayRef = useRef(enterDelayMs ?? 0);
+  enterDelayRef.current = enterDelayMs ?? 0;
+  const onPopSoundRef = useRef(onPopSound);
+  onPopSoundRef.current = onPopSound;
+  const onEnterSoundRef = useRef(onEnterSound);
+  onEnterSoundRef.current = onEnterSound;
 
   const wrongTint = useMemo(() => parseHexColor(wrongTintColor), [wrongTintColor]);
   const wrongTintR = wrongTint.r;
@@ -122,10 +148,29 @@ export function LetterBubble({
       enterT.value = 1;
       return;
     }
-    enterT.value = withTiming(1, {
-      duration: ENTER_DURATION_MS,
-      easing: Easing.out(Easing.back(1.6)),
-    });
+    const delay = enterDelayRef.current;
+    enterT.value = withDelay(
+      delay,
+      withTiming(1, {
+        duration: ENTER_DURATION_MS,
+        easing: Easing.out(Easing.back(1.6)),
+      }),
+    );
+    const sound = onEnterSoundRef.current;
+    if (sound != null) {
+      enterSoundTrigger.value = 0;
+      enterSoundTrigger.value = withDelay(
+        delay,
+        withTiming(1, { duration: 0 }, (finished) => {
+          'worklet';
+          if (finished) {
+            scheduleOnRN(sound);
+          }
+        }),
+      );
+    }
+    // Only (re)run on mount / skipEnter change; delay + sound are read from refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enterT, skipEnter]);
 
   useEffect(() => {
@@ -162,17 +207,36 @@ export function LetterBubble({
       popT.value = 0;
       return;
     }
+    const delay = popDelayRef.current;
     popT.value = 0;
-    popT.value = withTiming(
-      1,
-      { duration: BUBBLE_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },
-      (finished) => {
-        'worklet';
-        if (finished && onPopComplete != null) {
-          scheduleOnRN(onPopComplete);
-        }
-      },
+    popT.value = withDelay(
+      delay,
+      withTiming(
+        1,
+        { duration: BUBBLE_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },
+        (finished) => {
+          'worklet';
+          if (finished && onPopComplete != null) {
+            scheduleOnRN(onPopComplete);
+          }
+        },
+      ),
     );
+    const sound = onPopSoundRef.current;
+    if (sound != null) {
+      popSoundTrigger.value = 0;
+      popSoundTrigger.value = withDelay(
+        delay,
+        withTiming(1, { duration: 0 }, (finished) => {
+          'worklet';
+          if (finished) {
+            scheduleOnRN(sound);
+          }
+        }),
+      );
+    }
+    // Delay + sound are read from refs so this only fires on status change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onPopComplete, popT, status]);
 
   const anim = useDerivedValue<BubbleAnimState>(() => {
@@ -257,3 +321,9 @@ export function LetterBubble({
     </Group>
   );
 }
+
+/**
+ * Memoized so a single popped/inflating bubble does not force React-Native-Skia
+ * to reconcile every other bubble in the canvas on each game-state change.
+ */
+export const LetterBubble = React.memo(LetterBubbleComponent);

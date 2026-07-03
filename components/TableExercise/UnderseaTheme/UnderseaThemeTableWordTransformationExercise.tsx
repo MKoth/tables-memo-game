@@ -168,6 +168,8 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
                 : undefined
             }
             onLetterPress={game.handleLetterPress}
+            playPop={sounds.playBubblePop}
+            playInflate={sounds.playBubbleInflate}
           />
         )}
         {game.insertAnimation != null &&

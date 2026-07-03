@@ -85,6 +85,10 @@ export type TransformationWordBubblesProps = {
   interactive?: boolean;
   insertPreview?: InsertPreviewLayout;
   onLetterPress: (position: number) => void;
+  /** Fired (UI-thread synced) as each letter bursts during the exit cascade. */
+  playPop?: () => void;
+  /** Fired (UI-thread synced) as each letter inflates during the enter cascade. */
+  playInflate?: () => void;
 };
 
 export function TransformationWordBubbles({
@@ -92,6 +96,8 @@ export function TransformationWordBubbles({
   interactive = true,
   insertPreview,
   onLetterPress,
+  playPop,
+  playInflate,
 }: TransformationWordBubblesProps) {
   const { koiRect } = useUnderseaThemeLayout();
   const { images } = useUnderseaThemeAssetsContext();
@@ -131,9 +137,6 @@ export function TransformationWordBubbles({
     <>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
         {letters.map((letter) => {
-          if (letter.pendingEnter) {
-            return null;
-          }
           const centerX =
             insertPreview != null && previewLayout != null
               ? previewCenterForLetter(letter.position, insertPreview, previewLayout)
@@ -152,6 +155,10 @@ export function TransformationWordBubbles({
               skipEnter={letter.skipEnter}
               moveDurationMs={letter.skipEnter ? 0 : undefined}
               status={statusFor(letter)}
+              popDelayMs={letter.popDelayMs}
+              enterDelayMs={letter.enterDelayMs}
+              onPopSound={letter.popDelayMs != null ? playPop : undefined}
+              onEnterSound={letter.enterDelayMs != null ? playInflate : undefined}
               image={images.bubble}
               font={font}
               clock={clock}
@@ -161,7 +168,7 @@ export function TransformationWordBubbles({
       </Canvas>
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {letters.map((letter) => {
-          if (letter.popped || letter.pendingEnter) {
+          if (letter.popped) {
             return null;
           }
           const cx =
