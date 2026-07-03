@@ -1,6 +1,11 @@
+import type { RefObject } from 'react';
 import type { TableData } from '../../../../../data/tableData';
 
 export type JellyfishSoundKind = 'success' | 'error' | 'primary';
+
+export type JellyfishTableLayerController = {
+  revealBodyLabel: (cellIndex: number) => void;
+};
 
 export type JellyfishTableLayerProps = {
   table: TableData;
@@ -8,6 +13,11 @@ export type JellyfishTableLayerProps = {
   interactive?: boolean;
   /** How long (ms) a tapped visible label shows its translation before reverting. */
   translationDisplayMs?: number;
+  /** Body/header cell index to keep highlighted with the primary tint. -1 = none. */
+  highlightedCellIndex?: number;
+  /** Additional body labels to show without requiring a koi match first. */
+  extraRevealedBodyIndices?: ReadonlySet<number> | readonly number[];
+  controllerRef?: RefObject<JellyfishTableLayerController | null>;
 };
 
 export type JellyfishTableLayerInnerProps = {
@@ -20,4 +30,7 @@ export type JellyfishTableLayerInnerProps = {
   onJellyfishSound?: (kind: JellyfishSoundKind) => void;
   interactive: boolean;
   translationDisplayMs: number;
+  highlightedCellIndex: number;
+  extraRevealedBodyIndices?: ReadonlySet<number> | readonly number[];
+  controllerRef?: RefObject<JellyfishTableLayerController | null>;
 };

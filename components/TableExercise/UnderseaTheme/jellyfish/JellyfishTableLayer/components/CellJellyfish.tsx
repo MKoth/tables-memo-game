@@ -7,6 +7,7 @@ import {
   JELLYFISH_DEFAULT_WOBBLE,
   JELLYFISH_FLASH_TINT_WAVE_SPEED,
   JELLYFISH_FLASH_WOBBLE,
+  JELLYFISH_TINT_PRESETS,
   JELLYFISH_TINT_PRESETS_BY_INDEX,
 } from '../presets/jellyfishTintPresets';
 import type { CellConfig } from '../helpers/cellConfigBuilders';
@@ -23,6 +24,7 @@ export type CellJellyfishProps = {
   bellImage: SkImage;
   tentacleImage: SkImage;
   clock: SharedValue<number>;
+  isPersistentlyHighlighted?: boolean;
 };
 
 export function CellJellyfish({
@@ -37,6 +39,7 @@ export function CellJellyfish({
   bellImage,
   tentacleImage,
   clock,
+  isPersistentlyHighlighted = false,
 }: CellJellyfishProps) {
   const idx = config.index;
 
@@ -44,8 +47,27 @@ export function CellJellyfish({
     const until = tintFlashUntil.value[idx] ?? 0;
     const presetIdx = tintFlashPreset.value[idx] ?? -1;
     const isFlashing = clock.value < until && presetIdx >= 0;
-    const wobble = isFlashing ? JELLYFISH_FLASH_WOBBLE : JELLYFISH_DEFAULT_WOBBLE;
+    const wobble = isFlashing || isPersistentlyHighlighted
+      ? JELLYFISH_FLASH_WOBBLE
+      : JELLYFISH_DEFAULT_WOBBLE;
     const tentacleWobbleAmp = wobble.wobbleAmp * 1.25;
+
+    if (isPersistentlyHighlighted) {
+      const preset = JELLYFISH_TINT_PRESETS.primary;
+      return {
+        tintMode: preset.tintMode,
+        tintStrength: preset.tintStrength,
+        tintA: [preset.tintA[0], preset.tintA[1], preset.tintA[2]],
+        tintB: [preset.tintB[0], preset.tintB[1], preset.tintB[2]],
+        tintC: [preset.tintC[0], preset.tintC[1], preset.tintC[2]],
+        animatedTint: preset.animatedTint,
+        tintWaveSpeed: JELLYFISH_FLASH_TINT_WAVE_SPEED,
+        bellWobbleAmp: wobble.wobbleAmp,
+        tentacleWobbleAmp,
+        wobbleSpeed: wobble.wobbleSpeed,
+        wobbleLobes: wobble.wobbleLobes,
+      };
+    }
 
     if (isFlashing) {
       const preset = JELLYFISH_TINT_PRESETS_BY_INDEX[presetIdx];

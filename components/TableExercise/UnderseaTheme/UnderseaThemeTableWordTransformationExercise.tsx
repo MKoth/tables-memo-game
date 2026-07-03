@@ -3,13 +3,12 @@ import { StyleSheet, View } from 'react-native';
 import { UnderseaThemeBackground } from './background';
 import {
   UnderseaThemeClockProvider,
-  UnderseaThemeLayoutProvider,
-  UnderseaThemeAssetsProvider,
-  useUnderseaThemeAssets,
+  WORD_TRANSFORMATION_STORE_CONFIG,
+  useUnderseaThemeAssetsContext,
   useUnderseaThemeExerciseStore,
 } from './core';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
-import { UnderseaThemeLoadingScreen } from './ui';
+import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 
 type UnderseaThemeWordTransformationContentProps = {
   sounds: UnderseaThemeSoundController;
@@ -40,24 +39,16 @@ function UnderseaThemeWordTransformationContent({
   );
 }
 
-export function UnderseaThemeTableWordTransformationExercise() {
-  const assets = useUnderseaThemeAssets();
+function UnderseaThemeWordTransformationContentWithSounds() {
+  const { sounds } = useUnderseaThemeAssetsContext();
+  return <UnderseaThemeWordTransformationContent sounds={sounds} />;
+}
 
+export function UnderseaThemeTableWordTransformationExercise() {
   return (
-    <UnderseaThemeLayoutProvider>
-      {assets.phase !== 'ready' ? (
-        <UnderseaThemeLoadingScreen
-          seafloorImage={assets.seafloorImage}
-          stoneImages={assets.stoneImages}
-          seaweedImages={assets.seaweedImages}
-          progress={assets.progress}
-        />
-      ) : (
-        <UnderseaThemeAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
-          <UnderseaThemeWordTransformationContent sounds={assets.sounds} />
-        </UnderseaThemeAssetsProvider>
-      )}
-    </UnderseaThemeLayoutProvider>
+    <UnderseaThemeExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
+      <UnderseaThemeWordTransformationContentWithSounds />
+    </UnderseaThemeExerciseShell>
   );
 }
 

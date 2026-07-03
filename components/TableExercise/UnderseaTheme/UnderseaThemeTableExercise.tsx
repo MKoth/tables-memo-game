@@ -4,20 +4,19 @@ import { getTableBodyWords, spanishPresentTable2Singular } from '../../../data/t
 import { UnderseaThemeBackground } from './background';
 import {
   UnderseaThemeClockProvider,
-  UnderseaThemeLayoutProvider,
-  UnderseaThemeAssetsProvider,
   UnderseaThemeRuntimeProvider,
-  useUnderseaThemeAssets,
+  TABLE_EXERCISE_STORE_CONFIG,
+  useUnderseaThemeAssetsContext,
   useUnderseaThemeExerciseStore,
 } from './core';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
 import { KoiSwimZone } from './koi';
+import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import {
   CaptureOverlay,
   UnderseaThemeCornerControls,
   UnderseaThemeInstructions,
-  UnderseaThemeLoadingScreen,
 } from './ui';
 
 const JELLYFISH_LAYER_Z = 5;
@@ -82,24 +81,16 @@ function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentPr
   );
 }
 
-export function UnderseaThemeTableExercise() {
-  const assets = useUnderseaThemeAssets();
+function UnderseaThemeExerciseContentWithSounds() {
+  const { sounds } = useUnderseaThemeAssetsContext();
+  return <UnderseaThemeExerciseContent sounds={sounds} />;
+}
 
+export function UnderseaThemeTableExercise() {
   return (
-    <UnderseaThemeLayoutProvider>
-      {assets.phase !== 'ready' ? (
-        <UnderseaThemeLoadingScreen
-          seafloorImage={assets.seafloorImage}
-          stoneImages={assets.stoneImages}
-          seaweedImages={assets.seaweedImages}
-          progress={assets.progress}
-        />
-      ) : (
-        <UnderseaThemeAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
-          <UnderseaThemeExerciseContent sounds={assets.sounds} />
-        </UnderseaThemeAssetsProvider>
-      )}
-    </UnderseaThemeLayoutProvider>
+    <UnderseaThemeExerciseShell storeConfig={TABLE_EXERCISE_STORE_CONFIG}>
+      <UnderseaThemeExerciseContentWithSounds />
+    </UnderseaThemeExerciseShell>
   );
 }
 

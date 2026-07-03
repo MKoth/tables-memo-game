@@ -5,7 +5,11 @@ import { JellyfishTableLayerInner } from './JellyfishTableLayerInner';
 import { DEFAULT_TRANSLATION_DISPLAY_MS } from './config/jellyfishTableLayerConfig';
 import type { JellyfishTableLayerProps } from './types';
 
-export type { JellyfishSoundKind, JellyfishTableLayerProps } from './types';
+export type {
+  JellyfishSoundKind,
+  JellyfishTableLayerController,
+  JellyfishTableLayerProps,
+} from './types';
 
 /**
  * Thin shell: reads preloaded jellyfish images from context before mounting
@@ -16,6 +20,9 @@ export function JellyfishTableLayer({
   onJellyfishSound,
   interactive = true,
   translationDisplayMs = DEFAULT_TRANSLATION_DISPLAY_MS,
+  highlightedCellIndex = -1,
+  extraRevealedBodyIndices,
+  controllerRef,
 }: JellyfishTableLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
   const { captureBridge, onJellyfishMatchSuccess } = useUnderseaThemeRuntime();
@@ -33,6 +40,9 @@ export function JellyfishTableLayer({
       onJellyfishSound={onJellyfishSound}
       interactive={interactive}
       translationDisplayMs={translationDisplayMs}
+      highlightedCellIndex={highlightedCellIndex}
+      extraRevealedBodyIndices={extraRevealedBodyIndices}
+      controllerRef={controllerRef}
     />
   );
 }

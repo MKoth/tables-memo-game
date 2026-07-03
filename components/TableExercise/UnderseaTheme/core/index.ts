@@ -40,7 +40,16 @@ export { useUnderseaThemeAssets } from './assets/useUnderseaThemeAssets';
 export type { UnderseaThemeImages } from './assets/underseaThemeAssets';
 export type { UnderseaThemeSoundController } from './assets/useUnderseaThemeSounds';
 
-export { useUnderseaThemeExerciseStore } from './store/underseaThemeExerciseStore';
+export {
+  createUnderseaThemeExerciseStore,
+  UnderseaThemeExerciseStoreProvider,
+  useUnderseaThemeExerciseStore,
+  TABLE_EXERCISE_STORE_CONFIG,
+  WORD_TRANSFORMATION_STORE_CONFIG,
+  type UnderseaThemeExerciseState,
+  type UnderseaThemeExerciseStore,
+  type UnderseaThemeExerciseStoreConfig,
+} from './store/createUnderseaThemeExerciseStore';
 
 export type {
   JellyfishLayoutBridge,

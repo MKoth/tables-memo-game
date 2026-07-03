@@ -31,7 +31,7 @@ import {
   type LayoutBounds,
   type LayoutParticle,
 } from './layout/computeJellyfishLayout';
-import type { JellyfishSoundKind, JellyfishTableLayerInnerProps } from './types';
+import type { JellyfishSoundKind, JellyfishTableLayerController, JellyfishTableLayerInnerProps } from './types';
 
 export type { JellyfishSoundKind, JellyfishTableLayerProps } from './types';
 
@@ -45,6 +45,9 @@ export function JellyfishTableLayerInner({
   onJellyfishSound,
   interactive,
   translationDisplayMs,
+  highlightedCellIndex,
+  extraRevealedBodyIndices,
+  controllerRef,
 }: JellyfishTableLayerInnerProps) {
   const { publishJellyBridge } = useUnderseaThemeRuntime();
   const { height } = useWindowDimensions();
@@ -141,13 +144,38 @@ export function JellyfishTableLayerInner({
     });
   }, []);
 
+  const effectiveRevealedBodyIndices = useMemo(() => {
+    if (extraRevealedBodyIndices == null) {
+      return revealedBodyIndices;
+    }
+
+    const extra =
+      extraRevealedBodyIndices instanceof Set
+        ? extraRevealedBodyIndices
+        : new Set(extraRevealedBodyIndices);
+    return new Set([...revealedBodyIndices, ...extra]);
+  }, [extraRevealedBodyIndices, revealedBodyIndices]);
+
+  const controller = useMemo<JellyfishTableLayerController>(
+    () => ({
+      revealBodyLabel,
+    }),
+    [revealBodyLabel],
+  );
+
+  useLayoutEffect(() => {
+    if (controllerRef != null) {
+      controllerRef.current = controller;
+    }
+  }, [controller, controllerRef]);
+
   const flashTranslationJs = useCallback(
     (hitIdx: number) => {
       const config = cellConfigs[hitIdx];
       if (config == null || config.translation.length === 0) {
         return;
       }
-      if (!config.isHeader && !revealedBodyIndices.has(hitIdx)) {
+      if (!config.isHeader && !effectiveRevealedBodyIndices.has(hitIdx)) {
         return;
       }
       setTranslatedIndices(prev => new Set(prev).add(hitIdx));
@@ -162,7 +190,7 @@ export function JellyfishTableLayerInner({
         });
       }, translationDisplayMs);
     },
-    [cellConfigs, revealedBodyIndices, translationDisplayMs],
+    [cellConfigs, effectiveRevealedBodyIndices, translationDisplayMs],
   );
 
   const handleMatchSuccessJs = useCallback(
@@ -356,10 +384,11 @@ export function JellyfishTableLayerInner({
             bellImage={bellImage}
             tentacleImage={tentacleImage}
             clock={clock}
+            isPersistentlyHighlighted={highlightedCellIndex === config.index}
           />
         ))}
         {drawOrder.map(config => {
-          if (!config.isHeader && !revealedBodyIndices.has(config.index)) {
+          if (!config.isHeader && !effectiveRevealedBodyIndices.has(config.index)) {
             return null;
           }
           return (

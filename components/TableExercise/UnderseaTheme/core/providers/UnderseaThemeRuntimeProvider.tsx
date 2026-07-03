@@ -11,7 +11,7 @@ import type {
   KoiCaptureBridge,
   KoiSimBridge,
 } from '../types/bridgeTypes';
-import { useUnderseaThemeExerciseStore } from '../store/underseaThemeExerciseStore';
+import { useUnderseaThemeExerciseStore } from '../store/createUnderseaThemeExerciseStore';
 
 type UnderseaThemeRuntimeContextValue = {
   captureBridge: KoiCaptureBridge | null;

@@ -1,4 +1,4 @@
-import type { ControlsAnchor } from '../../../core/layout/computeUnderseaThemeLayout';
+import type { ControlsAnchor, UnderseaThemeLayout } from '../../../core/layout/computeUnderseaThemeLayout';
 import { HELP_BUTTON_SIZE } from '../constants';
 
 export type EdgeInsets = {
@@ -51,4 +51,31 @@ export function computeTooltipPosition(
     case 'topLeft':
       return { top: insets.top + offset, left: insets.left + margin };
   }
+}
+
+const INSTRUCTION_BAR_HORIZONTAL_MARGIN = 16;
+const INSTRUCTION_BAR_BOTTOM_MARGIN = 20;
+
+/** Positions the transformation instruction bar inside the koi interaction zone. */
+export function computeInstructionBarPosition(
+  layout: UnderseaThemeLayout,
+  insets: EdgeInsets,
+): {
+  left: number;
+  top: number;
+  width: number;
+} {
+  const { koiRect } = layout;
+  const horizontalMargin = INSTRUCTION_BAR_HORIZONTAL_MARGIN + insets.left;
+  const width = Math.max(0, koiRect.w - horizontalMargin * 2);
+  const top = Math.max(
+    koiRect.y + 12,
+    koiRect.y + koiRect.h - 88 - INSTRUCTION_BAR_BOTTOM_MARGIN - insets.bottom,
+  );
+
+  return {
+    left: koiRect.x + horizontalMargin,
+    top,
+    width,
+  };
 }

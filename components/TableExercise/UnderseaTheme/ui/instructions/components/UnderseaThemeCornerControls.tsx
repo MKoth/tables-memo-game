@@ -9,7 +9,7 @@ import {
 } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUnderseaThemeLayout } from '../../../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeExerciseStore } from '../../../core/store/underseaThemeExerciseStore';
+import { useUnderseaThemeExerciseStore } from '../../../core/store/createUnderseaThemeExerciseStore';
 import { UiDropPanel } from '../UiDropPanel';
 import {
   CORNER_BUTTON_GAP,

@@ -4,7 +4,7 @@ import { Canvas } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
 import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
-import { useUnderseaThemeExerciseStore } from '../../core/store/underseaThemeExerciseStore';
+import { useUnderseaThemeExerciseStore } from '../../core/store/createUnderseaThemeExerciseStore';
 import { TutorialSpotlightOverlay } from './components/TutorialSpotlightOverlay';
 import { InstructionTooltip } from './components/UnderseaThemeCornerControls';
 import { HELP_MARGIN, INSTRUCTIONS_Z } from './constants';

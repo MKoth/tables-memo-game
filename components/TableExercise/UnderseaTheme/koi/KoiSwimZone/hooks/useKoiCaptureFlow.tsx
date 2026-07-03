@@ -31,6 +31,12 @@ type UseKoiCaptureFlowParams = {
   images: Record<'koi1' | 'koi2' | 'koi3', SkImage>;
   masks: Record<'koi1' | 'koi2' | 'koi3', SkImage>;
   sounds?: UnderseaThemeSoundController;
+  /** Override bubble travel target (defaults to koi zone center). */
+  bubbleTarget?: {
+    centerX: number;
+    centerY: number;
+    diameter?: number;
+  };
 };
 
 export function useKoiCaptureFlow({
@@ -43,6 +49,7 @@ export function useKoiCaptureFlow({
   images,
   masks,
   sounds,
+  bubbleTarget,
 }: UseKoiCaptureFlowParams) {
   const [selection, setSelection] = useState<BubbleSelection | null>(null);
   const [escapeOverlayActive, setEscapeOverlayActive] = useState(false);
@@ -78,9 +85,12 @@ export function useKoiCaptureFlow({
     soundsRef.current?.playRandomSplash();
   }, []);
 
-  const targetDiameter = Math.min(koiRect.w, koiRect.h) * BUBBLE_DIAMETER_RATIO;
-  const targetCenterX = koiRect.x + koiRect.w * 0.5;
-  const targetCenterY = koiRect.y + koiRect.h * 0.5;
+  const defaultTargetDiameter = Math.min(koiRect.w, koiRect.h) * BUBBLE_DIAMETER_RATIO;
+  const defaultTargetCenterX = koiRect.x + koiRect.w * 0.5;
+  const defaultTargetCenterY = koiRect.y + koiRect.h * 0.5;
+  const targetDiameter = bubbleTarget?.diameter ?? defaultTargetDiameter;
+  const targetCenterX = bubbleTarget?.centerX ?? defaultTargetCenterX;
+  const targetCenterY = bubbleTarget?.centerY ?? defaultTargetCenterY;
 
   const bubbleConfig = useMemo(
     () => ({
@@ -309,6 +319,35 @@ export function useKoiCaptureFlow({
     eliminatedFishSv,
   });
 
+  const getFishIndexForWord = useCallback(
+    (word: string) => sim.runtimeEntries.findIndex((entry) => entry.spawn.word === word),
+    [sim.runtimeEntries],
+  );
+
+  const armCaptureByWord = useCallback(
+    (word: string) => {
+      const fishIndex = getFishIndexForWord(word);
+      if (fishIndex < 0) {
+        return false;
+      }
+
+      const positions = sim.sharedPositions.value;
+      const originX = positions[fishIndex * 2] ?? 0;
+      const originY = positions[fishIndex * 2 + 1] ?? 0;
+
+      handleFishSelect(word, fishIndex, originX, originY);
+      return true;
+    },
+    [getFishIndexForWord, handleFishSelect, sim.sharedPositions],
+  );
+
+  const dispatchEscapeTo = useCallback(
+    (targetX: number, targetY: number, hitIdx = -1) => {
+      handleMatchSuccess(targetX, targetY, hitIdx);
+    },
+    [handleMatchSuccess],
+  );
+
   return {
     sim,
     selection,
@@ -316,5 +355,9 @@ export function useKoiCaptureFlow({
     eliminatedFishIndices,
     eliminatedFishSv,
     handleFishSelect,
+    handleMatchSuccess,
+    getFishIndexForWord,
+    armCaptureByWord,
+    dispatchEscapeTo,
   };
 }

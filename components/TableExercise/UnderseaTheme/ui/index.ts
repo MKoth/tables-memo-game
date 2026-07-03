@@ -10,4 +10,8 @@ export {
   type UnderseaThemeCornerControlsProps,
   type UnderseaThemeSoundToggleButtonProps,
 } from './instructions/UnderseaThemeInstructions';
+export {
+  TransformationInstructionBar,
+  type TransformationInstructionBarProps,
+} from './instructions/TransformationInstructionBar';
 export { UnderseaThemeLoadingScreen } from './loading/UnderseaThemeLoadingScreen';
