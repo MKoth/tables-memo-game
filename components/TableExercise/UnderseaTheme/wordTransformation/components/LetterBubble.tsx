@@ -119,6 +119,7 @@ export function LetterBubble({
 
   useEffect(() => {
     if (skipEnter) {
+      enterT.value = 1;
       return;
     }
     enterT.value = withTiming(1, {

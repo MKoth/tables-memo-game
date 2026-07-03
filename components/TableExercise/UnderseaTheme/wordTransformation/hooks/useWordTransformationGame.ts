@@ -164,6 +164,8 @@ export function useWordTransformationGame({
   );
 
   const applyingRef = useRef(false);
+  const currentWordRef = useRef(currentWord);
+  currentWordRef.current = currentWord;
   const skipSequenceResetRef = useRef(false);
   const wrongTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const wrongVariantTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -358,13 +360,16 @@ export function useWordTransformationGame({
   );
 
   const startWordExitTransition = useCallback(
-    (solved: WordOperationSequence) => {
+    (solved: WordOperationSequence, exitWord?: string) => {
       clearWordTransitionTimers();
       setTransitioning(true);
+      setPoppedPositions(new Set());
+      setSkipEnterPositions(new Set());
       setRevealedCellIndices((prev) => new Set(prev).add(solved.cellIndex));
       onSequenceSolved?.(solved);
 
-      const popOrder = shuffleIndices(currentWord.length);
+      const word = exitWord ?? currentWordRef.current;
+      const popOrder = shuffleIndices(word.length);
       if (popOrder.length === 0) {
         startWordEnterTransition();
         return;
@@ -401,7 +406,6 @@ export function useWordTransformationGame({
     },
     [
       clearWordTransitionTimers,
-      currentWord,
       onSequenceSolved,
       playPop,
       scheduleWordTransitionTimer,
@@ -414,12 +418,13 @@ export function useWordTransformationGame({
       if (sequence == null) {
         return;
       }
+      currentWordRef.current = nextWord;
       setCurrentWord(nextWord);
       setPoppedPositions(new Set());
 
       const nextOpIndex = opIndex + 1;
       if (nextOpIndex >= sequence.operations.length) {
-        startWordExitTransition(sequence);
+        startWordExitTransition(sequence, nextWord);
         return;
       }
       setOpIndex(nextOpIndex);
@@ -556,6 +561,7 @@ export function useWordTransformationGame({
             Array.from({ length: insertLength }, (_, i) => operation.index + i),
           ),
         );
+        currentWordRef.current = nextWord;
         setCurrentWord(nextWord);
         setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'dismiss' }));
 
@@ -613,6 +619,10 @@ export function useWordTransformationGame({
         const pendingEnter =
           wordTransition?.phase === 'enter' &&
           !wordTransition.revealedPositions.has(position);
+        const popped =
+          wordTransition?.phase === 'exit'
+            ? exitPopped
+            : poppedPositions.has(position);
 
         return {
           // Stable per sequence + index so surviving letters keep their instance
@@ -620,7 +630,7 @@ export function useWordTransformationGame({
           key: `${orderPos}:${position}`,
           char,
           position,
-          popped: poppedPositions.has(position) || exitPopped,
+          popped,
           wrong: wrongPositions.has(position),
           skipEnter: skipEnterPositions.has(position),
           pendingEnter,
