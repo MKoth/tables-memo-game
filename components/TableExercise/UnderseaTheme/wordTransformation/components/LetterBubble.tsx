@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   Glyphs,
   Group,
@@ -40,6 +40,17 @@ const WRONG_WOBBLE = {
 } as const;
 /** Whole-bubble shake frequency while wrong feedback is active. */
 const WRONG_SHAKE_HZ = 11;
+
+/** Livelier wobble while a bubble is travelling to a new position (e.g. insert flight). */
+const MOVE_WOBBLE = {
+  wobbleAmp: BUBBLE_IDLE_WOBBLE.wobbleAmp * 3.7,
+  wobbleSpeed: BUBBLE_IDLE_WOBBLE.wobbleSpeed * 7.6,
+} as const;
+/** Ramp-up / ease-out envelope (ms) for the travel wobble boost. */
+const MOVE_WOBBLE_RAMP_MS = 0;
+const MOVE_WOBBLE_RELEASE_MS = 220;
+/** Minimum positional change (px) that counts as a real move worth wobbling for. */
+const MOVE_WOBBLE_MIN_DELTA = 1.5;
 
 function lerp(a: number, b: number, t: number): number {
   'worklet';
@@ -124,6 +135,7 @@ function LetterBubbleComponent({
   const popT = useSharedValue(0);
   const enterT = useSharedValue(skipEnter ? 1 : 0);
   const wrongT = useSharedValue(0);
+  const moveT = useSharedValue(0);
   const popSoundTrigger = useSharedValue(0);
   const enterSoundTrigger = useSharedValue(0);
 
@@ -173,7 +185,12 @@ function LetterBubbleComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enterT, skipEnter]);
 
-  useEffect(() => {
+  // useLayoutEffect so travel + wobble start before the first paint after mount.
+  useLayoutEffect(() => {
+    const travelDelta =
+      Math.hypot(centerX - posX.value, centerY - posY.value) +
+      Math.abs(diameter - dia.value);
+
     posX.value = withTiming(centerX, {
       duration: moveDurationMs,
       easing: Easing.inOut(Easing.cubic),
@@ -186,7 +203,19 @@ function LetterBubbleComponent({
       duration: moveDurationMs,
       easing: Easing.inOut(Easing.cubic),
     });
-  }, [centerX, centerY, diameter, dia, moveDurationMs, posX, posY]);
+
+    // Wiggle faster / wider while actually travelling, then settle back to idle.
+    if (moveDurationMs > 0 && travelDelta > MOVE_WOBBLE_MIN_DELTA) {
+      const holdMs = Math.max(0, moveDurationMs - MOVE_WOBBLE_RAMP_MS - MOVE_WOBBLE_RELEASE_MS);
+      moveT.value = withSequence(
+        withTiming(1, { duration: MOVE_WOBBLE_RAMP_MS, easing: Easing.out(Easing.quad) }),
+        withDelay(
+          holdMs,
+          withTiming(0, { duration: MOVE_WOBBLE_RELEASE_MS, easing: Easing.in(Easing.quad) }),
+        ),
+      );
+    }
+  }, [centerX, centerY, diameter, dia, moveDurationMs, moveT, posX, posY]);
 
   useEffect(() => {
     if (status !== 'wrong') {
@@ -243,6 +272,7 @@ function LetterBubbleComponent({
     const enter = enterT.value;
     const pop = popT.value;
     const wrong = wrongT.value;
+    const move = moveT.value;
     const growT = Math.min(1, pop / 0.5);
     const enterScale = 0.35 + 0.65 * enter;
     const d = pop > 0 ? dia.value * (1 + 0.28 * growT) : dia.value * enterScale;
@@ -257,14 +287,17 @@ function LetterBubbleComponent({
     const shakeY = shakeAmp * Math.cos(shakeT * WRONG_SHAKE_HZ * Math.PI * 2 * 1.17);
     const cx = posX.value + shakeX;
     const cy = posY.value + shakeY;
+    // Base idle wobble → livelier while travelling → wrong feedback overrides.
+    const moveAmp = lerp(BUBBLE_IDLE_WOBBLE.wobbleAmp, MOVE_WOBBLE.wobbleAmp, move);
+    const moveSpeed = lerp(BUBBLE_IDLE_WOBBLE.wobbleSpeed, MOVE_WOBBLE.wobbleSpeed, move);
     return {
       x: cx - d * 0.5,
       y: cy - d * 0.5,
       diameter: d,
       centerX: cx,
       centerY: cy,
-      wobbleAmp: lerp(BUBBLE_IDLE_WOBBLE.wobbleAmp, WRONG_WOBBLE.wobbleAmp, wrong),
-      wobbleSpeed: lerp(BUBBLE_IDLE_WOBBLE.wobbleSpeed, WRONG_WOBBLE.wobbleSpeed, wrong),
+      wobbleAmp: lerp(moveAmp, WRONG_WOBBLE.wobbleAmp, wrong),
+      wobbleSpeed: lerp(moveSpeed, WRONG_WOBBLE.wobbleSpeed, wrong),
       wobbleLobes: lerp(BUBBLE_IDLE_WOBBLE.wobbleLobes, WRONG_WOBBLE.wobbleLobes, wrong),
       opacity,
       labelOpacity: pop > 0 ? 1 - Math.min(1, pop / 0.5) : enter,

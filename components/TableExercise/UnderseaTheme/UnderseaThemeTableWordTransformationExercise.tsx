@@ -172,11 +172,7 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
             playInflate={sounds.playBubbleInflate}
           />
         )}
-        {game.insertAnimation != null &&
-          (game.insertAnimation.phase === 'fly' ||
-            game.insertAnimation.phase === 'dismiss') && (
-          <TransformationInsertFlight flight={game.insertAnimation} />
-        )}
+        <TransformationInsertFlight flight={game.insertAnimation} />
         {(game.mode === 'insert' || game.insertAnimation != null) &&
           !game.transitioning &&
           game.wordTransition == null && (
@@ -187,6 +183,7 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
             poppedItemIds={game.poppedPickerItemIds}
             interactive={game.insertAnimation == null}
             onSelect={game.handleVariantPress}
+            playPop={sounds.playBubblePop}
           />
         )}
       </View>

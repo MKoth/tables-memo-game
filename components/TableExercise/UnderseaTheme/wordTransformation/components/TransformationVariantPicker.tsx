@@ -10,17 +10,21 @@ import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from './Trans
 export type VariantPickerItem = {
   id: string;
   label: string;
+  /** UI-thread stagger when this variant pops during insert dismiss. */
+  popDelayMs?: number;
+  /** True during dismiss — bubble plays a staggered pop (see popDelayMs). */
+  popping?: boolean;
 };
 
 function statusFor(
-  itemId: string,
+  item: VariantPickerItem,
   wrongItemId: string | null,
   poppedItemIds: ReadonlySet<string> | undefined,
 ): LetterBubbleStatus {
-  if (poppedItemIds?.has(itemId)) {
+  if (item.popping || poppedItemIds?.has(item.id)) {
     return 'popped';
   }
-  if (wrongItemId === itemId) {
+  if (wrongItemId === item.id) {
     return 'wrong';
   }
   return 'idle';
@@ -39,6 +43,8 @@ export type TransformationVariantPickerProps = {
   poppedItemIds?: ReadonlySet<string>;
   interactive?: boolean;
   onSelect: (item: VariantPickerItem, source: VariantPickerSourceLayout) => void;
+  /** Fired (UI-thread synced) as each wrong variant pops during dismiss. */
+  playPop?: () => void;
 };
 
 export function TransformationVariantPicker({
@@ -48,6 +54,7 @@ export function TransformationVariantPicker({
   poppedItemIds,
   interactive = true,
   onSelect,
+  playPop,
 }: TransformationVariantPickerProps) {
   const { koiRect } = useUnderseaThemeLayout();
   const { images } = useUnderseaThemeAssetsContext();
@@ -94,7 +101,9 @@ export function TransformationVariantPicker({
               centerX={layout.centers[i] ?? 0}
               centerY={layout.rowY}
               diameter={layout.diameter}
-              status={statusFor(item.id, wrongItemId ?? null, poppedItemIds)}
+              status={statusFor(item, wrongItemId ?? null, poppedItemIds)}
+              popDelayMs={item.popDelayMs}
+              onPopSound={item.popDelayMs != null ? playPop : undefined}
               image={images.bubble}
               font={font}
               clock={clock}
@@ -104,7 +113,7 @@ export function TransformationVariantPicker({
       </Canvas>
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {items.map((item, i) => {
-          if (hiddenItemIds?.has(item.id) || poppedItemIds?.has(item.id)) {
+          if (hiddenItemIds?.has(item.id) || item.popping || poppedItemIds?.has(item.id)) {
             return null;
           }
           const cx = layout.centers[i] ?? 0;

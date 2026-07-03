@@ -51,6 +51,8 @@ export type InsertAnimationState = {
   allVariants: string[];
   wrongVariants: string[];
   poppedWrongVariants: ReadonlySet<string>;
+  /** Shuffled ids for staggered wrong-variant pops during dismiss (UI thread). */
+  dismissPopOrder: readonly string[];
   char: string;
   fromCenterX: number;
   fromCenterY: number;
@@ -117,6 +119,10 @@ function shuffleIndices(count: number): number[] {
     [order[i], order[j]] = [order[j], order[i]];
   }
   return order;
+}
+
+function shuffleIds(ids: readonly string[]): string[] {
+  return shuffleIndices(ids.length).map((index) => ids[index]!);
 }
 
 function applyDelete(word: string, index: number, length: number): string {
@@ -509,21 +515,17 @@ export function useWordTransformationGame({
     ) => {
       scheduleInsertTimer(() => {
         onLand();
-        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'dismiss' }));
-
-        wrongIds.forEach((wrongId, index) => {
-          scheduleInsertTimer(() => {
-            playPop?.();
-            setInsertAnimation((prev) => {
-              if (prev == null) {
-                return null;
-              }
-              return {
-                ...prev,
-                poppedWrongVariants: new Set(prev.poppedWrongVariants).add(wrongId),
-              };
-            });
-          }, index * VARIANT_POP_STAGGER_MS);
+        // Single update: every wrong variant pops on the UI thread via popDelayMs
+        // (same pattern as word exit — avoids JS-thread setTimeout batching).
+        setInsertAnimation((prev) => {
+          if (prev == null) {
+            return null;
+          }
+          return {
+            ...prev,
+            phase: 'dismiss',
+            dismissPopOrder: shuffleIds(wrongIds),
+          };
         });
       }, INSERT_RESERVE_MS + INSERT_FLY_MS);
 
@@ -543,7 +545,7 @@ export function useWordTransformationGame({
         finalizeInsertOperation();
       }, finalizeDelay);
     },
-    [finalizeInsertOperation, playPop, scheduleInsertTimer],
+    [finalizeInsertOperation, scheduleInsertTimer],
   );
 
   const startWholeWordInsertAnimation = useCallback(
@@ -571,12 +573,13 @@ export function useWordTransformationGame({
           : targetCenters.reduce((sum, center) => sum + center, 0) / targetCenters.length;
 
       const animationBase: InsertAnimationState = {
-        phase: 'reserve',
+        phase: 'fly',
         selectedVariant: operation.text,
         selectedChoiceId: item.id,
         allVariants,
         wrongVariants,
         poppedWrongVariants: new Set(),
+        dismissPopOrder: [],
         char: operation.text,
         fromCenterX: source.centerX,
         fromCenterY: source.centerY,
@@ -591,10 +594,6 @@ export function useWordTransformationGame({
       };
 
       setInsertAnimation(animationBase);
-
-      scheduleInsertTimer(() => {
-        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'fly' }));
-      }, INSERT_RESERVE_MS);
 
       scheduleInsertDismissAndFinalize(
         wrongVariants,
@@ -651,12 +650,13 @@ export function useWordTransformationGame({
         : [];
 
       const animationBase: InsertAnimationState = {
-        phase: 'reserve',
+        phase: 'fly',
         selectedVariant: item.label,
         selectedChoiceId: item.id,
         allVariants: sequentialLetterChoices.map((choice) => choice.id),
         wrongVariants: remainingWrongIds,
         poppedWrongVariants: new Set(),
+        dismissPopOrder: [],
         char: item.label,
         fromCenterX: source.centerX,
         fromCenterY: source.centerY,
@@ -672,10 +672,6 @@ export function useWordTransformationGame({
       };
 
       setInsertAnimation(animationBase);
-
-      scheduleInsertTimer(() => {
-        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'fly' }));
-      }, INSERT_RESERVE_MS);
 
       if (isLastLetter) {
         scheduleInsertDismissAndFinalize(
@@ -795,11 +791,47 @@ export function useWordTransformationGame({
   );
 
   const variantPickerItems = useMemo((): VariantPickerItem[] => {
+    const withDismissStagger = (
+      items: VariantPickerItem[],
+      wrongIds: readonly string[],
+      dismissPopOrder: readonly string[],
+      isDismiss: boolean,
+    ): VariantPickerItem[] =>
+      items.map((item) => {
+        if (!isDismiss || !wrongIds.includes(item.id)) {
+          return item;
+        }
+        const popIndex = dismissPopOrder.indexOf(item.id);
+        return {
+          ...item,
+          popping: true,
+          popDelayMs: popIndex >= 0 ? popIndex * VARIANT_POP_STAGGER_MS : undefined,
+        };
+      });
+
     if (insertAnimation?.sequential && sequentialLetterChoices != null) {
-      return sequentialLetterChoices.map((choice) => ({ id: choice.id, label: choice.char }));
+      const base = sequentialLetterChoices.map((choice) => ({
+        id: choice.id,
+        label: choice.char,
+      }));
+      return withDismissStagger(
+        base,
+        insertAnimation.wrongVariants,
+        insertAnimation.dismissPopOrder,
+        insertAnimation.phase === 'dismiss',
+      );
     }
     if (insertAnimation != null) {
-      return insertAnimation.allVariants.map((variant) => ({ id: variant, label: variant }));
+      const base = insertAnimation.allVariants.map((variant) => ({
+        id: variant,
+        label: variant,
+      }));
+      return withDismissStagger(
+        base,
+        insertAnimation.wrongVariants,
+        insertAnimation.dismissPopOrder,
+        insertAnimation.phase === 'dismiss',
+      );
     }
     if (isSequentialInsert) {
       return (sequentialLetterChoices ?? []).map((choice) => ({
@@ -815,11 +847,7 @@ export function useWordTransformationGame({
 
   const pickerHiddenItemIds = useMemo(() => {
     const hidden = new Set(hiddenLetterChoiceIds);
-    if (
-      insertAnimation != null &&
-      insertAnimation.phase !== 'reserve' &&
-      insertAnimation.selectedChoiceId != null
-    ) {
+    if (insertAnimation?.selectedChoiceId != null) {
       hidden.add(insertAnimation.selectedChoiceId);
     }
     return hidden;
