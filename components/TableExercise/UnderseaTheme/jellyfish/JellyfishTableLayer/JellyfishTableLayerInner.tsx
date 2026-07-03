@@ -5,7 +5,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
-import { useSharedValue } from 'react-native-reanimated';
+import { runOnUI, useSharedValue } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { BubblePhase } from '../../koi/bubbles';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
@@ -23,8 +23,10 @@ import {
   createCellConfigs,
   sortDrawOrder,
 } from './helpers/cellConfigBuilders';
+import { resolvePersistentHighlights } from './helpers/resolvePersistentHighlights';
 import { useJellyfishTableGestures } from './gestures/useJellyfishTableGestures';
 import { useJellyfishMotionLoop } from './motion/useJellyfishMotionLoop';
+import { focusJellyfishCell } from './worklets/jellyfishTableWorklets';
 import {
   computeJellyfishSizing,
   computeLayoutPositions,
@@ -101,6 +103,10 @@ export function JellyfishTableLayerInner({
   );
   const drawOrder = useMemo(() => sortDrawOrder(cellConfigs), [cellConfigs]);
   const layoutParticles = useMemo(() => buildLayoutParticles(cellConfigs), [cellConfigs]);
+  const persistentHighlights = useMemo(
+    () => resolvePersistentHighlights(cellConfigs, highlightedCellIndex),
+    [cellConfigs, highlightedCellIndex],
+  );
   const [revealedBodyIndices, setRevealedBodyIndices] = useState<ReadonlySet<number>>(
     () => new Set(),
   );
@@ -363,6 +369,37 @@ export function JellyfishTableLayerInner({
     flashTranslationJs,
   });
 
+  useEffect(() => {
+    if (highlightedCellIndex < 0 || highlightedCellIndex >= cellConfigs.length) {
+      return;
+    }
+
+    runOnUI(focusJellyfishCell)(
+      highlightedCellIndex,
+      cellGridColsSv,
+      cellGridRowsSv,
+      biasX,
+      biasY,
+      appliedBiasX,
+      appliedBiasY,
+      prevBiasX,
+      prevBiasY,
+      layoutParticlesSv,
+      layoutBoundsSv,
+      layoutX,
+      layoutY,
+      layoutScale,
+      lastLayoutTs,
+      isBiasCoasting,
+      biasCoastPending,
+      motionAngle,
+      motionAmp,
+      retainedLabelRotation,
+      motionLoopEngaged,
+      activateMotionLoop,
+    );
+  }, [highlightedCellIndex, cellConfigs.length, activateMotionLoop]);
+
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -384,7 +421,7 @@ export function JellyfishTableLayerInner({
             bellImage={bellImage}
             tentacleImage={tentacleImage}
             clock={clock}
-            isPersistentlyHighlighted={highlightedCellIndex === config.index}
+            persistentHighlightKind={persistentHighlights.get(config.index) ?? null}
           />
         ))}
         {drawOrder.map(config => {
@@ -409,6 +446,7 @@ export function JellyfishTableLayerInner({
             tintFlashUntil={tintFlashUntil}
             clock={clock}
             labelBaseRotation={labelRotationRad}
+            persistentHighlightKind={persistentHighlights.get(config.index) ?? null}
           />
           );
         })}

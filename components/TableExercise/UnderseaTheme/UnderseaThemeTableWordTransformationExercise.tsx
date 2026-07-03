@@ -144,7 +144,6 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
       <View style={styles.jellyfishLayer} pointerEvents="box-none">
         <JellyfishTableLayer
           table={table}
-          interactive={false}
           onJellyfishSound={handleJellyfishSound}
           highlightedCellIndex={game.highlightedCellIndex}
           extraRevealedBodyIndices={game.revealedCellIndices}

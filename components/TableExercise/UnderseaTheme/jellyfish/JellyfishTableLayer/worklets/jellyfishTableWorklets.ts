@@ -259,6 +259,61 @@ export function tryFocusJellyfish(
   );
 }
 
+/** Pan/zoom the table toward one cell — same motion as tapping that jellyfish. */
+export function focusJellyfishCell(
+  hitIdx: number,
+  cellGridColsSv: SharedValue<number[]>,
+  cellGridRowsSv: SharedValue<number[]>,
+  biasX: SharedValue<number>,
+  biasY: SharedValue<number>,
+  appliedBiasX: SharedValue<number>,
+  appliedBiasY: SharedValue<number>,
+  prevBiasX: SharedValue<number>,
+  prevBiasY: SharedValue<number>,
+  layoutParticlesSv: SharedValue<LayoutParticle[]>,
+  layoutBoundsSv: SharedValue<LayoutBounds>,
+  layoutX: SharedValue<number[]>,
+  layoutY: SharedValue<number[]>,
+  layoutScale: SharedValue<number[]>,
+  lastLayoutTs: SharedValue<number>,
+  isBiasCoasting: SharedValue<number>,
+  biasCoastPending: SharedValue<number>,
+  motionAngle: SharedValue<number>,
+  motionAmp: SharedValue<number>,
+  retainedLabelRotation: SharedValue<number>,
+  motionLoopEngaged: SharedValue<number>,
+  activateMotionLoop: () => void,
+): void {
+  'worklet';
+  tryFocusJellyfish(
+    hitIdx,
+    0,
+    0,
+    false,
+    cellGridColsSv,
+    cellGridRowsSv,
+    biasX,
+    biasY,
+    appliedBiasX,
+    appliedBiasY,
+    prevBiasX,
+    prevBiasY,
+    layoutParticlesSv,
+    layoutBoundsSv,
+    layoutX,
+    layoutY,
+    layoutScale,
+    lastLayoutTs,
+    isBiasCoasting,
+    biasCoastPending,
+    motionAngle,
+    motionAmp,
+    retainedLabelRotation,
+    motionLoopEngaged,
+    activateMotionLoop,
+  );
+}
+
 export function decayMotionTilt(
   motionAmp: SharedValue<number>,
   retainedLabelRotation: SharedValue<number>,

@@ -21,9 +21,9 @@ import type { JellyfishSoundKind } from '../types';
 import {
   clampW,
   findJellyfishIndexAtTap,
+  focusJellyfishCell,
   scheduleBiasAutoAnim,
   triggerJellyfishTintFlash,
-  tryFocusJellyfish,
   updateMotionFromDrag,
   updateRetainedLabelRotation,
 } from '../worklets/jellyfishTableWorklets';
@@ -228,11 +228,8 @@ export function useJellyfishTableGestures({
           clock,
         );
         scheduleOnRN(handleJellyfishSoundJs, isMatch ? 'success' : 'error');
-        tryFocusJellyfish(
+        focusJellyfishCell(
           hitIdx,
-          0,
-          0,
-          false,
           cellGridColsSv,
           cellGridRowsSv,
           biasX,
@@ -273,11 +270,8 @@ export function useJellyfishTableGestures({
         clock,
       );
       scheduleOnRN(handleJellyfishSoundJs, 'primary');
-      tryFocusJellyfish(
+      focusJellyfishCell(
         hitIdx,
-        0,
-        0,
-        false,
         cellGridColsSv,
         cellGridRowsSv,
         biasX,

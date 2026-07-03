@@ -13,6 +13,22 @@ export type JellyfishTintPreset = {
   tintWaveSpeed: number;
 };
 
+export type JellyfishLabelColors = {
+  labelFillColor: string;
+  labelStrokeColor: string;
+};
+
+/** Label fill/stroke matched to a tint preset (light fill, dark stroke). */
+export function labelColorsFromTints(
+  tintA: JellyfishTintRgb,
+  tintC: JellyfishTintRgb,
+): JellyfishLabelColors {
+  return {
+    labelFillColor: tintToRgba(lightenTint(tintA, 0.38), 0.95),
+    labelStrokeColor: tintToRgba(darkenTint(tintC, 0.68), 0.92),
+  };
+}
+
 /** Semantic tint presets — three-stop radial with animated color cycling. */
 export const JELLYFISH_TINT_PRESETS = {
   primary: {
@@ -42,6 +58,26 @@ export const JELLYFISH_TINT_PRESETS = {
     animatedTint: true,
     tintWaveSpeed: 0.35,
   },
+  /** Brighter green cycling — row header cue for the active target cell. */
+  highlightRow: {
+    tintMode: 2,
+    tintStrength: 0.94,
+    tintA: [0.95, 1.3, 0.62],
+    tintB: [0.82, 1.18, 0.52],
+    tintC: [0.68, 1.05, 0.42],
+    animatedTint: true,
+    tintWaveSpeed: 0.42,
+  },
+  /** Lighter blue cycling — column header cue for the active target cell. */
+  highlightCol: {
+    tintMode: 2,
+    tintStrength: 0.94,
+    tintA: [0.78, 1.08, 1.38],
+    tintB: [0.62, 0.92, 1.28],
+    tintC: [0.48, 0.78, 1.18],
+    animatedTint: true,
+    tintWaveSpeed: 0.42,
+  },
 } as const satisfies Record<string, JellyfishTintPreset>;
 
 export const JELLYFISH_TINT_PRESET_INDEX = {
@@ -53,28 +89,39 @@ export const JELLYFISH_TINT_PRESET_INDEX = {
 export type JellyfishTintPresetIndex =
   (typeof JELLYFISH_TINT_PRESET_INDEX)[keyof typeof JELLYFISH_TINT_PRESET_INDEX];
 
+/** Persistent table highlight roles for the active guess cell and its headers. */
+export type PersistentHighlightKind = 'target' | 'rowHeader' | 'colHeader';
+
+export const JELLYFISH_PERSISTENT_HIGHLIGHT_PRESETS = {
+  target: JELLYFISH_TINT_PRESETS.primary,
+  rowHeader: JELLYFISH_TINT_PRESETS.highlightRow,
+  colHeader: JELLYFISH_TINT_PRESETS.highlightCol,
+} as const satisfies Record<PersistentHighlightKind, JellyfishTintPreset>;
+
+export const JELLYFISH_PERSISTENT_HIGHLIGHT_LABEL_COLORS: Record<
+  PersistentHighlightKind,
+  JellyfishLabelColors
+> = {
+  target: labelColorsFromTints(
+    JELLYFISH_TINT_PRESETS.primary.tintA,
+    JELLYFISH_TINT_PRESETS.primary.tintC,
+  ),
+  rowHeader: labelColorsFromTints(
+    JELLYFISH_TINT_PRESETS.highlightRow.tintA,
+    JELLYFISH_TINT_PRESETS.highlightRow.tintC,
+  ),
+  colHeader: labelColorsFromTints(
+    JELLYFISH_TINT_PRESETS.highlightCol.tintA,
+    JELLYFISH_TINT_PRESETS.highlightCol.tintC,
+  ),
+};
+
 /** Indexed lookup for worklets (primary → 0, error → 1, success → 2). */
 export const JELLYFISH_TINT_PRESETS_BY_INDEX: ReadonlyArray<JellyfishTintPreset> = [
   JELLYFISH_TINT_PRESETS.primary,
   JELLYFISH_TINT_PRESETS.error,
   JELLYFISH_TINT_PRESETS.success,
 ];
-
-export type JellyfishLabelColors = {
-  labelFillColor: string;
-  labelStrokeColor: string;
-};
-
-/** Label fill/stroke matched to a tint preset (light fill, dark stroke). */
-export function labelColorsFromTints(
-  tintA: JellyfishTintRgb,
-  tintC: JellyfishTintRgb,
-): JellyfishLabelColors {
-  return {
-    labelFillColor: tintToRgba(lightenTint(tintA, 0.38), 0.95),
-    labelStrokeColor: tintToRgba(darkenTint(tintC, 0.68), 0.92),
-  };
-}
 
 /** Label colors per preset index — for click-flash text styling. */
 export const JELLYFISH_LABEL_COLORS_BY_INDEX: ReadonlyArray<JellyfishLabelColors> =

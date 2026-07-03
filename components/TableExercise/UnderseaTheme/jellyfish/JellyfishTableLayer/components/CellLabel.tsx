@@ -2,7 +2,11 @@ import React, { useMemo } from 'react';
 import { Glyphs, Group, vec, type SkFont } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import { JELLYFISH_LABEL_COLORS_BY_INDEX } from '../presets/jellyfishTintPresets';
+import {
+  JELLYFISH_LABEL_COLORS_BY_INDEX,
+  JELLYFISH_PERSISTENT_HIGHLIGHT_LABEL_COLORS,
+  type PersistentHighlightKind,
+} from '../presets/jellyfishTintPresets';
 import { LABEL_STROKE_WIDTH, LABEL_TILT_PX } from '../config/jellyfishTableLayerConfig';
 import type { CellConfig } from '../helpers/cellConfigBuilders';
 
@@ -20,6 +24,7 @@ export type CellLabelProps = {
   tintFlashUntil: SharedValue<number[]>;
   clock: SharedValue<number>;
   labelBaseRotation: number;
+  persistentHighlightKind?: PersistentHighlightKind | null;
 };
 
 export function CellLabel({
@@ -36,6 +41,7 @@ export function CellLabel({
   tintFlashUntil,
   clock,
   labelBaseRotation,
+  persistentHighlightKind = null,
 }: CellLabelProps) {
   const idx = config.index;
   const defaultFillColor = config.labelFillColor;
@@ -86,6 +92,10 @@ export function CellLabel({
     if (clock.value < until && presetIdx >= 0) {
       return JELLYFISH_LABEL_COLORS_BY_INDEX[presetIdx]?.labelFillColor ?? defaultFillColor;
     }
+    if (persistentHighlightKind != null) {
+      return JELLYFISH_PERSISTENT_HIGHLIGHT_LABEL_COLORS[persistentHighlightKind]
+        .labelFillColor;
+    }
     return defaultFillColor;
   });
 
@@ -94,6 +104,10 @@ export function CellLabel({
     const presetIdx = tintFlashPreset.value[idx] ?? -1;
     if (clock.value < until && presetIdx >= 0) {
       return JELLYFISH_LABEL_COLORS_BY_INDEX[presetIdx]?.labelStrokeColor ?? defaultStrokeColor;
+    }
+    if (persistentHighlightKind != null) {
+      return JELLYFISH_PERSISTENT_HIGHLIGHT_LABEL_COLORS[persistentHighlightKind]
+        .labelStrokeColor;
     }
     return defaultStrokeColor;
   });
