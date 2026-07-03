@@ -2,6 +2,14 @@ import { bubbleDeformUniformDefaults } from '../../shaders/bubbleDeform.sksl';
 
 const defaults = bubbleDeformUniformDefaults;
 
+/** Neutral tint — table / koi bubbles keep shader defaults. */
+export const BUBBLE_NEUTRAL_TINT = {
+  tintR: defaults.tintA[0],
+  tintG: defaults.tintA[1],
+  tintB: defaults.tintA[2],
+  tintStrength: defaults.tintStrength,
+} as const;
+
 export const BUBBLE_ENTER_DURATION_MS = 500;
 export const BUBBLE_BURST_DURATION_MS = 400;
 
@@ -30,6 +38,9 @@ export const BUBBLE_SPAWN_OFFSET_Y = 0.55;
 export { KOI_FISH_LENGTH } from '../config/koiInstanceConfig';
 
 export const BUBBLE_IDLE_OPACITY = defaults.opacity;
+
+/** More opaque bubbles for the word-transformation exercise only. */
+export const WORD_TRANSFORMATION_BUBBLE_OPACITY = 0.78;
 
 export const BUBBLE_FISH_SCALE = 1.22;
 export const BUBBLE_SHADOW_OFFSET_MULT = 1.6;

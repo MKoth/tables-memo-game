@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
+import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
+import { computeLetterLayout } from '../components/TransformationWordBubbles';
+import {
+  BUBBLE_BURST_DURATION_MS,
+  INSERT_FLY_MS,
+  INSERT_RESERVE_MS,
+  VARIANT_POP_STAGGER_MS,
+  WORD_LETTER_ENTER_DURATION_MS,
+  WORD_LETTER_ENTER_STAGGER_MS,
+  WORD_LETTER_EXIT_STAGGER_MS,
+} from '../insertAnimationTiming';
 import {
   OPERATION_TYPES,
   createWordTransformationExercise,
@@ -13,13 +24,62 @@ export type LetterBubbleModel = {
   position: number;
   popped: boolean;
   wrong: boolean;
+  skipEnter?: boolean;
+  /** Hidden until revealed during the post-solve enter sequence. */
+  pendingEnter?: boolean;
 };
+
+export type VariantSourceLayout = {
+  centerX: number;
+  centerY: number;
+  diameter: number;
+};
+
+export type InsertAnimationPhase = 'reserve' | 'fly' | 'dismiss';
+
+export type InsertAnimationState = {
+  phase: InsertAnimationPhase;
+  selectedVariant: string;
+  allVariants: string[];
+  wrongVariants: string[];
+  poppedWrongVariants: ReadonlySet<string>;
+  char: string;
+  fromCenterX: number;
+  fromCenterY: number;
+  fromDiameter: number;
+  toCenterX: number;
+  toCenterY: number;
+  toDiameter: number;
+  flyDurationMs: number;
+  nextWord: string;
+  insertIndex: number;
+  insertLength: number;
+};
+
+/** @deprecated Use InsertAnimationState */
+export type InsertFlightState = InsertAnimationState;
+
+export type WordTransitionPhase = 'exit' | 'enter';
+
+export type WordTransitionState =
+  | {
+      phase: 'exit';
+      popOrder: readonly number[];
+      poppedPositions: ReadonlySet<number>;
+    }
+  | {
+      phase: 'enter';
+      revealOrder: readonly number[];
+      revealedPositions: ReadonlySet<number>;
+    };
 
 export type TransformationMode = 'delete' | 'insert';
 
 export type WordTransformationGame = {
   isCompleted: boolean;
   transitioning: boolean;
+  insertAnimation: InsertAnimationState | null;
+  wordTransition: WordTransitionState | null;
   sequence: WordOperationSequence | null;
   operation: Operation | null;
   mode: TransformationMode | null;
@@ -32,12 +92,11 @@ export type WordTransformationGame = {
   solvedCount: number;
   totalCount: number;
   handleLetterPress: (position: number) => void;
-  handleVariantPress: (variant: string) => void;
+  handleVariantPress: (variant: string, source: VariantSourceLayout) => void;
 };
 
 const WRONG_FEEDBACK_MS = 1000;
 const DELETE_APPLY_MS = 320;
-const SOLVE_TRANSITION_MS = 900;
 
 function shuffleIndices(count: number): number[] {
   const order = Array.from({ length: count }, (_, i) => i);
@@ -58,21 +117,23 @@ function applyInsert(word: string, index: number, text: string): string {
 
 export type UseWordTransformationGameParams = {
   table: TableData;
+  koiRect: ZoneRect;
   /** Fired when a cell's transformation is finished, before advancing. */
   onSequenceSolved?: (sequence: WordOperationSequence) => void;
   onAllSolved?: () => void;
   playPop?: () => void;
+  playInflate?: () => void;
   playWrong?: () => void;
-  playSuccess?: () => void;
 };
 
 export function useWordTransformationGame({
   table,
+  koiRect,
   onSequenceSolved,
   onAllSolved,
   playPop,
+  playInflate,
   playWrong,
-  playSuccess,
 }: UseWordTransformationGameParams): WordTransformationGame {
   const exercise = useMemo(() => createWordTransformationExercise(table), [table]);
   const order = useMemo(
@@ -93,15 +154,50 @@ export function useWordTransformationGame({
   );
   const [wrongVariant, setWrongVariant] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
+  const [insertAnimation, setInsertAnimation] = useState<InsertAnimationState | null>(null);
+  const [wordTransition, setWordTransition] = useState<WordTransitionState | null>(null);
+  const [skipEnterPositions, setSkipEnterPositions] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
   const [revealedCellIndices, setRevealedCellIndices] = useState<ReadonlySet<number>>(
     () => new Set(),
   );
 
   const applyingRef = useRef(false);
+  const skipSequenceResetRef = useRef(false);
   const wrongTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const wrongVariantTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const opCompleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const insertTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const wordTransitionTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearInsertTimers = useCallback(() => {
+    insertTimersRef.current.forEach(clearTimeout);
+    insertTimersRef.current = [];
+  }, []);
+
+  const clearWordTransitionTimers = useCallback(() => {
+    wordTransitionTimersRef.current.forEach(clearTimeout);
+    wordTransitionTimersRef.current = [];
+  }, []);
+
+  const scheduleInsertTimer = useCallback((fn: () => void, delayMs: number) => {
+    const id = setTimeout(() => {
+      insertTimersRef.current = insertTimersRef.current.filter((timerId) => timerId !== id);
+      fn();
+    }, delayMs);
+    insertTimersRef.current.push(id);
+  }, []);
+
+  const scheduleWordTransitionTimer = useCallback((fn: () => void, delayMs: number) => {
+    const id = setTimeout(() => {
+      wordTransitionTimersRef.current = wordTransitionTimersRef.current.filter(
+        (timerId) => timerId !== id,
+      );
+      fn();
+    }, delayMs);
+    wordTransitionTimersRef.current.push(id);
+  }, []);
 
   useEffect(
     () => () => {
@@ -112,11 +208,10 @@ export function useWordTransformationGame({
       if (opCompleteTimerRef.current != null) {
         clearTimeout(opCompleteTimerRef.current);
       }
-      if (transitionTimerRef.current != null) {
-        clearTimeout(transitionTimerRef.current);
-      }
+      clearInsertTimers();
+      clearWordTransitionTimers();
     },
-    [],
+    [clearInsertTimers, clearWordTransitionTimers],
   );
 
   const isCompleted = order.length === 0 || orderPos >= order.length;
@@ -127,9 +222,18 @@ export function useWordTransformationGame({
     if (sequence == null) {
       return;
     }
+    if (skipSequenceResetRef.current) {
+      skipSequenceResetRef.current = false;
+      return;
+    }
     applyingRef.current = false;
     setOpIndex(0);
     setPoppedPositions(new Set());
+    setSkipEnterPositions(new Set());
+    clearInsertTimers();
+    clearWordTransitionTimers();
+    setInsertAnimation(null);
+    setWordTransition(null);
     setCurrentWord(sequence.baseWord);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderPos]);
@@ -178,20 +282,131 @@ export function useWordTransformationGame({
     }, WRONG_FEEDBACK_MS);
   }, []);
 
-  const advanceAfterSolve = useCallback(
+  const startWordEnterTransition = useCallback(() => {
+      const nextPos = orderPos + 1;
+
+      if (nextPos >= order.length) {
+        setWordTransition(null);
+        setTransitioning(false);
+        setOrderPos(nextPos);
+        return;
+      }
+
+      const nextSequence = exercise.sequences[order[nextPos]];
+      if (nextSequence == null) {
+        setWordTransition(null);
+        setTransitioning(false);
+        setOrderPos(nextPos);
+        return;
+      }
+
+      const revealOrder = shuffleIndices(nextSequence.baseWord.length);
+
+      skipSequenceResetRef.current = true;
+      setOrderPos(nextPos);
+      applyingRef.current = false;
+      setOpIndex(0);
+      setPoppedPositions(new Set());
+      setSkipEnterPositions(new Set());
+      clearInsertTimers();
+      setInsertAnimation(null);
+      setCurrentWord(nextSequence.baseWord);
+
+      if (revealOrder.length === 0) {
+        setWordTransition(null);
+        setTransitioning(false);
+        return;
+      }
+
+      setWordTransition({
+        phase: 'enter',
+        revealOrder,
+        revealedPositions: new Set(),
+      });
+
+      revealOrder.forEach((position, index) => {
+        scheduleWordTransitionTimer(() => {
+          playInflate?.();
+          setWordTransition((prev) => {
+            if (prev?.phase !== 'enter') {
+              return prev;
+            }
+            return {
+              ...prev,
+              revealedPositions: new Set(prev.revealedPositions).add(revealOrder[index]!),
+            };
+          });
+        }, index * WORD_LETTER_ENTER_STAGGER_MS);
+      });
+
+      const enterCompleteDelay =
+        (revealOrder.length - 1) * WORD_LETTER_ENTER_STAGGER_MS +
+        WORD_LETTER_ENTER_DURATION_MS;
+
+      scheduleWordTransitionTimer(() => {
+        setWordTransition(null);
+        setTransitioning(false);
+      }, enterCompleteDelay);
+  }, [
+      clearInsertTimers,
+      exercise.sequences,
+      order,
+      orderPos,
+      playInflate,
+      scheduleWordTransitionTimer,
+    ],
+  );
+
+  const startWordExitTransition = useCallback(
     (solved: WordOperationSequence) => {
+      clearWordTransitionTimers();
       setTransitioning(true);
       setRevealedCellIndices((prev) => new Set(prev).add(solved.cellIndex));
       onSequenceSolved?.(solved);
-      playSuccess?.();
 
-      transitionTimerRef.current = setTimeout(() => {
-        transitionTimerRef.current = null;
-        setTransitioning(false);
-        setOrderPos((prev) => prev + 1);
-      }, SOLVE_TRANSITION_MS);
+      const popOrder = shuffleIndices(currentWord.length);
+      if (popOrder.length === 0) {
+        startWordEnterTransition();
+        return;
+      }
+
+      setWordTransition({
+        phase: 'exit',
+        popOrder,
+        poppedPositions: new Set(),
+      });
+
+      popOrder.forEach((position, index) => {
+        scheduleWordTransitionTimer(() => {
+          playPop?.();
+          setWordTransition((prev) => {
+            if (prev?.phase !== 'exit') {
+              return prev;
+            }
+            return {
+              ...prev,
+              poppedPositions: new Set(prev.poppedPositions).add(popOrder[index]!),
+            };
+          });
+        }, index * WORD_LETTER_EXIT_STAGGER_MS);
+      });
+
+      const exitCompleteDelay =
+        (popOrder.length - 1) * WORD_LETTER_EXIT_STAGGER_MS + BUBBLE_BURST_DURATION_MS;
+
+      scheduleWordTransitionTimer(() => {
+        setWordTransition(null);
+        startWordEnterTransition();
+      }, exitCompleteDelay);
     },
-    [onSequenceSolved, playSuccess],
+    [
+      clearWordTransitionTimers,
+      currentWord,
+      onSequenceSolved,
+      playPop,
+      scheduleWordTransitionTimer,
+      startWordEnterTransition,
+    ],
   );
 
   const completeOperation = useCallback(
@@ -204,17 +419,17 @@ export function useWordTransformationGame({
 
       const nextOpIndex = opIndex + 1;
       if (nextOpIndex >= sequence.operations.length) {
-        advanceAfterSolve(sequence);
+        startWordExitTransition(sequence);
         return;
       }
       setOpIndex(nextOpIndex);
     },
-    [advanceAfterSolve, opIndex, sequence],
+    [opIndex, sequence, startWordExitTransition],
   );
 
   const handleLetterPress = useCallback(
     (position: number) => {
-      if (applyingRef.current || transitioning || operation == null || mode !== 'delete') {
+      if (applyingRef.current || transitioning || wordTransition != null || operation == null || mode !== 'delete') {
         return;
       }
       const length = operation.length ?? 0;
@@ -252,12 +467,38 @@ export function useWordTransformationGame({
       playWrong,
       poppedPositions,
       transitioning,
+      wordTransition,
     ],
   );
 
+  const finalizeInsertOperation = useCallback(() => {
+      if (sequence == null) {
+        return;
+      }
+      applyingRef.current = false;
+      clearInsertTimers();
+      setInsertAnimation(null);
+
+      const nextOpIndex = opIndex + 1;
+      if (nextOpIndex >= sequence.operations.length) {
+        startWordExitTransition(sequence);
+        return;
+      }
+      setOpIndex(nextOpIndex);
+    },
+    [clearInsertTimers, opIndex, sequence, startWordExitTransition],
+  );
+
   const handleVariantPress = useCallback(
-    (variant: string) => {
-      if (applyingRef.current || transitioning || operation == null || mode !== 'insert') {
+    (variant: string, source: VariantSourceLayout) => {
+      if (
+        applyingRef.current ||
+        transitioning ||
+        wordTransition != null ||
+        insertAnimation != null ||
+        operation == null ||
+        mode !== 'insert'
+      ) {
         return;
       }
       if (variant !== operation.text) {
@@ -265,31 +506,134 @@ export function useWordTransformationGame({
         flashWrongVariant(variant);
         return;
       }
-      playPop?.();
-      completeOperation(applyInsert(currentWord, operation.index, operation.text));
+
+      playInflate?.();
+      applyingRef.current = true;
+      clearInsertTimers();
+
+      const nextWord = applyInsert(currentWord, operation.index, operation.text);
+      const insertLength = operation.text.length;
+      const allVariants = operation.variants ?? [];
+      const wrongVariants = allVariants.filter((item) => item !== operation.text);
+      const targetLayout = computeLetterLayout(koiRect, nextWord.length);
+      const targetCenters = targetLayout.centers.slice(
+        operation.index,
+        operation.index + insertLength,
+      );
+      const toCenterX =
+        targetCenters.length === 1
+          ? (targetCenters[0] ?? 0)
+          : targetCenters.reduce((sum, center) => sum + center, 0) / targetCenters.length;
+
+      const animationBase: InsertAnimationState = {
+        phase: 'reserve',
+        selectedVariant: operation.text,
+        allVariants,
+        wrongVariants,
+        poppedWrongVariants: new Set(),
+        char: operation.text,
+        fromCenterX: source.centerX,
+        fromCenterY: source.centerY,
+        fromDiameter: source.diameter,
+        toCenterX,
+        toCenterY: targetLayout.rowY,
+        toDiameter: targetLayout.diameter,
+        flyDurationMs: INSERT_FLY_MS,
+        nextWord,
+        insertIndex: operation.index,
+        insertLength,
+      };
+
+      setInsertAnimation(animationBase);
+
+      scheduleInsertTimer(() => {
+        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'fly' }));
+      }, INSERT_RESERVE_MS);
+
+      scheduleInsertTimer(() => {
+        setSkipEnterPositions(
+          new Set(
+            Array.from({ length: insertLength }, (_, i) => operation.index + i),
+          ),
+        );
+        setCurrentWord(nextWord);
+        setInsertAnimation((prev) => (prev == null ? null : { ...prev, phase: 'dismiss' }));
+
+        wrongVariants.forEach((wrongVariant, index) => {
+          scheduleInsertTimer(() => {
+            playPop?.();
+            setInsertAnimation((prev) => {
+              if (prev == null) {
+                return null;
+              }
+              return {
+                ...prev,
+                poppedWrongVariants: new Set(prev.poppedWrongVariants).add(wrongVariant),
+              };
+            });
+          }, index * VARIANT_POP_STAGGER_MS);
+        });
+      }, INSERT_RESERVE_MS + INSERT_FLY_MS);
+
+      const lastPopStartMs =
+        wrongVariants.length > 0 ? (wrongVariants.length - 1) * VARIANT_POP_STAGGER_MS : 0;
+      const finalizeDelay =
+        INSERT_RESERVE_MS +
+        INSERT_FLY_MS +
+        lastPopStartMs +
+        BUBBLE_BURST_DURATION_MS;
+
+      scheduleInsertTimer(() => {
+        finalizeInsertOperation();
+      }, finalizeDelay);
     },
     [
-      completeOperation,
+      clearInsertTimers,
       currentWord,
+      finalizeInsertOperation,
       flashWrongVariant,
+      insertAnimation,
+      koiRect,
       mode,
       operation,
+      playInflate,
       playPop,
       playWrong,
+      scheduleInsertTimer,
       transitioning,
+      wordTransition,
     ],
   );
 
   const letters = useMemo<LetterBubbleModel[]>(
     () =>
-      currentWord.split('').map((char, position) => ({
-        key: `${orderPos}:${opIndex}:${position}`,
-        char,
-        position,
-        popped: poppedPositions.has(position),
-        wrong: wrongPositions.has(position),
-      })),
-    [currentWord, opIndex, orderPos, poppedPositions, wrongPositions],
+      currentWord.split('').map((char, position) => {
+        const exitPopped =
+          wordTransition?.phase === 'exit' && wordTransition.poppedPositions.has(position);
+        const pendingEnter =
+          wordTransition?.phase === 'enter' &&
+          !wordTransition.revealedPositions.has(position);
+
+        return {
+          // Stable per sequence + index so surviving letters keep their instance
+          // across operation steps and grow in place instead of re-entering.
+          key: `${orderPos}:${position}`,
+          char,
+          position,
+          popped: poppedPositions.has(position) || exitPopped,
+          wrong: wrongPositions.has(position),
+          skipEnter: skipEnterPositions.has(position),
+          pendingEnter,
+        };
+      }),
+    [
+      currentWord,
+      orderPos,
+      poppedPositions,
+      skipEnterPositions,
+      wordTransition,
+      wrongPositions,
+    ],
   );
 
   const instruction = useMemo(() => {
@@ -311,6 +655,8 @@ export function useWordTransformationGame({
   return {
     isCompleted,
     transitioning,
+    insertAnimation,
+    wordTransition,
     sequence,
     operation,
     mode,

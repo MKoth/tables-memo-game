@@ -18,8 +18,8 @@ import type { SharedValue } from 'react-native-reanimated';
 import { BubbleInstance } from '../../koi/bubbles/BubbleInstance';
 import {
   BUBBLE_BURST_DURATION_MS,
-  BUBBLE_IDLE_OPACITY,
   BUBBLE_IDLE_WOBBLE,
+  WORD_TRANSFORMATION_BUBBLE_OPACITY,
 } from '../../koi/bubbles/bubbleAnimPresets';
 import type { BubbleAnimState } from '../../koi/bubbles/bubbleAnimTypes';
 
@@ -28,7 +28,42 @@ const LABEL_FILL_COLOR = '#ffffff';
 const LABEL_STROKE_COLOR = '#0a2840';
 const LABEL_WRONG_COLOR = '#ff5a5a';
 const ENTER_DURATION_MS = 320;
-const MOVE_DURATION_MS = 240;
+const MOVE_DURATION_MS = 320;
+const WRONG_FEEDBACK_MS = 1000;
+const WRONG_TINT_STRENGTH = 0.82;
+
+const WRONG_WOBBLE = {
+  wobbleAmp: BUBBLE_IDLE_WOBBLE.wobbleAmp * 1.8,
+  wobbleSpeed: BUBBLE_IDLE_WOBBLE.wobbleSpeed * 5.8,
+  wobbleLobes: 1,
+} as const;
+/** Whole-bubble shake frequency while wrong feedback is active. */
+const WRONG_SHAKE_HZ = 11;
+
+function lerp(a: number, b: number, t: number): number {
+  'worklet';
+  return a + (b - a) * t;
+}
+
+function parseHexColor(hex: string): { r: number; g: number; b: number } {
+  const normalized = hex.replace('#', '').trim();
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : normalized.slice(0, 6);
+  const n = Number.parseInt(value, 16);
+  if (Number.isNaN(n)) {
+    return { r: 1, g: 0.35, b: 0.35 };
+  }
+  return {
+    r: ((n >> 16) & 255) / 255,
+    g: ((n >> 8) & 255) / 255,
+    b: (n & 255) / 255,
+  };
+}
 
 export type LetterBubbleStatus = 'idle' | 'wrong' | 'popped';
 
@@ -41,6 +76,15 @@ export type LetterBubbleProps = {
   image: SkImage;
   font: SkFont;
   clock: SharedValue<number>;
+  /** When set, the bubble starts here instead of playing the enter animation. */
+  initialCenterX?: number;
+  initialCenterY?: number;
+  initialDiameter?: number;
+  skipEnter?: boolean;
+  /** Override move / resize animation duration (ms). */
+  moveDurationMs?: number;
+  /** Bubble shader tint while status is wrong (hex). */
+  wrongTintColor?: string;
   onPopComplete?: () => void;
 };
 
@@ -53,46 +97,71 @@ export function LetterBubble({
   image,
   font,
   clock,
+  initialCenterX,
+  initialCenterY,
+  initialDiameter,
+  skipEnter = false,
+  moveDurationMs = MOVE_DURATION_MS,
+  wrongTintColor = LABEL_WRONG_COLOR,
   onPopComplete,
 }: LetterBubbleProps) {
-  const posX = useSharedValue(centerX);
-  const posY = useSharedValue(centerY);
-  const dia = useSharedValue(diameter);
-  const wiggle = useSharedValue(0);
+  const posX = useSharedValue(initialCenterX ?? centerX);
+  const posY = useSharedValue(initialCenterY ?? centerY);
+  const dia = useSharedValue(initialDiameter ?? diameter);
   const popT = useSharedValue(0);
-  const enterT = useSharedValue(0);
+  const enterT = useSharedValue(skipEnter ? 1 : 0);
+  const wrongT = useSharedValue(0);
+
+  const wrongTint = useMemo(() => parseHexColor(wrongTintColor), [wrongTintColor]);
+  const wrongTintR = wrongTint.r;
+  const wrongTintG = wrongTint.g;
+  const wrongTintB = wrongTint.b;
 
   useEffect(() => {
+    if (skipEnter) {
+      return;
+    }
     enterT.value = withTiming(1, {
       duration: ENTER_DURATION_MS,
       easing: Easing.out(Easing.back(1.6)),
     });
-  }, [enterT]);
+  }, [enterT, skipEnter]);
 
   useEffect(() => {
-    posX.value = withTiming(centerX, { duration: MOVE_DURATION_MS });
-    posY.value = withTiming(centerY, { duration: MOVE_DURATION_MS });
-    dia.value = diameter;
-  }, [centerX, centerY, diameter, dia, posX, posY]);
+    posX.value = withTiming(centerX, {
+      duration: moveDurationMs,
+      easing: Easing.inOut(Easing.cubic),
+    });
+    posY.value = withTiming(centerY, {
+      duration: moveDurationMs,
+      easing: Easing.inOut(Easing.cubic),
+    });
+    dia.value = withTiming(diameter, {
+      duration: moveDurationMs,
+      easing: Easing.inOut(Easing.cubic),
+    });
+  }, [centerX, centerY, diameter, dia, moveDurationMs, posX, posY]);
 
   useEffect(() => {
     if (status !== 'wrong') {
+      wrongT.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
       return;
     }
-    const amp = Math.max(5, diameter * 0.12);
-    wiggle.value = withSequence(
-      withTiming(-amp, { duration: 60 }),
-      withTiming(amp, { duration: 110 }),
-      withTiming(-amp * 0.8, { duration: 110 }),
-      withTiming(amp * 0.6, { duration: 110 }),
-      withTiming(0, { duration: 90 }),
+    const rampMs = 180;
+    const holdMs = Math.max(0, WRONG_FEEDBACK_MS - rampMs * 2);
+    wrongT.value = withSequence(
+      withTiming(1, { duration: rampMs, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: holdMs }),
+      withTiming(0, { duration: rampMs, easing: Easing.inOut(Easing.cubic) }),
     );
-  }, [diameter, status, wiggle]);
+  }, [status, wrongT]);
 
   useEffect(() => {
     if (status !== 'popped') {
+      popT.value = 0;
       return;
     }
+    popT.value = 0;
     popT.value = withTiming(
       1,
       { duration: BUBBLE_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },
@@ -108,25 +177,37 @@ export function LetterBubble({
   const anim = useDerivedValue<BubbleAnimState>(() => {
     const enter = enterT.value;
     const pop = popT.value;
+    const wrong = wrongT.value;
     const growT = Math.min(1, pop / 0.5);
     const enterScale = 0.35 + 0.65 * enter;
     const d = pop > 0 ? dia.value * (1 + 0.28 * growT) : dia.value * enterScale;
     const fade = pop < 0.55 ? 0 : Math.min(1, (pop - 0.55) / 0.45);
-    const opacity = pop > 0 ? BUBBLE_IDLE_OPACITY * (1 - fade) : BUBBLE_IDLE_OPACITY * enter;
-    const cx = posX.value + wiggle.value;
-    const cy = posY.value;
+    const opacity =
+      pop > 0
+        ? WORD_TRANSFORMATION_BUBBLE_OPACITY * (1 - fade)
+        : WORD_TRANSFORMATION_BUBBLE_OPACITY * enter;
+    const shakeAmp = wrong * Math.max(2, d * 0.05);
+    const shakeT = clock.value / 1000;
+    const shakeX = shakeAmp * Math.sin(shakeT * WRONG_SHAKE_HZ * Math.PI * 2);
+    const shakeY = shakeAmp * Math.cos(shakeT * WRONG_SHAKE_HZ * Math.PI * 2 * 1.17);
+    const cx = posX.value + shakeX;
+    const cy = posY.value + shakeY;
     return {
       x: cx - d * 0.5,
       y: cy - d * 0.5,
       diameter: d,
       centerX: cx,
       centerY: cy,
-      wobbleAmp: BUBBLE_IDLE_WOBBLE.wobbleAmp,
-      wobbleSpeed: BUBBLE_IDLE_WOBBLE.wobbleSpeed,
-      wobbleLobes: BUBBLE_IDLE_WOBBLE.wobbleLobes,
+      wobbleAmp: lerp(BUBBLE_IDLE_WOBBLE.wobbleAmp, WRONG_WOBBLE.wobbleAmp, wrong),
+      wobbleSpeed: lerp(BUBBLE_IDLE_WOBBLE.wobbleSpeed, WRONG_WOBBLE.wobbleSpeed, wrong),
+      wobbleLobes: lerp(BUBBLE_IDLE_WOBBLE.wobbleLobes, WRONG_WOBBLE.wobbleLobes, wrong),
       opacity,
       labelOpacity: pop > 0 ? 1 - Math.min(1, pop / 0.5) : enter,
       captureVisualT: 1,
+      tintR: wrongTintR,
+      tintG: wrongTintG,
+      tintB: wrongTintB,
+      tintStrength: wrong * WRONG_TINT_STRENGTH,
     };
   });
 
@@ -141,9 +222,17 @@ export function LetterBubble({
 
   const labelTransform = useDerivedValue(() => {
     const { centerX: cx, centerY: cy, diameter: d } = anim.value;
+    const ox = diameter * 0.5;
+    const oy = diameter * 0.5;
+    const scale = diameter > 0 ? d / diameter : 1;
     return [
       { translateX: cx - d * 0.5 },
       { translateY: cy - d * 0.5 },
+      { translateX: ox },
+      { translateY: oy },
+      { scale },
+      { translateX: -ox },
+      { translateY: -oy },
     ];
   });
 

@@ -24,6 +24,10 @@ export type BubbleAnimState = {
   opacity: number;
   labelOpacity: number;
   captureVisualT: number;
+  tintR: number;
+  tintG: number;
+  tintB: number;
+  tintStrength: number;
 };
 
 export type BubbleAnimationConfig = {

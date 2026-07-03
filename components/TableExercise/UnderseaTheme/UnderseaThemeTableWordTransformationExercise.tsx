@@ -17,6 +17,7 @@ import { KoiSwimZone, type KoiSwimZoneController } from './koi';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { CaptureOverlay, TransformationInstructionBar, UnderseaThemeCornerControls } from './ui';
 import {
+  TransformationInsertFlight,
   TransformationVariantPicker,
   TransformationWordBubbles,
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
@@ -115,10 +116,11 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
 
   const game = useWordTransformationGame({
     table,
+    koiRect,
     onSequenceSolved: handleSequenceSolved,
     playPop: sounds.playBubblePop,
+    playInflate: sounds.playBubbleInflate,
     playWrong: sounds.playWrongClick,
-    playSuccess: sounds.playSuccessClick,
   });
 
   const instructionCenterY =
@@ -152,15 +154,41 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
         {!game.isCompleted && (
           <TransformationWordBubbles
             letters={game.letters}
-            interactive={!game.transitioning}
+            interactive={
+              !game.transitioning &&
+              game.insertAnimation == null &&
+              game.wordTransition == null
+            }
+            insertPreview={
+              game.insertAnimation != null && game.insertAnimation.phase !== 'dismiss'
+                ? {
+                    insertIndex: game.insertAnimation.insertIndex,
+                    insertLength: game.insertAnimation.insertLength,
+                    targetLetterCount: game.insertAnimation.nextWord.length,
+                  }
+                : undefined
+            }
             onLetterPress={game.handleLetterPress}
           />
         )}
-        {game.mode === 'insert' && !game.transitioning && (
+        {game.insertAnimation != null &&
+          (game.insertAnimation.phase === 'fly' ||
+            game.insertAnimation.phase === 'dismiss') && (
+          <TransformationInsertFlight flight={game.insertAnimation} />
+        )}
+        {(game.mode === 'insert' || game.insertAnimation != null) &&
+          !game.transitioning &&
+          game.wordTransition == null && (
           <TransformationVariantPicker
-            variants={game.variants}
+            variants={game.insertAnimation?.allVariants ?? game.variants}
             wrongVariant={game.wrongVariant}
-            interactive={!game.transitioning}
+            hiddenVariant={
+              game.insertAnimation != null && game.insertAnimation.phase !== 'reserve'
+                ? game.insertAnimation.selectedVariant
+                : null
+            }
+            poppedVariants={game.insertAnimation?.poppedWrongVariants}
+            interactive={game.insertAnimation == null}
             onSelect={game.handleVariantPress}
           />
         )}

@@ -4,6 +4,7 @@ import {
   BUBBLE_ENTER_WOBBLE,
   BUBBLE_IDLE_OPACITY,
   BUBBLE_IDLE_WOBBLE,
+  BUBBLE_NEUTRAL_TINT,
   BUBBLE_SPAWN_OFFSET_Y,
   BUBBLE_START_DIAMETER_RATIO,
   KOI_FISH_LENGTH,
@@ -44,6 +45,7 @@ export function computeBubbleAnimState(
       opacity: 0,
       labelOpacity: 0,
       captureVisualT: 0,
+      ...BUBBLE_NEUTRAL_TINT,
     };
   }
 
@@ -83,6 +85,7 @@ export function computeBubbleAnimState(
       opacity: BUBBLE_IDLE_OPACITY * (1 - fadeT),
       labelOpacity: 1 - labelFadeT,
       captureVisualT,
+      ...BUBBLE_NEUTRAL_TINT,
     };
   }
 
@@ -99,6 +102,7 @@ export function computeBubbleAnimState(
       opacity: BUBBLE_IDLE_OPACITY,
       labelOpacity: 1,
       captureVisualT: 1,
+      ...BUBBLE_NEUTRAL_TINT,
     };
   }
 
@@ -119,6 +123,7 @@ export function computeBubbleAnimState(
     opacity: BUBBLE_IDLE_OPACITY * fadeInT,
     labelOpacity: labelT,
     captureVisualT: t,
+    ...BUBBLE_NEUTRAL_TINT,
   };
 }
 

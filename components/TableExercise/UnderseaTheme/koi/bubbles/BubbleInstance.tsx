@@ -37,6 +37,8 @@ const {
   bgCutoff: defaultBgCutoff,
   centerClear: defaultCenterClear,
   rimClear: defaultRimClear,
+  tintA: defaultTintA,
+  tintStrength: defaultTintStrength,
 } = bubbleDeformUniformDefaults;
 
 export type BubbleInstanceProps = {
@@ -69,7 +71,19 @@ export function BubbleInstance({
   });
 
   const uniforms = useDerivedValue(() => {
-    const { x, y, diameter, wobbleAmp, wobbleSpeed, wobbleLobes, opacity } = anim.value;
+    const {
+      x,
+      y,
+      diameter,
+      wobbleAmp,
+      wobbleSpeed,
+      wobbleLobes,
+      opacity,
+      tintR,
+      tintG,
+      tintB,
+      tintStrength,
+    } = anim.value;
     return {
       bubbleX: x,
       bubbleY: y,
@@ -81,6 +95,8 @@ export function BubbleInstance({
       wobbleSpeed,
       wobbleLobes,
       opacity,
+      tintA: [tintR ?? defaultTintA[0], tintG ?? defaultTintA[1], tintB ?? defaultTintA[2]],
+      tintStrength: tintStrength ?? defaultTintStrength,
       bgCutoff,
       centerClear,
       rimClear,

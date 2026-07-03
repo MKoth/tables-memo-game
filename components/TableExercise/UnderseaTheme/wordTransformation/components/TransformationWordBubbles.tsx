@@ -54,6 +54,22 @@ export function computeLetterLayout(
   return { diameter, rowY, centers };
 }
 
+export type InsertPreviewLayout = {
+  insertIndex: number;
+  insertLength: number;
+  targetLetterCount: number;
+};
+
+export function previewCenterForLetter(
+  position: number,
+  preview: InsertPreviewLayout,
+  targetLayout: LetterLayout,
+): number {
+  const targetIndex =
+    position < preview.insertIndex ? position : position + preview.insertLength;
+  return targetLayout.centers[targetIndex] ?? 0;
+}
+
 function statusFor(letter: LetterBubbleModel): LetterBubbleStatus {
   if (letter.popped) {
     return 'popped';
@@ -67,12 +83,14 @@ function statusFor(letter: LetterBubbleModel): LetterBubbleStatus {
 export type TransformationWordBubblesProps = {
   letters: LetterBubbleModel[];
   interactive?: boolean;
+  insertPreview?: InsertPreviewLayout;
   onLetterPress: (position: number) => void;
 };
 
 export function TransformationWordBubbles({
   letters,
   interactive = true,
+  insertPreview,
   onLetterPress,
 }: TransformationWordBubblesProps) {
   const { koiRect } = useUnderseaThemeLayout();
@@ -84,15 +102,25 @@ export function TransformationWordBubbles({
     [koiRect, letters.length],
   );
 
+  const previewLayout = useMemo(
+    () =>
+      insertPreview == null
+        ? null
+        : computeLetterLayout(koiRect, insertPreview.targetLetterCount),
+    [insertPreview, koiRect],
+  );
+
+  const activeLayout = previewLayout ?? layout;
+
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const font = useMemo(
     () =>
       matchFont({
         fontFamily,
-        fontSize: Math.max(16, layout.diameter * 0.5),
+        fontSize: Math.max(16, activeLayout.diameter * 0.5),
         fontWeight: '700',
       }),
-    [fontFamily, layout.diameter],
+    [activeLayout.diameter, fontFamily],
   );
 
   if (letters.length === 0) {
@@ -102,26 +130,44 @@ export function TransformationWordBubbles({
   return (
     <>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-        {letters.map((letter, i) => (
-          <LetterBubble
-            key={letter.key}
-            char={letter.char}
-            centerX={layout.centers[i] ?? 0}
-            centerY={layout.rowY}
-            diameter={layout.diameter}
-            status={statusFor(letter)}
-            image={images.bubble}
-            font={font}
-            clock={clock}
-          />
-        ))}
-      </Canvas>
-      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        {letters.map((letter, i) => {
-          if (letter.popped) {
+        {letters.map((letter) => {
+          if (letter.pendingEnter) {
             return null;
           }
-          const cx = layout.centers[i] ?? 0;
+          const centerX =
+            insertPreview != null && previewLayout != null
+              ? previewCenterForLetter(letter.position, insertPreview, previewLayout)
+              : (layout.centers[letter.position] ?? 0);
+
+          return (
+            <LetterBubble
+              key={letter.key}
+              char={letter.char}
+              centerX={centerX}
+              centerY={activeLayout.rowY}
+              diameter={activeLayout.diameter}
+              initialCenterX={letter.skipEnter ? centerX : undefined}
+              initialCenterY={letter.skipEnter ? activeLayout.rowY : undefined}
+              initialDiameter={letter.skipEnter ? activeLayout.diameter : undefined}
+              skipEnter={letter.skipEnter}
+              moveDurationMs={letter.skipEnter ? 0 : undefined}
+              status={statusFor(letter)}
+              image={images.bubble}
+              font={font}
+              clock={clock}
+            />
+          );
+        })}
+      </Canvas>
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        {letters.map((letter) => {
+          if (letter.popped || letter.pendingEnter) {
+            return null;
+          }
+          const cx =
+            insertPreview != null && previewLayout != null
+              ? previewCenterForLetter(letter.position, insertPreview, previewLayout)
+              : (layout.centers[letter.position] ?? 0);
           return (
             <Pressable
               key={letter.key}
@@ -130,10 +176,10 @@ export function TransformationWordBubbles({
               style={[
                 styles.hit,
                 {
-                  left: cx - layout.diameter * 0.5,
-                  top: layout.rowY - layout.diameter * 0.5,
-                  width: layout.diameter,
-                  height: layout.diameter,
+                  left: cx - activeLayout.diameter * 0.5,
+                  top: activeLayout.rowY - activeLayout.diameter * 0.5,
+                  width: activeLayout.diameter,
+                  height: activeLayout.diameter,
                 },
               ]}
             />

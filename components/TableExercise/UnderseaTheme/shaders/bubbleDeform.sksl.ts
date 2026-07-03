@@ -16,6 +16,8 @@ uniform float wobbleAmp;
 uniform float wobbleSpeed;
 uniform float wobbleLobes;
 uniform float opacity;
+uniform float3 tintA;
+uniform float tintStrength;
 uniform float bgCutoff;
 uniform float centerClear;
 uniform float rimClear;
@@ -58,8 +60,10 @@ half4 main(float2 fragCoord) {
   float centerFade = mix(centerClear, 1.0, smoothstep(0.0, 0.42, r));
   float rimFade = mix(1.0, rimClear, smoothstep(0.34, 0.5, r));
   float alpha = color.a * bgMask * opacity * centerFade * rimFade;
+  half3 tint = half3(tintA);
+  half3 rgb = mix(color.rgb, tint, half(tintStrength * bgMask));
 
-  return half4(color.rgb * alpha, alpha);
+  return half4(rgb * alpha, alpha);
 }
 `;
 
@@ -71,6 +75,10 @@ export const bubbleDeformUniformDefaults = {
   wobbleLobes: 1,
   /** Overall bubble translucency. */
   opacity: 0.48,
+  /** RGB tint color (linear 0–1). */
+  tintA: [1, 1, 1] as const,
+  /** 0 = natural bubble color, 1 = full tintA. */
+  tintStrength: 0,
   /** Luminance below which source pixels are treated as background. */
   bgCutoff: 0.27,
   /** Alpha multiplier at bubble center (lower = more transparent). */
