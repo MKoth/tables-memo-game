@@ -1,62 +1,19 @@
-import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import React, { useMemo } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Canvas, matchFont } from '@shopify/react-native-skia';
+import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
+import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
+import { computeLetterLayout } from './TransformationWordBubbles';
 
-const VARIANT_FILL = 'rgba(82, 173, 245, 0.42)';
-const VARIANT_BORDER = 'rgba(191, 235, 255, 0.6)';
-const VARIANT_WRONG_BORDER = '#ff5a5a';
+const VARIANT_ROW_Y_RATIO = 0.58;
 
-type VariantButtonProps = {
-  variant: string;
-  isWrong: boolean;
-  disabled?: boolean;
-  onPress: (variant: string) => void;
-};
-
-function VariantButton({ variant, isWrong, disabled, onPress }: VariantButtonProps) {
-  const wiggle = useSharedValue(0);
-
-  useEffect(() => {
-    if (!isWrong) {
-      return;
-    }
-    wiggle.value = withSequence(
-      withTiming(-7, { duration: 60 }),
-      withTiming(7, { duration: 110 }),
-      withTiming(-5, { duration: 110 }),
-      withTiming(5, { duration: 110 }),
-      withTiming(0, { duration: 90 }),
-    );
-  }, [isWrong, wiggle]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: wiggle.value }],
-  }));
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <Pressable
-        disabled={disabled}
-        onPress={() => onPress(variant)}
-        style={({ pressed }) => [
-          styles.button,
-          isWrong && styles.buttonWrong,
-          pressed && !disabled && styles.buttonPressed,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`Insert ${variant}`}>
-        <Text style={[styles.buttonText, isWrong && styles.buttonTextWrong]}>
-          {variant}
-        </Text>
-      </Pressable>
-    </Animated.View>
-  );
+function statusFor(variant: string, wrongVariant: string | null): LetterBubbleStatus {
+  if (wrongVariant === variant) {
+    return 'wrong';
+  }
+  return 'idle';
 }
 
 export type TransformationVariantPickerProps = {
@@ -73,75 +30,83 @@ export function TransformationVariantPicker({
   onSelect,
 }: TransformationVariantPickerProps) {
   const { koiRect } = useUnderseaThemeLayout();
+  const { images } = useUnderseaThemeAssetsContext();
+  const clock = useUnderseaThemeClock();
+
+  const layout = useMemo(
+    () => computeLetterLayout(koiRect, variants.length, VARIANT_ROW_Y_RATIO),
+    [koiRect, variants.length],
+  );
+
+  const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
+  const maxVariantLength = useMemo(
+    () => variants.reduce((max, variant) => Math.max(max, variant.length), 1),
+    [variants],
+  );
+  const font = useMemo(
+    () =>
+      matchFont({
+        fontFamily,
+        fontSize: Math.max(
+          14,
+          (layout.diameter * 0.5) / Math.max(1, maxVariantLength * 0.52),
+        ),
+        fontWeight: '700',
+      }),
+    [fontFamily, layout.diameter, maxVariantLength],
+  );
 
   if (variants.length === 0) {
     return null;
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          left: koiRect.x,
-          top: koiRect.y + koiRect.h * 0.58,
-          width: koiRect.w,
-        },
-      ]}
-      pointerEvents="box-none">
-      <View style={styles.row}>
-        {variants.map((variant) => (
-          <VariantButton
+    <>
+      <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+        {variants.map((variant, i) => (
+          <LetterBubble
             key={variant}
-            variant={variant}
-            isWrong={wrongVariant === variant}
-            disabled={!interactive}
-            onPress={onSelect}
+            char={variant}
+            centerX={layout.centers[i] ?? 0}
+            centerY={layout.rowY}
+            diameter={layout.diameter}
+            status={statusFor(variant, wrongVariant)}
+            image={images.bubble}
+            font={font}
+            clock={clock}
           />
         ))}
+      </Canvas>
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        {variants.map((variant, i) => {
+          const cx = layout.centers[i] ?? 0;
+          return (
+            <Pressable
+              key={variant}
+              disabled={!interactive}
+              onPress={() => onSelect(variant)}
+              accessibilityRole="button"
+              accessibilityLabel={`Insert ${variant}`}
+              style={[
+                styles.hit,
+                {
+                  left: cx - layout.diameter * 0.5,
+                  top: layout.rowY - layout.diameter * 0.5,
+                  width: layout.diameter,
+                  height: layout.diameter,
+                },
+              ]}
+            />
+          );
+        })}
       </View>
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  hit: {
     position: 'absolute',
-    alignItems: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  button: {
-    minWidth: 60,
-    height: 60,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: VARIANT_FILL,
-    borderWidth: 2,
-    borderColor: VARIANT_BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonWrong: {
-    borderColor: VARIANT_WRONG_BORDER,
-  },
-  buttonPressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.96 }],
-  },
-  buttonText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#ffffff',
-    textShadowColor: 'rgba(10, 40, 64, 0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  buttonTextWrong: {
-    color: VARIANT_WRONG_BORDER,
+    borderRadius: 999,
   },
 });

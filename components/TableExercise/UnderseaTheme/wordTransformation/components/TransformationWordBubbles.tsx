@@ -18,8 +18,12 @@ export type LetterLayout = {
   centers: number[];
 };
 
-export function computeLetterLayout(koiRect: ZoneRect, count: number): LetterLayout {
-  const rowY = koiRect.y + koiRect.h * 0.4;
+export function computeLetterLayout(
+  koiRect: ZoneRect,
+  count: number,
+  rowYRatio = 0.4,
+): LetterLayout {
+  const rowY = koiRect.y + koiRect.h * rowYRatio;
   if (count <= 0) {
     return { diameter: MIN_DIAMETER, rowY, centers: [] };
   }
