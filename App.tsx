@@ -12,7 +12,7 @@ import { TableExercise } from './components/TableExercise/TableExercise';
 import { TableWordTransformationExercise } from './components/TableExercise/TableWordTransformationExercise';
 
 /** Dev switch: 'table' | 'wordTransformation' */
-const ACTIVE_EXERCISE: 'table' | 'wordTransformation' = 'wordTransformation';
+const ACTIVE_EXERCISE: 'table' | 'wordTransformation' = 'table';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
