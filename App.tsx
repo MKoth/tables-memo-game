@@ -9,10 +9,12 @@ import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TableExercise } from './components/TableExercise/TableExercise';
+import { TableSentenceTransformationExercise } from './components/TableExercise/TableSentenceTransformationExercise';
 import { TableWordTransformationExercise } from './components/TableExercise/TableWordTransformationExercise';
 
-/** Dev switch: 'table' | 'wordTransformation' */
-const ACTIVE_EXERCISE: 'table' | 'wordTransformation' = 'wordTransformation';
+/** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' */
+const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' =
+  'sentenceTransformation';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -32,8 +34,10 @@ function AppContent() {
     <View style={styles.container}>
       {ACTIVE_EXERCISE === 'table' ? (
         <TableExercise />
-      ) : (
+      ) : ACTIVE_EXERCISE === 'wordTransformation' ? (
         <TableWordTransformationExercise />
+      ) : (
+        <TableSentenceTransformationExercise />
       )}
     </View>
   );
