@@ -126,16 +126,17 @@ export function useSentenceTransformationGame({
   const isCompleted = roundOrder.length === 0 || roundPos >= roundOrder.length;
   const currentRoundIndex = isCompleted ? -1 : roundOrder[roundPos] ?? -1;
   const currentRound = currentRoundIndex >= 0 ? rounds[currentRoundIndex] ?? null : null;
-  const sequence =
-    currentRound == null ? null : roundToSequence(table, currentRound);
+  const sequence = useMemo(
+    () => (currentRound == null ? null : roundToSequence(table, currentRound)),
+    [currentRound, table],
+  );
 
   useEffect(() => {
     if (sequence == null || coreRef.current == null) {
       return;
     }
     coreRef.current.loadSequence(sequence, roundPos);
-    syncCoreSnapshot();
-  }, [roundPos, sequence, syncCoreSnapshot]);
+  }, [roundPos, sequence]);
 
   const instruction = useMemo(() => {
     if (isCompleted) {

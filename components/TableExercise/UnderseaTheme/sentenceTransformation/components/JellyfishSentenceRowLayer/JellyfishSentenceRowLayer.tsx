@@ -20,9 +20,9 @@ import type { PersistentHighlightKind } from '../../../jellyfish/JellyfishTableL
 import type { SentencePromptDisplaySlot } from '../../domain/types';
 import {
   computeSentenceRowLayout,
-  findSentenceSlotAtTap,
   type SentenceSlotConfig,
 } from './computeSentenceRowLayout';
+import { findSentenceSlotAtTap } from './sentenceRowWorklets';
 
 export type JellyfishSentenceRowLayerProps = {
   displaySlots: SentencePromptDisplaySlot[];
