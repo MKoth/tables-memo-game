@@ -1,5 +1,13 @@
 export type TableTranslationRule = 'spanish-present';
 
+/** Sparse sentence prompt tied to one body cell; blank slot is a position, not a token. */
+export type SentencePrompt = {
+  /** Display words; the blank slot is omitted from this list. */
+  tokens: string[];
+  /** 0..tokens.length inclusive — blank sits after the first blankIndex tokens. */
+  blankIndex: number;
+};
+
 export type TableData = {
   id: string;
   title: string;
@@ -9,6 +17,8 @@ export type TableData = {
   colHeaders: string[];
   /** body[rowIndex][colIndex] = conjugated form. */
   body: string[][];
+  /** bodySentencePrompts[rowIndex][colIndex] parallels body[row][col]. */
+  bodySentencePrompts?: SentencePrompt[][];
   /** English gloss for each row header (same order as rowHeaders). */
   rowHeaderTranslations: string[];
   /** English gloss for each column header (same order as colHeaders). */
@@ -102,6 +112,7 @@ export function createTableData(
   colHeaders: string[],
   body: string[][],
   translationRule?: TableTranslationRule,
+  bodySentencePrompts?: SentencePrompt[][],
 ): TableData {
   if (body.length !== rowHeaders.length) {
     throw new Error(
@@ -116,12 +127,35 @@ export function createTableData(
     }
   }
 
+  if (bodySentencePrompts != null) {
+    if (bodySentencePrompts.length !== rowHeaders.length) {
+      throw new Error(
+        `createTableData: bodySentencePrompts has ${bodySentencePrompts.length} rows but rowHeaders has ${rowHeaders.length} entries`,
+      );
+    }
+    for (let r = 0; r < bodySentencePrompts.length; r++) {
+      if (bodySentencePrompts[r]!.length !== colHeaders.length) {
+        throw new Error(
+          `createTableData: bodySentencePrompts[${r}] has ${bodySentencePrompts[r]!.length} columns but colHeaders has ${colHeaders.length} entries`,
+        );
+      }
+    }
+  }
+
   const translations =
     translationRule === 'spanish-present'
       ? buildSpanishPresentTranslations(rowHeaders, colHeaders, body)
       : buildEmptyTranslations(rowHeaders, colHeaders, body);
 
-  return { id, title, rowHeaders, colHeaders, body, ...translations };
+  return {
+    id,
+    title,
+    rowHeaders,
+    colHeaders,
+    body,
+    ...(bodySentencePrompts != null ? { bodySentencePrompts } : {}),
+    ...translations,
+  };
 }
 
 const SPANISH_ROW_HEADERS = [
@@ -193,6 +227,27 @@ export const spanishPresentTable1Plural = createTableData(
   'spanish-present',
 );
 
+const SPANISH_PRESENT_TABLE2_PLURAL_SENTENCE_PROMPTS: SentencePrompt[][] = [
+  [
+    { tokens: ['Nosotros', 'en', 'el', 'coro', 'los', 'domingos'], blankIndex: 1 },
+    { tokens: ['Nosotros', 'salsa', 'los', 'viernes'], blankIndex: 1 },
+    { tokens: ['Nosotros', 'por', 'el', 'parque', 'cada', 'mañana'], blankIndex: 1 },
+    { tokens: ['Nosotros', 'la', 'cuerda', 'en', 'el', 'patio'], blankIndex: 1 },
+  ],
+  [
+    { tokens: ['Vosotros', 'muy', 'bien', 'en', 'el', 'escenario'], blankIndex: 1 },
+    { tokens: ['Vosotros', 'en', 'la', 'fiesta', 'de', 'cumpleaños'], blankIndex: 1 },
+    { tokens: ['Vosotros', 'en', 'la', 'playa', 'por', 'la', 'tarde'], blankIndex: 1 },
+    { tokens: ['Vosotros', 'muy', 'alto', 'en', 'el', 'gimnasio'], blankIndex: 1 },
+  ],
+  [
+    { tokens: ['Ellos', 'una', 'canción', 'bonita'], blankIndex: 1 },
+    { tokens: ['Ellas', 'tango', 'en', 'la', 'plaza'], blankIndex: 1 },
+    { tokens: ['Los', 'niños', 'rápido', 'hacia', 'la', 'meta'], blankIndex: 2 },
+    { tokens: ['Ellos', 'sobre', 'las', 'olas', 'del', 'mar'], blankIndex: 1 },
+  ],
+];
+
 export const spanishPresentTable2Plural = createTableData(
   'spanish-present-part-2-plural',
   'Spanish Present — cantar, bailar, correr, saltar (plural)',
@@ -200,6 +255,7 @@ export const spanishPresentTable2Plural = createTableData(
   ['cantar', 'bailar', 'correr', 'saltar'],
   SPANISH_BODY_FULL.slice(3, 6).map(row => row.slice(3, 7)),
   'spanish-present',
+  SPANISH_PRESENT_TABLE2_PLURAL_SENTENCE_PROMPTS,
 );
 
 /** Full present tense table (original). */
