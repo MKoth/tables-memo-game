@@ -18,10 +18,12 @@ export type RoundResolutionBubbleState = {
 
 export type TransformationRoundResolutionBubbleProps = {
   bubble: RoundResolutionBubbleState | null;
+  onComplete?: () => void;
 };
 
 export function TransformationRoundResolutionBubble({
   bubble,
+  onComplete,
 }: TransformationRoundResolutionBubbleProps) {
   const { images } = useUnderseaThemeAssetsContext();
   const clock = useUnderseaThemeClock();
@@ -63,6 +65,7 @@ export function TransformationRoundResolutionBubble({
         image={images.bubble}
         font={font}
         clock={clock}
+        onMoveComplete={onComplete}
       />
     </Canvas>
   );

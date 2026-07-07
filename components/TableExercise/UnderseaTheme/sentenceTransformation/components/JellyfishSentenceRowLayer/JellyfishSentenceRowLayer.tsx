@@ -40,6 +40,9 @@ export type JellyfishSentenceRowLayerProps = {
   blankExiting: boolean;
   poppingSlotIndex: number | null;
   onTokenTap?: () => void;
+  onRowEnterComplete?: () => void;
+  onPopComplete?: () => void;
+  onRowExitComplete?: () => void;
 };
 
 function toCellConfig(slot: SentenceSlotConfig): CellConfig {
@@ -78,6 +81,9 @@ export function JellyfishSentenceRowLayer({
   blankExiting,
   poppingSlotIndex,
   onTokenTap,
+  onRowEnterComplete,
+  onPopComplete,
+  onRowExitComplete,
 }: JellyfishSentenceRowLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
   const { jellyRect, labelRotationRad } = useUnderseaThemeLayout();
@@ -149,23 +155,58 @@ export function JellyfishSentenceRowLayer({
     },
   );
 
+  const onRowEnterCompleteRef = React.useRef(onRowEnterComplete);
+  onRowEnterCompleteRef.current = onRowEnterComplete;
+  const onPopCompleteRef = React.useRef(onPopComplete);
+  onPopCompleteRef.current = onPopComplete;
+  const onRowExitCompleteRef = React.useRef(onRowExitComplete);
+  onRowExitCompleteRef.current = onRowExitComplete;
+
+  const fireRowEnterComplete = useCallback(() => {
+    onRowEnterCompleteRef.current?.();
+  }, []);
+  const firePopComplete = useCallback(() => {
+    onPopCompleteRef.current?.();
+  }, []);
+  const fireRowExitComplete = useCallback(() => {
+    onRowExitCompleteRef.current?.();
+  }, []);
+
   useEffect(() => {
     if (roundPhase === 'enter') {
       rowOffsetX.value = offscreenOffset(screenWidth, exitEdge);
-      rowOffsetX.value = withTiming(0, {
-        duration: ROUND_ROW_ENTER_DURATION_MS,
-        easing: Easing.out(Easing.cubic),
-      });
+      rowOffsetX.value = withTiming(
+        0,
+        {
+          duration: ROUND_ROW_ENTER_DURATION_MS,
+          easing: Easing.out(Easing.cubic),
+        },
+        (finished) => {
+          'worklet';
+          if (finished) {
+            scheduleOnRN(fireRowEnterComplete);
+          }
+        },
+      );
       return;
     }
 
     if (roundPhase === 'exit') {
-      rowOffsetX.value = withTiming(offscreenOffset(screenWidth, exitEdge), {
-        duration: ROUND_ROW_EXIT_DURATION_MS,
-        easing: Easing.in(Easing.cubic),
-      });
+      rowOffsetX.value = withTiming(
+        offscreenOffset(screenWidth, exitEdge),
+        {
+          duration: ROUND_ROW_EXIT_DURATION_MS,
+          easing: Easing.in(Easing.cubic),
+        },
+        (finished) => {
+          'worklet';
+          if (finished) {
+            scheduleOnRN(fireRowExitComplete);
+          }
+        },
+      );
     }
-  }, [exitEdge, roundPhase, rowOffsetX, screenWidth]);
+  }, [exitEdge, fireRowEnterComplete, fireRowExitComplete, roundPhase, rowOffsetX, screenWidth]);
 
   useEffect(() => {
     if (!blankExiting || blankSlotIndex < 0) {
@@ -192,8 +233,14 @@ export function JellyfishSentenceRowLayer({
         duration: ROUND_SOLVED_POP_DURATION_MS,
         easing: Easing.out(Easing.cubic),
       },
+      (finished) => {
+        'worklet';
+        if (finished) {
+          scheduleOnRN(firePopComplete);
+        }
+      },
     );
-  }, [poppingSlotIndex, slotAnimScale]);
+  }, [firePopComplete, poppingSlotIndex, slotAnimScale]);
 
   useEffect(() => {
     if (roundPhase === 'enter' || roundPhase === 'transform') {

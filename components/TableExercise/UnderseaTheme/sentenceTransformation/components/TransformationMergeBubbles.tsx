@@ -11,11 +11,13 @@ import { ROUND_MERGE_DURATION_MS } from '../domain/roundResolutionTiming';
 export type TransformationMergeBubblesProps = {
   word: string;
   durationMs?: number;
+  onComplete?: () => void;
 };
 
 export function TransformationMergeBubbles({
   word,
   durationMs = ROUND_MERGE_DURATION_MS,
+  onComplete,
 }: TransformationMergeBubblesProps) {
   const { koiRect } = useUnderseaThemeLayout();
   const { images } = useUnderseaThemeAssetsContext();
@@ -70,6 +72,9 @@ export function TransformationMergeBubbles({
           image={images.bubble}
           font={font}
           clock={clock}
+          onMoveComplete={
+            position === word.length - 1 ? onComplete : undefined
+          }
         />
       ))}
     </Canvas>

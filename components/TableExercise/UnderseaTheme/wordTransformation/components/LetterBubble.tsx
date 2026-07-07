@@ -105,6 +105,8 @@ export type LetterBubbleProps = {
   onPopSound?: () => void;
   /** Fired on the UI thread at the frame the enter/inflate becomes visible. */
   onEnterSound?: () => void;
+  /** Fired on the UI thread when a move/resize animation finishes. */
+  onMoveComplete?: () => void;
   onPopComplete?: () => void;
 };
 
@@ -127,6 +129,7 @@ function LetterBubbleComponent({
   enterDelayMs,
   onPopSound,
   onEnterSound,
+  onMoveComplete,
   onPopComplete,
 }: LetterBubbleProps) {
   const posX = useSharedValue(initialCenterX ?? centerX);
@@ -149,6 +152,8 @@ function LetterBubbleComponent({
   onPopSoundRef.current = onPopSound;
   const onEnterSoundRef = useRef(onEnterSound);
   onEnterSoundRef.current = onEnterSound;
+  const onMoveCompleteRef = useRef(onMoveComplete);
+  onMoveCompleteRef.current = onMoveComplete;
 
   const wrongTint = useMemo(() => parseHexColor(wrongTintColor), [wrongTintColor]);
   const wrongTintR = wrongTint.r;
@@ -199,10 +204,20 @@ function LetterBubbleComponent({
       duration: moveDurationMs,
       easing: Easing.inOut(Easing.cubic),
     });
-    dia.value = withTiming(diameter, {
-      duration: moveDurationMs,
-      easing: Easing.inOut(Easing.cubic),
-    });
+    dia.value = withTiming(
+      diameter,
+      {
+        duration: moveDurationMs,
+        easing: Easing.inOut(Easing.cubic),
+      },
+      (finished) => {
+        'worklet';
+        const callback = onMoveCompleteRef.current;
+        if (finished && callback != null) {
+          scheduleOnRN(callback);
+        }
+      },
+    );
 
     // Wiggle faster / wider while actually travelling, then settle back to idle.
     if (moveDurationMs > 0 && travelDelta > MOVE_WOBBLE_MIN_DELTA) {

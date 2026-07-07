@@ -85,13 +85,19 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
           blankExiting={game.blankExiting}
           poppingSlotIndex={game.poppingSlotIndex}
           onTokenTap={handleTokenTap}
+          onRowEnterComplete={game.handleRowEnterComplete}
+          onPopComplete={game.handlePopComplete}
+          onRowExitComplete={game.handleRowExitComplete}
         />
       </View>
       <View style={styles.bubbleLayer} pointerEvents="box-none">
         {!game.isCompleted && (
           <>
             {game.mergeWord != null && (
-              <TransformationMergeBubbles word={game.mergeWord} />
+              <TransformationMergeBubbles
+                word={game.mergeWord}
+                onComplete={game.handleMergeComplete}
+              />
             )}
             <TransformationWordBubbles
               letters={game.letters}
@@ -113,7 +119,10 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
               playPop={sounds.playBubblePop}
               playInflate={sounds.playBubbleInflate}
             />
-            <TransformationRoundResolutionBubble bubble={game.resolutionBubble} />
+            <TransformationRoundResolutionBubble
+              bubble={game.resolutionBubble}
+              onComplete={game.handleResolveComplete}
+            />
           </>
         )}
         <TransformationInsertFlight flight={game.insertAnimation} />

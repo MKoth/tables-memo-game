@@ -48,6 +48,10 @@ _Avoid_: completion animation, success sequence
 The pause after round resolution lands and before the solved word pops — time for the learner to read the complete sentence (~3 seconds).
 _Avoid_: display delay, success pause
 
+**Round controller**:
+The module that owns round lifecycle phase truth and scheduling for the sentence transformation exercise — enter, transform, merge, resolve, hold, pop, exit, and advance. Distinct from **round resolution**, which names only the post-transform animation sequence.
+_Avoid_: round orchestrator, phase manager
+
 **Round entrance**:
 How the next sentence row arrives after the previous round exits: jellyfish fly in from the same offscreen edge the prior row left through, then the infinitive letter bubbles inflate. The first round of a session uses the same fly-in.
 _Avoid_: row transition, sentence intro

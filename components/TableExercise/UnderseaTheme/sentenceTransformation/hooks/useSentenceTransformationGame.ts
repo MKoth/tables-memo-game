@@ -17,19 +17,14 @@ import {
   type WordTransformationCoreSnapshot,
 } from '../../wordTransformation/domain';
 import {
-  bubbleEnterDurationMs,
-  createSentenceRoundOrchestrator,
+  createSentenceRoundController,
   createSentenceTransformationExercise,
   displaySlotsWithSolvedWord,
   findBlankSlotIndex,
   shuffleIndices,
-  ROUND_MERGE_DURATION_MS,
   ROUND_RESOLVE_FLY_DURATION_MS,
-  ROUND_ROW_ENTER_DURATION_MS,
-  ROUND_ROW_EXIT_DURATION_MS,
-  ROUND_SOLVED_POP_DURATION_MS,
   type SentencePromptDisplaySlot,
-  type SentenceRoundOrchestratorSnapshot,
+  type SentenceRoundControllerSnapshot,
   type SentenceRoundPhase,
   type SentenceTransformationRound,
 } from '../domain';
@@ -43,7 +38,7 @@ export type SentenceTransformationGame = {
   isCompleted: boolean;
   transitioning: boolean;
   roundPhase: SentenceRoundPhase;
-  exitEdge: SentenceRoundOrchestratorSnapshot['exitEdge'];
+  exitEdge: SentenceRoundControllerSnapshot['exitEdge'];
   blankSlotIndex: number;
   blankExiting: boolean;
   poppingSlotIndex: number | null;
@@ -65,6 +60,11 @@ export type SentenceTransformationGame = {
   totalCount: number;
   handleLetterPress: (position: number) => void;
   handleVariantPress: (item: VariantPickerItem, source: VariantSourceLayout) => void;
+  handleRowEnterComplete: () => void;
+  handleMergeComplete: () => void;
+  handleResolveComplete: () => void;
+  handlePopComplete: () => void;
+  handleRowExitComplete: () => void;
 };
 
 function roundToSequence(
@@ -130,7 +130,7 @@ export function useSentenceTransformationGame({
   );
 
   const [, bumpRender] = useReducer((value: number) => value + 1, 0);
-  const [roundSnapshot, setRoundSnapshot] = useState<SentenceRoundOrchestratorSnapshot>(() => ({
+  const [roundSnapshot, setRoundSnapshot] = useState<SentenceRoundControllerSnapshot>(() => ({
     phase: 'enter',
     roundPos: 0,
     exitEdge: 'right',
@@ -145,9 +145,7 @@ export function useSentenceTransformationGame({
   );
 
   const coreRef = useRef<ReturnType<typeof createWordTransformationCore> | null>(null);
-  const roundRef = useRef<ReturnType<typeof createSentenceRoundOrchestrator> | null>(null);
-  const roundTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const skipSequenceLoadRef = useRef(false);
+  const roundRef = useRef<ReturnType<typeof createSentenceRoundController> | null>(null);
   const koiRectRef = useRef(koiRect);
   const jellyRectRef = useRef(jellyRect);
   koiRectRef.current = koiRect;
@@ -161,19 +159,6 @@ export function useSentenceTransformationGame({
   playInflateRef.current = playInflate;
   playWrongRef.current = playWrong;
   playSuccessRef.current = playSuccess;
-
-  const clearRoundTimers = useCallback(() => {
-    roundTimersRef.current.forEach(clearTimeout);
-    roundTimersRef.current = [];
-  }, []);
-
-  const scheduleRoundTimer = useCallback((fn: () => void, delayMs: number) => {
-    const id = setTimeout(() => {
-      roundTimersRef.current = roundTimersRef.current.filter((timerId) => timerId !== id);
-      fn();
-    }, delayMs);
-    roundTimersRef.current.push(id);
-  }, []);
 
   const syncRoundSnapshot = useCallback(() => {
     const snapshot = roundRef.current?.getSnapshot();
@@ -217,109 +202,11 @@ export function useSentenceTransformationGame({
     );
   }, [blankSlotIndex, currentRound?.displaySlots, roundSnapshot.blankFilled, roundSnapshot.solvedWord]);
 
-  const startBubbleEnter = useCallback(
-    (baseWord: string) => {
-      const revealOrder = shuffleIndices(baseWord.length);
-      if (revealOrder.length === 0) {
-        setBubbleEnter(null);
-        roundRef.current?.notifyEnterComplete();
-        syncRoundSnapshot();
-        return;
-      }
-
-      setBubbleEnter({
-        revealOrder,
-        revealedPositions: new Set(),
-      });
-
-      scheduleRoundTimer(() => {
-        setBubbleEnter(null);
-        roundRef.current?.notifyEnterComplete();
-        syncRoundSnapshot();
-      }, bubbleEnterDurationMs(baseWord.length));
-    },
-    [scheduleRoundTimer, syncRoundSnapshot],
-  );
-
-  const startRoundEnter = useCallback(
-    (baseWord: string) => {
-      clearRoundTimers();
-      setBubbleEnter(null);
-      setResolutionBubble(null);
-
-      scheduleRoundTimer(() => {
-        startBubbleEnter(baseWord);
-      }, ROUND_ROW_ENTER_DURATION_MS);
-    },
-    [clearRoundTimers, scheduleRoundTimer, startBubbleEnter],
-  );
-
-  const startMergePhase = useCallback(
-    (solvedWord: string) => {
-      scheduleRoundTimer(() => {
-        roundRef.current?.notifyMergeComplete();
-        syncRoundSnapshot();
-
-        const blank = blankSlotCenter(currentRound?.displaySlots ?? [], jellyRectRef.current);
-        const letterLayout = computeLetterLayout(
-          koiRectRef.current,
-          solvedWord.length,
-        );
-        const fromCenterX =
-          letterLayout.centers.length > 0
-            ? (letterLayout.centers[0]! + letterLayout.centers[letterLayout.centers.length - 1]!) *
-              0.5
-            : koiRectRef.current.x + koiRectRef.current.w * 0.5;
-
-        if (blank != null) {
-          setResolutionBubble({
-            word: solvedWord,
-            fromCenterX,
-            fromCenterY: letterLayout.rowY,
-            fromDiameter: letterLayout.diameter,
-            toCenterX: blank.x,
-            toCenterY: blank.y,
-            toDiameter: blank.bellSize * 0.9,
-            flyDurationMs: ROUND_RESOLVE_FLY_DURATION_MS,
-          });
-        }
-
-        scheduleRoundTimer(() => {
-          setResolutionBubble(null);
-          roundRef.current?.notifyResolveComplete();
-          syncRoundSnapshot();
-        }, ROUND_RESOLVE_FLY_DURATION_MS);
-      }, ROUND_MERGE_DURATION_MS);
-    },
-    [currentRound?.displaySlots, scheduleRoundTimer, syncRoundSnapshot],
-  );
-
-  const startPopPhase = useCallback(() => {
-    scheduleRoundTimer(() => {
-      roundRef.current?.notifyPopComplete();
-      syncRoundSnapshot();
-    }, ROUND_SOLVED_POP_DURATION_MS);
-  }, [scheduleRoundTimer, syncRoundSnapshot]);
-
-  const startExitPhase = useCallback(() => {
-    scheduleRoundTimer(() => {
-      roundRef.current?.notifyExitComplete();
-      syncRoundSnapshot();
-
-      const nextSnapshot = roundRef.current?.getSnapshot();
-      if (nextSnapshot?.phase === 'enter') {
-        const nextRoundIndex = roundOrder[nextSnapshot.roundPos] ?? -1;
-        const nextRound = nextRoundIndex >= 0 ? rounds[nextRoundIndex] ?? null : null;
-        if (nextRound != null) {
-          skipSequenceLoadRef.current = true;
-          const nextSequence = roundToSequence(table, nextRound);
-          coreRef.current?.loadSequence(nextSequence, nextSnapshot.roundPos);
-          syncCoreSnapshot();
-          startRoundEnter(nextRound.infinitive);
-        }
-      }
-    }, ROUND_ROW_EXIT_DURATION_MS);
-  }, [roundOrder, rounds, scheduleRoundTimer, startRoundEnter, syncCoreSnapshot, syncRoundSnapshot, table]);
+  const configureEnterPhase = useCallback((baseWord: string) => {
+    roundRef.current?.configureRound({ wordLength: baseWord.length });
+    setBubbleEnter(null);
+    setResolutionBubble(null);
+  }, []);
 
   const handleRoundPhaseChangeRef = useRef<() => void>(() => {});
 
@@ -331,26 +218,63 @@ export function useSentenceTransformationGame({
 
     syncRoundSnapshot();
 
-    if (snapshot.phase === 'merge' && snapshot.solvedWord != null) {
-      startMergePhase(snapshot.solvedWord);
+    const roundIndex = roundOrder[snapshot.roundPos] ?? -1;
+    const roundForSnapshot =
+      roundIndex >= 0 ? rounds[roundIndex] ?? null : null;
+
+    if (snapshot.phase === 'enter') {
+      const baseWord = roundForSnapshot?.infinitive ?? '';
+      if (baseWord.length > 0) {
+        configureEnterPhase(baseWord);
+      }
+      return;
+    }
+
+    if (snapshot.phase === 'transform') {
+      setBubbleEnter(null);
+      return;
+    }
+
+    if (snapshot.phase === 'resolve' && snapshot.solvedWord != null) {
+      const solvedWord = snapshot.solvedWord;
+      const blank = blankSlotCenter(
+        roundForSnapshot?.displaySlots ?? [],
+        jellyRectRef.current,
+      );
+      const letterLayout = computeLetterLayout(
+        koiRectRef.current,
+        solvedWord.length,
+      );
+      const fromCenterX =
+        letterLayout.centers.length > 0
+          ? (letterLayout.centers[0]! + letterLayout.centers[letterLayout.centers.length - 1]!) *
+            0.5
+          : koiRectRef.current.x + koiRectRef.current.w * 0.5;
+
+      if (blank != null) {
+        setResolutionBubble({
+          word: solvedWord,
+          fromCenterX,
+          fromCenterY: letterLayout.rowY,
+          fromDiameter: letterLayout.diameter,
+          toCenterX: blank.x,
+          toCenterY: blank.y,
+          toDiameter: blank.bellSize * 0.9,
+          flyDurationMs: ROUND_RESOLVE_FLY_DURATION_MS,
+        });
+      }
       return;
     }
 
     if (snapshot.phase === 'pop') {
       playSuccessRef.current?.();
-      startPopPhase();
-      return;
     }
-
-    if (snapshot.phase === 'exit') {
-      startExitPhase();
-    }
-  }, [startExitPhase, startMergePhase, startPopPhase, syncRoundSnapshot]);
+  }, [configureEnterPhase, roundOrder, rounds, syncRoundSnapshot]);
 
   handleRoundPhaseChangeRef.current = handleRoundPhaseChange;
 
   useEffect(() => {
-    const round = createSentenceRoundOrchestrator({
+    const round = createSentenceRoundController({
       roundCount: roundOrder.length,
       scheduleTimer: (fn, delayMs) => {
         const id = setTimeout(fn, delayMs);
@@ -362,7 +286,7 @@ export function useSentenceTransformationGame({
     roundRef.current = round;
 
     if (currentRound != null) {
-      startRoundEnter(currentRound.infinitive);
+      configureEnterPhase(currentRound.infinitive);
     }
 
     return () => {
@@ -401,20 +325,45 @@ export function useSentenceTransformationGame({
     if (sequence == null || coreRef.current == null) {
       return;
     }
-    if (skipSequenceLoadRef.current) {
-      skipSequenceLoadRef.current = false;
-      return;
-    }
     coreRef.current.loadSequence(sequence, roundSnapshot.roundPos);
     syncCoreSnapshot();
   }, [roundSnapshot.roundPos, sequence, syncCoreSnapshot]);
 
-  useEffect(
-    () => () => {
-      clearRoundTimers();
-    },
-    [clearRoundTimers],
-  );
+  const handleRowEnterComplete = useCallback(() => {
+    const baseWord = sequence?.baseWord ?? currentRound?.infinitive ?? '';
+    const revealOrder = shuffleIndices(baseWord.length);
+    if (revealOrder.length === 0) {
+      setBubbleEnter(null);
+    } else {
+      setBubbleEnter({
+        revealOrder,
+        revealedPositions: new Set(),
+      });
+    }
+    roundRef.current?.notifyRowEnterComplete();
+    syncRoundSnapshot();
+  }, [currentRound?.infinitive, sequence?.baseWord, syncRoundSnapshot]);
+
+  const handleMergeComplete = useCallback(() => {
+    roundRef.current?.notifyMergeComplete();
+    syncRoundSnapshot();
+  }, [syncRoundSnapshot]);
+
+  const handleResolveComplete = useCallback(() => {
+    setResolutionBubble(null);
+    roundRef.current?.notifyResolveComplete();
+    syncRoundSnapshot();
+  }, [syncRoundSnapshot]);
+
+  const handlePopComplete = useCallback(() => {
+    roundRef.current?.notifyPopComplete();
+    syncRoundSnapshot();
+  }, [syncRoundSnapshot]);
+
+  const handleRowExitComplete = useCallback(() => {
+    roundRef.current?.notifyExitComplete();
+    syncRoundSnapshot();
+  }, [syncRoundSnapshot]);
 
   const roundPhase = roundSnapshot.phase;
   const transitioning = roundPhase !== 'transform';
@@ -530,5 +479,10 @@ export function useSentenceTransformationGame({
     totalCount: roundOrder.length,
     handleLetterPress,
     handleVariantPress,
+    handleRowEnterComplete,
+    handleMergeComplete,
+    handleResolveComplete,
+    handlePopComplete,
+    handleRowExitComplete,
   };
 }

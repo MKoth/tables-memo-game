@@ -15,13 +15,13 @@ export {
   roundEnterDurationMs,
 } from './roundResolutionTiming';
 export {
-  createSentenceRoundOrchestrator,
+  createSentenceRoundController,
+  type SentenceRoundController,
+  type SentenceRoundControllerConfig,
+  type SentenceRoundControllerSnapshot,
   type SentenceRoundExitEdge,
-  type SentenceRoundOrchestrator,
-  type SentenceRoundOrchestratorConfig,
-  type SentenceRoundOrchestratorSnapshot,
   type SentenceRoundPhase,
-} from './sentenceRoundOrchestrator';
+} from './sentenceRoundController';
 export {
   displaySlotsWithSolvedWord,
   findBlankSlotIndex,

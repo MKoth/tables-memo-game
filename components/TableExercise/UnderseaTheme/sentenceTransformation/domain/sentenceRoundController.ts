@@ -1,5 +1,9 @@
 import type { ScheduleTimer } from '../../wordTransformation/domain/coreTypes';
-import { ROUND_HOLD_DURATION_MS, ROUND_ROW_EXIT_EDGE } from './roundResolutionTiming';
+import {
+  bubbleEnterDurationMs,
+  ROUND_HOLD_DURATION_MS,
+  ROUND_ROW_EXIT_EDGE,
+} from './roundResolutionTiming';
 
 export type SentenceRoundExitEdge = typeof ROUND_ROW_EXIT_EDGE | 'left';
 
@@ -13,7 +17,7 @@ export type SentenceRoundPhase =
   | 'exit'
   | 'advance';
 
-export type SentenceRoundOrchestratorSnapshot = {
+export type SentenceRoundControllerSnapshot = {
   phase: SentenceRoundPhase;
   roundPos: number;
   exitEdge: SentenceRoundExitEdge;
@@ -22,7 +26,7 @@ export type SentenceRoundOrchestratorSnapshot = {
   blankFilled: boolean;
 };
 
-export type SentenceRoundOrchestratorConfig = {
+export type SentenceRoundControllerConfig = {
   roundCount: number;
   scheduleTimer: ScheduleTimer;
   holdDurationMs?: number;
@@ -31,9 +35,10 @@ export type SentenceRoundOrchestratorConfig = {
   onSessionComplete?: () => void;
 };
 
-export type SentenceRoundOrchestrator = {
-  getSnapshot: () => SentenceRoundOrchestratorSnapshot;
-  notifyEnterComplete: () => void;
+export type SentenceRoundController = {
+  getSnapshot: () => SentenceRoundControllerSnapshot;
+  configureRound: (input: { wordLength: number }) => void;
+  notifyRowEnterComplete: () => void;
   notifySequenceComplete: (solvedWord: string) => void;
   notifyMergeComplete: () => void;
   notifyResolveComplete: () => void;
@@ -42,19 +47,21 @@ export type SentenceRoundOrchestrator = {
   dispose: () => void;
 };
 
-export function createSentenceRoundOrchestrator({
+export function createSentenceRoundController({
   roundCount,
   scheduleTimer,
   holdDurationMs = ROUND_HOLD_DURATION_MS,
   exitEdge = ROUND_ROW_EXIT_EDGE,
   onPhaseChange,
   onSessionComplete,
-}: SentenceRoundOrchestratorConfig): SentenceRoundOrchestrator {
+}: SentenceRoundControllerConfig): SentenceRoundController {
   let phase: SentenceRoundPhase = 'enter';
   let roundPos = 0;
   let solvedWord: string | null = null;
   let blankFilled = false;
   let isSessionComplete = false;
+  let configuredWordLength = 0;
+  let staggerTimerPending = false;
   const cancelTimers: Array<() => void> = [];
 
   const emitPhaseChange = () => {
@@ -66,7 +73,7 @@ export function createSentenceRoundOrchestrator({
     emitPhaseChange();
   };
 
-  const getSnapshot = (): SentenceRoundOrchestratorSnapshot => ({
+  const getSnapshot = (): SentenceRoundControllerSnapshot => ({
     phase,
     roundPos,
     exitEdge,
@@ -79,6 +86,25 @@ export function createSentenceRoundOrchestrator({
     const cancel = scheduleTimer(() => {
       setPhase('pop');
     }, holdDurationMs);
+    cancelTimers.push(cancel);
+  };
+
+  const scheduleBubbleEnterStagger = () => {
+    if (staggerTimerPending) {
+      return;
+    }
+
+    const delayMs = bubbleEnterDurationMs(configuredWordLength);
+    if (delayMs <= 0) {
+      setPhase('transform');
+      return;
+    }
+
+    staggerTimerPending = true;
+    const cancel = scheduleTimer(() => {
+      staggerTimerPending = false;
+      setPhase('transform');
+    }, delayMs);
     cancelTimers.push(cancel);
   };
 
@@ -99,11 +125,16 @@ export function createSentenceRoundOrchestrator({
   return {
     getSnapshot,
 
-    notifyEnterComplete() {
+    configureRound({ wordLength }) {
+      configuredWordLength = wordLength;
+      staggerTimerPending = false;
+    },
+
+    notifyRowEnterComplete() {
       if (phase !== 'enter') {
         return;
       }
-      setPhase('transform');
+      scheduleBubbleEnterStagger();
     },
 
     notifySequenceComplete(word) {
@@ -148,6 +179,7 @@ export function createSentenceRoundOrchestrator({
     dispose() {
       cancelTimers.forEach((cancel) => cancel());
       cancelTimers.length = 0;
+      staggerTimerPending = false;
     },
   };
 }
