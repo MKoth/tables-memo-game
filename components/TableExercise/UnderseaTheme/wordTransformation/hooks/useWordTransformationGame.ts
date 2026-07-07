@@ -333,9 +333,8 @@ export function useWordTransformationGame({
         return;
       }
       coreRef.current?.handleLetterPress(position);
-      syncCoreSnapshot();
     },
-    [syncCoreSnapshot, wordTransition, wordTransitioning],
+    [wordTransition, wordTransitioning],
   );
 
   const handleVariantPress = useCallback(
@@ -344,9 +343,8 @@ export function useWordTransformationGame({
         return;
       }
       coreRef.current?.handleVariantPress(item, source);
-      syncCoreSnapshot();
     },
-    [syncCoreSnapshot, wordTransition, wordTransitioning],
+    [wordTransition, wordTransitioning],
   );
 
   return {

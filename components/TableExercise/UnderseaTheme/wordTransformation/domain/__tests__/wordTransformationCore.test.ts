@@ -215,6 +215,17 @@ describe('wordTransformationCore', () => {
     expect(onSequenceComplete).toHaveBeenCalledWith(TWO_STEP_SEQUENCE, 'hablo');
   });
 
+  it('keeps sequential variant picker order stable across snapshot refreshes', () => {
+    const { core } = createTestCore(SEQUENTIAL_INSERT_SEQUENCE);
+
+    const firstSnapshot = core.getSnapshot().variantPickerItems.map((item) => item.id);
+    core.getSnapshot();
+    core.getSnapshot();
+    const secondSnapshot = core.getSnapshot().variantPickerItems.map((item) => item.id);
+
+    expect(secondSnapshot).toEqual(firstSnapshot);
+  });
+
   it('inserts sequential letters one at a time before completing', () => {
     const { core, onSequenceComplete } = createTestCore(SEQUENTIAL_INSERT_SEQUENCE);
     const snapshot = core.getSnapshot();

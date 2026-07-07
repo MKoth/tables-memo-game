@@ -97,6 +97,8 @@ export function createWordTransformationCore(
   let skipEnterPositions = new Set<number>();
   let blocked = false;
   let applying = false;
+  let cachedSequentialLetterChoices: LetterChoice[] | null = null;
+  let cachedSequentialChoicesKey: string | null = null;
 
   const currentWordRef = { current: currentWord };
   const wrongTimers: Record<number, ReturnType<typeof setTimeout>> = {};
@@ -137,6 +139,8 @@ export function createWordTransformationCore(
     skipEnterPositions = new Set();
     insertAnimation = null;
     blocked = false;
+    cachedSequentialLetterChoices = null;
+    cachedSequentialChoicesKey = null;
     clearInsertTimers();
     currentWord = nextSequence.baseWord;
     currentWordRef.current = currentWord;
@@ -167,7 +171,12 @@ export function createWordTransformationCore(
     if (!isSequentialInsert() || operation == null) {
       return null;
     }
-    return generateSequentialLetterChoices(operation.text);
+    const cacheKey = `${opIndex}:${operation.text}`;
+    if (cachedSequentialChoicesKey !== cacheKey) {
+      cachedSequentialChoicesKey = cacheKey;
+      cachedSequentialLetterChoices = generateSequentialLetterChoices(operation.text);
+    }
+    return cachedSequentialLetterChoices;
   };
 
   const flashWrongPosition = (position: number) => {
@@ -214,6 +223,8 @@ export function createWordTransformationCore(
       return;
     }
     opIndex = nextOpIndex;
+    cachedSequentialLetterChoices = null;
+    cachedSequentialChoicesKey = null;
     notify();
   };
 
@@ -233,6 +244,8 @@ export function createWordTransformationCore(
       return;
     }
     opIndex = nextOpIndex;
+    cachedSequentialLetterChoices = null;
+    cachedSequentialChoicesKey = null;
     notify();
   };
 
@@ -435,11 +448,13 @@ export function createWordTransformationCore(
     const mode = getMode();
     const sequentialLetterChoices = getSequentialLetterChoices();
 
-    if (insertAnimation?.sequential && sequentialLetterChoices != null) {
-      const base = sequentialLetterChoices.map((choice) => ({
-        id: choice.id,
-        label: choice.char,
-      }));
+    if (insertAnimation?.sequential) {
+      const choices = getSequentialLetterChoices() ?? [];
+      const choiceById = new Map(choices.map((choice) => [choice.id, choice]));
+      const base = insertAnimation.allVariants.flatMap((id) => {
+        const choice = choiceById.get(id);
+        return choice == null ? [] : [{ id: choice.id, label: choice.char }];
+      });
       return withDismissStagger(
         base,
         insertAnimation.wrongVariants,
