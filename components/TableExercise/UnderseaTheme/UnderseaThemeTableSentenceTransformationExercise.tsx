@@ -22,6 +22,8 @@ import {
   TRANSFORMATION_WORD_ROW_Y_RATIO,
 } from './wordTransformation';
 import { JellyfishSentenceRowLayer } from './sentenceTransformation/components/JellyfishSentenceRowLayer/JellyfishSentenceRowLayer';
+import { TransformationMergeBubbles } from './sentenceTransformation/components/TransformationMergeBubbles';
+import { TransformationRoundResolutionBubble } from './sentenceTransformation/components/TransformationRoundResolutionBubble';
 import { useSentenceTransformationGame } from './sentenceTransformation/hooks/useSentenceTransformationGame';
 
 /** Behind sentence row and bubbles per PRD z-order. */
@@ -38,7 +40,7 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
   const table = spanishPresentTable2Plural;
   const soundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
 
-  const { koiRect } = useUnderseaThemeLayout();
+  const { koiRect, jellyRect } = useUnderseaThemeLayout();
 
   useEffect(() => {
     sounds.startWaterflow();
@@ -58,6 +60,7 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
   const game = useSentenceTransformationGame({
     table,
     koiRect,
+    jellyRect,
     playPop: sounds.playBubblePop,
     playInflate: sounds.playBubbleInflate,
     playWrong: sounds.playWrongClick,
@@ -76,34 +79,47 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
       <View style={styles.sentenceRowLayer} pointerEvents="box-none">
         <JellyfishSentenceRowLayer
           displaySlots={game.displaySlots}
+          roundPhase={game.roundPhase}
+          exitEdge={game.exitEdge}
+          blankSlotIndex={game.blankSlotIndex}
+          blankExiting={game.blankExiting}
+          poppingSlotIndex={game.poppingSlotIndex}
           onTokenTap={handleTokenTap}
         />
       </View>
       <View style={styles.bubbleLayer} pointerEvents="box-none">
         {!game.isCompleted && (
-          <TransformationWordBubbles
-            letters={game.letters}
-            interactive={
-              !game.transitioning &&
-              game.insertAnimation == null
-            }
-            insertPreview={
-              game.insertAnimation != null && game.insertAnimation.phase !== 'dismiss'
-                ? {
-                    insertIndex: game.insertAnimation.insertIndex,
-                    insertLength: game.insertAnimation.insertLength,
-                    targetLetterCount: game.insertAnimation.nextWord.length,
-                  }
-                : undefined
-            }
-            onLetterPress={game.handleLetterPress}
-            playPop={sounds.playBubblePop}
-            playInflate={sounds.playBubbleInflate}
-          />
+          <>
+            {game.mergeWord != null && (
+              <TransformationMergeBubbles word={game.mergeWord} />
+            )}
+            <TransformationWordBubbles
+              letters={game.letters}
+              interactive={
+                !game.transitioning &&
+                game.insertAnimation == null &&
+                game.bubbleEnter == null
+              }
+              insertPreview={
+                game.insertAnimation != null && game.insertAnimation.phase !== 'dismiss'
+                  ? {
+                      insertIndex: game.insertAnimation.insertIndex,
+                      insertLength: game.insertAnimation.insertLength,
+                      targetLetterCount: game.insertAnimation.nextWord.length,
+                    }
+                  : undefined
+              }
+              onLetterPress={game.handleLetterPress}
+              playPop={sounds.playBubblePop}
+              playInflate={sounds.playBubbleInflate}
+            />
+            <TransformationRoundResolutionBubble bubble={game.resolutionBubble} />
+          </>
         )}
         <TransformationInsertFlight flight={game.insertAnimation} />
         {(game.mode === 'insert' || game.insertAnimation != null) &&
-          !game.transitioning && (
+          !game.transitioning &&
+          game.bubbleEnter == null && (
           <TransformationVariantPicker
             items={game.variantPickerItems}
             wrongItemId={game.wrongItemId}

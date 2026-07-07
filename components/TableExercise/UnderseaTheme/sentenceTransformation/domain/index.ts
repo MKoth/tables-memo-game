@@ -3,6 +3,29 @@ export {
   createSentenceTransformationExercise,
 } from './createSentenceTransformationExercise';
 export { expandSentencePromptSlots } from './expandSentencePromptSlots';
+export {
+  ROUND_HOLD_DURATION_MS,
+  ROUND_MERGE_DURATION_MS,
+  ROUND_RESOLVE_FLY_DURATION_MS,
+  ROUND_ROW_ENTER_DURATION_MS,
+  ROUND_ROW_EXIT_DURATION_MS,
+  ROUND_ROW_EXIT_EDGE,
+  ROUND_SOLVED_POP_DURATION_MS,
+  bubbleEnterDurationMs,
+  roundEnterDurationMs,
+} from './roundResolutionTiming';
+export {
+  createSentenceRoundOrchestrator,
+  type SentenceRoundExitEdge,
+  type SentenceRoundOrchestrator,
+  type SentenceRoundOrchestratorConfig,
+  type SentenceRoundOrchestratorSnapshot,
+  type SentenceRoundPhase,
+} from './sentenceRoundOrchestrator';
+export {
+  displaySlotsWithSolvedWord,
+  findBlankSlotIndex,
+} from './sentenceRowDisplay';
 export { shuffleIndices } from './shuffleIndices';
 export {
   type CreateSentenceTransformationExerciseOptions,

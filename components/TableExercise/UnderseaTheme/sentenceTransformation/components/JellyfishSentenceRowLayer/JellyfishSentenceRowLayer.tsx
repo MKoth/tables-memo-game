@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { GestureDetector } from 'react-native-gesture-handler';
-import { useSharedValue } from 'react-native-reanimated';
+import { useSharedValue, withTiming, Easing, useAnimatedReaction } from 'react-native-reanimated';
 import { useTapGesture } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useUnderseaThemeAssetsContext } from '../../../core/providers/UnderseaThemeAssetsProvider';
@@ -17,6 +17,14 @@ import {
   TAP_MAX_DISTANCE_PX,
 } from '../../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import type { PersistentHighlightKind } from '../../../jellyfish/JellyfishTableLayer/presets/jellyfishTintPresets';
+import {
+  ROUND_RESOLVE_FLY_DURATION_MS,
+  ROUND_ROW_ENTER_DURATION_MS,
+  ROUND_ROW_EXIT_DURATION_MS,
+  ROUND_SOLVED_POP_DURATION_MS,
+  type SentenceRoundExitEdge,
+  type SentenceRoundPhase,
+} from '../../domain';
 import type { SentencePromptDisplaySlot } from '../../domain/types';
 import {
   computeSentenceRowLayout,
@@ -26,6 +34,11 @@ import { findSentenceSlotAtTap } from './sentenceRowWorklets';
 
 export type JellyfishSentenceRowLayerProps = {
   displaySlots: SentencePromptDisplaySlot[];
+  roundPhase: SentenceRoundPhase;
+  exitEdge: SentenceRoundExitEdge;
+  blankSlotIndex: number;
+  blankExiting: boolean;
+  poppingSlotIndex: number | null;
   onTokenTap?: () => void;
 };
 
@@ -53,13 +66,23 @@ function toCellConfig(slot: SentenceSlotConfig): CellConfig {
   };
 }
 
+function offscreenOffset(width: number, exitEdge: SentenceRoundExitEdge): number {
+  return exitEdge === 'right' ? width : -width;
+}
+
 export function JellyfishSentenceRowLayer({
   displaySlots,
+  roundPhase,
+  exitEdge,
+  blankSlotIndex,
+  blankExiting,
+  poppingSlotIndex,
   onTokenTap,
 }: JellyfishSentenceRowLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
   const { jellyRect, labelRotationRad } = useUnderseaThemeLayout();
   const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
+  const { width: screenWidth } = useWindowDimensions();
 
   const layout = useMemo(
     () =>
@@ -85,8 +108,12 @@ export function JellyfishSentenceRowLayer({
   );
 
   const layoutX = useSharedValue<number[]>(layout.xs);
+  const renderLayoutX = useSharedValue<number[]>(layout.xs);
   const layoutY = useSharedValue<number[]>(layout.ys);
+  const baseLayoutScale = useSharedValue<number[]>(layout.scales);
   const layoutScale = useSharedValue<number[]>(layout.scales);
+  const slotAnimScale = useSharedValue<number[]>(layout.scales);
+  const rowOffsetX = useSharedValue(offscreenOffset(screenWidth, exitEdge));
   const zoneLeftSv = useSharedValue(jellyRect.x);
   const zoneTopSv = useSharedValue(jellyRect.y);
   const bellSizesSv = useSharedValue(layout.configs.map((config) => config.bellSize));
@@ -99,13 +126,80 @@ export function JellyfishSentenceRowLayer({
   useEffect(() => {
     layoutX.value = layout.xs;
     layoutY.value = layout.ys;
+    baseLayoutScale.value = layout.scales;
     layoutScale.value = layout.scales;
+    slotAnimScale.value = layout.scales.map(() => 1);
     zoneLeftSv.value = jellyRect.x;
     zoneTopSv.value = jellyRect.y;
     bellSizesSv.value = layout.configs.map((config) => config.bellSize);
     tintFlashPreset.value = layout.configs.map(() => -1);
     tintFlashUntil.value = layout.configs.map(() => 0);
-  }, [jellyRect.x, jellyRect.y, layout, layoutScale, layoutX, layoutY, bellSizesSv, tintFlashPreset, tintFlashUntil, zoneLeftSv, zoneTopSv]);
+  }, [jellyRect.x, jellyRect.y, layout, baseLayoutScale, layoutScale, layoutX, layoutY, bellSizesSv, slotAnimScale, tintFlashPreset, tintFlashUntil, zoneLeftSv, zoneTopSv]);
+
+  useAnimatedReaction(
+    () => ({
+      xs: layoutX.value,
+      offset: rowOffsetX.value,
+      anim: slotAnimScale.value,
+      base: baseLayoutScale.value,
+    }),
+    ({ xs, offset, anim, base }) => {
+      renderLayoutX.value = xs.map((x) => x + offset);
+      layoutScale.value = base.map((scale, index) => scale * (anim[index] ?? 1));
+    },
+  );
+
+  useEffect(() => {
+    if (roundPhase === 'enter') {
+      rowOffsetX.value = offscreenOffset(screenWidth, exitEdge);
+      rowOffsetX.value = withTiming(0, {
+        duration: ROUND_ROW_ENTER_DURATION_MS,
+        easing: Easing.out(Easing.cubic),
+      });
+      return;
+    }
+
+    if (roundPhase === 'exit') {
+      rowOffsetX.value = withTiming(offscreenOffset(screenWidth, exitEdge), {
+        duration: ROUND_ROW_EXIT_DURATION_MS,
+        easing: Easing.in(Easing.cubic),
+      });
+    }
+  }, [exitEdge, roundPhase, rowOffsetX, screenWidth]);
+
+  useEffect(() => {
+    if (!blankExiting || blankSlotIndex < 0) {
+      return;
+    }
+    slotAnimScale.value = withTiming(
+      slotAnimScale.value.map((_, index) => (index === blankSlotIndex ? 0 : 1)),
+      {
+        duration: ROUND_RESOLVE_FLY_DURATION_MS,
+        easing: Easing.in(Easing.cubic),
+      },
+    );
+  }, [blankExiting, blankSlotIndex, slotAnimScale]);
+
+  useEffect(() => {
+    if (poppingSlotIndex == null || poppingSlotIndex < 0) {
+      return;
+    }
+    slotAnimScale.value = withTiming(
+      slotAnimScale.value.map((scale, index) =>
+        index === poppingSlotIndex ? 0 : scale,
+      ),
+      {
+        duration: ROUND_SOLVED_POP_DURATION_MS,
+        easing: Easing.out(Easing.cubic),
+      },
+    );
+  }, [poppingSlotIndex, slotAnimScale]);
+
+  useEffect(() => {
+    if (roundPhase === 'enter' || roundPhase === 'transform') {
+      slotAnimScale.value = layout.scales.map(() => 1);
+    }
+  }, [displaySlots, layout.scales, roundPhase, slotAnimScale]);
 
   const cellConfigs = useMemo(
     () => layout.configs.map(toCellConfig),
@@ -130,7 +224,7 @@ export function JellyfishSentenceRowLayer({
       const hitIndex = findSentenceSlotAtTap(
         event.x + zoneLeftSv.value,
         event.y + zoneTopSv.value,
-        layoutX.value,
+        renderLayoutX.value,
         layoutY.value,
         bellSizesSv.value,
       );
@@ -142,9 +236,13 @@ export function JellyfishSentenceRowLayer({
   });
 
   const persistentHighlightFor = useCallback(
-    (index: number): PersistentHighlightKind | null =>
-      layout.configs[index]?.kind === 'blank' ? 'target' : null,
-    [layout.configs],
+    (index: number): PersistentHighlightKind | null => {
+      if (blankExiting && index === blankSlotIndex) {
+        return null;
+      }
+      return layout.configs[index]?.kind === 'blank' ? 'target' : null;
+    },
+    [blankExiting, blankSlotIndex, layout.configs],
   );
 
   if (displaySlots.length === 0) {
@@ -158,7 +256,7 @@ export function JellyfishSentenceRowLayer({
           <CellJellyfish
             key={config.key}
             config={config}
-            layoutX={layoutX}
+            layoutX={renderLayoutX}
             layoutY={layoutY}
             layoutScale={layoutScale}
             motionAngle={motionAngle}
@@ -176,7 +274,7 @@ export function JellyfishSentenceRowLayer({
             key={`${config.key}-label`}
             config={config}
             font={bodyFont}
-            layoutX={layoutX}
+            layoutX={renderLayoutX}
             layoutY={layoutY}
             layoutScale={layoutScale}
             motionAngle={motionAngle}
