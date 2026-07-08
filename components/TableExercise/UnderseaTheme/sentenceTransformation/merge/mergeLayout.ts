@@ -79,13 +79,14 @@ export function buildMergeShaderUniforms(
   mergeCenterX: number,
   mergeDiameter: number,
   mergeProgress: number,
-  maxLetters: number = MERGE_SHADER_MAX_LETTERS,
+  maxLetters?: number,
 ): MergeShaderUniforms {
   'worklet';
-  const letterCount = Math.min(layout.centers.length, maxLetters);
+  const resolvedMaxLetters = maxLetters ?? 10;
+  const letterCount = Math.min(layout.centers.length, resolvedMaxLetters);
   const centers: MergeShaderCenter[] = [];
 
-  for (let i = 0; i < maxLetters; i++) {
+  for (let i = 0; i < resolvedMaxLetters; i++) {
     if (i < letterCount) {
       const state = interpolateMergeLetterState(
         layout,
