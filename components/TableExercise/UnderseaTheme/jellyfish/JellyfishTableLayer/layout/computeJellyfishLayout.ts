@@ -7,6 +7,7 @@
  */
 
 import type { LayoutBounds } from '../../../core/layout/layoutBounds';
+import { computeJellyfishFontScale } from '../../jellyfishVisualTokens';
 
 export type { LayoutBounds } from '../../../core/layout/layoutBounds';
 export {
@@ -27,7 +28,7 @@ export const EDGE_SQUEEZE = 0.30;
 export const SPREAD_BOOST = 0.40;
 
 /** Reference body bell size used for font scaling. */
-export const REFERENCE_BODY_BELL_SIZE = 55;
+export { REFERENCE_BODY_BELL_SIZE } from '../../jellyfishVisualTokens';
 
 export type JellyfishSizing = {
   bodyBellSize: number;
@@ -94,7 +95,7 @@ export function computeJellyfishSizing(input: JellyfishSizingInput): JellyfishSi
     scaleMax: lerp(1.15, 1.35, d),
     edgeSqueeze: lerp(0.30, 0.45, d),
     spreadBoost: lerp(0.35, 0.45, d),
-    fontScale: bodyBellSize / REFERENCE_BODY_BELL_SIZE,
+    fontScale: computeJellyfishFontScale(bodyBellSize),
   };
 }
 

@@ -1,53 +1,13 @@
-export type RGB = readonly [number, number, number];
-export type TintMode = 0 | 1 | 2;
+import type { RGB } from '../../jellyfishVisualTokens';
+import { rollBodyTint, sr } from '../../jellyfishVisualTokens';
 
-const BODY_PALETTE: ReadonlyArray<RGB> = [
-  [0.85, 0.55, 0.95],
-  [0.55, 0.85, 1.0],
-  [1.0, 0.7, 0.85],
-  [0.9, 0.95, 1.1],
-  [1.1, 0.85, 0.6],
-  [0.7, 0.95, 0.75],
-  [1.15, 0.75, 0.9],
-  [0.6, 0.7, 1.15],
-];
+export type { RGB, TintMode, TintSpawn } from '../../jellyfishVisualTokens';
+export { rollBodyTint, sr };
 
 export const HEADER_ROW_A: RGB = [0.6, 0.85, 1.1];
 export const HEADER_ROW_B: RGB = [0.45, 0.65, 1.0];
 export const HEADER_COL_A: RGB = [0.85, 1.05, 0.6];
 export const HEADER_COL_B: RGB = [0.65, 0.95, 0.5];
-
-export function sr(a: number, b: number): number {
-  let n = (a * 374761393 + b * 668265263) | 0;
-  n = (n ^ (n >>> 13)) * 1274126177;
-  n = n ^ (n >>> 16);
-  return (n >>> 0) / 0xffffffff;
-}
-
-export type TintSpawn = {
-  tintMode: TintMode;
-  tintStrength: number;
-  tintA: RGB;
-  tintB: RGB;
-  tintC: RGB;
-  animatedTint: boolean;
-  tintWaveSpeed: number;
-};
-
-export function rollBodyTint(r: number, c: number): TintSpawn {
-  const modeR = sr(r * 3 + 7, c * 5 + 11);
-  const tintMode: TintMode = modeR < 0.35 ? 0 : modeR < 0.70 ? 1 : 2;
-  const n = BODY_PALETTE.length;
-  return {
-    tintMode,
-    tintStrength: 0.82 + sr(r + 300, c + 300) * 0.12,
-    tintA: BODY_PALETTE[Math.floor(sr(r, c) * n)],
-    tintB: BODY_PALETTE[Math.floor(sr(r + 100, c + 100) * n)],
-    tintC: BODY_PALETTE[Math.floor(sr(r + 200, c + 200) * n)],
-    animatedTint: tintMode > 0 && sr(r + 50, c + 50) < 0.45,
-    tintWaveSpeed: 0.2 + sr(r + 150, c + 150) * 0.4,
-  };
-}
 
 export function uniqueTintColors(tintA: RGB, tintB: RGB, tintC: RGB): RGB[] {
   const seen = new Set<string>();
@@ -97,11 +57,11 @@ export function rollLabelColors(
     if (borderIdx === bodyIdx) {
       borderIdx = (borderIdx + 1) % palette.length;
     }
-    bodyBase = palette[bodyIdx];
-    borderBase = palette[borderIdx];
+    bodyBase = palette[bodyIdx]!;
+    borderBase = palette[borderIdx]!;
   } else {
-    bodyBase = palette[0];
-    borderBase = palette[0];
+    bodyBase = palette[0]!;
+    borderBase = palette[0]!;
   }
 
   return {

@@ -1,5 +1,10 @@
 import type { SentencePromptDisplaySlot } from '../../sentenceTransformation/domain/types';
 import type { ZoneRect } from './computeUnderseaThemeLayout';
+import {
+  computeJellyfishFontScale,
+  rollBodyTint,
+  sr,
+} from '../../jellyfish/jellyfishVisualTokens';
 
 const MIN_DIAMETER = 34;
 const MAX_DIAMETER = 74;
@@ -98,61 +103,9 @@ const SLOT_GAP = 10;
 const LINE_GAP = 18;
 const BODY_BELL_SIZE_MIN = 28;
 const BODY_BELL_SIZE_MAX = 72;
-const REFERENCE_BODY_BELL_SIZE = 55;
 
 function clamp(val: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, val));
-}
-
-function sr(a: number, b: number): number {
-  let n = (a * 374761393 + b * 668265263) | 0;
-  n = (n ^ (n >>> 13)) * 1274126177;
-  n = n ^ (n >>> 16);
-  return (n >>> 0) / 0xffffffff;
-}
-
-function rollBodyTint(index: number): Pick<
-  SentenceSlotConfig,
-  | 'tintMode'
-  | 'tintStrength'
-  | 'tintA'
-  | 'tintB'
-  | 'tintC'
-  | 'animatedTint'
-  | 'tintWaveSpeed'
-  | 'labelFillColor'
-  | 'labelStrokeColor'
-> {
-  const palette: ReadonlyArray<readonly [number, number, number]> = [
-    [0.85, 0.55, 0.95],
-    [0.55, 0.85, 1.0],
-    [1.0, 0.7, 0.85],
-    [0.9, 0.95, 1.1],
-    [1.1, 0.85, 0.6],
-    [0.7, 0.95, 0.75],
-  ];
-  const tintA = palette[index % palette.length]!;
-  const tintB: readonly [number, number, number] = [
-    tintA[0] * 0.85,
-    tintA[1] * 0.85,
-    tintA[2] * 0.85,
-  ];
-  const tintC: readonly [number, number, number] = [
-    tintA[0] * 0.7,
-    tintA[1] * 0.7,
-    tintA[2] * 0.7,
-  ];
-  return {
-    tintMode: 2,
-    tintStrength: 0.85,
-    tintA,
-    tintB,
-    tintC,
-    animatedTint: true,
-    tintWaveSpeed: 0.25 + sr(index, 11) * 0.35,
-    labelFillColor: 'rgba(255,255,255,0.95)',
-    labelStrokeColor: 'rgba(20,40,60,0.92)',
-  };
 }
 
 function estimateSlotWidth(label: string, bellSize: number): number {
@@ -179,10 +132,11 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
     BODY_BELL_SIZE_MIN,
     BODY_BELL_SIZE_MAX,
   );
-  const fontScale = bellSize / REFERENCE_BODY_BELL_SIZE;
+  const fontScale = computeJellyfishFontScale(bellSize);
 
   const configs: SentenceSlotConfig[] = slots.map((slot, index) => {
     const label = slot.kind === 'blank' ? '?' : slot.text;
+    const tint = rollBodyTint(index);
     return {
       key: `slot-${index}`,
       index,
@@ -191,7 +145,9 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
       bellSize,
       phase: sr(index, 3) * Math.PI * 2,
       pulseSpeed: 2.2 + sr(index, 7) * 2.0,
-      ...rollBodyTint(index),
+      ...tint,
+      labelFillColor: 'rgba(255,255,255,0.95)',
+      labelStrokeColor: 'rgba(20,40,60,0.92)',
     };
   });
 
