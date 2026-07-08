@@ -11,6 +11,7 @@ export {
   generateSequentialLetterChoices,
   generateWordOperations,
   generateWrongVariants,
+  type GenerateOperationsOptions,
   type LetterChoice,
 } from './generateOperations';
 export {

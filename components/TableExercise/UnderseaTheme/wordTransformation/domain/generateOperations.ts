@@ -13,7 +13,12 @@ export type LetterChoice = {
   char: string;
 };
 
-function shuffleArray<T>(items: T[]): T[] {
+export type GenerateOperationsOptions = {
+  shuffle?: <T>(items: T[]) => T[];
+  randomInt?: (maxExclusive: number) => number;
+};
+
+function defaultShuffle<T>(items: T[]): T[] {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -22,10 +27,25 @@ function shuffleArray<T>(items: T[]): T[] {
   return result;
 }
 
-function generateRandomString(length: number): string {
+function defaultRandomInt(maxExclusive: number): number {
+  return Math.floor(Math.random() * maxExclusive);
+}
+
+function shuffleArray<T>(
+  items: T[],
+  shuffle: GenerateOperationsOptions['shuffle'] = defaultShuffle,
+): T[] {
+  return (shuffle ?? defaultShuffle)(items);
+}
+
+function generateRandomString(
+  length: number,
+  randomInt: GenerateOperationsOptions['randomInt'] = defaultRandomInt,
+): string {
+  const pick = randomInt ?? defaultRandomInt;
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += VARIANT_CHARS.charAt(Math.floor(Math.random() * VARIANT_CHARS.length));
+    result += VARIANT_CHARS.charAt(pick(VARIANT_CHARS.length));
   }
   return result;
 }
@@ -39,6 +59,7 @@ export function generateWrongVariants(
   allTableOperations: Operation[],
   operationType: OperationType,
   maxVariants = 4,
+  options: GenerateOperationsOptions = {},
 ): string[] {
   const wrongVariants = new Set<string>();
 
@@ -54,14 +75,17 @@ export function generateWrongVariants(
 
   let guard = 0;
   while (wrongVariants.size < maxVariants - 1 && guard < 100) {
-    const randomText = generateRandomString(correctText.length);
+    const randomText = generateRandomString(correctText.length, options.randomInt);
     if (randomText !== correctText) {
       wrongVariants.add(randomText);
     }
     guard += 1;
   }
 
-  return shuffleArray([correctText, ...Array.from(wrongVariants)]).slice(0, maxVariants);
+  return shuffleArray(
+    [correctText, ...Array.from(wrongVariants)],
+    options.shuffle,
+  ).slice(0, maxVariants);
 }
 
 /** Required insert letters plus random distractors, shuffled for sequential pick. */
@@ -114,6 +138,7 @@ export function generateWordOperations(
   baseWord: string,
   targetWord: string,
   allTableOperations: Operation[] = [],
+  options: GenerateOperationsOptions = {},
 ): Operation[] {
   const dmp = new DiffMatchPatch();
   const diff = dmp.diff_main(baseWord, targetWord);
@@ -142,6 +167,8 @@ export function generateWordOperations(
         op.text,
         allTableOperations,
         OPERATION_TYPES.INSERT,
+        4,
+        options,
       );
     }
   });
