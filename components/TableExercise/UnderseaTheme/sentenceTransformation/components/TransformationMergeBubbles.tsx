@@ -2,11 +2,13 @@ import React, { useMemo } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
 import { computeLetterLayout } from '../../core/layout/underseaExerciseLayout';
-import { LetterBubble } from '../../wordTransformation/components/LetterBubble';
 import { ROUND_MERGE_DURATION_MS } from '../domain/roundResolutionTiming';
+import { MergeLetterLabels } from '../merge/MergeLetterLabels';
+import { MetaballMergeLayer } from '../merge/MetaballMergeLayer';
+import { computeMergeTarget } from '../merge/mergeLayout';
+import { useMergeProgress } from '../merge/useMergeProgress';
 
 export type TransformationMergeBubblesProps = {
   word: string;
@@ -21,23 +23,17 @@ export function TransformationMergeBubbles({
 }: TransformationMergeBubblesProps) {
   const { koiRect } = useUnderseaThemeLayout();
   const { images } = useUnderseaThemeAssetsContext();
-  const clock = useUnderseaThemeClock();
+  const mergeProgress = useMergeProgress(durationMs, onComplete);
 
   const layout = useMemo(
     () => computeLetterLayout(koiRect, word.length),
     [koiRect, word.length],
   );
 
-  const mergeCenterX = useMemo(() => {
-    if (layout.centers.length === 0) {
-      return koiRect.x + koiRect.w * 0.5;
-    }
-    return (
-      (layout.centers[0]! + layout.centers[layout.centers.length - 1]!) * 0.5
-    );
-  }, [koiRect.w, koiRect.x, layout.centers]);
-
-  const mergeDiameter = Math.max(layout.diameter * 0.55, 28);
+  const { mergeCenterX, mergeDiameter } = useMemo(
+    () => computeMergeTarget(layout, koiRect),
+    [koiRect, layout],
+  );
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const font = useMemo(
@@ -56,27 +52,21 @@ export function TransformationMergeBubbles({
 
   return (
     <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-      {word.split('').map((char, position) => (
-        <LetterBubble
-          key={`merge-${position}`}
-          char={char}
-          centerX={mergeCenterX}
-          centerY={layout.rowY}
-          diameter={mergeDiameter}
-          initialCenterX={layout.centers[position] ?? mergeCenterX}
-          initialCenterY={layout.rowY}
-          initialDiameter={layout.diameter}
-          skipEnter
-          moveDurationMs={durationMs}
-          status="idle"
-          image={images.bubble}
-          font={font}
-          clock={clock}
-          onMoveComplete={
-            position === word.length - 1 ? onComplete : undefined
-          }
-        />
-      ))}
+      <MetaballMergeLayer
+        mergeProgress={mergeProgress}
+        layout={layout}
+        mergeCenterX={mergeCenterX}
+        mergeDiameter={mergeDiameter}
+        bubbleImage={images.bubble}
+      />
+      <MergeLetterLabels
+        word={word}
+        mergeProgress={mergeProgress}
+        layout={layout}
+        mergeCenterX={mergeCenterX}
+        mergeDiameter={mergeDiameter}
+        font={font}
+      />
     </Canvas>
   );
 }
