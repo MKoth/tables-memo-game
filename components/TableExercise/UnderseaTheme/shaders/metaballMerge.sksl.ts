@@ -46,7 +46,7 @@ half4 main(float2 fragCoord) {
   float2 normalizedCoord = clamp(
     (fragCoord - vec2(boundsX, boundsY)) / safeBounds,
     0.0,
-    1.0,
+    1.0
   );
   float2 sampleCoord = vec2(boundsX, boundsY) + normalizedCoord * safeBounds;
   half4 bubbleColor = bubbleTexture.eval(sampleCoord);

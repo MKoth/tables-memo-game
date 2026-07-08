@@ -13,14 +13,17 @@ const LABEL_FILL_COLOR = '#ffffff';
 const LABEL_STROKE_COLOR = '#0a2840';
 
 function clamp(value: number, min: number, max: number): number {
+  'worklet';
   return Math.max(min, Math.min(max, value));
 }
 
 function mix(a: number, b: number, t: number): number {
+  'worklet';
   return a + (b - a) * t;
 }
 
 function smoothStep(edge0: number, edge1: number, x: number): number {
+  'worklet';
   if (edge1 === edge0) {
     return x >= edge1 ? 1 : 0;
   }
