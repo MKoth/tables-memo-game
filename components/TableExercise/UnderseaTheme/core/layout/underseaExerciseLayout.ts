@@ -258,3 +258,47 @@ export function blankSlotCenter(
     bellSize: layout.configs[blankIndex]?.bellSize ?? 40,
   };
 }
+
+export type RoundResolutionFlightLayout = {
+  fromCenterX: number;
+  fromCenterY: number;
+  fromDiameter: number;
+  toCenterX: number;
+  toCenterY: number;
+  toDiameter: number;
+};
+
+export type RoundResolutionFlightInput = {
+  slots: SentencePromptDisplaySlot[];
+  jellyRect: ZoneRect;
+  koiRect: ZoneRect;
+  wordLength: number;
+};
+
+/** Fly-from (koi letter row) and fly-to (blank slot) geometry for round resolve phase. */
+export function computeRoundResolutionFlight(
+  input: RoundResolutionFlightInput,
+): RoundResolutionFlightLayout | null {
+  const { slots, jellyRect, koiRect, wordLength } = input;
+  const blank = blankSlotCenter(slots, jellyRect);
+  if (blank == null) {
+    return null;
+  }
+
+  const letterLayout = computeLetterLayout(koiRect, wordLength);
+  const fromCenterX =
+    letterLayout.centers.length > 0
+      ? (letterLayout.centers[0]! +
+          letterLayout.centers[letterLayout.centers.length - 1]!) *
+        0.5
+      : koiRect.x + koiRect.w * 0.5;
+
+  return {
+    fromCenterX,
+    fromCenterY: letterLayout.rowY,
+    fromDiameter: letterLayout.diameter,
+    toCenterX: blank.x,
+    toCenterY: blank.y,
+    toDiameter: blank.bellSize * 0.9,
+  };
+}

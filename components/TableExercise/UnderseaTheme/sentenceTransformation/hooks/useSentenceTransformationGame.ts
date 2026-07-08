@@ -2,10 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import type { TableData } from '../../../../../data/tableData';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
 import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransformationCoreBridge';
-import {
-  blankSlotCenter,
-  computeLetterLayout,
-} from '../../core/layout/underseaExerciseLayout';
+import { computeRoundResolutionFlight } from '../../core/layout/underseaExerciseLayout';
 import type { RoundResolutionBubbleState } from '../components/TransformationRoundResolutionBubble';
 import type { VariantPickerItem } from '../../wordTransformation/components/TransformationVariantPicker';
 import { WORD_LETTER_ENTER_STAGGER_MS } from '../../wordTransformation/insertAnimationTiming';
@@ -218,29 +215,17 @@ export function useSentenceTransformationGame({
 
     if (snapshot.phase === 'resolve' && snapshot.solvedWord != null) {
       const solvedWord = snapshot.solvedWord;
-      const blank = blankSlotCenter(
-        roundForSnapshot?.displaySlots ?? [],
-        jellyRectRef.current,
-      );
-      const letterLayout = computeLetterLayout(
-        koiRectRef.current,
-        solvedWord.length,
-      );
-      const fromCenterX =
-        letterLayout.centers.length > 0
-          ? (letterLayout.centers[0]! + letterLayout.centers[letterLayout.centers.length - 1]!) *
-            0.5
-          : koiRectRef.current.x + koiRectRef.current.w * 0.5;
+      const flight = computeRoundResolutionFlight({
+        slots: roundForSnapshot?.displaySlots ?? [],
+        jellyRect: jellyRectRef.current,
+        koiRect: koiRectRef.current,
+        wordLength: solvedWord.length,
+      });
 
-      if (blank != null) {
+      if (flight != null) {
         setResolutionBubble({
           word: solvedWord,
-          fromCenterX,
-          fromCenterY: letterLayout.rowY,
-          fromDiameter: letterLayout.diameter,
-          toCenterX: blank.x,
-          toCenterY: blank.y,
-          toDiameter: blank.bellSize * 0.9,
+          ...flight,
           flyDurationMs: ROUND_RESOLVE_FLY_DURATION_MS,
         });
       }

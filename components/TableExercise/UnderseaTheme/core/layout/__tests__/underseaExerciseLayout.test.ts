@@ -2,6 +2,7 @@ import type { SentencePromptDisplaySlot } from '../../../sentenceTransformation/
 import {
   blankSlotCenter,
   computeLetterLayout,
+  computeRoundResolutionFlight,
   computeSentenceRowLayout,
   previewCenterForLetter,
   TRANSFORMATION_WORD_ROW_Y_RATIO,
@@ -86,6 +87,68 @@ describe('computeSentenceRowLayout', () => {
     const uniqueYs = new Set(layout.ys);
 
     expect(uniqueYs.size).toBeGreaterThan(1);
+  });
+});
+
+describe('computeRoundResolutionFlight', () => {
+  const SLOTS_WITH_BLANK: SentencePromptDisplaySlot[] = [
+    { kind: 'token', text: 'Yo' },
+    { kind: 'blank' },
+    { kind: 'token', text: 'hoy.' },
+  ];
+
+  it('returns null when there is no blank slot', () => {
+    const slots: SentencePromptDisplaySlot[] = [{ kind: 'token', text: 'hola' }];
+
+    expect(
+      computeRoundResolutionFlight({
+        slots,
+        jellyRect: JELLY_RECT,
+        koiRect: KOI_RECT,
+        wordLength: 4,
+      }),
+    ).toBeNull();
+  });
+
+  it('returns fly-from center averaged across letter row and fly-to blank slot geometry', () => {
+    const letterLayout = computeLetterLayout(KOI_RECT, 3);
+    const blank = blankSlotCenter(SLOTS_WITH_BLANK, JELLY_RECT);
+
+    expect(
+      computeRoundResolutionFlight({
+        slots: SLOTS_WITH_BLANK,
+        jellyRect: JELLY_RECT,
+        koiRect: KOI_RECT,
+        wordLength: 3,
+      }),
+    ).toEqual({
+      fromCenterX: (letterLayout.centers[0]! + letterLayout.centers[2]!) * 0.5,
+      fromCenterY: letterLayout.rowY,
+      fromDiameter: letterLayout.diameter,
+      toCenterX: blank!.x,
+      toCenterY: blank!.y,
+      toDiameter: blank!.bellSize * 0.9,
+    });
+  });
+
+  it('falls back to koi zone center when word length is zero', () => {
+    const blank = blankSlotCenter(SLOTS_WITH_BLANK, JELLY_RECT);
+
+    expect(
+      computeRoundResolutionFlight({
+        slots: SLOTS_WITH_BLANK,
+        jellyRect: JELLY_RECT,
+        koiRect: KOI_RECT,
+        wordLength: 0,
+      }),
+    ).toEqual({
+      fromCenterX: KOI_RECT.x + KOI_RECT.w * 0.5,
+      fromCenterY: KOI_RECT.y + KOI_RECT.h * TRANSFORMATION_WORD_ROW_Y_RATIO,
+      fromDiameter: 34,
+      toCenterX: blank!.x,
+      toCenterY: blank!.y,
+      toDiameter: blank!.bellSize * 0.9,
+    });
   });
 });
 
