@@ -47,6 +47,7 @@ export function computeMergeTarget(
   layout: LetterLayout,
   koiRect: ZoneRect,
 ): { mergeCenterX: number; mergeDiameter: number } {
+  'worklet';
   const mergeCenterX =
     layout.centers.length === 0
       ? koiRect.x + koiRect.w * 0.5
@@ -80,6 +81,7 @@ export function buildMergeShaderUniforms(
   mergeProgress: number,
   maxLetters: number = MERGE_SHADER_MAX_LETTERS,
 ): MergeShaderUniforms {
+  'worklet';
   const letterCount = Math.min(layout.centers.length, maxLetters);
   const centers: MergeShaderCenter[] = [];
 
