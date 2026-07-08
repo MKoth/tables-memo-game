@@ -29,7 +29,7 @@ import type { SentencePromptDisplaySlot } from '../../domain/types';
 import {
   computeSentenceRowLayout,
   type SentenceSlotConfig,
-} from './computeSentenceRowLayout';
+} from '../../../core/layout/underseaExerciseLayout';
 import { findSentenceSlotAtTap } from './sentenceRowWorklets';
 
 export type JellyfishSentenceRowLayerProps = {
@@ -94,10 +94,7 @@ export function JellyfishSentenceRowLayer({
     () =>
       computeSentenceRowLayout({
         slots: displaySlots,
-        zoneLeft: jellyRect.x,
-        zoneTop: jellyRect.y,
-        zoneWidth: jellyRect.w,
-        zoneHeight: jellyRect.h,
+        jellyRect,
       }),
     [displaySlots, jellyRect],
   );

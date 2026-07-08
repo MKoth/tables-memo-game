@@ -11,6 +11,10 @@ import {
   useUnderseaThemeLayout,
   useUnderseaThemeRuntime,
 } from './core';
+import {
+  TRANSFORMATION_VARIANT_ROW_Y_RATIO,
+  TRANSFORMATION_WORD_ROW_Y_RATIO,
+} from './core/layout/underseaExerciseLayout';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
 import { KoiSwimZone, type KoiSwimZoneController } from './koi';
@@ -20,8 +24,6 @@ import {
   TransformationInsertFlight,
   TransformationVariantPicker,
   TransformationWordBubbles,
-  TRANSFORMATION_VARIANT_ROW_Y_RATIO,
-  TRANSFORMATION_WORD_ROW_Y_RATIO,
   useWordTransformationGame,
   type WordOperationSequence,
 } from './wordTransformation';

@@ -12,13 +12,15 @@ export {
   type WordTransitionState,
 } from './hooks/useWordTransformationGame';
 export {
-  TransformationWordBubbles,
   computeLetterLayout,
   previewCenterForLetter,
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
   TRANSFORMATION_WORD_ROW_Y_RATIO,
   type InsertPreviewLayout,
   type LetterLayout,
+} from '../core/layout/underseaExerciseLayout';
+export {
+  TransformationWordBubbles,
 } from './components/TransformationWordBubbles';
 export {
   TransformationInsertFlight,

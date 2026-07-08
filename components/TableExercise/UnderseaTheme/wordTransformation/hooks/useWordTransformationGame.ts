@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
-import { computeLetterLayout } from '../components/TransformationWordBubbles';
+import { computeLetterLayout } from '../../core/layout/underseaExerciseLayout';
 import type { VariantPickerItem } from '../components/TransformationVariantPicker';
 import {
   BUBBLE_BURST_DURATION_MS,

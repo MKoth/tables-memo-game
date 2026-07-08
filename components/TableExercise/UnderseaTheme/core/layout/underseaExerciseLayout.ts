@@ -1,4 +1,66 @@
-import type { SentencePromptDisplaySlot } from '../../domain/types';
+import type { SentencePromptDisplaySlot } from '../../sentenceTransformation/domain/types';
+import type { ZoneRect } from './computeUnderseaThemeLayout';
+
+const MIN_DIAMETER = 34;
+const MAX_DIAMETER = 74;
+const GAP_RATIO = 0.26;
+
+/** Vertical placement of the current-word bubble row inside the koi zone. */
+export const TRANSFORMATION_WORD_ROW_Y_RATIO = 0.2;
+/** Vertical placement of the insert-variant bubble row inside the koi zone. */
+export const TRANSFORMATION_VARIANT_ROW_Y_RATIO = 0.65;
+
+export type LetterLayout = {
+  diameter: number;
+  rowY: number;
+  centers: number[];
+};
+
+export function computeLetterLayout(
+  koiRect: ZoneRect,
+  count: number,
+  rowYRatio = TRANSFORMATION_WORD_ROW_Y_RATIO,
+): LetterLayout {
+  const rowY = koiRect.y + koiRect.h * rowYRatio;
+  if (count <= 0) {
+    return { diameter: MIN_DIAMETER, rowY, centers: [] };
+  }
+
+  const maxRowWidth = koiRect.w * 0.9;
+  const denom = count + (count - 1) * GAP_RATIO;
+  const widthLimited = maxRowWidth / denom;
+  const heightLimited = koiRect.h * 0.18;
+  const diameter = Math.max(
+    MIN_DIAMETER,
+    Math.min(MAX_DIAMETER, widthLimited, heightLimited),
+  );
+  const gap = diameter * GAP_RATIO;
+  const total = count * diameter + (count - 1) * gap;
+  const startX = koiRect.x + koiRect.w * 0.5 - total * 0.5;
+
+  const centers = Array.from(
+    { length: count },
+    (_, i) => startX + i * (diameter + gap) + diameter * 0.5,
+  );
+
+  return { diameter, rowY, centers };
+}
+
+export type InsertPreviewLayout = {
+  insertIndex: number;
+  insertLength: number;
+  targetLetterCount: number;
+};
+
+export function previewCenterForLetter(
+  position: number,
+  preview: InsertPreviewLayout,
+  targetLayout: LetterLayout,
+): number {
+  const targetIndex =
+    position < preview.insertIndex ? position : position + preview.insertLength;
+  return targetLayout.centers[targetIndex] ?? 0;
+}
 
 export type SentenceSlotConfig = {
   key: string;
@@ -21,10 +83,7 @@ export type SentenceSlotConfig = {
 
 export type SentenceRowLayoutInput = {
   slots: SentencePromptDisplaySlot[];
-  zoneLeft: number;
-  zoneTop: number;
-  zoneWidth: number;
-  zoneHeight: number;
+  jellyRect: ZoneRect;
 };
 
 export type SentenceRowLayout = {
@@ -102,12 +161,13 @@ function estimateSlotWidth(label: string, bellSize: number): number {
   return Math.max(bellSize, textWidth) + SLOT_GAP;
 }
 
-/**
- * Lay out sentence row jellyfish horizontally with line wrapping, vertically centered
- * in the jelly zone.
- */
+/** Lay out sentence row jellyfish horizontally with line wrapping, vertically centered. */
 export function computeSentenceRowLayout(input: SentenceRowLayoutInput): SentenceRowLayout {
-  const { slots, zoneLeft, zoneTop, zoneWidth, zoneHeight } = input;
+  const { slots, jellyRect } = input;
+  const zoneLeft = jellyRect.x;
+  const zoneTop = jellyRect.y;
+  const zoneWidth = jellyRect.w;
+  const zoneHeight = jellyRect.h;
   const slotCount = slots.length;
 
   if (slotCount === 0) {
@@ -179,4 +239,22 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
   });
 
   return { xs, ys, scales, configs, fontScale };
+}
+
+export function blankSlotCenter(
+  slots: SentencePromptDisplaySlot[],
+  jellyRect: ZoneRect,
+): { x: number; y: number; bellSize: number } | null {
+  const blankIndex = slots.findIndex((slot) => slot.kind === 'blank');
+  if (blankIndex < 0) {
+    return null;
+  }
+
+  const layout = computeSentenceRowLayout({ slots, jellyRect });
+
+  return {
+    x: layout.xs[blankIndex] ?? jellyRect.x + jellyRect.w * 0.5,
+    y: layout.ys[blankIndex] ?? jellyRect.y + jellyRect.h * 0.5,
+    bellSize: layout.configs[blankIndex]?.bellSize ?? 40,
+  };
 }

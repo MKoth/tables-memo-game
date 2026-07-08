@@ -4,7 +4,7 @@ import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
 import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { computeLetterLayout } from '../../wordTransformation/components/TransformationWordBubbles';
+import { computeLetterLayout } from '../../core/layout/underseaExerciseLayout';
 import { LetterBubble } from '../../wordTransformation/components/LetterBubble';
 import { ROUND_MERGE_DURATION_MS } from '../domain/roundResolutionTiming';
 

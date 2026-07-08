@@ -5,7 +5,10 @@ import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThem
 import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
 import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
-import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from './TransformationWordBubbles';
+import {
+  computeLetterLayout,
+  TRANSFORMATION_VARIANT_ROW_Y_RATIO,
+} from '../../core/layout/underseaExerciseLayout';
 
 export type VariantPickerItem = {
   id: string;

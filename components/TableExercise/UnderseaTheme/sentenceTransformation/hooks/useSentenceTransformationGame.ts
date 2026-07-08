@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
-import { computeSentenceRowLayout } from '../components/JellyfishSentenceRowLayer/computeSentenceRowLayout';
+import {
+  blankSlotCenter,
+  computeLetterLayout,
+} from '../../core/layout/underseaExerciseLayout';
 import type { RoundResolutionBubbleState } from '../components/TransformationRoundResolutionBubble';
-import { computeLetterLayout } from '../../wordTransformation/components/TransformationWordBubbles';
 import type { VariantPickerItem } from '../../wordTransformation/components/TransformationVariantPicker';
 import { WORD_LETTER_ENTER_STAGGER_MS } from '../../wordTransformation/insertAnimationTiming';
 import {
@@ -78,30 +80,6 @@ function roundToSequence(
     baseWord: round.infinitive,
     targetWord: round.conjugatedForm,
     operations: round.operations,
-  };
-}
-
-function blankSlotCenter(
-  slots: SentencePromptDisplaySlot[],
-  jellyRect: ZoneRect,
-): { x: number; y: number; bellSize: number } | null {
-  const blankIndex = findBlankSlotIndex(slots);
-  if (blankIndex < 0) {
-    return null;
-  }
-
-  const layout = computeSentenceRowLayout({
-    slots,
-    zoneLeft: jellyRect.x,
-    zoneTop: jellyRect.y,
-    zoneWidth: jellyRect.w,
-    zoneHeight: jellyRect.h,
-  });
-
-  return {
-    x: layout.xs[blankIndex] ?? jellyRect.x + jellyRect.w * 0.5,
-    y: layout.ys[blankIndex] ?? jellyRect.y + jellyRect.h * 0.5,
-    bellSize: layout.configs[blankIndex]?.bellSize ?? 40,
   };
 }
 
