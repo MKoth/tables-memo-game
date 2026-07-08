@@ -44,6 +44,10 @@ _Avoid_: level, stage, turn
 The animated sequence after the last transformation operation succeeds: merged bubble flies to the blank slot, the blank jellyfish leaves, the complete sentence holds on screen, the solved word pops, then the row exits.
 _Avoid_: completion animation, success sequence
 
+**Metaball merge**:
+The shader-driven round resolution animation where each letter bubble’s influence field blends into one unified bubble before the whole word flies to the blank slot.
+_Avoid_: bubble fusion effect, gooey merge
+
 **Round hold**:
 The pause after round resolution lands and before the solved word pops — time for the learner to read the complete sentence (~3 seconds).
 _Avoid_: display delay, success pause
