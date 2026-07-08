@@ -20,7 +20,6 @@ import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell'
 import { TransformationInstructionBar, UnderseaThemeCornerControls } from './ui';
 import { TransformationBubbleLayer } from './wordTransformation';
 import { JellyfishSentenceRowLayer } from './sentenceTransformation/components/JellyfishSentenceRowLayer/JellyfishSentenceRowLayer';
-import { TransformationMergeBubbles } from './sentenceTransformation/components/TransformationMergeBubbles';
 import { TransformationRoundResolutionBubble } from './sentenceTransformation/components/TransformationRoundResolutionBubble';
 import { useSentenceTransformationGame } from './sentenceTransformation/hooks/useSentenceTransformationGame';
 
@@ -89,14 +88,10 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
         />
       </View>
       <View style={styles.bubbleLayer} pointerEvents="box-none">
-        {!game.isCompleted && game.mergeWord != null && (
-          <TransformationMergeBubbles
-            word={game.mergeWord}
-            onComplete={game.handleMergeComplete}
-          />
-        )}
         <TransformationBubbleLayer
           wordBubblesVisible={!game.isCompleted}
+          mergeWord={game.mergeWord}
+          onMergeComplete={game.handleMergeComplete}
           betweenWordBubblesAndInsertFlight={
             !game.isCompleted ? (
               <TransformationRoundResolutionBubble

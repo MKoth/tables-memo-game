@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
@@ -11,6 +11,13 @@ import {
 } from '../../core/layout/underseaExerciseLayout';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
 import type { LetterBubbleModel } from '../domain';
+
+import { bubbleDeformUniformDefaults } from '../../shaders/bubbleDeform.sksl';
+import { ROUND_MERGE_DURATION_MS } from '../../sentenceTransformation/domain/roundResolutionTiming';
+import { MergeLetterLabels } from '../../sentenceTransformation/merge/MergeLetterLabels';
+import { MetaballMergeLayer } from '../../sentenceTransformation/merge/MetaballMergeLayer';
+import { computeMergeTarget } from '../../sentenceTransformation/merge/mergeLayout';
+import { useMergeProgress } from '../../sentenceTransformation/merge/useMergeProgress';
 
 function statusFor(letter: LetterBubbleModel): LetterBubbleStatus {
   if (letter.popped) {
@@ -26,6 +33,8 @@ export type TransformationWordBubblesProps = {
   letters: LetterBubbleModel[];
   interactive?: boolean;
   insertPreview?: InsertPreviewLayout;
+  mergeWord?: string | null;
+  onMergeComplete?: () => void;
   onLetterPress: (position: number) => void;
   /** Fired (UI-thread synced) as each letter bursts during the exit cascade. */
   playPop?: () => void;
@@ -37,6 +46,8 @@ export function TransformationWordBubbles({
   letters,
   interactive = true,
   insertPreview,
+  mergeWord,
+  onMergeComplete,
   onLetterPress,
   playPop,
   playInflate,
@@ -45,9 +56,25 @@ export function TransformationWordBubbles({
   const { images } = useUnderseaThemeAssetsContext();
   const clock = useUnderseaThemeClock();
 
+  const mergeProgress = useMergeProgress(
+    ROUND_MERGE_DURATION_MS,
+    onMergeComplete,
+    mergeWord,
+  );
+
   const layout = useMemo(
     () => computeLetterLayout(koiRect, letters.length),
     [koiRect, letters.length],
+  );
+
+  const mergeLayout = useMemo(
+    () => (mergeWord ? computeLetterLayout(koiRect, mergeWord.length) : null),
+    [koiRect, mergeWord],
+  );
+
+  const { mergeCenterX, mergeDiameter } = useMemo(
+    () => (mergeLayout ? computeMergeTarget(mergeLayout, koiRect) : { mergeCenterX: 0, mergeDiameter: 0 }),
+    [koiRect, mergeLayout],
   );
 
   const previewLayout = useMemo(
@@ -58,7 +85,20 @@ export function TransformationWordBubbles({
     [insertPreview, koiRect],
   );
 
-  const activeLayout = previewLayout ?? layout;
+  const activeLayout = mergeLayout ?? previewLayout ?? layout;
+
+  const [lettersHiddenForMerge, setLettersHiddenForMerge] = useState(false);
+
+  useLayoutEffect(() => {
+    if (mergeWord) {
+      const raf = requestAnimationFrame(() => {
+        setLettersHiddenForMerge(true);
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      setLettersHiddenForMerge(false);
+    }
+  }, [mergeWord]);
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const font = useMemo(
@@ -71,69 +111,98 @@ export function TransformationWordBubbles({
     [activeLayout.diameter, fontFamily],
   );
 
-  if (letters.length === 0) {
+  if (letters.length === 0 && !mergeWord) {
     return null;
   }
 
   return (
     <>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-        {letters.map((letter) => {
-          const centerX =
-            insertPreview != null && previewLayout != null
-              ? previewCenterForLetter(letter.position, insertPreview, previewLayout)
-              : (layout.centers[letter.position] ?? 0);
+        {!lettersHiddenForMerge &&
+          letters.map((letter) => {
+            const centerX =
+              insertPreview != null && previewLayout != null
+                ? previewCenterForLetter(letter.position, insertPreview, previewLayout)
+                : (layout.centers[letter.position] ?? 0);
 
-          return (
-            <LetterBubble
-              key={letter.key}
-              char={letter.char}
-              centerX={centerX}
-              centerY={activeLayout.rowY}
-              diameter={activeLayout.diameter}
-              initialCenterX={letter.skipEnter ? centerX : undefined}
-              initialCenterY={letter.skipEnter ? activeLayout.rowY : undefined}
-              initialDiameter={letter.skipEnter ? activeLayout.diameter : undefined}
-              skipEnter={letter.skipEnter}
-              moveDurationMs={letter.skipEnter ? 0 : undefined}
-              status={statusFor(letter)}
-              popDelayMs={letter.popDelayMs}
-              enterDelayMs={letter.enterDelayMs}
-              onPopSound={letter.popDelayMs != null ? playPop : undefined}
-              onEnterSound={letter.enterDelayMs != null ? playInflate : undefined}
-              image={images.bubble}
-              font={font}
+            return (
+              <LetterBubble
+                key={letter.key}
+                char={letter.char}
+                centerX={centerX}
+                centerY={activeLayout.rowY}
+                diameter={activeLayout.diameter}
+                initialCenterX={letter.skipEnter ? centerX : undefined}
+                initialCenterY={letter.skipEnter ? activeLayout.rowY : undefined}
+                initialDiameter={letter.skipEnter ? activeLayout.diameter : undefined}
+                skipEnter={letter.skipEnter}
+                moveDurationMs={letter.skipEnter ? 0 : undefined}
+                status={statusFor(letter)}
+                popDelayMs={letter.popDelayMs}
+                enterDelayMs={letter.enterDelayMs}
+                onPopSound={letter.popDelayMs != null ? playPop : undefined}
+                onEnterSound={letter.enterDelayMs != null ? playInflate : undefined}
+                image={images.bubble}
+                font={font}
+                clock={clock}
+              />
+            );
+          })}
+        {mergeWord != null && (
+          <>
+            <MetaballMergeLayer
+              mergeProgress={mergeProgress}
+              layout={mergeLayout!}
+              mergeCenterX={mergeCenterX}
+              mergeDiameter={mergeDiameter}
+              bubbleImage={images.bubble}
+              bounds={koiRect}
               clock={clock}
+              // pass through bubbleDeform defaults so metaballs visually match LetterBubble
+              bgCutoff={bubbleDeformUniformDefaults.bgCutoff}
+              centerClear={bubbleDeformUniformDefaults.centerClear}
+              rimClear={bubbleDeformUniformDefaults.rimClear}
+              tintA={bubbleDeformUniformDefaults.tintA}
+              tintStrength={bubbleDeformUniformDefaults.tintStrength}
             />
-          );
-        })}
+            <MergeLetterLabels
+              word={mergeWord}
+              mergeProgress={mergeProgress}
+              layout={mergeLayout!}
+              mergeCenterX={mergeCenterX}
+              mergeDiameter={mergeDiameter}
+              font={font}
+            />
+          </>
+        )}
       </Canvas>
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        {letters.map((letter) => {
-          if (letter.popped) {
-            return null;
-          }
-          const cx =
-            insertPreview != null && previewLayout != null
-              ? previewCenterForLetter(letter.position, insertPreview, previewLayout)
-              : (layout.centers[letter.position] ?? 0);
-          return (
-            <Pressable
-              key={letter.key}
-              disabled={!interactive}
-              onPress={() => onLetterPress(letter.position)}
-              style={[
-                styles.hit,
-                {
-                  left: cx - activeLayout.diameter * 0.5,
-                  top: activeLayout.rowY - activeLayout.diameter * 0.5,
-                  width: activeLayout.diameter,
-                  height: activeLayout.diameter,
-                },
-              ]}
-            />
-          );
-        })}
+        {!lettersHiddenForMerge &&
+          letters.map((letter) => {
+            if (letter.popped) {
+              return null;
+            }
+            const cx =
+              insertPreview != null && previewLayout != null
+                ? previewCenterForLetter(letter.position, insertPreview, previewLayout)
+                : (layout.centers[letter.position] ?? 0);
+            return (
+              <Pressable
+                key={letter.key}
+                disabled={!interactive}
+                onPress={() => onLetterPress(letter.position)}
+                style={[
+                  styles.hit,
+                  {
+                    left: cx - activeLayout.diameter * 0.5,
+                    top: activeLayout.rowY - activeLayout.diameter * 0.5,
+                    width: activeLayout.diameter,
+                    height: activeLayout.diameter,
+                  },
+                ]}
+              />
+            );
+          })}
       </View>
     </>
   );

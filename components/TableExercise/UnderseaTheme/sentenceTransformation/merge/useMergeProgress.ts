@@ -10,12 +10,18 @@ import { scheduleOnRN } from 'react-native-worklets';
 export function useMergeProgress(
   durationMs: number,
   onComplete?: () => void,
+  trigger?: any,
 ): SharedValue<number> {
   const mergeProgress = useSharedValue(0);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
   useLayoutEffect(() => {
+    if (trigger === null || trigger === undefined) {
+      mergeProgress.value = 0;
+      return;
+    }
+
     mergeProgress.value = 0;
     mergeProgress.value = withTiming(
       1,
@@ -28,7 +34,7 @@ export function useMergeProgress(
         }
       },
     );
-  }, [durationMs, mergeProgress]);
+  }, [durationMs, mergeProgress, trigger]);
 
   return mergeProgress;
 }

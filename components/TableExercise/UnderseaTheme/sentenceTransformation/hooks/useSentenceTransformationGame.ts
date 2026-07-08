@@ -312,7 +312,7 @@ export function useSentenceTransformationGame({
   const displayWord = sequence?.baseWord ?? coreSnapshot?.currentWord ?? '';
 
   const letters = useMemo<LetterBubbleModel[]>(() => {
-    if (roundPhase === 'merge' || resolutionBubble != null) {
+    if (resolutionBubble != null) {
       return [];
     }
 

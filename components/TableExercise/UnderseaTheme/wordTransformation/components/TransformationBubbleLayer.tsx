@@ -26,6 +26,8 @@ function insertPreviewFromAnimation(
 
 export type TransformationBubbleLayerProps = {
   wordBubblesVisible?: boolean;
+  mergeWord?: string | null;
+  onMergeComplete?: () => void;
   /** Rendered after word bubbles and before insert flight (e.g. sentence resolution). */
   betweenWordBubblesAndInsertFlight?: ReactNode;
   letters: LetterBubbleModel[];
@@ -48,6 +50,8 @@ export type TransformationBubbleLayerProps = {
 
 export function TransformationBubbleLayer({
   wordBubblesVisible = true,
+  mergeWord,
+  onMergeComplete,
   betweenWordBubblesAndInsertFlight,
   letters,
   lettersInteractive,
@@ -75,6 +79,8 @@ export function TransformationBubbleLayer({
           letters={letters}
           interactive={lettersInteractive}
           insertPreview={insertPreview}
+          mergeWord={mergeWord}
+          onMergeComplete={onMergeComplete}
           onLetterPress={onLetterPress}
           playPop={playPop}
           playInflate={playInflate}
