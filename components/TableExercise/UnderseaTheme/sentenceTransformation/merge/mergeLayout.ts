@@ -144,37 +144,6 @@ export function buildMergeShaderUniforms(
     }
   }
 
-  // Add a growing "global" circle that expands to encompass the whole word
-  // as merge completes. We append it if there's room, otherwise overwrite the
-  // last slot. The extra center helps the metaball field form one big round
-  // blob that covers the final laid-out word.
-  // Place a growing global circle that expands to encompass the laid-out word.
-  const bigCircleSlotIndex = Math.min(letterCount, resolvedMaxLetters - 1);
-  const bigProgress = smoothStep(0.4, 1.0, mergeProgress);
-
-  if (bigProgress > 0) {
-    // compute target diameter to tightly encompass the final laid-out word
-    // Compute spacing using same heuristic as per-letter interpolation so the
-    // big circle fits the final letter positions (not the original centers).
-    const initialDiameter = layout.diameter;
-    let targetWordWidth = mergeDiameter;
-    if (letterCount > 0) {
-      const baseSpacing = initialDiameter * 0.9;
-      const availableSpacing = mergeDiameter / Math.max(letterCount, 1);
-      const spacing = Math.min(baseSpacing, Math.max(availableSpacing, baseSpacing * 0.6));
-      targetWordWidth = spacing * Math.max(0, letterCount - 1) + initialDiameter;
-    }
-    const padding = initialDiameter * 0.25; // small padding so circle isn't much bigger
-    const desiredBigDiameter = Math.max(mergeDiameter, targetWordWidth + padding);
-    const initialBigDiameter = 0; // start from zero so it grows smoothly
-    const bigDiameter = lerp(initialBigDiameter, desiredBigDiameter, bigProgress);
-    const bigRadius = bigDiameter * 0.5;
-    const bigCenter = [mergeCenterX, layout.rowY, bigRadius];
-    // place or overwrite slot
-    letterCenters[bigCircleSlotIndex] = bigCenter;
-  }
-
-  const returnedLetterCount = Math.min(letterCount + (bigProgress > 0 ? 1 : 0), resolvedMaxLetters);
   const baseOpacity = lerp(1.0, 1.0, mergeProgress);
-  return { mergeProgress, letterCount: returnedLetterCount, letterCenters, baseOpacity };
+  return { mergeProgress, letterCount, letterCenters, baseOpacity };
 }
