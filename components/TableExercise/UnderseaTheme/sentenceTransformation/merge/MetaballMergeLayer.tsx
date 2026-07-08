@@ -15,6 +15,7 @@ import type { LetterLayout } from '../../core/layout/underseaExerciseLayout';
 import { buildMergeShaderUniforms } from './mergeLayout';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
 import { METABALL_MERGE_SKSL } from '../../shaders/metaballMerge.sksl';
+import { bubbleDeformUniformDefaults } from '../../shaders/bubbleDeform.sksl';
 
 export type MetaballMergeLayerProps = {
   mergeProgress: SharedValue<number>;
@@ -23,6 +24,17 @@ export type MetaballMergeLayerProps = {
   mergeDiameter: number;
   bubbleImage: SkImage;
   bounds: ZoneRect;
+  clock?: SharedValue<number>;
+  // Optional overrides to match per-bubble visual parameters from LetterBubble/BubbleInstance
+  phase?: number;
+  wobbleAmp?: number;
+  wobbleSpeed?: number;
+  wobbleLobes?: number;
+  bgCutoff?: number;
+  centerClear?: number;
+  rimClear?: number;
+  tintA?: readonly [number, number, number];
+  tintStrength?: number;
 };
 
 /**
@@ -51,6 +63,16 @@ export function MetaballMergeLayer({
   mergeDiameter,
   bubbleImage,
   bounds,
+  clock,
+  phase,
+  wobbleAmp,
+  wobbleSpeed,
+  wobbleLobes,
+  bgCutoff,
+  centerClear,
+  rimClear,
+  tintA,
+  tintStrength,
 }: MetaballMergeLayerProps) {
   const renderingRect = useMemo(
     () => Skia.XYWHRect(bounds.x, bounds.y, bounds.w, bounds.h),
@@ -58,16 +80,37 @@ export function MetaballMergeLayer({
   );
 
   const uniforms = useDerivedValue(() => {
-    const { mergeProgress: progress, letterCount, letterCenters } = buildMergeShaderUniforms(
-      layout,
-      mergeCenterX,
-      mergeDiameter,
-      mergeProgress.value,
-    );
+    const { mergeProgress: progress, letterCount, letterCenters, baseOpacity } =
+      buildMergeShaderUniforms(layout, mergeCenterX, mergeDiameter, mergeProgress.value);
+    const {
+      phase: defaultPhase,
+      wobbleAmp: defaultWobbleAmp,
+      wobbleSpeed: defaultWobbleSpeed,
+      wobbleLobes: defaultWobbleLobes,
+      bgCutoff: defaultBgCutoff,
+      centerClear: defaultCenterClear,
+      rimClear: defaultRimClear,
+      tintA: defaultTintA,
+      tintStrength: defaultTintStrength,
+    } = bubbleDeformUniformDefaults;
+
     return {
       mergeProgress: progress,
       letterCount,
       letterCenters,
+      baseOpacity,
+      // Match bubbleDeform defaults so per-letter sampling produces similar center/rim transparency
+      bgCutoff: bgCutoff ?? defaultBgCutoff,
+      centerClear: centerClear ?? defaultCenterClear,
+      rimClear: rimClear ?? defaultRimClear,
+      tintA: tintA ?? defaultTintA,
+      tintStrength: tintStrength ?? defaultTintStrength,
+      // Wobble / animation uniforms (use same defaults as bubbleDeform, allow overrides)
+      iTime: (clock ? clock.value : 0) / 1000,
+      phase: phase ?? defaultPhase,
+      wobbleAmp: wobbleAmp ?? defaultWobbleAmp,
+      wobbleSpeed: wobbleSpeed ?? defaultWobbleSpeed,
+      wobbleLobes: wobbleLobes ?? defaultWobbleLobes,
       boundsX: bounds.x,
       boundsY: bounds.y,
       boundsW: Math.max(bounds.w, 1),

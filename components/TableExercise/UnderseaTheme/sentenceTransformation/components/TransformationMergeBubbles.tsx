@@ -9,6 +9,8 @@ import { MergeLetterLabels } from '../merge/MergeLetterLabels';
 import { MetaballMergeLayer } from '../merge/MetaballMergeLayer';
 import { computeMergeTarget } from '../merge/mergeLayout';
 import { useMergeProgress } from '../merge/useMergeProgress';
+import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
+import { bubbleDeformUniformDefaults } from '../../shaders/bubbleDeform.sksl';
 
 export type TransformationMergeBubblesProps = {
   word: string;
@@ -60,6 +62,13 @@ export function TransformationMergeBubbles({
         mergeDiameter={mergeDiameter}
         bubbleImage={images.bubble}
         bounds={koiRect}
+        clock={useUnderseaThemeClock()}
+        // pass through bubbleDeform defaults so metaballs visually match LetterBubble
+        bgCutoff={bubbleDeformUniformDefaults.bgCutoff}
+        centerClear={bubbleDeformUniformDefaults.centerClear}
+        rimClear={bubbleDeformUniformDefaults.rimClear}
+        tintA={bubbleDeformUniformDefaults.tintA}
+        tintStrength={bubbleDeformUniformDefaults.tintStrength}
       />
       <MergeLetterLabels
         word={word}

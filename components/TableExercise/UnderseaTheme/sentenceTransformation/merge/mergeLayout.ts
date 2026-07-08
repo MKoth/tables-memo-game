@@ -20,6 +20,7 @@ export type MergeShaderUniforms = {
   mergeProgress: number;
   letterCount: number;
   letterCenters: number[][];
+  baseOpacity: number;
 };
 
 function lerp(a: number, b: number, t: number): number {
@@ -174,5 +175,6 @@ export function buildMergeShaderUniforms(
   }
 
   const returnedLetterCount = Math.min(letterCount + (bigProgress > 0 ? 1 : 0), resolvedMaxLetters);
-  return { mergeProgress, letterCount: returnedLetterCount, letterCenters };
+  const baseOpacity = lerp(1.0, 1.0, mergeProgress);
+  return { mergeProgress, letterCount: returnedLetterCount, letterCenters, baseOpacity };
 }
