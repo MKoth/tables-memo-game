@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
-import { computeLetterLayout } from '../../core/layout/underseaExerciseLayout';
+import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransformationCoreBridge';
 import type { VariantPickerItem } from '../components/TransformationVariantPicker';
 import {
   BUBBLE_BURST_DURATION_MS,
@@ -10,14 +10,12 @@ import {
   WORD_LETTER_EXIT_STAGGER_MS,
 } from '../insertAnimationTiming';
 import {
-  createWordTransformationCore,
   createWordTransformationExercise,
   type InsertAnimationState,
   type LetterBubbleModel,
   type TransformationMode,
   type VariantSourceLayout,
   type WordOperationSequence,
-  type WordTransformationCoreSnapshot,
 } from '../domain';
 
 export type WordTransitionPhase = 'exit' | 'enter';
@@ -97,17 +95,33 @@ export function useWordTransformationGame({
   const [revealedCellIndices, setRevealedCellIndices] = useState<ReadonlySet<number>>(
     () => new Set(),
   );
-  const [, bumpRender] = useReducer((value: number) => value + 1, 0);
-  const [coreSnapshot, setCoreSnapshot] = useState<WordTransformationCoreSnapshot | null>(null);
 
-  const coreRef = useRef<ReturnType<typeof createWordTransformationCore> | null>(null);
   const skipSequenceLoadRef = useRef(false);
   const wordTransitionTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const startWordExitTransitionRef = useRef<
     (solved: WordOperationSequence, exitWord?: string) => void
   >(() => {});
-  const koiRectRef = useRef(koiRect);
-  koiRectRef.current = koiRect;
+
+  const isCompleted = order.length === 0 || orderPos >= order.length;
+  const sequence = isCompleted ? null : exercise.sequences[order[orderPos]] ?? null;
+
+  const {
+    coreSnapshot,
+    handleLetterPress: handleLetterPressUnguarded,
+    handleVariantPress: handleVariantPressUnguarded,
+    loadSequence,
+  } = useWordTransformationCoreBridge({
+    koiRect,
+    sequence,
+    sequenceKey: orderPos,
+    playPop,
+    playInflate,
+    playWrong,
+    onSequenceComplete: (completedSequence, finalWord) => {
+      startWordExitTransitionRef.current(completedSequence, finalWord);
+    },
+    skipSequenceLoadRef,
+  });
 
   const clearWordTransitionTimers = useCallback(() => {
     wordTransitionTimersRef.current.forEach(clearTimeout);
@@ -122,11 +136,6 @@ export function useWordTransformationGame({
       fn();
     }, delayMs);
     wordTransitionTimersRef.current.push(id);
-  }, []);
-
-  const syncCoreSnapshot = useCallback(() => {
-    setCoreSnapshot(coreRef.current?.getSnapshot() ?? null);
-    bumpRender();
   }, []);
 
   const startWordEnterTransition = useCallback(() => {
@@ -151,8 +160,7 @@ export function useWordTransformationGame({
 
     skipSequenceLoadRef.current = true;
     setOrderPos(nextPos);
-    coreRef.current?.loadSequence(nextSequence, nextPos);
-    syncCoreSnapshot();
+    loadSequence(nextSequence, nextPos);
 
     if (revealOrder.length === 0) {
       setWordTransition(null);
@@ -175,10 +183,10 @@ export function useWordTransformationGame({
     }, enterCompleteDelay);
   }, [
     exercise.sequences,
+    loadSequence,
     order,
     orderPos,
     scheduleWordTransitionTimer,
-    syncCoreSnapshot,
   ]);
 
   const startWordExitTransition = useCallback(
@@ -217,53 +225,7 @@ export function useWordTransformationGame({
     ],
   );
 
-  const playPopRef = useRef(playPop);
-  const playInflateRef = useRef(playInflate);
-  const playWrongRef = useRef(playWrong);
-  playPopRef.current = playPop;
-  playInflateRef.current = playInflate;
-  playWrongRef.current = playWrong;
-
   startWordExitTransitionRef.current = startWordExitTransition;
-
-  useEffect(() => {
-    const core = createWordTransformationCore({
-      getLetterLayout: (wordLength) =>
-        computeLetterLayout(koiRectRef.current, wordLength),
-      scheduleTimer: (fn, delayMs) => {
-        const id = setTimeout(fn, delayMs);
-        return () => clearTimeout(id);
-      },
-      onSequenceComplete: (sequence, finalWord) => {
-        startWordExitTransitionRef.current(sequence, finalWord);
-      },
-      onStateChange: syncCoreSnapshot,
-      playPop: () => playPopRef.current?.(),
-      playInflate: () => playInflateRef.current?.(),
-      playWrong: () => playWrongRef.current?.(),
-    });
-    coreRef.current = core;
-
-    return () => {
-      core.dispose();
-      coreRef.current = null;
-    };
-  }, [syncCoreSnapshot]);
-
-  const isCompleted = order.length === 0 || orderPos >= order.length;
-  const sequence = isCompleted ? null : exercise.sequences[order[orderPos]] ?? null;
-
-  useEffect(() => {
-    if (sequence == null || coreRef.current == null) {
-      return;
-    }
-    if (skipSequenceLoadRef.current) {
-      skipSequenceLoadRef.current = false;
-      return;
-    }
-    coreRef.current.loadSequence(sequence, orderPos);
-    syncCoreSnapshot();
-  }, [orderPos, sequence, syncCoreSnapshot]);
 
   useEffect(() => {
     if (order.length > 0 && orderPos >= order.length) {
@@ -322,9 +284,9 @@ export function useWordTransformationGame({
       if (wordTransition != null || wordTransitioning) {
         return;
       }
-      coreRef.current?.handleLetterPress(position);
+      handleLetterPressUnguarded(position);
     },
-    [wordTransition, wordTransitioning],
+    [handleLetterPressUnguarded, wordTransition, wordTransitioning],
   );
 
   const handleVariantPress = useCallback(
@@ -332,9 +294,9 @@ export function useWordTransformationGame({
       if (wordTransition != null || wordTransitioning) {
         return;
       }
-      coreRef.current?.handleVariantPress(item, source);
+      handleVariantPressUnguarded(item, source);
     },
-    [wordTransition, wordTransitioning],
+    [handleVariantPressUnguarded, wordTransition, wordTransitioning],
   );
 
   return {

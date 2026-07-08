@@ -58,3 +58,9 @@ export type {
   KoiSimBridge,
   TutorialStep,
 } from './types/bridgeTypes';
+
+export {
+  useWordTransformationCoreBridge,
+  type UseWordTransformationCoreBridgeParams,
+  type UseWordTransformationCoreBridgeResult,
+} from './hooks/useWordTransformationCoreBridge';

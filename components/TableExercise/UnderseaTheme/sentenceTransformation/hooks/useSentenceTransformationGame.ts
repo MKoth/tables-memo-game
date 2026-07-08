@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
 import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
+import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransformationCoreBridge';
 import {
   blankSlotCenter,
   computeLetterLayout,
@@ -10,13 +11,11 @@ import type { VariantPickerItem } from '../../wordTransformation/components/Tran
 import { WORD_LETTER_ENTER_STAGGER_MS } from '../../wordTransformation/insertAnimationTiming';
 import {
   bodyCellIndex,
-  createWordTransformationCore,
   type InsertAnimationState,
   type LetterBubbleModel,
   type TransformationMode,
   type VariantSourceLayout,
   type WordOperationSequence,
-  type WordTransformationCoreSnapshot,
 } from '../../wordTransformation/domain';
 import {
   createSentenceRoundController,
@@ -116,26 +115,18 @@ export function useSentenceTransformationGame({
     solvedWord: null,
     blankFilled: false,
   }));
-  const [coreSnapshot, setCoreSnapshot] = useState<WordTransformationCoreSnapshot | null>(null);
   const [bubbleEnter, setBubbleEnter] = useState<SentenceBubbleEnterState | null>(null);
   const [resolutionBubble, setResolutionBubble] = useState<RoundResolutionBubbleState | null>(
     null,
   );
 
-  const coreRef = useRef<ReturnType<typeof createWordTransformationCore> | null>(null);
   const roundRef = useRef<ReturnType<typeof createSentenceRoundController> | null>(null);
   const koiRectRef = useRef(koiRect);
   const jellyRectRef = useRef(jellyRect);
   koiRectRef.current = koiRect;
   jellyRectRef.current = jellyRect;
 
-  const playPopRef = useRef(playPop);
-  const playInflateRef = useRef(playInflate);
-  const playWrongRef = useRef(playWrong);
   const playSuccessRef = useRef(playSuccess);
-  playPopRef.current = playPop;
-  playInflateRef.current = playInflate;
-  playWrongRef.current = playWrong;
   playSuccessRef.current = playSuccess;
 
   const syncRoundSnapshot = useCallback(() => {
@@ -143,11 +134,6 @@ export function useSentenceTransformationGame({
     if (snapshot != null) {
       setRoundSnapshot(snapshot);
     }
-    bumpRender();
-  }, []);
-
-  const syncCoreSnapshot = useCallback(() => {
-    setCoreSnapshot(coreRef.current?.getSnapshot() ?? null);
     bumpRender();
   }, []);
 
@@ -162,6 +148,23 @@ export function useSentenceTransformationGame({
     () => (currentRound == null ? null : roundToSequence(table, currentRound)),
     [currentRound, table],
   );
+
+  const {
+    coreSnapshot,
+    handleLetterPress: handleLetterPressUnguarded,
+    handleVariantPress: handleVariantPressUnguarded,
+  } = useWordTransformationCoreBridge({
+    koiRect,
+    sequence,
+    sequenceKey: roundSnapshot.roundPos,
+    playPop,
+    playInflate,
+    playWrong,
+    onSequenceComplete: (_completedSequence, finalWord) => {
+      roundRef.current?.notifySequenceComplete(finalWord);
+      syncRoundSnapshot();
+    },
+  });
 
   const blankSlotIndex = useMemo(
     () => findBlankSlotIndex(currentRound?.displaySlots ?? []),
@@ -274,39 +277,6 @@ export function useSentenceTransformationGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roundOrder.length]);
 
-  useEffect(() => {
-    const core = createWordTransformationCore({
-      getLetterLayout: (wordLength) =>
-        computeLetterLayout(koiRectRef.current, wordLength),
-      scheduleTimer: (fn, delayMs) => {
-        const id = setTimeout(fn, delayMs);
-        return () => clearTimeout(id);
-      },
-      onSequenceComplete: (_sequence, finalWord) => {
-        roundRef.current?.notifySequenceComplete(finalWord);
-        syncRoundSnapshot();
-      },
-      onStateChange: syncCoreSnapshot,
-      playPop: () => playPopRef.current?.(),
-      playInflate: () => playInflateRef.current?.(),
-      playWrong: () => playWrongRef.current?.(),
-    });
-    coreRef.current = core;
-
-    return () => {
-      core.dispose();
-      coreRef.current = null;
-    };
-  }, [syncCoreSnapshot]);
-
-  useEffect(() => {
-    if (sequence == null || coreRef.current == null) {
-      return;
-    }
-    coreRef.current.loadSequence(sequence, roundSnapshot.roundPos);
-    syncCoreSnapshot();
-  }, [roundSnapshot.roundPos, sequence, syncCoreSnapshot]);
-
   const handleRowEnterComplete = useCallback(() => {
     const baseWord = sequence?.baseWord ?? currentRound?.infinitive ?? '';
     const revealOrder = shuffleIndices(baseWord.length);
@@ -416,9 +386,9 @@ export function useSentenceTransformationGame({
       if (transitioning || bubbleEnter != null) {
         return;
       }
-      coreRef.current?.handleLetterPress(position);
+      handleLetterPressUnguarded(position);
     },
-    [bubbleEnter, transitioning],
+    [bubbleEnter, handleLetterPressUnguarded, transitioning],
   );
 
   const handleVariantPress = useCallback(
@@ -426,9 +396,9 @@ export function useSentenceTransformationGame({
       if (transitioning || bubbleEnter != null) {
         return;
       }
-      coreRef.current?.handleVariantPress(item, source);
+      handleVariantPressUnguarded(item, source);
     },
-    [bubbleEnter, transitioning],
+    [bubbleEnter, handleVariantPressUnguarded, transitioning],
   );
 
   return {
