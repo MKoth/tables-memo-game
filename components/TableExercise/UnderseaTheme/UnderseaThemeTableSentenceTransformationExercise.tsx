@@ -18,11 +18,7 @@ import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThem
 import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { TransformationInstructionBar, UnderseaThemeCornerControls } from './ui';
-import {
-  TransformationInsertFlight,
-  TransformationVariantPicker,
-  TransformationWordBubbles,
-} from './wordTransformation';
+import { TransformationBubbleLayer } from './wordTransformation';
 import { JellyfishSentenceRowLayer } from './sentenceTransformation/components/JellyfishSentenceRowLayer/JellyfishSentenceRowLayer';
 import { TransformationMergeBubbles } from './sentenceTransformation/components/TransformationMergeBubbles';
 import { TransformationRoundResolutionBubble } from './sentenceTransformation/components/TransformationRoundResolutionBubble';
@@ -93,54 +89,44 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
         />
       </View>
       <View style={styles.bubbleLayer} pointerEvents="box-none">
-        {!game.isCompleted && (
-          <>
-            {game.mergeWord != null && (
-              <TransformationMergeBubbles
-                word={game.mergeWord}
-                onComplete={game.handleMergeComplete}
-              />
-            )}
-            <TransformationWordBubbles
-              letters={game.letters}
-              interactive={
-                !game.transitioning &&
-                game.insertAnimation == null &&
-                game.bubbleEnter == null
-              }
-              insertPreview={
-                game.insertAnimation != null && game.insertAnimation.phase !== 'dismiss'
-                  ? {
-                      insertIndex: game.insertAnimation.insertIndex,
-                      insertLength: game.insertAnimation.insertLength,
-                      targetLetterCount: game.insertAnimation.nextWord.length,
-                    }
-                  : undefined
-              }
-              onLetterPress={game.handleLetterPress}
-              playPop={sounds.playBubblePop}
-              playInflate={sounds.playBubbleInflate}
-            />
-            <TransformationRoundResolutionBubble
-              bubble={game.resolutionBubble}
-              onComplete={game.handleResolveComplete}
-            />
-          </>
-        )}
-        <TransformationInsertFlight flight={game.insertAnimation} />
-        {(game.mode === 'insert' || game.insertAnimation != null) &&
-          !game.transitioning &&
-          game.bubbleEnter == null && (
-          <TransformationVariantPicker
-            items={game.variantPickerItems}
-            wrongItemId={game.wrongItemId}
-            hiddenItemIds={game.pickerHiddenItemIds}
-            poppedItemIds={game.poppedPickerItemIds}
-            interactive={game.insertAnimation == null}
-            onSelect={game.handleVariantPress}
-            playPop={sounds.playBubblePop}
+        {!game.isCompleted && game.mergeWord != null && (
+          <TransformationMergeBubbles
+            word={game.mergeWord}
+            onComplete={game.handleMergeComplete}
           />
         )}
+        <TransformationBubbleLayer
+          wordBubblesVisible={!game.isCompleted}
+          betweenWordBubblesAndInsertFlight={
+            !game.isCompleted ? (
+              <TransformationRoundResolutionBubble
+                bubble={game.resolutionBubble}
+                onComplete={game.handleResolveComplete}
+              />
+            ) : undefined
+          }
+          letters={game.letters}
+          lettersInteractive={
+            !game.transitioning &&
+            game.insertAnimation == null &&
+            game.bubbleEnter == null
+          }
+          insertAnimation={game.insertAnimation}
+          variantPickerVisible={
+            (game.mode === 'insert' || game.insertAnimation != null) &&
+            !game.transitioning &&
+            game.bubbleEnter == null
+          }
+          variantPickerInteractive={game.insertAnimation == null}
+          variantPickerItems={game.variantPickerItems}
+          wrongItemId={game.wrongItemId}
+          pickerHiddenItemIds={game.pickerHiddenItemIds}
+          poppedPickerItemIds={game.poppedPickerItemIds}
+          onLetterPress={game.handleLetterPress}
+          onVariantSelect={game.handleVariantPress}
+          playPop={sounds.playBubblePop}
+          playInflate={sounds.playBubbleInflate}
+        />
       </View>
       <TransformationInstructionBar
         message={game.instruction}

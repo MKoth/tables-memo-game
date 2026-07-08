@@ -21,9 +21,7 @@ import { KoiSwimZone, type KoiSwimZoneController } from './koi';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { CaptureOverlay, TransformationInstructionBar, UnderseaThemeCornerControls } from './ui';
 import {
-  TransformationInsertFlight,
-  TransformationVariantPicker,
-  TransformationWordBubbles,
+  TransformationBubbleLayer,
   useWordTransformationGame,
   type WordOperationSequence,
 } from './wordTransformation';
@@ -152,42 +150,30 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
         />
       </View>
       <View style={styles.bubbleLayer} pointerEvents="box-none">
-        {!game.isCompleted && (
-          <TransformationWordBubbles
-            letters={game.letters}
-            interactive={
-              !game.transitioning &&
-              game.insertAnimation == null &&
-              game.wordTransition == null
-            }
-            insertPreview={
-              game.insertAnimation != null && game.insertAnimation.phase !== 'dismiss'
-                ? {
-                    insertIndex: game.insertAnimation.insertIndex,
-                    insertLength: game.insertAnimation.insertLength,
-                    targetLetterCount: game.insertAnimation.nextWord.length,
-                  }
-                : undefined
-            }
-            onLetterPress={game.handleLetterPress}
-            playPop={sounds.playBubblePop}
-            playInflate={sounds.playBubbleInflate}
-          />
-        )}
-        <TransformationInsertFlight flight={game.insertAnimation} />
-        {(game.mode === 'insert' || game.insertAnimation != null) &&
-          !game.transitioning &&
-          game.wordTransition == null && (
-          <TransformationVariantPicker
-            items={game.variantPickerItems}
-            wrongItemId={game.wrongItemId}
-            hiddenItemIds={game.pickerHiddenItemIds}
-            poppedItemIds={game.poppedPickerItemIds}
-            interactive={game.insertAnimation == null}
-            onSelect={game.handleVariantPress}
-            playPop={sounds.playBubblePop}
-          />
-        )}
+        <TransformationBubbleLayer
+          wordBubblesVisible={!game.isCompleted}
+          letters={game.letters}
+          lettersInteractive={
+            !game.transitioning &&
+            game.insertAnimation == null &&
+            game.wordTransition == null
+          }
+          insertAnimation={game.insertAnimation}
+          variantPickerVisible={
+            (game.mode === 'insert' || game.insertAnimation != null) &&
+            !game.transitioning &&
+            game.wordTransition == null
+          }
+          variantPickerInteractive={game.insertAnimation == null}
+          variantPickerItems={game.variantPickerItems}
+          wrongItemId={game.wrongItemId}
+          pickerHiddenItemIds={game.pickerHiddenItemIds}
+          poppedPickerItemIds={game.poppedPickerItemIds}
+          onLetterPress={game.handleLetterPress}
+          onVariantSelect={game.handleVariantPress}
+          playPop={sounds.playBubblePop}
+          playInflate={sounds.playBubbleInflate}
+        />
       </View>
       <TransformationInstructionBar
         message={game.instruction}

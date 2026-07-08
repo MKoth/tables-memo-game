@@ -14,6 +14,10 @@ export {
   type LetterLayout,
 } from '../core/layout/underseaExerciseLayout';
 export {
+  TransformationBubbleLayer,
+  type TransformationBubbleLayerProps,
+} from './components/TransformationBubbleLayer';
+export {
   TransformationWordBubbles,
 } from './components/TransformationWordBubbles';
 export {
