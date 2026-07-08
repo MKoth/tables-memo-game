@@ -58,14 +58,16 @@ export function MetaballMergeLayer({
   );
 
   const uniforms = useDerivedValue(() => {
-    const base = buildMergeShaderUniforms(
+    const { mergeProgress: progress, letterCount, letterCenters } = buildMergeShaderUniforms(
       layout,
       mergeCenterX,
       mergeDiameter,
       mergeProgress.value,
     );
     return {
-      ...base,
+      mergeProgress: progress,
+      letterCount,
+      letterCenters,
       boundsX: bounds.x,
       boundsY: bounds.y,
       boundsW: Math.max(bounds.w, 1),

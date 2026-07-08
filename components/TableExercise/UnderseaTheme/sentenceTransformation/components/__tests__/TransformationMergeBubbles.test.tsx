@@ -87,6 +87,6 @@ describe('TransformationMergeBubbles', () => {
     );
 
     expect(uniforms.mergeProgress).toBe(mergeProgress);
-    expect(uniforms.centers[0]?.x).toBe(letterState.centerX);
+    expect(uniforms.letterCenters[0][0]).toBe(letterState.centerX);
   });
 });

@@ -252,7 +252,7 @@ export function computeRoundResolutionFlight(
   return {
     fromCenterX,
     fromCenterY: letterLayout.rowY,
-    fromDiameter: letterLayout.diameter,
+    fromDiameter: Math.max(letterLayout.diameter * 1.4, 48),
     toCenterX: blank.x,
     toCenterY: blank.y,
     toDiameter: blank.bellSize * 0.9,

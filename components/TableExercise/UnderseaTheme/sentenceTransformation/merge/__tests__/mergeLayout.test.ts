@@ -82,7 +82,7 @@ describe('buildMergeShaderUniforms', () => {
 
     expect(uniforms.mergeProgress).toBe(mergeProgress);
     expect(uniforms.letterCount).toBe(3);
-    expect(uniforms.centers[0]?.x).toBe(
+    expect(uniforms.letterCenters[0][0]).toBe(
       interpolateMergeLetterState(
         layout,
         target.mergeCenterX,
@@ -104,7 +104,7 @@ describe('buildMergeShaderUniforms', () => {
       0.25,
     );
 
-    expect(uniforms.centers).toHaveLength(MERGE_SHADER_MAX_LETTERS);
-    expect(uniforms.centers[2]).toEqual({ x: 0, y: 0, radius: 0 });
+    expect(uniforms.letterCenters).toHaveLength(MERGE_SHADER_MAX_LETTERS);
+    expect(uniforms.letterCenters[2]).toEqual([0, 0, 0]);
   });
 });

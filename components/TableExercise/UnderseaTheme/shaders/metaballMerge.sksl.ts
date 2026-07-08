@@ -36,11 +36,14 @@ half4 main(float2 fragCoord) {
     letterField += exp(-normalized * normalized * 2.0);
   }
 
-  // At progress 0, we want the edge (normalized=1.0) at exp(-2.0) ≈ 0.1353
-  // At progress 1, letterField at the edge is letterCount * 0.1353
+  // Base field value at normalized=1.0 (used as reference).
   float fieldAtEdge = 0.1353;
-  float threshold = mix(fieldAtEdge, max(letterCount, 1.0) * fieldAtEdge, mergeProgress);
-  
+  // To avoid individual blobs looking like they're shrinking during the early
+  // merge, reduce the threshold over time so each letter's contribution
+  // occupies more area as mergeProgress increases. The global big circle
+  // added from JS will help blend into one round blob at the end.
+  float threshold = mix(fieldAtEdge, fieldAtEdge * 0.35, mergeProgress);
+
   // Keep edges relatively sharp but allow a bit of goo as they merge
   float softness = mix(0.04, 0.12, mergeProgress);
   float mask = smoothstep(threshold - softness, threshold + softness, letterField);

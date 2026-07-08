@@ -71,6 +71,8 @@ function MergeLetterLabel({
       mergeCenterX,
       mergeDiameter,
       mergeProgress.value,
+      position,
+      layout.centers.length,
     );
     const ox = initialDiameter * 0.5;
     const oy = initialDiameter * 0.5;
@@ -81,47 +83,8 @@ function MergeLetterLabel({
   });
 
   const labelOpacity = useDerivedValue(() => {
-    const progress = mergeProgress.value;
-    const FIELD_AT_EDGE = 0.1353;
-    const threshold = mix(
-      FIELD_AT_EDGE,
-      Math.max(layout.centers.length, 1) * FIELD_AT_EDGE,
-      progress,
-    );
-    const softness = mix(0.04, 0.12, progress);
-
-    const { centerX: labelX, centerY: labelY } =
-      interpolateMergeLetterStateAt(
-        initialCenterX,
-        rowY,
-        initialDiameter,
-        mergeCenterX,
-        mergeDiameter,
-        progress,
-      );
-
-    const letterField = layout.centers.reduce((acc, _, index) => {
-      const state = interpolateMergeLetterState(
-        layout,
-        mergeCenterX,
-        mergeDiameter,
-        progress,
-        index,
-      );
-      const dx = state.centerX - labelX;
-      const dy = state.centerY - labelY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const radius = Math.max(state.diameter * 0.5, 4);
-      const normalized = distance / radius;
-      return acc + Math.exp(-normalized * normalized * 2.0);
-    }, 0);
-
-    const maskValue = smoothStep(
-      threshold - softness,
-      threshold + softness,
-      letterField,
-    );
-    return 1 - clamp(maskValue, 0, 1);
+    // Keep letters fully opaque during merge so they form the final word.
+    return 1;
   });
 
   const glyphs = useMemo(() => {

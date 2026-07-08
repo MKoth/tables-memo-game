@@ -15,7 +15,7 @@ export const ROUND_ROW_ENTER_DURATION_MS = 520;
 export const ROUND_ROW_EXIT_DURATION_MS = 520;
 
 /** Letter bubbles unite into one word bubble before flying to the blank slot. */
-export const ROUND_MERGE_DURATION_MS = 380;
+export const ROUND_MERGE_DURATION_MS = 6800;
 
 /** Merged bubble glide to the blank slot; blank jellyfish exits concurrently. */
 export const ROUND_RESOLVE_FLY_DURATION_MS = INSERT_FLY_MS;

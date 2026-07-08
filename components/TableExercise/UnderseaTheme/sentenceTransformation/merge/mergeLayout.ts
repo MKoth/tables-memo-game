@@ -19,12 +19,26 @@ export type MergeShaderCenter = {
 export type MergeShaderUniforms = {
   mergeProgress: number;
   letterCount: number;
-  centers: MergeShaderCenter[];
+  letterCenters: number[][];
 };
 
 function lerp(a: number, b: number, t: number): number {
   'worklet';
   return a + (b - a) * t;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  'worklet';
+  return Math.max(min, Math.min(max, value));
+}
+
+function smoothStep(edge0: number, edge1: number, x: number): number {
+  'worklet';
+  if (edge1 === edge0) {
+    return x >= edge1 ? 1 : 0;
+  }
+  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
 }
 
 export function interpolateMergeLetterStateAt(
@@ -34,12 +48,37 @@ export function interpolateMergeLetterStateAt(
   mergeCenterX: number,
   mergeDiameter: number,
   mergeProgress: number,
+  position?: number,
+  letterCount?: number,
 ): MergeLetterState {
   'worklet';
+  // Default behaviour: move each letter toward the merge center.
+  // When position and letterCount are provided, arrange letters into
+  // a horizontal word layout centered on mergeCenterX at the end of the
+  // merge (mergeProgress === 1) so they don't overlap.
+  // Use eased progress for diameter so circles grow smoothly (avoid sudden shrink/expand).
+  const eased = smoothStep(0, 1, mergeProgress);
+  // Ensure per-letter diameter never becomes smaller than the initial diameter.
+  const targetDiameter = Math.max(initialDiameter, lerp(initialDiameter, mergeDiameter, eased));
+  let targetCenterX = mergeCenterX;
+
+  if (position !== undefined && letterCount && letterCount > 0) {
+    // spacing between letters at the final arrangement.
+    // Use the initial diameter as baseline, scaled slightly down so letters sit closer.
+    const baseSpacing = initialDiameter * 0.9;
+    // If mergeDiameter is large enough to host the whole word, use it to scale spacing.
+    const availableSpacing = mergeDiameter / Math.max(letterCount, 1);
+    const spacing = Math.min(baseSpacing, Math.max(availableSpacing, baseSpacing * 0.6));
+    const centerIndex = (letterCount - 1) / 2;
+    targetCenterX = mergeCenterX + (position - centerIndex) * spacing;
+  }
+
   return {
-    centerX: lerp(initialCenterX, mergeCenterX, mergeProgress),
+    // Use linear interpolation for center so letters travel predictably,
+    // but use eased diameter above for smoother visual growth.
+    centerX: lerp(initialCenterX, targetCenterX, mergeProgress),
     centerY: rowY,
-    diameter: lerp(initialDiameter, mergeDiameter, mergeProgress),
+    diameter: targetDiameter,
   };
 }
 
@@ -52,7 +91,7 @@ export function computeMergeTarget(
     layout.centers.length === 0
       ? koiRect.x + koiRect.w * 0.5
       : (layout.centers[0]! + layout.centers[layout.centers.length - 1]!) * 0.5;
-  const mergeDiameter = Math.max(layout.diameter * 0.55, 28);
+  const mergeDiameter = Math.max(layout.diameter * 1.4, 48);
   return { mergeCenterX, mergeDiameter };
 }
 
@@ -72,6 +111,8 @@ export function interpolateMergeLetterState(
     mergeCenterX,
     mergeDiameter,
     mergeProgress,
+    position,
+    layout.centers.length,
   );
 }
 
@@ -85,7 +126,7 @@ export function buildMergeShaderUniforms(
   'worklet';
   const resolvedMaxLetters = maxLetters ?? 10;
   const letterCount = Math.min(layout.centers.length, resolvedMaxLetters);
-  const centers: MergeShaderCenter[] = [];
+  const letterCenters: number[][] = [];
 
   for (let i = 0; i < resolvedMaxLetters; i++) {
     if (i < letterCount) {
@@ -96,15 +137,42 @@ export function buildMergeShaderUniforms(
         mergeProgress,
         i,
       );
-      centers.push({
-        x: state.centerX,
-        y: state.centerY,
-        radius: state.diameter * 0.5,
-      });
+      letterCenters.push([state.centerX, state.centerY, state.diameter * 0.5]);
     } else {
-      centers.push({ x: 0, y: 0, radius: 0 });
+      letterCenters.push([0, 0, 0]);
     }
   }
 
-  return { mergeProgress, letterCount, centers };
+  // Add a growing "global" circle that expands to encompass the whole word
+  // as merge completes. We append it if there's room, otherwise overwrite the
+  // last slot. The extra center helps the metaball field form one big round
+  // blob that covers the final laid-out word.
+  // Place a growing global circle that expands to encompass the laid-out word.
+  const bigCircleSlotIndex = Math.min(letterCount, resolvedMaxLetters - 1);
+  const bigProgress = smoothStep(0.4, 1.0, mergeProgress);
+
+  if (bigProgress > 0) {
+    // compute target diameter to tightly encompass the final laid-out word
+    // Compute spacing using same heuristic as per-letter interpolation so the
+    // big circle fits the final letter positions (not the original centers).
+    const initialDiameter = layout.diameter;
+    let targetWordWidth = mergeDiameter;
+    if (letterCount > 0) {
+      const baseSpacing = initialDiameter * 0.9;
+      const availableSpacing = mergeDiameter / Math.max(letterCount, 1);
+      const spacing = Math.min(baseSpacing, Math.max(availableSpacing, baseSpacing * 0.6));
+      targetWordWidth = spacing * Math.max(0, letterCount - 1) + initialDiameter;
+    }
+    const padding = initialDiameter * 0.25; // small padding so circle isn't much bigger
+    const desiredBigDiameter = Math.max(mergeDiameter, targetWordWidth + padding);
+    const initialBigDiameter = 0; // start from zero so it grows smoothly
+    const bigDiameter = lerp(initialBigDiameter, desiredBigDiameter, bigProgress);
+    const bigRadius = bigDiameter * 0.5;
+    const bigCenter = [mergeCenterX, layout.rowY, bigRadius];
+    // place or overwrite slot
+    letterCenters[bigCircleSlotIndex] = bigCenter;
+  }
+
+  const returnedLetterCount = Math.min(letterCount + (bigProgress > 0 ? 1 : 0), resolvedMaxLetters);
+  return { mergeProgress, letterCount: returnedLetterCount, letterCenters };
 }
