@@ -63,6 +63,7 @@ export function interpolateMergeLetterState(
   mergeProgress: number,
   position: number,
 ): MergeLetterState {
+  'worklet';
   const initialCenterX = layout.centers[position] ?? mergeCenterX;
   return interpolateMergeLetterStateAt(
     initialCenterX,
