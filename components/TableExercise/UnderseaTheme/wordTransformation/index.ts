@@ -1,12 +1,6 @@
 export * from './domain';
 export {
   useWordTransformationGame,
-  type InsertAnimationPhase,
-  type InsertAnimationState,
-  type InsertFlightState,
-  type LetterBubbleModel,
-  type TransformationMode,
-  type VariantSourceLayout,
   type WordTransformationGame,
   type WordTransitionPhase,
   type WordTransitionState,

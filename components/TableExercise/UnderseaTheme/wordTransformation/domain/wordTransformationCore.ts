@@ -14,7 +14,6 @@ import {
 import type {
   InsertAnimationState,
   LetterBubbleModel,
-  LetterLayout,
   ScheduleTimer,
   TransformationMode,
   VariantPickerPressItem,
@@ -28,7 +27,6 @@ export type {
   InsertAnimationPhase,
   InsertAnimationState,
   LetterBubbleModel,
-  LetterLayout,
   ScheduleTimer,
   TransformationMode,
   VariantPickerPressItem,

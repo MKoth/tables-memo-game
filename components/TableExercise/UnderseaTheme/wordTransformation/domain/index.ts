@@ -25,7 +25,6 @@ export {
   type InsertAnimationPhase,
   type InsertAnimationState,
   type LetterBubbleModel,
-  type LetterLayout,
   type ScheduleTimer,
   type TransformationMode,
   type VariantPickerPressItem,

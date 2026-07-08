@@ -20,16 +20,6 @@ import {
   type WordTransformationCoreSnapshot,
 } from '../domain';
 
-export type {
-  InsertAnimationPhase,
-  InsertAnimationState,
-  LetterBubbleModel,
-  TransformationMode,
-  VariantSourceLayout,
-} from '../domain';
-/** @deprecated Use InsertAnimationState */
-export type InsertFlightState = InsertAnimationState;
-
 export type WordTransitionPhase = 'exit' | 'enter';
 
 export type WordTransitionState =

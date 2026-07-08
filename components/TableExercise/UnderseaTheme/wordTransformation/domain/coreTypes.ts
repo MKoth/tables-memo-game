@@ -1,3 +1,4 @@
+import type { LetterLayout } from '../../core/layout/underseaExerciseLayout';
 import type { Operation, WordOperationSequence } from './types';
 
 export type LetterBubbleModel = {
@@ -47,12 +48,6 @@ export type InsertAnimationState = {
 };
 
 export type TransformationMode = 'delete' | 'insert';
-
-export type LetterLayout = {
-  diameter: number;
-  rowY: number;
-  centers: number[];
-};
 
 export type VariantPickerPressItem = {
   id: string;

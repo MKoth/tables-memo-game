@@ -10,7 +10,7 @@ import {
   type InsertPreviewLayout,
 } from '../../core/layout/underseaExerciseLayout';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
-import type { LetterBubbleModel } from '../hooks/useWordTransformationGame';
+import type { LetterBubbleModel } from '../domain';
 
 function statusFor(letter: LetterBubbleModel): LetterBubbleStatus {
   if (letter.popped) {
