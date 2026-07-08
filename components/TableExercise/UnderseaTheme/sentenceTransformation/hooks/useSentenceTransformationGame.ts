@@ -376,15 +376,15 @@ export function useSentenceTransformationGame({
   const displayWord = sequence?.baseWord ?? coreSnapshot?.currentWord ?? '';
 
   const letters = useMemo<LetterBubbleModel[]>(() => {
-    if (
-      roundPhase === 'enter' ||
-      roundPhase === 'merge' ||
-      resolutionBubble != null
-    ) {
+    if (roundPhase === 'merge' || resolutionBubble != null) {
       return [];
     }
 
-    if (bubbleEnter != null) {
+    if (roundPhase === 'enter' && bubbleEnter == null) {
+      return [];
+    }
+
+    if (roundPhase === 'enter' && bubbleEnter != null) {
       return displayWord.split('').map((char, position) => {
         const enterIndex = bubbleEnter.revealOrder.indexOf(position);
         return {

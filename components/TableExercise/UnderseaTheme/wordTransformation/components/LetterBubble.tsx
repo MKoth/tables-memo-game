@@ -22,13 +22,13 @@ import {
   BUBBLE_IDLE_WOBBLE,
   WORD_TRANSFORMATION_BUBBLE_OPACITY,
 } from '../../koi/bubbles/bubbleAnimPresets';
+import { WORD_LETTER_ENTER_DURATION_MS } from '../insertAnimationTiming';
 import type { BubbleAnimState } from '../../koi/bubbles/bubbleAnimTypes';
 
 const LABEL_STROKE_WIDTH = 2;
 const LABEL_FILL_COLOR = '#ffffff';
 const LABEL_STROKE_COLOR = '#0a2840';
 const LABEL_WRONG_COLOR = '#ff5a5a';
-const ENTER_DURATION_MS = 320;
 const MOVE_DURATION_MS = 320;
 const WRONG_FEEDBACK_MS = 1000;
 const WRONG_TINT_STRENGTH = 0.82;
@@ -169,7 +169,7 @@ function LetterBubbleComponent({
     enterT.value = withDelay(
       delay,
       withTiming(1, {
-        duration: ENTER_DURATION_MS,
+        duration: WORD_LETTER_ENTER_DURATION_MS,
         easing: Easing.out(Easing.back(1.6)),
       }),
     );
