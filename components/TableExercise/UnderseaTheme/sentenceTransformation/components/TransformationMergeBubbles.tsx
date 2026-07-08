@@ -36,14 +36,15 @@ export function TransformationMergeBubbles({
   );
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
+  const fontSize = Math.max(16, layout.diameter * 0.5);
   const font = useMemo(
     () =>
       matchFont({
         fontFamily,
-        fontSize: Math.max(16, mergeDiameter * 0.5),
+        fontSize,
         fontWeight: '700',
       }),
-    [fontFamily, mergeDiameter],
+    [fontFamily, fontSize],
   );
 
   if (word.length === 0) {

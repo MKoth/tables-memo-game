@@ -42,7 +42,7 @@ function MergeLetterLabel({
   const rowY = layout.rowY;
 
   const labelTransform = useDerivedValue(() => {
-    const state = interpolateMergeLetterStateAt(
+    const { centerX, centerY } = interpolateMergeLetterStateAt(
       initialCenterX,
       rowY,
       initialDiameter,
@@ -50,18 +50,11 @@ function MergeLetterLabel({
       mergeDiameter,
       mergeProgress.value,
     );
-    const { centerX, centerY, diameter } = state;
     const ox = initialDiameter * 0.5;
     const oy = initialDiameter * 0.5;
-    const scale = initialDiameter > 0 ? diameter / initialDiameter : 1;
     return [
-      { translateX: centerX - diameter * 0.5 },
-      { translateY: centerY - diameter * 0.5 },
-      { translateX: ox },
-      { translateY: oy },
-      { scale },
-      { translateX: -ox },
-      { translateY: -oy },
+      { translateX: centerX - ox },
+      { translateY: centerY - oy },
     ];
   });
 
