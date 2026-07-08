@@ -32,22 +32,21 @@ half4 main(float2 fragCoord) {
     float radius = max(letterCenters[i].z, 4.0);
     float distanceToCenter = distance(fragCoord, center);
     float normalized = distanceToCenter / radius;
-    letterField += exp(-normalized * normalized * 5.0);
+    // Calibrate field power for smoother blending
+    letterField += exp(-normalized * normalized * 2.0);
   }
 
-  float mergeGain = mix(0.08, 1.4, mergeProgress);
-  float threshold = mix(1.4, 0.35, mergeProgress);
-  float softness = mix(0.35, 0.06, mergeProgress);
-  float exposure = smoothstep(0.05, 0.25, mergeProgress);
-  float mask = smoothstep(threshold - softness, threshold + softness, letterField * mergeGain);
-  mask *= exposure;
-
+  // At progress 0, we want the edge (normalized=1.0) at exp(-2.0) ≈ 0.1353
+  // At progress 1, letterField at the edge is letterCount * 0.1353
+  float fieldAtEdge = 0.1353;
+  float threshold = mix(fieldAtEdge, max(letterCount, 1.0) * fieldAtEdge, mergeProgress);
+  
+  // Keep edges relatively sharp but allow a bit of goo as they merge
+  float softness = mix(0.04, 0.12, mergeProgress);
+  float mask = smoothstep(threshold - softness, threshold + softness, letterField);
+  
   float2 safeBounds = vec2(max(boundsW, 1.0), max(boundsH, 1.0));
-  float2 normalizedCoord = clamp(
-    (fragCoord - vec2(boundsX, boundsY)) / safeBounds,
-    0.0,
-    1.0
-  );
+  float2 normalizedCoord = clamp((fragCoord - vec2(boundsX, boundsY)) / safeBounds, 0.0, 1.0);
   float2 sampleCoord = vec2(boundsX, boundsY) + normalizedCoord * safeBounds;
   half4 bubbleColor = bubbleTexture.eval(sampleCoord);
   bubbleColor.rgb *= mask;

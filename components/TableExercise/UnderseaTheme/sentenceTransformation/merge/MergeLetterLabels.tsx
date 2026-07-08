@@ -82,10 +82,13 @@ function MergeLetterLabel({
 
   const labelOpacity = useDerivedValue(() => {
     const progress = mergeProgress.value;
-    const maskGain = mix(0.08, 1.4, progress);
-    const maskThreshold = mix(1.4, 0.35, progress);
-    const maskSoftness = mix(0.35, 0.06, progress);
-    const exposure = smoothStep(0.05, 0.25, progress);
+    const FIELD_AT_EDGE = 0.1353;
+    const threshold = mix(
+      FIELD_AT_EDGE,
+      Math.max(layout.centers.length, 1) * FIELD_AT_EDGE,
+      progress,
+    );
+    const softness = mix(0.04, 0.12, progress);
 
     const { centerX: labelX, centerY: labelY } =
       interpolateMergeLetterStateAt(
@@ -110,16 +113,15 @@ function MergeLetterLabel({
       const distance = Math.sqrt(dx * dx + dy * dy);
       const radius = Math.max(state.diameter * 0.5, 4);
       const normalized = distance / radius;
-      return acc + Math.exp(-normalized * normalized * 5.0);
+      return acc + Math.exp(-normalized * normalized * 2.0);
     }, 0);
 
     const maskValue = smoothStep(
-      maskThreshold - maskSoftness,
-      maskThreshold + maskSoftness,
-      letterField * maskGain,
+      threshold - softness,
+      threshold + softness,
+      letterField,
     );
-    const blobProgress = clamp(maskValue * exposure, 0, 1);
-    return 1 - blobProgress;
+    return 1 - clamp(maskValue, 0, 1);
   });
 
   const glyphs = useMemo(() => {
