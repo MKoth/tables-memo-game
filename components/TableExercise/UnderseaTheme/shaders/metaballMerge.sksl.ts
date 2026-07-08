@@ -45,13 +45,101 @@ half4 main(float2 fragCoord) {
     }
     vec2 center = letterCenters[i].xy;
     float radius = max(letterCenters[i].z, 4.0);
-    float distanceToCenter = distance(fragCoord, center);
-    float normalized = distanceToCenter / radius;
-    float contribution = exp(-normalized * normalized * 2.0);
-    letterField += contribution;
 
     // Local polar coordinates around this letter's center for wobble deformation.
-    vec2 localUV = (fragCoord - center) / radius;
+    vec2 local = fragCoord - center;
+
+    float radiusScale = 1.0;
+
+    for (int j = 0; j < ${MERGE_SHADER_MAX_LETTERS}; j++) {
+        if (j >= letters) break;
+        if (j == i) continue;
+
+        vec2 delta = letterCenters[j].xy - center;
+        float dist = length(delta);
+        if (dist < 0.001) continue;
+
+        float otherRadius = max(letterCenters[j].z, 4.0);
+        float combined = radius + otherRadius;
+
+        float overlap = max(combined - dist, 0.0);
+        float influence = smoothstep(0.0, radius * 0.8, overlap);
+
+        vec2 dir = normalize(delta);
+
+        // Is this fragment on the side facing the neighbor?
+        float facing = max(dot(normalize(local), dir), 0.0);
+
+        // Shrink only that side.
+        radiusScale -= influence * facing * 0.15;
+    }
+
+    radiusScale = max(radiusScale, 0.8);
+
+    float effectiveRadius = radius * radiusScale;
+
+    float normalized = length(local / effectiveRadius);
+    float contribution = exp(-normalized * normalized * 2.0);
+    letterField = max(letterField, contribution)
+            + min(letterField, contribution) * 0.35;
+
+    vec2 localUV = local / effectiveRadius;
+
+    float totalInfluence = 0.0;
+    vec2 squeezeAxis = vec2(1.0, 0.0);
+    float strongestInfluence = 0.0;
+
+    for (int j = 0; j < ${MERGE_SHADER_MAX_LETTERS}; j++) {
+        if (j >= letters) {
+            break;
+        }
+        if (j == i) {
+            continue;
+        }
+
+        vec2 delta = letterCenters[j].xy - center;
+        float dist = length(delta);
+        if (dist < 0.001) {
+            continue;
+        }
+
+        float otherRadius = max(letterCenters[j].z, 4.0);
+        float combined = radius + otherRadius;
+
+        // Start squeezing only after touching.
+        float overlap = max(combined - dist, 0.0);
+        float influence = smoothstep(
+            0.0,
+            radius * 0.6,   // Increase for smoother transition
+            overlap
+        );
+
+        vec2 dir = normalize(delta);
+
+        totalInfluence += influence;
+
+        if (influence > strongestInfluence) {
+            strongestInfluence = influence;
+            squeezeAxis = dir;
+        }
+    }
+
+    if (totalInfluence > 0.001) {
+
+        vec2 perp = vec2(-squeezeAxis.y, squeezeAxis.x);
+
+        float x = dot(localUV, squeezeAxis);
+        float y = dot(localUV, perp);
+
+        // Compression along neighbor direction.
+        x *= mix(1.0, 1.20, totalInfluence);
+
+        // Expansion perpendicular to preserve volume.
+        y *= mix(1.0, 0.9, totalInfluence);
+
+        localUV = squeezeAxis * x + perp * y;
+    }
+
     float rLocal = length(localUV);
     float theta = atan(localUV.y, localUV.x);
 
