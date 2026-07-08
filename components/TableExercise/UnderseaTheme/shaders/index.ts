@@ -4,6 +4,8 @@ export {
   underseaSeafloorUniformDefaults,
 } from './underseaSeafloorBackground.sksl';
 
+export { METABALL_MERGE_SKSL } from './metaballMerge.sksl';
+
 export {
   BUBBLE_DEFORM_SKSL,
   bubbleDeformUniformDefaults,

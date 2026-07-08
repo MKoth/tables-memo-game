@@ -3,11 +3,30 @@ import { Glyphs, Group, vec, type SkFont } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
 import type { LetterLayout } from '../../core/layout/underseaExerciseLayout';
-import { interpolateMergeLetterStateAt } from './mergeLayout';
+import {
+  interpolateMergeLetterState,
+  interpolateMergeLetterStateAt,
+} from './mergeLayout';
 
 const LABEL_STROKE_WIDTH = 2;
 const LABEL_FILL_COLOR = '#ffffff';
 const LABEL_STROKE_COLOR = '#0a2840';
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function mix(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function smoothStep(edge0: number, edge1: number, x: number): number {
+  if (edge1 === edge0) {
+    return x >= edge1 ? 1 : 0;
+  }
+  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
 
 export type MergeLetterLabelsProps = {
   word: string;
@@ -58,6 +77,48 @@ function MergeLetterLabel({
     ];
   });
 
+  const labelOpacity = useDerivedValue(() => {
+    const progress = mergeProgress.value;
+    const maskGain = mix(0.08, 1.4, progress);
+    const maskThreshold = mix(1.4, 0.35, progress);
+    const maskSoftness = mix(0.35, 0.06, progress);
+    const exposure = smoothStep(0.05, 0.25, progress);
+
+    const { centerX: labelX, centerY: labelY } =
+      interpolateMergeLetterStateAt(
+        initialCenterX,
+        rowY,
+        initialDiameter,
+        mergeCenterX,
+        mergeDiameter,
+        progress,
+      );
+
+    const letterField = layout.centers.reduce((acc, _, index) => {
+      const state = interpolateMergeLetterState(
+        layout,
+        mergeCenterX,
+        mergeDiameter,
+        progress,
+        index,
+      );
+      const dx = state.centerX - labelX;
+      const dy = state.centerY - labelY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const radius = Math.max(state.diameter * 0.5, 4);
+      const normalized = distance / radius;
+      return acc + Math.exp(-normalized * normalized * 5.0);
+    }, 0);
+
+    const maskValue = smoothStep(
+      maskThreshold - maskSoftness,
+      maskThreshold + maskSoftness,
+      letterField * maskGain,
+    );
+    const blobProgress = clamp(maskValue * exposure, 0, 1);
+    return 1 - blobProgress;
+  });
+
   const glyphs = useMemo(() => {
     const ids = font.getGlyphIDs(char);
     const textWidth = font.getTextWidth(char);
@@ -68,7 +129,7 @@ function MergeLetterLabel({
   }, [char, font, initialDiameter]);
 
   return (
-    <Group transform={labelTransform}>
+    <Group transform={labelTransform} opacity={labelOpacity}>
       <Group
         style="stroke"
         strokeWidth={LABEL_STROKE_WIDTH}

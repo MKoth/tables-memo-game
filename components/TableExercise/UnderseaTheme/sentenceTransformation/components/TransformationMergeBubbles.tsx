@@ -59,6 +59,7 @@ export function TransformationMergeBubbles({
         mergeCenterX={mergeCenterX}
         mergeDiameter={mergeDiameter}
         bubbleImage={images.bubble}
+        bounds={koiRect}
       />
       <MergeLetterLabels
         word={word}
