@@ -17,10 +17,12 @@ uniform shader bubbleTexture;
 
 half4 main(float2 fragCoord) {
   float letterField = 0.0;
-  int letters = min(
-    ${MERGE_SHADER_MAX_LETTERS},
-    int(max(letterCount, 0.0))
-  );
+  float letterCountSafe = max(letterCount, 0.0);
+  int letters = ${MERGE_SHADER_MAX_LETTERS};
+  int clampedLetterCount = int(letterCountSafe);
+  if (clampedLetterCount < letters) {
+    letters = clampedLetterCount;
+  }
 
   for (int i = 0; i < ${MERGE_SHADER_MAX_LETTERS}; i++) {
     if (i >= letters) {
