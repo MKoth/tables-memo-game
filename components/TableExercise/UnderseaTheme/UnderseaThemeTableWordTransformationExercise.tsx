@@ -18,12 +18,12 @@ import {
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
 import { KoiSwimZone, type KoiSwimZoneController } from './koi';
+import { useKoiEscapeCoordinator } from './koi/escape/useKoiEscapeCoordinator';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { CaptureOverlay, TransformationInstructionBar, UnderseaThemeCornerControls } from './ui';
 import {
   TransformationBubbleLayer,
   useWordTransformationGame,
-  type WordOperationSequence,
 } from './wordTransformation';
 
 const JELLYFISH_LAYER_Z = 5;
@@ -31,9 +31,6 @@ const JELLYFISH_LAYER_Z = 5;
 const KOI_SWIM_ZONE_Z = 10;
 /** Above koi fish so letter bubbles stay readable and tappable. */
 const BUBBLE_LAYER_Z = 15;
-/** Brief pause after a sequence is solved before the koi swims to its jellyfish. */
-const KOI_ESCAPE_DELAY_MS = 700;
-
 type WordTransformationContentProps = {
   sounds: UnderseaThemeSoundController;
 };
@@ -45,13 +42,13 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
 
   const { jellyBridge } = useUnderseaThemeRuntime();
   const { jellyRect, koiRect } = useUnderseaThemeLayout();
-  const jellyBridgeRef = useRef(jellyBridge);
-  jellyBridgeRef.current = jellyBridge;
-  const jellyRectRef = useRef(jellyRect);
-  jellyRectRef.current = jellyRect;
 
   const koiControllerRef = useRef<KoiSwimZoneController | null>(null);
-  const escapeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSequenceSolved = useKoiEscapeCoordinator({
+    koiControllerRef,
+    jellyBridge,
+    jellyRect,
+  });
 
   useEffect(() => {
     sounds.startWaterflow();
@@ -63,15 +60,6 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
   useEffect(() => {
     sounds.setMuted(!soundEnabled);
   }, [sounds, soundEnabled]);
-
-  useEffect(
-    () => () => {
-      if (escapeTimerRef.current != null) {
-        clearTimeout(escapeTimerRef.current);
-      }
-    },
-    [],
-  );
 
   const handleJellyfishSound = useCallback(
     (kind: JellyfishSoundKind) => {
@@ -87,32 +75,6 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
     },
     [sounds],
   );
-
-  const handleSequenceSolved = useCallback((sequence: WordOperationSequence) => {
-    const koi = koiControllerRef.current;
-    if (koi == null) {
-      return;
-    }
-
-    const captured = koi.armCaptureByWord(sequence.targetWord);
-    if (!captured) {
-      return;
-    }
-
-    if (escapeTimerRef.current != null) {
-      clearTimeout(escapeTimerRef.current);
-    }
-    escapeTimerRef.current = setTimeout(() => {
-      escapeTimerRef.current = null;
-      const bridge = jellyBridgeRef.current;
-      const rect = jellyRectRef.current;
-      const targetX =
-        bridge?.layoutX.value[sequence.cellIndex] ?? rect.x + rect.w * 0.5;
-      const targetY =
-        bridge?.layoutY.value[sequence.cellIndex] ?? rect.y + rect.h * 0.5;
-      koiControllerRef.current?.dispatchEscapeTo(targetX, targetY, sequence.cellIndex);
-    }, KOI_ESCAPE_DELAY_MS);
-  }, []);
 
   const game = useWordTransformationGame({
     table,
