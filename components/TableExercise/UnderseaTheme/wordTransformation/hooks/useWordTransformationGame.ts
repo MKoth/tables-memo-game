@@ -4,11 +4,10 @@ import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
 import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransformationCoreBridge';
 import type { VariantPickerItem } from '../components/TransformationVariantPicker';
 import {
-  BUBBLE_BURST_DURATION_MS,
-  WORD_LETTER_ENTER_DURATION_MS,
-  WORD_LETTER_ENTER_STAGGER_MS,
-  WORD_LETTER_EXIT_STAGGER_MS,
-} from '../insertAnimationTiming';
+  buildCascadeRevealOrder,
+  computeCascadeCompleteDelayMs,
+  mapLettersWithCascade,
+} from '../letterCascade';
 import {
   createWordTransformationExercise,
   type InsertAnimationState,
@@ -156,7 +155,10 @@ export function useWordTransformationGame({
       return;
     }
 
-    const revealOrder = shuffleIndices(nextSequence.baseWord.length);
+    const revealOrder = buildCascadeRevealOrder(
+      nextSequence.baseWord.length,
+      shuffleIndices,
+    );
 
     skipSequenceLoadRef.current = true;
     setOrderPos(nextPos);
@@ -174,8 +176,7 @@ export function useWordTransformationGame({
       revealedPositions: new Set(),
     });
 
-    const enterCompleteDelay =
-      (revealOrder.length - 1) * WORD_LETTER_ENTER_STAGGER_MS + WORD_LETTER_ENTER_DURATION_MS;
+    const enterCompleteDelay = computeCascadeCompleteDelayMs(revealOrder.length, 'enter');
 
     scheduleWordTransitionTimer(() => {
       setWordTransition(null);
@@ -209,8 +210,7 @@ export function useWordTransformationGame({
         poppedPositions: new Set(),
       });
 
-      const exitCompleteDelay =
-        (popOrder.length - 1) * WORD_LETTER_EXIT_STAGGER_MS + BUBBLE_BURST_DURATION_MS;
+      const exitCompleteDelay = computeCascadeCompleteDelayMs(popOrder.length, 'exit');
 
       scheduleWordTransitionTimer(() => {
         setWordTransition(null);
@@ -246,23 +246,20 @@ export function useWordTransformationGame({
 
   const letters = useMemo<LetterBubbleModel[]>(() => {
     if (wordTransition != null) {
-      return displayWord.split('').map((char, position) => {
-        const isExit = wordTransition.phase === 'exit';
-        const isEnter = wordTransition.phase === 'enter';
-        const popIndex = isExit ? wordTransition.popOrder.indexOf(position) : -1;
-        const enterIndex = isEnter ? wordTransition.revealOrder.indexOf(position) : -1;
+      const order =
+        wordTransition.phase === 'exit'
+          ? wordTransition.popOrder
+          : wordTransition.revealOrder;
 
-        return {
-          key: `${orderPos}:${position}`,
-          char,
-          position,
-          popped: isExit ? true : coreSnapshot?.letters[position]?.popped ?? false,
-          wrong: coreSnapshot?.letters[position]?.wrong ?? false,
-          skipEnter: coreSnapshot?.letters[position]?.skipEnter,
-          popDelayMs: popIndex >= 0 ? popIndex * WORD_LETTER_EXIT_STAGGER_MS : undefined,
-          enterDelayMs:
-            enterIndex >= 0 ? enterIndex * WORD_LETTER_ENTER_STAGGER_MS : undefined,
-        };
+      return mapLettersWithCascade({
+        word: displayWord,
+        keyPrefix: orderPos,
+        phase: wordTransition.phase,
+        order,
+        getLetterState:
+          wordTransition.phase === 'enter'
+            ? (position) => coreSnapshot?.letters[position]
+            : undefined,
       });
     }
 

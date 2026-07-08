@@ -5,7 +5,10 @@ import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransfo
 import { computeRoundResolutionFlight } from '../../core/layout/underseaExerciseLayout';
 import type { RoundResolutionBubbleState } from '../components/TransformationRoundResolutionBubble';
 import type { VariantPickerItem } from '../../wordTransformation/components/TransformationVariantPicker';
-import { WORD_LETTER_ENTER_STAGGER_MS } from '../../wordTransformation/insertAnimationTiming';
+import {
+  buildCascadeRevealOrder,
+  mapLettersWithCascade,
+} from '../../wordTransformation/letterCascade';
 import {
   bodyCellIndex,
   type InsertAnimationState,
@@ -264,7 +267,7 @@ export function useSentenceTransformationGame({
 
   const handleRowEnterComplete = useCallback(() => {
     const baseWord = sequence?.baseWord ?? currentRound?.infinitive ?? '';
-    const revealOrder = shuffleIndices(baseWord.length);
+    const revealOrder = buildCascadeRevealOrder(baseWord.length, shuffleIndices);
     if (revealOrder.length === 0) {
       setBubbleEnter(null);
     } else {
@@ -318,17 +321,11 @@ export function useSentenceTransformationGame({
     }
 
     if (roundPhase === 'enter' && bubbleEnter != null) {
-      return displayWord.split('').map((char, position) => {
-        const enterIndex = bubbleEnter.revealOrder.indexOf(position);
-        return {
-          key: `${roundSnapshot.roundPos}:${position}`,
-          char,
-          position,
-          popped: false,
-          wrong: false,
-          enterDelayMs:
-            enterIndex >= 0 ? enterIndex * WORD_LETTER_ENTER_STAGGER_MS : undefined,
-        };
+      return mapLettersWithCascade({
+        word: displayWord,
+        keyPrefix: roundSnapshot.roundPos,
+        phase: 'enter',
+        order: bubbleEnter.revealOrder,
       });
     }
 
