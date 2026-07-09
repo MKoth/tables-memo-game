@@ -270,8 +270,6 @@ export function JellyfishSentenceRowLayer({
   }, []);
 
   useEffect(() => {
-    layoutX.value = layout.xs;
-    layoutY.value = layout.ys;
     baseLayoutScale.value = layout.scales;
     layoutScale.value = layout.scales;
     slotAnimScale.value = layout.scales.map(() => 1);
@@ -281,7 +279,7 @@ export function JellyfishSentenceRowLayer({
     tintFlashPreset.value = layout.configs.map(() => -1);
     tintFlashUntil.value = layout.configs.map(() => 0);
     blankSlotIndexSv.value = blankSlotIndex;
-  }, [jellyRect.x, jellyRect.y, layout, baseLayoutScale, layoutScale, layoutX, layoutY, bellSizesSv, slotAnimScale, tintFlashPreset, tintFlashUntil, zoneLeftSv, zoneTopSv, blankSlotIndex, blankSlotIndexSv]);
+  }, [jellyRect.x, jellyRect.y, layout, baseLayoutScale, layoutScale, bellSizesSv, slotAnimScale, tintFlashPreset, tintFlashUntil, zoneLeftSv, zoneTopSv, blankSlotIndex, blankSlotIndexSv]);
 
   useEffect(() => {
     const count = swimPaths.length;
@@ -292,6 +290,8 @@ export function JellyfishSentenceRowLayer({
       centerYs.value = [];
       enterAngles.value = [];
       exitAngles.value = [];
+      layoutX.value = [];
+      layoutY.value = [];
       return;
     }
     const enterAnglesList = swimPaths.map((p) => p.enterAngle);
@@ -301,6 +301,8 @@ export function JellyfishSentenceRowLayer({
     centerYs.value = swimPaths.map((p) => p.slotCenterY);
     enterAngles.value = enterAnglesList;
     exitAngles.value = swimPaths.map((p) => p.exitAngle);
+    layoutX.value = layout.xs;
+    layoutY.value = layout.ys;
     motionAngles.value = new Array(count).fill(0);
     motionAmps.value = new Array(count).fill(0);
 
@@ -324,7 +326,7 @@ export function JellyfishSentenceRowLayer({
         },
       );
     }
-  }, [swimPaths, roundPhase, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, fireRowEnterComplete]);
+  }, [swimPaths, roundPhase, layout, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, fireRowEnterComplete]);
 
   useAnimatedReaction(
     () => ({
