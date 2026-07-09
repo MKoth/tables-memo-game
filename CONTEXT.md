@@ -33,11 +33,23 @@ A short contextual sentence tied to one table body cell, made of an ordered list
 _Avoid_: sentence, example sentence, fill-in-the-blank
 
 **Blank slot**:
-The single token position in a sentence prompt reserved for the conjugated form. Its layout footprint is fixed at round enter from the conjugated form’s word-bubble diameter; a smaller highlighted jellyfish marked with `?` (about 70% of the footprint diameter) sits centered inside that footprint until it exits during resolve. After that exit, the sentence row no longer draws a jellyfish there — only the landed word bubble occupies the footprint through hold until it pops.
+The single token position in a sentence prompt reserved for the conjugated form. Its layout footprint is fixed at round enter — from the word-bubble diameter in sentence transformation, or from the correct option jellyfish bell diameter in variant selection. A smaller highlighted jellyfish marked with `?` (about 70% of the footprint diameter) sits centered inside that footprint until it exits during resolve. After that exit, the sentence row no longer draws a jellyfish there — the landed word bubble or option jellyfish occupies the footprint through hold until it exits with the row.
 _Avoid_: gap, placeholder, underline
 
+**Variant selection exercise**:
+An exercise where the learner selects the correct conjugated form from three option jellyfish (one correct answer and two distractors) displayed below a sentence prompt with a blank slot. No letter manipulation — the learner taps a jellyfish to submit their choice. The selected jellyfish then flies to the blank slot position; distractors exit immediately along their remembered swim-in paths.
+_Avoid_: multiple choice exercise, picker exercise, quiz
+
+**Option jellyfish**:
+A jellyfish that carries a conjugated form in the variant selection exercise. Three are shown per round: the correct form and two distractor forms from the same infinitive but different pronoun rows. They swim in from offscreen at round enter (same swim-path model as sentence token jellyfish) and sit in the option-zone below the sentence row. On correct selection the chosen one flies to the blank slot; on wrong selection it flashes red and the round waits for another tap.
+_Avoid_: variant jellyfish, choice bubble, answer jellyfish
+
+**Distractor forms**:
+The two incorrect conjugated forms shown as distractors in a variant selection exercise round. Selected randomly from the same infinitive column, excluding the target pronoun row.
+_Avoid_: wrong answers, decoys, foils
+
 **Round**:
-One cycle of the sentence transformation exercise — from a sentence prompt appearing through solving the blank slot to the row leaving the screen before the next prompt.
+One cycle of the sentence transformation or variant selection exercise — from a sentence prompt appearing through solving the blank slot to the row leaving the screen before the next prompt.
 _Avoid_: level, stage, turn
 
 **Round resolution**:
@@ -57,7 +69,7 @@ The pause after the word bubble lands in the blank-slot footprint and before tha
 _Avoid_: display delay, success pause
 
 **Round controller**:
-The module that owns round lifecycle phase truth and scheduling for the sentence transformation exercise — enter, transform, merge, materialize, resolve, hold, pop, exit, and advance. Distinct from **round resolution**, which names only the post-transform animation sequence.
+The module that owns round lifecycle phase truth and scheduling. Two variants: **sentence transformation** (enter, transform, merge, materialize, resolve, hold, pop, exit, advance) and **variant selection** (enter, transform, resolve, hold, exit, advance). Distinct from **round resolution**, which names only the post-transform animation sequence.
 _Avoid_: round orchestrator, phase manager
 
 **Materialize**:
@@ -65,7 +77,7 @@ The brief round phase after metaball merge where the word bubble replaces the me
 _Avoid_: inflate (reserved for letter-bubble appear), appear, bubble enter
 
 **Round entrance**:
-How the next sentence row arrives after the previous round exits: each jellyfish swims in on its own linear path from an offscreen spawn point to its slot, then the infinitive letter bubbles inflate. Allowed spawn edges are orientation-gated — portrait: top/left/right (no bottom); landscape: top/bottom/right (no left) — so paths avoid the word-transformation zone. Spawn points are assigned in sentence-token order along those edges so trajectories do not cross; the blank slot gets a path like any other. All jellyfish start together and share one enter duration (different path lengths ⇒ different speeds); enter completes when the last arrives. Row exit mirrors that: remaining token jellyfish start together, share one exit duration, and exit completes when the last has left; each retraces its entrance path (blank may reverse early during resolve and is not re-exited with the row). Paths are remembered for the round — a mid-round orientation change may reflow resting slot positions, but does not replan those paths until the next round. The first round of a session uses the same per-jellyfish swim-in.
+How the next round arrives after the previous round exits: each jellyfish (sentence tokens, blank slot, and option jellyfish in variant selection) swims in on its own linear path from an offscreen spawn point to its slot. In sentence transformation, the infinitive letter bubbles then inflate. Allowed spawn edges are orientation-gated — portrait: top/left/right (no bottom); landscape: top/bottom/right (no left) — so paths avoid the word-transformation zone. Spawn points are assigned in row order along those edges so trajectories do not cross; the blank slot gets a path like any other. All jellyfish start together and share one enter duration (different path lengths ⇒ different speeds); enter completes when the last arrives. Row exit mirrors that: remaining jellyfish start together, share one exit duration, and exit completes when the last has left; each retraces its entrance path (blank may reverse early during resolve and is not re-exited with the row). For variant selection, the two distractor option jellyfish that did not get selected exit immediately on correct selection. Paths are remembered for the round — a mid-round orientation change may reflow resting slot positions, but does not replan those paths until the next round. The first round of a session uses the same per-jellyfish swim-in.
 _Avoid_: row transition, sentence intro
 
 **Sentence row**:
