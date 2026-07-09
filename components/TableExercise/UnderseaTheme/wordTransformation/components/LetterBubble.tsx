@@ -222,6 +222,7 @@ function LetterBubbleComponent({
       duration: moveDurationMs,
       easing: Easing.inOut(Easing.cubic),
     });
+    const capturedOnMoveComplete = onMoveComplete;
     dia.value = withTiming(
       diameter,
       {
@@ -230,9 +231,8 @@ function LetterBubbleComponent({
       },
       (finished) => {
         'worklet';
-        const callback = onMoveCompleteRef.current;
-        if (finished && callback != null) {
-          scheduleOnRN(callback);
+        if (finished && capturedOnMoveComplete != null) {
+          scheduleOnRN(capturedOnMoveComplete);
         }
       },
     );
@@ -248,7 +248,7 @@ function LetterBubbleComponent({
         ),
       );
     }
-  }, [centerX, centerY, diameter, dia, moveDurationMs, moveT, posX, posY]);
+  }, [centerX, centerY, diameter, dia, moveDurationMs, moveT, posX, posY, onMoveComplete]);
 
   useEffect(() => {
     if (status !== 'wrong') {
