@@ -270,11 +270,6 @@ export function useSentenceTransformationGame({
     const roundForSnapshot =
       roundIndex >= 0 ? rounds[roundIndex] ?? null : null;
 
-    if (snapshot.phase === 'advance') {
-      setSwimPaths(computeSwimPathsFromRound(roundForSnapshot, snapshot.roundPos));
-      return;
-    }
-
     if (snapshot.phase === 'enter') {
       const baseWord = roundForSnapshot?.infinitive ?? '';
       if (baseWord.length > 0) {
@@ -382,7 +377,14 @@ export function useSentenceTransformationGame({
   const handleRowExitComplete = useCallback(() => {
     roundRef.current?.notifyExitComplete();
     syncRoundSnapshot();
-  }, [syncRoundSnapshot]);
+    const snapshot = roundRef.current?.getSnapshot();
+    if (snapshot) {
+      const roundIndex = roundOrder[snapshot.roundPos] ?? -1;
+      const roundForSnapshot =
+        roundIndex >= 0 ? rounds[roundIndex] ?? null : null;
+      setSwimPaths(computeSwimPathsFromRound(roundForSnapshot, snapshot.roundPos));
+    }
+  }, [syncRoundSnapshot, roundOrder, rounds, computeSwimPathsFromRound]);
 
   const roundPhase = roundSnapshot.phase;
   const transitioning = roundPhase !== 'transform';
