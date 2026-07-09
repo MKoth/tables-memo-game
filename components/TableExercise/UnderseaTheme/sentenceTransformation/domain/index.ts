@@ -4,6 +4,7 @@ export {
 } from './createSentenceTransformationExercise';
 export { expandSentencePromptSlots } from './expandSentencePromptSlots';
 export {
+  ROUND_ADVANCE_DELAY_MS,
   ROUND_HOLD_DURATION_MS,
   ROUND_MATERIALIZE_DURATION_MS,
   ROUND_MERGE_DURATION_MS,

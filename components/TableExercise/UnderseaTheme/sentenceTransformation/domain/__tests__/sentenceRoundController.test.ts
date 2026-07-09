@@ -1,4 +1,5 @@
 import {
+  ROUND_ADVANCE_DELAY_MS,
   bubbleEnterDurationMs,
   ROUND_HOLD_DURATION_MS,
 } from '../roundResolutionTiming';
@@ -35,6 +36,12 @@ function runHoldTimer(timers: Array<{ fn: () => void; delayMs: number }>) {
   const holdTimer = timers.find((timer) => timer.delayMs === ROUND_HOLD_DURATION_MS);
   expect(holdTimer).toBeDefined();
   holdTimer!.fn();
+}
+
+function runAdvanceTimer(timers: Array<{ fn: () => void; delayMs: number }>) {
+  const advanceTimer = timers.find((timer) => timer.delayMs === ROUND_ADVANCE_DELAY_MS);
+  expect(advanceTimer).toBeDefined();
+  advanceTimer!.fn();
 }
 
 function runStaggerTimer(
@@ -156,6 +163,8 @@ describe('createSentenceRoundController', () => {
     expect(controller.getSnapshot().phase).toBe('exit');
 
     controller.notifyExitComplete();
+    expect(controller.getSnapshot().phase).toBe('advance');
+    runAdvanceTimer(timers);
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'enter',
       roundPos: 1,
@@ -164,7 +173,7 @@ describe('createSentenceRoundController', () => {
     });
   });
 
-  it('passes through advance before the next round enter', () => {
+  it('passes through advance with delay before the next round enter', () => {
     const phases: SentenceRoundPhase[] = [];
     const timers: Array<{ fn: () => void; delayMs: number }> = [];
     const controller = createSentenceRoundController({
@@ -188,6 +197,8 @@ describe('createSentenceRoundController', () => {
     controller.notifyExitComplete();
 
     expect(phases).toContain('advance');
+    expect(controller.getSnapshot().phase).toBe('advance');
+    runAdvanceTimer(timers);
     expect(controller.getSnapshot().phase).toBe('enter');
   });
 

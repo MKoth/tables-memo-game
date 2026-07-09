@@ -140,6 +140,8 @@ export function useSentenceTransformationGame({
   koiRectRef.current = koiRect;
   jellyRectRef.current = jellyRect;
 
+  const playPopRef = useRef(playPop);
+  playPopRef.current = playPop;
   const playSuccessRef = useRef(playSuccess);
   playSuccessRef.current = playSuccess;
 
@@ -279,7 +281,7 @@ export function useSentenceTransformationGame({
     }
 
     if (snapshot.phase === 'pop') {
-      playSuccessRef.current?.();
+      playPopRef.current?.();
     }
   }, [configureEnterPhase, roundOrder, rounds, syncRoundSnapshot, computeCurrentSwimPaths]);
 

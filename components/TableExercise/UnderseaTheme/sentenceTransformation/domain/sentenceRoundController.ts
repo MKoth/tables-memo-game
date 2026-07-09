@@ -1,5 +1,6 @@
 import type { ScheduleTimer } from '../../wordTransformation/domain/coreTypes';
 import {
+  ROUND_ADVANCE_DELAY_MS,
   bubbleEnterDurationMs,
   ROUND_HOLD_DURATION_MS,
 } from './roundResolutionTiming';
@@ -110,7 +111,10 @@ export function createSentenceRoundController({
       return;
     }
 
-    setPhase('enter');
+    const cancel = scheduleTimer(() => {
+      setPhase('enter');
+    }, ROUND_ADVANCE_DELAY_MS);
+    cancelTimers.push(cancel);
   };
 
   return {
