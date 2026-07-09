@@ -88,6 +88,7 @@ export function TransformationWordBubbles({
   const activeLayout = mergeLayout ?? previewLayout ?? layout;
 
   const [lettersHiddenForMerge, setLettersHiddenForMerge] = useState(false);
+  const [mergeCanvasPersist, setMergeCanvasPersist] = useState(false);
 
   useLayoutEffect(() => {
     if (mergeWord) {
@@ -100,6 +101,18 @@ export function TransformationWordBubbles({
     }
   }, [mergeWord]);
 
+  useLayoutEffect(() => {
+    if (letters.length === 0 && !mergeWord) {
+      setMergeCanvasPersist(true);
+      const raf = requestAnimationFrame(() => {
+        setMergeCanvasPersist(false);
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      setMergeCanvasPersist(false);
+    }
+  }, [letters.length, mergeWord]);
+
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const font = useMemo(
     () =>
@@ -111,7 +124,7 @@ export function TransformationWordBubbles({
     [activeLayout.diameter, fontFamily],
   );
 
-  if (letters.length === 0 && !mergeWord) {
+  if (letters.length === 0 && !mergeWord && !mergeCanvasPersist) {
     return null;
   }
 
