@@ -26,7 +26,6 @@ import {
 } from '../../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import type { PersistentHighlightKind } from '../../../jellyfish/JellyfishTableLayer/presets/jellyfishTintPresets';
 import {
-  ROUND_RESOLVE_FLY_DURATION_MS,
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
   ROUND_SOLVED_POP_DURATION_MS,
@@ -422,13 +421,6 @@ export function JellyfishSentenceRowLayer({
       1,
       {
         duration: ROUND_ROW_EXIT_DURATION_MS,
-        easing: Easing.in(Easing.cubic),
-      },
-    );
-    slotAnimScale.value = withTiming(
-      slotAnimScale.value.map((_, index) => (index === blankSlotIndex ? 0 : 1)),
-      {
-        duration: ROUND_RESOLVE_FLY_DURATION_MS,
         easing: Easing.in(Easing.cubic),
       },
     );
