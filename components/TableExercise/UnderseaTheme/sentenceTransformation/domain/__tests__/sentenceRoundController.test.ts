@@ -251,6 +251,26 @@ describe('createSentenceRoundController', () => {
     });
   });
 
+  it('notifyResolveComplete transitions to hold without any blank-exit notification', () => {
+    const { controller, timers } = createTestController(2);
+
+    controller.configureRound({ wordLength: 4 });
+    controller.notifyRowEnterComplete();
+    runStaggerTimer(timers, 4);
+    controller.notifySequenceComplete('hablo');
+    controller.notifyMergeComplete();
+    controller.notifyMaterializeComplete();
+
+    controller.notifyResolveComplete();
+    expect(controller.getSnapshot().phase).toBe('hold');
+
+    runHoldTimer(timers);
+    expect(controller.getSnapshot().phase).toBe('pop');
+
+    controller.notifyPopComplete();
+    expect(controller.getSnapshot().phase).toBe('exit');
+  });
+
   it('dispose cancels a pending hold timer', () => {
     jest.useFakeTimers();
     const controller = createSentenceRoundController({

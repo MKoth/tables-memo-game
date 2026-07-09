@@ -21,6 +21,15 @@ function landscapeCenters(count: number): { x: number; y: number }[] {
   return centers;
 }
 
+function assertExitAngleReversesEnter(path: { enterAngle: number; exitAngle: number }) {
+  const expectedExit = path.enterAngle + Math.PI;
+  const normalized =
+    ((path.exitAngle - expectedExit + Math.PI) % (2 * Math.PI) + 2 * Math.PI) %
+      (2 * Math.PI) -
+    Math.PI;
+  expect(Math.abs(normalized)).toBeLessThan(0.001);
+}
+
 function planForOrientation(
   orientation: UnderseaThemeOrientation,
   slotCount: number,
@@ -89,9 +98,7 @@ describe('planSwimPaths', () => {
     it('calculates exit angle opposite to enter angle', () => {
       const paths = planForOrientation('portrait', 3);
       for (const path of paths) {
-        const expectedExit = path.enterAngle + Math.PI;
-        const normalized = ((path.exitAngle - expectedExit + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
-        expect(Math.abs(normalized)).toBeLessThan(0.001);
+        assertExitAngleReversesEnter(path);
       }
     });
 
@@ -171,6 +178,24 @@ describe('planSwimPaths', () => {
         expect(prevDist).toBeGreaterThan(0);
         expect(currDist).toBeGreaterThan(0);
       }
+    });
+  });
+
+  describe('blank early-exit path', () => {
+    it.each([1, 3, 5, 7])(
+      'exit angle reverses enter angle for all %d slots',
+      (totalSlots) => {
+        const paths = planForOrientation('portrait', totalSlots);
+        for (const path of paths) {
+          assertExitAngleReversesEnter(path);
+        }
+      },
+    );
+
+    it('exit path for a single slot (blank-only row) has valid trajectory', () => {
+      const paths = planForOrientation('portrait', 1);
+      expect(paths).toHaveLength(1);
+      assertExitAngleReversesEnter(paths[0]!);
     });
   });
 
