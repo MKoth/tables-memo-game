@@ -101,6 +101,7 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
               <TransformationRoundResolutionBubble
                 bubble={game.resolutionBubble}
                 roundPhase={game.roundPhase}
+                translation={game.bubbleTranslation}
                 onMaterializeComplete={game.handleMaterializeComplete}
                 onResolveComplete={game.handleResolveComplete}
                 onPopComplete={game.handlePopComplete}

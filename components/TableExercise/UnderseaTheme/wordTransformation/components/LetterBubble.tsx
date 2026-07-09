@@ -114,6 +114,8 @@ export type LetterBubbleProps = {
   labelFixed?: boolean;
   /** Extra pixels between consecutive glyphs (default 0 = natural font advance). */
   letterSpacing?: number;
+  /** 0–1 boost applied to wobble amplitude/speed — used by translation-on-tap. */
+  wobbleBoostT?: SharedValue<number>;
 };
 
 function LetterBubbleComponent({
@@ -140,6 +142,7 @@ function LetterBubbleComponent({
   onPopComplete,
   labelFixed = false,
   letterSpacing = 0,
+  wobbleBoostT,
 }: LetterBubbleProps) {
   const posX = useSharedValue(initialCenterX ?? centerX);
   const posY = useSharedValue(initialCenterY ?? centerY);
@@ -323,14 +326,17 @@ function LetterBubbleComponent({
     // Base idle wobble → livelier while travelling → wrong feedback overrides.
     const moveAmp = lerp(BUBBLE_IDLE_WOBBLE.wobbleAmp, MOVE_WOBBLE.wobbleAmp, move);
     const moveSpeed = lerp(BUBBLE_IDLE_WOBBLE.wobbleSpeed, MOVE_WOBBLE.wobbleSpeed, move);
+    const boostT = wobbleBoostT?.value ?? 0;
+    const boostAmp = lerp(moveAmp, MOVE_WOBBLE.wobbleAmp * 1.8, boostT);
+    const boostSpeed = lerp(moveSpeed, MOVE_WOBBLE.wobbleSpeed * 1.5, boostT);
     return {
       x: cx - d * 0.5,
       y: cy - d * 0.5,
       diameter: d,
       centerX: cx,
       centerY: cy,
-      wobbleAmp: lerp(moveAmp, WRONG_WOBBLE.wobbleAmp, wrong),
-      wobbleSpeed: lerp(moveSpeed, WRONG_WOBBLE.wobbleSpeed, wrong),
+      wobbleAmp: lerp(boostAmp, WRONG_WOBBLE.wobbleAmp, wrong),
+      wobbleSpeed: lerp(boostSpeed, WRONG_WOBBLE.wobbleSpeed, wrong),
       wobbleLobes: lerp(BUBBLE_IDLE_WOBBLE.wobbleLobes, WRONG_WOBBLE.wobbleLobes, wrong),
       opacity,
       labelOpacity: pop > 0 ? 1 - Math.min(1, pop / 0.5) : enter,

@@ -72,6 +72,7 @@ export type SentenceSlotConfig = {
   index: number;
   label: string;
   kind: 'token' | 'blank';
+  translation: string;
   bellSize: number;
   phase: number;
   pulseSpeed: number;
@@ -191,6 +192,7 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
       index,
       label,
       kind: slot.kind,
+      translation: slot.kind === 'token' && slot.translation ? slot.translation : '',
       bellSize,
       phase: sr(index, 3) * Math.PI * 2,
       pulseSpeed: 2.2 + sr(index, 7) * 2.0,

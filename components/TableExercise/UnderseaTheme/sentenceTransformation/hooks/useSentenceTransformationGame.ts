@@ -66,6 +66,7 @@ export type SentenceTransformationGame = {
   conjugatedForm: string;
   roundPos: number;
   swimPaths: SwimPath[];
+  bubbleTranslation: string;
   solvedCount: number;
   totalCount: number;
   handleLetterPress: (position: number) => void;
@@ -400,6 +401,10 @@ export function useSentenceTransformationGame({
     roundPhase === 'pop' && blankSlotIndex >= 0 ? blankSlotIndex : null;
   const mergeWord =
     roundPhase === 'merge' ? roundSnapshot.solvedWord : null;
+  const bubbleTranslation =
+    currentRound != null
+      ? table.bodyTranslations[currentRound.rowIndex]?.[currentRound.colIndex] ?? ''
+      : '';
 
   const displayWord = sequence?.baseWord ?? coreSnapshot?.currentWord ?? '';
 
@@ -499,6 +504,7 @@ export function useSentenceTransformationGame({
     conjugatedForm: currentRound?.conjugatedForm ?? '',
     roundPos: roundSnapshot.roundPos,
     swimPaths,
+    bubbleTranslation,
     solvedCount: roundSnapshot.roundPos,
     totalCount: roundOrder.length,
     handleLetterPress,

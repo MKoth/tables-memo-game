@@ -2,7 +2,7 @@ import type { SentencePrompt, TableData } from '../../../../../data/tableData';
 import type { Operation } from '../../wordTransformation/domain/types';
 
 export type SentencePromptDisplaySlot =
-  | { kind: 'token'; text: string }
+  | { kind: 'token'; text: string; translation?: string }
   | { kind: 'blank' };
 
 export type SentenceTransformationRound = {

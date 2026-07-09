@@ -13,7 +13,11 @@ export function expandSentencePromptSlots(
       slots.push({ kind: 'blank' });
     }
     if (index < prompt.tokens.length) {
-      slots.push({ kind: 'token', text: prompt.tokens[index]! });
+      slots.push({
+        kind: 'token',
+        text: prompt.tokens[index]!,
+        translation: prompt.tokenTranslations[index],
+      });
     }
   }
   return slots;

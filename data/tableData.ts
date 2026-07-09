@@ -6,6 +6,8 @@ export type SentencePrompt = {
   tokens: string[];
   /** 0..tokens.length inclusive — blank sits after the first blankIndex tokens. */
   blankIndex: number;
+  /** English translation for each token (same length as tokens). */
+  tokenTranslations: string[];
 };
 
 export type TableData = {
@@ -229,22 +231,22 @@ export const spanishPresentTable1Plural = createTableData(
 
 const SPANISH_PRESENT_TABLE2_PLURAL_SENTENCE_PROMPTS: SentencePrompt[][] = [
   [
-    { tokens: ['Nosotros', 'en', 'el', 'coro', 'los', 'domingos'], blankIndex: 1 },
-    { tokens: ['Nosotros', 'salsa', 'los', 'viernes'], blankIndex: 1 },
-    { tokens: ['Nosotros', 'por', 'el', 'parque', 'cada', 'mañana'], blankIndex: 1 },
-    { tokens: ['Nosotros', 'la', 'cuerda', 'en', 'el', 'patio'], blankIndex: 1 },
+    { tokens: ['Nosotros', 'en', 'el', 'coro', 'los', 'domingos'], blankIndex: 1, tokenTranslations: ['We', 'in', 'the', 'choir', 'on', 'Sundays'] },
+    { tokens: ['Nosotros', 'salsa', 'los', 'viernes'], blankIndex: 1, tokenTranslations: ['We', 'salsa', 'on', 'Fridays'] },
+    { tokens: ['Nosotros', 'por', 'el', 'parque', 'cada', 'mañana'], blankIndex: 1, tokenTranslations: ['We', 'through', 'the', 'park', 'every', 'morning'] },
+    { tokens: ['Nosotros', 'la', 'cuerda', 'en', 'el', 'patio'], blankIndex: 1, tokenTranslations: ['We', 'the', 'rope', 'in', 'the', 'yard'] },
   ],
   [
-    { tokens: ['Vosotros', 'muy', 'bien', 'en', 'el', 'escenario'], blankIndex: 1 },
-    { tokens: ['Vosotros', 'en', 'la', 'fiesta', 'de', 'cumpleaños'], blankIndex: 1 },
-    { tokens: ['Vosotros', 'en', 'la', 'playa', 'por', 'la', 'tarde'], blankIndex: 1 },
-    { tokens: ['Vosotros', 'muy', 'alto', 'en', 'el', 'gimnasio'], blankIndex: 1 },
+    { tokens: ['Vosotros', 'muy', 'bien', 'en', 'el', 'escenario'], blankIndex: 1, tokenTranslations: ['You all', 'very', 'well', 'on', 'the', 'stage'] },
+    { tokens: ['Vosotros', 'en', 'la', 'fiesta', 'de', 'cumpleaños'], blankIndex: 1, tokenTranslations: ['You all', 'at', 'the', 'party', 'of', 'birthday'] },
+    { tokens: ['Vosotros', 'en', 'la', 'playa', 'por', 'la', 'tarde'], blankIndex: 1, tokenTranslations: ['You all', 'on', 'the', 'beach', 'in', 'the', 'afternoon'] },
+    { tokens: ['Vosotros', 'muy', 'alto', 'en', 'el', 'gimnasio'], blankIndex: 1, tokenTranslations: ['You all', 'very', 'high', 'in', 'the', 'gym'] },
   ],
   [
-    { tokens: ['Ellos', 'una', 'canción', 'bonita'], blankIndex: 1 },
-    { tokens: ['Ellas', 'tango', 'en', 'la', 'plaza'], blankIndex: 1 },
-    { tokens: ['Los', 'niños', 'rápido', 'hacia', 'la', 'meta'], blankIndex: 2 },
-    { tokens: ['Ellos', 'sobre', 'las', 'olas', 'del', 'mar'], blankIndex: 1 },
+    { tokens: ['Ellos', 'una', 'canción', 'bonita'], blankIndex: 1, tokenTranslations: ['They', 'a', 'song', 'beautiful'] },
+    { tokens: ['Ellas', 'tango', 'en', 'la', 'plaza'], blankIndex: 1, tokenTranslations: ['They', 'tango', 'in', 'the', 'square'] },
+    { tokens: ['Los', 'niños', 'rápido', 'hacia', 'la', 'meta'], blankIndex: 2, tokenTranslations: ['The', 'children', 'fast', 'toward', 'the', 'finish'] },
+    { tokens: ['Ellos', 'sobre', 'las', 'olas', 'del', 'mar'], blankIndex: 1, tokenTranslations: ['They', 'over', 'the', 'waves', 'of the', 'sea'] },
   ],
 ];
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont, type SkFont, type SkImage } from '@shopify/react-native-skia';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -23,8 +23,9 @@ import {
   JELLYFISH_CLOCK_FPS,
   TAP_MAX_DISTANCE_PX,
   TILT_AMP_MAX,
+  TINT_FLASH_MS,
 } from '../../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
-import type { PersistentHighlightKind } from '../../../jellyfish/JellyfishTableLayer/presets/jellyfishTintPresets';
+import { JELLYFISH_TINT_PRESET_INDEX, type PersistentHighlightKind } from '../../../jellyfish/JellyfishTableLayer/presets/jellyfishTintPresets';
 import {
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
@@ -38,6 +39,7 @@ import {
   type SentenceSlotConfig,
 } from '../../../core/layout/underseaExerciseLayout';
 import { findSentenceSlotAtTap } from './sentenceRowWorklets';
+import { triggerJellyfishTintFlash } from '../../../jellyfish/JellyfishTableLayer/worklets/jellyfishTableWorklets';
 
 export type JellyfishSentenceRowLayerProps = {
   displaySlots: SentencePromptDisplaySlot[];
@@ -62,12 +64,12 @@ function toCellConfig(slot: SentenceSlotConfig): CellConfig {
     gridRow: 0,
     isHeader: false,
     label: slot.label,
-    translation: '',
     bellSize: slot.bellSize,
     phase: slot.phase,
     pulseSpeed: slot.pulseSpeed,
     labelFillColor: slot.labelFillColor,
     labelStrokeColor: slot.labelStrokeColor,
+    translation: slot.translation,
     tintMode: slot.tintMode,
     tintStrength: slot.tintStrength,
     tintA: slot.tintA,
@@ -145,6 +147,7 @@ type SlotCellLabelProps = {
   clock: SharedValue<number>;
   labelBaseRotation: number;
   persistentHighlightKind?: PersistentHighlightKind | null;
+  displayLabel?: string;
 };
 
 function SlotCellLabel({
@@ -162,6 +165,7 @@ function SlotCellLabel({
   clock,
   labelBaseRotation,
   persistentHighlightKind,
+  displayLabel,
 }: SlotCellLabelProps) {
   const slotMotionAngle = useDerivedValue(() => motionAngles.value[index] ?? 0);
   const slotMotionAmp = useDerivedValue(() => motionAmps.value[index] ?? 0);
@@ -181,6 +185,7 @@ function SlotCellLabel({
       clock={clock}
       labelBaseRotation={labelBaseRotation}
       persistentHighlightKind={persistentHighlightKind}
+      displayLabel={displayLabel}
     />
   );
 }
@@ -251,6 +256,8 @@ export function JellyfishSentenceRowLayer({
   const swimProgress = useSharedValue(1);
   const blankExitProgress = useSharedValue(0);
   const blankSlotIndexSv = useSharedValue(-1);
+  const [translatedSlotIndex, setTranslatedSlotIndex] = useState<number | null>(null);
+  const translatedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onRowEnterCompleteRef = React.useRef(onRowEnterComplete);
   onRowEnterCompleteRef.current = onRowEnterComplete;
@@ -476,6 +483,14 @@ export function JellyfishSentenceRowLayer({
   const handleTokenTapJs = useCallback((slotIndex: number) => {
     if (slotKindsRef.current[slotIndex] === 'token') {
       onTokenTapRef.current?.();
+      setTranslatedSlotIndex(slotIndex);
+      if (translatedTimeoutRef.current != null) {
+        clearTimeout(translatedTimeoutRef.current);
+      }
+      translatedTimeoutRef.current = setTimeout(() => {
+        setTranslatedSlotIndex(null);
+        translatedTimeoutRef.current = null;
+      }, TINT_FLASH_MS);
     }
   }, []);
 
@@ -493,6 +508,13 @@ export function JellyfishSentenceRowLayer({
       if (hitIndex < 0) {
         return;
       }
+      triggerJellyfishTintFlash(
+        hitIndex,
+        JELLYFISH_TINT_PRESET_INDEX.primary,
+        tintFlashPreset,
+        tintFlashUntil,
+        clock,
+      );
       scheduleOnRN(handleTokenTapJs, hitIndex);
     },
   });
@@ -549,6 +571,11 @@ export function JellyfishSentenceRowLayer({
             clock={clock}
             labelBaseRotation={labelRotationRad}
             persistentHighlightKind={persistentHighlightFor(config.index)}
+            displayLabel={
+              translatedSlotIndex === config.index && config.translation
+                ? config.translation
+                : undefined
+            }
           />
         ))}
       </Canvas>

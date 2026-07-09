@@ -14,6 +14,7 @@ import {
 const VALID_PROMPT: SentencePrompt = {
   tokens: ['Nosotros', 'en', 'el', 'coro'],
   blankIndex: 1,
+  tokenTranslations: ['We', 'in', 'the', 'choir'],
 };
 
 function tableWithPromptAt(
@@ -44,7 +45,7 @@ describe('validateSentencePromptsForTable', () => {
   });
 
   it('rejects blankIndex below zero', () => {
-    const table = tableWithPromptAt(0, 0, { tokens: ['Nosotros'], blankIndex: -1 });
+    const table = tableWithPromptAt(0, 0, { tokens: ['Nosotros'], blankIndex: -1, tokenTranslations: [''] });
 
     expect(() => validateSentencePromptsForTable(table)).toThrow(/blankIndex/i);
   });
@@ -53,6 +54,7 @@ describe('validateSentencePromptsForTable', () => {
     const table = tableWithPromptAt(0, 0, {
       tokens: ['Nosotros', 'bien'],
       blankIndex: 3,
+      tokenTranslations: ['', ''],
     });
 
     expect(() => validateSentencePromptsForTable(table)).toThrow(/blankIndex/i);
@@ -86,33 +88,33 @@ describe('validateSentencePromptsForTable', () => {
 describe('expandSentencePromptSlots', () => {
   it('inserts a blank slot at blankIndex between sparse tokens', () => {
     expect(expandSentencePromptSlots(VALID_PROMPT)).toEqual([
-      { kind: 'token', text: 'Nosotros' },
+      { kind: 'token', text: 'Nosotros', translation: 'We' },
       { kind: 'blank' },
-      { kind: 'token', text: 'en' },
-      { kind: 'token', text: 'el' },
-      { kind: 'token', text: 'coro' },
+      { kind: 'token', text: 'en', translation: 'in' },
+      { kind: 'token', text: 'el', translation: 'the' },
+      { kind: 'token', text: 'coro', translation: 'choir' },
     ]);
   });
 
   it('places the blank before all tokens when blankIndex is zero', () => {
     expect(
-      expandSentencePromptSlots({ tokens: ['bien', 'hoy'], blankIndex: 0 }),
+      expandSentencePromptSlots({ tokens: ['bien', 'hoy'], blankIndex: 0, tokenTranslations: ['', ''] }),
     ).toEqual([
       { kind: 'blank' },
-      { kind: 'token', text: 'bien' },
-      { kind: 'token', text: 'hoy' },
+      { kind: 'token', text: 'bien', translation: '' },
+      { kind: 'token', text: 'hoy', translation: '' },
     ]);
   });
 
   it('places the blank after all tokens when blankIndex equals tokens.length', () => {
     expect(
-      expandSentencePromptSlots({ tokens: ['Ellos'], blankIndex: 1 }),
-    ).toEqual([{ kind: 'token', text: 'Ellos' }, { kind: 'blank' }]);
+      expandSentencePromptSlots({ tokens: ['Ellos'], blankIndex: 1, tokenTranslations: [''] }),
+    ).toEqual([{ kind: 'token', text: 'Ellos', translation: '' }, { kind: 'blank' }]);
   });
 
   it('rejects invalid blankIndex', () => {
     expect(() =>
-      expandSentencePromptSlots({ tokens: ['Nosotros'], blankIndex: 2 }),
+      expandSentencePromptSlots({ tokens: ['Nosotros'], blankIndex: 2, tokenTranslations: [''] }),
     ).toThrow(/blankIndex/i);
   });
 });
