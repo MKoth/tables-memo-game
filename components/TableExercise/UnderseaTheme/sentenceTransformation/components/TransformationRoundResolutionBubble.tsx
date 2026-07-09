@@ -40,20 +40,17 @@ export function TransformationRoundResolutionBubble({
   const clock = useUnderseaThemeClock();
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
-  const font = useMemo(() => {
-    if (bubble == null) {
-      return matchFont({ fontFamily, fontSize: 16, fontWeight: '700' });
-    }
-    const fontSize = Math.max(
+  const fontSize = useMemo(() => {
+    if (bubble == null) return 16;
+    return Math.max(
       14,
       (bubble.toDiameter * 0.5) / Math.max(1, bubble.word.length * 0.52),
     );
-    return matchFont({
-      fontFamily,
-      fontSize,
-      fontWeight: '700',
-    });
-  }, [bubble, fontFamily]);
+  }, [bubble]);
+  const font = useMemo(
+    () => matchFont({ fontFamily, fontSize, fontWeight: '700' }),
+    [fontFamily, fontSize],
+  );
 
   if (bubble == null) {
     return null;
@@ -104,6 +101,7 @@ export function TransformationRoundResolutionBubble({
         image={images.bubble}
         font={font}
         clock={clock}
+        letterSpacing={Math.max(1, fontSize * 0.08)}
         onEnterSound={sounds.playBubbleInflate}
         onMoveComplete={moveComplete}
         onPopComplete={onPopComplete}

@@ -112,6 +112,8 @@ export type LetterBubbleProps = {
   onPopComplete?: () => void;
   /** When true, the label does not scale with the bubble during enter/pop/wobble. */
   labelFixed?: boolean;
+  /** Extra pixels between consecutive glyphs (default 0 = natural font advance). */
+  letterSpacing?: number;
 };
 
 function LetterBubbleComponent({
@@ -137,6 +139,7 @@ function LetterBubbleComponent({
   onMoveComplete,
   onPopComplete,
   labelFixed = false,
+  letterSpacing = 0,
 }: LetterBubbleProps) {
   const posX = useSharedValue(initialCenterX ?? centerX);
   const posY = useSharedValue(initialCenterY ?? centerY);
@@ -345,8 +348,15 @@ function LetterBubbleComponent({
     const metrics = font.getMetrics();
     const offsetX = diameter * 0.5 - textWidth * 0.5;
     const offsetY = diameter * 0.5 - (metrics.ascent + metrics.descent) * 0.5;
-    return ids.map((id) => ({ id, pos: vec(offsetX, offsetY) }));
-  }, [char, diameter, font]);
+    let curX = offsetX;
+    return ids.map((id, i) => {
+      const pos = vec(curX, offsetY);
+      if (i < char.length) {
+        curX += font.getTextWidth(char[i]) + letterSpacing;
+      }
+      return { id, pos };
+    });
+  }, [char, diameter, font, letterSpacing]);
 
   const labelTransform = useDerivedValue(() => {
     const { centerX: cx, centerY: cy, diameter: d } = anim.value;
