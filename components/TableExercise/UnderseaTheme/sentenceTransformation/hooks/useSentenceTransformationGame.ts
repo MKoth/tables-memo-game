@@ -290,7 +290,6 @@ export function useSentenceTransformationGame({
   }, [syncRoundSnapshot]);
 
   const handleResolveComplete = useCallback(() => {
-    setResolutionBubble(null);
     roundRef.current?.notifyResolveComplete();
     syncRoundSnapshot();
   }, [syncRoundSnapshot]);

@@ -85,7 +85,6 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
           poppingSlotIndex={game.poppingSlotIndex}
           onTokenTap={handleTokenTap}
           onRowEnterComplete={game.handleRowEnterComplete}
-          onPopComplete={game.handlePopComplete}
           onRowExitComplete={game.handleRowExitComplete}
         />
       </View>
