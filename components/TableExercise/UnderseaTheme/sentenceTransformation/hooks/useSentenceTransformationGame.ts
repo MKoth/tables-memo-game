@@ -382,6 +382,8 @@ export function useSentenceTransformationGame({
   const roundPhase = roundSnapshot.phase;
   const transitioning = roundPhase !== 'transform';
   const blankExiting =
+    roundPhase === 'merge' ||
+    roundPhase === 'materialize' ||
     roundPhase === 'resolve' ||
     roundPhase === 'hold' ||
     roundPhase === 'pop' ||
