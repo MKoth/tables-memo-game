@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { GestureDetector, useTapGesture } from 'react-native-gesture-handler';
@@ -76,6 +76,12 @@ export function TransformationRoundResolutionBubble({
       translateTimeoutRef.current = null;
     }, TRANSLATION_WOBBLE_MS);
   }, [translation]);
+
+  useEffect(() => {
+    if (bubble != null && roundPhase === 'materialize') {
+      sounds.playBubbleInflate();
+    }
+  }, [bubble, roundPhase, sounds]);
 
   const tapGesture = useTapGesture({
     maxDistance: TAP_MAX_DISTANCE_PX,
