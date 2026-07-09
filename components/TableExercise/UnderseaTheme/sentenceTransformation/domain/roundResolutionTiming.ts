@@ -7,8 +7,8 @@ import {
 /** Pause after the solved word lands so the learner can read the full sentence. */
 export const ROUND_HOLD_DURATION_MS = 3000;
 
-export const ROUND_ROW_ENTER_DURATION_MS = 4500;
-export const ROUND_ROW_EXIT_DURATION_MS = 4500;
+export const ROUND_ROW_ENTER_DURATION_MS = 4000;
+export const ROUND_ROW_EXIT_DURATION_MS = 4000;
 
 export const ROUND_ADVANCE_DELAY_MS = 400;
 

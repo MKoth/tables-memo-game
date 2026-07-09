@@ -214,17 +214,9 @@ function LetterBubbleComponent({
       Math.hypot(centerX - posX.value, centerY - posY.value) +
       Math.abs(diameter - dia.value);
 
-    posX.value = withTiming(centerX, {
-      duration: moveDurationMs,
-      easing: Easing.inOut(Easing.cubic),
-    });
-    posY.value = withTiming(centerY, {
-      duration: moveDurationMs,
-      easing: Easing.inOut(Easing.cubic),
-    });
     const capturedOnMoveComplete = onMoveComplete;
-    dia.value = withTiming(
-      diameter,
+    posX.value = withTiming(
+      centerX,
       {
         duration: moveDurationMs,
         easing: Easing.inOut(Easing.cubic),
@@ -236,6 +228,14 @@ function LetterBubbleComponent({
         }
       },
     );
+    posY.value = withTiming(centerY, {
+      duration: moveDurationMs,
+      easing: Easing.inOut(Easing.cubic),
+    });
+    dia.value = withTiming(diameter, {
+      duration: moveDurationMs,
+      easing: Easing.inOut(Easing.cubic),
+    });
 
     // Wiggle faster / wider while actually travelling, then settle back to idle.
     if (moveDurationMs > 0 && travelDelta > MOVE_WOBBLE_MIN_DELTA) {
