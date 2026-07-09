@@ -76,6 +76,8 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
       <View style={styles.sentenceRowLayer} pointerEvents="box-none">
         <JellyfishSentenceRowLayer
           displaySlots={game.displaySlots}
+          conjugatedForm={game.conjugatedForm}
+          roundPos={game.roundPos}
           roundPhase={game.roundPhase}
           exitEdge={game.exitEdge}
           blankSlotIndex={game.blankSlotIndex}

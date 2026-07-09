@@ -57,6 +57,8 @@ export type SentenceTransformationGame = {
   poppedPickerItemIds: ReadonlySet<string> | undefined;
   instruction: string;
   displaySlots: SentencePromptDisplaySlot[];
+  conjugatedForm: string;
+  roundPos: number;
   solvedCount: number;
   totalCount: number;
   handleLetterPress: (position: number) => void;
@@ -222,7 +224,8 @@ export function useSentenceTransformationGame({
         slots: roundForSnapshot?.displaySlots ?? [],
         jellyRect: jellyRectRef.current,
         koiRect: koiRectRef.current,
-        wordLength: solvedWord.length,
+        conjugatedForm: solvedWord,
+        roundPos: snapshot.roundPos,
       });
 
       if (flight != null) {
@@ -405,6 +408,8 @@ export function useSentenceTransformationGame({
     poppedPickerItemIds: coreSnapshot?.poppedPickerItemIds,
     instruction,
     displaySlots,
+    conjugatedForm: currentRound?.conjugatedForm ?? '',
+    roundPos: roundSnapshot.roundPos,
     solvedCount: roundSnapshot.roundPos,
     totalCount: roundOrder.length,
     handleLetterPress,

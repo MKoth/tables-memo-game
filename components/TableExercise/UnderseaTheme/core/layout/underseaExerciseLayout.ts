@@ -89,6 +89,9 @@ export type SentenceSlotConfig = {
 export type SentenceRowLayoutInput = {
   slots: SentencePromptDisplaySlot[];
   jellyRect: ZoneRect;
+  koiRect: ZoneRect;
+  conjugatedForm: string;
+  roundPos: number;
 };
 
 export type SentenceRowLayout = {
@@ -97,18 +100,28 @@ export type SentenceRowLayout = {
   scales: number[];
   configs: SentenceSlotConfig[];
   fontScale: number;
+  blankFootprintDiameter: number;
 };
 
 const SLOT_GAP = 10;
 const LINE_GAP = 18;
 const BODY_BELL_SIZE_MIN = 28;
 const BODY_BELL_SIZE_MAX = 72;
+const TOKEN_SIZE_VARIATION = 0.35;
 
 function clamp(val: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, val));
 }
 
-function estimateSlotWidth(label: string, bellSize: number): number {
+function estimateSlotWidth(
+  label: string,
+  bellSize: number,
+  isBlank: boolean,
+  blankFootprintDiameter: number,
+): number {
+  if (isBlank) {
+    return blankFootprintDiameter + SLOT_GAP;
+  }
   const charWidth = bellSize * 0.22;
   const textWidth = Math.max(label.length * charWidth, bellSize * 0.45);
   return Math.max(bellSize, textWidth) + SLOT_GAP;
@@ -116,7 +129,7 @@ function estimateSlotWidth(label: string, bellSize: number): number {
 
 /** Lay out sentence row jellyfish horizontally with line wrapping, vertically centered. */
 export function computeSentenceRowLayout(input: SentenceRowLayoutInput): SentenceRowLayout {
-  const { slots, jellyRect } = input;
+  const { slots, jellyRect, koiRect, conjugatedForm, roundPos } = input;
   const zoneLeft = jellyRect.x;
   const zoneTop = jellyRect.y;
   const zoneWidth = jellyRect.w;
@@ -124,19 +137,45 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
   const slotCount = slots.length;
 
   if (slotCount === 0) {
-    return { xs: [], ys: [], scales: [], configs: [], fontScale: 1 };
+    return {
+      xs: [],
+      ys: [],
+      scales: [],
+      configs: [],
+      fontScale: 1,
+      blankFootprintDiameter: 0,
+    };
   }
 
-  const bellSize = clamp(
+  // Base bell size for the row (used for uniform font scale and as a baseline for rolls)
+  const baseBellSize = clamp(
     Math.min(zoneWidth / Math.max(slotCount, 3), zoneHeight * 0.35),
     BODY_BELL_SIZE_MIN,
     BODY_BELL_SIZE_MAX,
   );
-  const fontScale = computeJellyfishFontScale(bellSize);
+  const fontScale = computeJellyfishFontScale(baseBellSize);
+
+  // Blank footprint diameter: pack the conjugated form at the letter-bubble size for that length
+  const letterLayout = computeLetterLayout(koiRect, conjugatedForm.length);
+  const gap = letterLayout.diameter * GAP_RATIO;
+  const blankFootprintDiameter =
+    conjugatedForm.length > 0
+      ? conjugatedForm.length * letterLayout.diameter +
+        (conjugatedForm.length - 1) * gap
+      : letterLayout.diameter * 1.4;
 
   const configs: SentenceSlotConfig[] = slots.map((slot, index) => {
-    const label = slot.kind === 'blank' ? '?' : slot.text;
-    const tint = rollBodyTint(index);
+    const isBlank = slot.kind === 'blank';
+    const label = isBlank ? '?' : slot.text;
+    const tint = rollBodyTint(index, roundPos);
+
+    // Varied token sizes (stable for the round)
+    // Blank is excluded from the size lottery and uses ~70% of footprint
+    const sizeRoll = sr(index + 100, roundPos + 100);
+    const bellSize = isBlank
+      ? blankFootprintDiameter * 0.7
+      : baseBellSize * (1 + (sizeRoll - 0.5) * TOKEN_SIZE_VARIATION);
+
     return {
       key: `slot-${index}`,
       index,
@@ -151,67 +190,91 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
     };
   });
 
-  const slotWidths = configs.map((config) => estimateSlotWidth(config.label, bellSize));
+  const slotWidths = configs.map((config) =>
+    estimateSlotWidth(
+      config.label,
+      config.bellSize,
+      config.kind === 'blank',
+      blankFootprintDiameter,
+    ),
+  );
 
-  type Line = { indices: number[]; width: number };
+  type Line = { indices: number[]; width: number; maxBellSize: number };
   const lines: Line[] = [];
-  let currentLine: Line = { indices: [], width: 0 };
+  let currentLine: Line = { indices: [], width: 0, maxBellSize: 0 };
 
   for (let index = 0; index < configs.length; index++) {
-    const width = slotWidths[index] ?? bellSize;
+    const width = slotWidths[index] ?? baseBellSize;
+    const bellSize = configs[index]?.bellSize ?? baseBellSize;
     const nextWidth =
       currentLine.indices.length === 0 ? width : currentLine.width + width;
 
     if (currentLine.indices.length > 0 && nextWidth > zoneWidth) {
       lines.push(currentLine);
-      currentLine = { indices: [index], width };
+      currentLine = { indices: [index], width, maxBellSize: bellSize };
     } else {
       currentLine.indices.push(index);
       currentLine.width = nextWidth;
+      currentLine.maxBellSize = Math.max(currentLine.maxBellSize, bellSize);
     }
   }
   if (currentLine.indices.length > 0) {
     lines.push(currentLine);
   }
 
-  const lineHeight = bellSize + LINE_GAP;
+  // Use the largest bell size in the row (or baseline) for line height
+  const rowMaxBellSize = Math.max(
+    ...configs.map((c) => (c.kind === 'blank' ? blankFootprintDiameter : c.bellSize)),
+    baseBellSize,
+  );
+  const lineHeight = rowMaxBellSize + LINE_GAP;
   const blockHeight = lines.length * lineHeight - LINE_GAP;
   const blockTop = zoneTop + Math.max(0, (zoneHeight - blockHeight) * 0.5);
 
   const xs: number[] = new Array(slotCount).fill(zoneLeft + zoneWidth * 0.5);
-  const ys: number[] = new Array(slotCount).fill(blockTop + bellSize * 0.5);
+  const ys: number[] = new Array(slotCount).fill(blockTop + rowMaxBellSize * 0.5);
   const scales: number[] = new Array(slotCount).fill(1);
 
   lines.forEach((line, lineIndex) => {
-    const lineY = blockTop + lineIndex * lineHeight + bellSize * 0.5;
+    const lineY = blockTop + lineIndex * lineHeight + rowMaxBellSize * 0.5;
     let cursorX = zoneLeft + (zoneWidth - line.width) * 0.5;
 
     line.indices.forEach((slotIndex) => {
-      const width = slotWidths[slotIndex] ?? bellSize;
+      const width = slotWidths[slotIndex] ?? baseBellSize;
       xs[slotIndex] = cursorX + width * 0.5 - SLOT_GAP * 0.5;
       ys[slotIndex] = lineY;
       cursorX += width;
     });
   });
 
-  return { xs, ys, scales, configs, fontScale };
+  return { xs, ys, scales, configs, fontScale, blankFootprintDiameter };
 }
 
 export function blankSlotCenter(
   slots: SentencePromptDisplaySlot[],
   jellyRect: ZoneRect,
-): { x: number; y: number; bellSize: number } | null {
+  koiRect: ZoneRect,
+  conjugatedForm: string,
+  roundPos: number,
+): { x: number; y: number; bellSize: number; footprintDiameter: number } | null {
   const blankIndex = slots.findIndex((slot) => slot.kind === 'blank');
   if (blankIndex < 0) {
     return null;
   }
 
-  const layout = computeSentenceRowLayout({ slots, jellyRect });
+  const layout = computeSentenceRowLayout({
+    slots,
+    jellyRect,
+    koiRect,
+    conjugatedForm,
+    roundPos,
+  });
 
   return {
     x: layout.xs[blankIndex] ?? jellyRect.x + jellyRect.w * 0.5,
     y: layout.ys[blankIndex] ?? jellyRect.y + jellyRect.h * 0.5,
     bellSize: layout.configs[blankIndex]?.bellSize ?? 40,
+    footprintDiameter: layout.blankFootprintDiameter,
   };
 }
 
@@ -228,20 +291,21 @@ export type RoundResolutionFlightInput = {
   slots: SentencePromptDisplaySlot[];
   jellyRect: ZoneRect;
   koiRect: ZoneRect;
-  wordLength: number;
+  conjugatedForm: string;
+  roundPos: number;
 };
 
 /** Fly-from (koi letter row) and fly-to (blank slot) geometry for round resolve phase. */
 export function computeRoundResolutionFlight(
   input: RoundResolutionFlightInput,
 ): RoundResolutionFlightLayout | null {
-  const { slots, jellyRect, koiRect, wordLength } = input;
-  const blank = blankSlotCenter(slots, jellyRect);
+  const { slots, jellyRect, koiRect, conjugatedForm, roundPos } = input;
+  const blank = blankSlotCenter(slots, jellyRect, koiRect, conjugatedForm, roundPos);
   if (blank == null) {
     return null;
   }
 
-  const letterLayout = computeLetterLayout(koiRect, wordLength);
+  const letterLayout = computeLetterLayout(koiRect, conjugatedForm.length);
   const fromCenterX =
     letterLayout.centers.length > 0
       ? (letterLayout.centers[0]! +
@@ -252,9 +316,10 @@ export function computeRoundResolutionFlight(
   return {
     fromCenterX,
     fromCenterY: letterLayout.rowY,
-    fromDiameter: Math.max(letterLayout.diameter * 1.4, 48),
+    fromDiameter: blank.footprintDiameter,
     toCenterX: blank.x,
     toCenterY: blank.y,
-    toDiameter: blank.bellSize * 0.9,
+    toDiameter: blank.footprintDiameter,
   };
 }
+

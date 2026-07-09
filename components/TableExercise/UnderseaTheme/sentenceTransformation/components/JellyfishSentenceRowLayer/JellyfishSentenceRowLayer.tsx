@@ -34,6 +34,8 @@ import { findSentenceSlotAtTap } from './sentenceRowWorklets';
 
 export type JellyfishSentenceRowLayerProps = {
   displaySlots: SentencePromptDisplaySlot[];
+  conjugatedForm: string;
+  roundPos: number;
   roundPhase: SentenceRoundPhase;
   exitEdge: SentenceRoundExitEdge;
   blankSlotIndex: number;
@@ -75,6 +77,8 @@ function offscreenOffset(width: number, exitEdge: SentenceRoundExitEdge): number
 
 export function JellyfishSentenceRowLayer({
   displaySlots,
+  conjugatedForm,
+  roundPos,
   roundPhase,
   exitEdge,
   blankSlotIndex,
@@ -86,7 +90,7 @@ export function JellyfishSentenceRowLayer({
   onRowExitComplete,
 }: JellyfishSentenceRowLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
-  const { jellyRect, labelRotationRad } = useUnderseaThemeLayout();
+  const { jellyRect, koiRect, labelRotationRad } = useUnderseaThemeLayout();
   const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
   const { width: screenWidth } = useWindowDimensions();
 
@@ -95,8 +99,11 @@ export function JellyfishSentenceRowLayer({
       computeSentenceRowLayout({
         slots: displaySlots,
         jellyRect,
+        koiRect,
+        conjugatedForm,
+        roundPos,
       }),
-    [displaySlots, jellyRect],
+    [displaySlots, jellyRect, koiRect, conjugatedForm, roundPos],
   );
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });

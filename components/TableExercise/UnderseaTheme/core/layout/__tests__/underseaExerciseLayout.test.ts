@@ -55,9 +55,22 @@ describe('previewCenterForLetter', () => {
 
 describe('computeSentenceRowLayout', () => {
   it('returns empty arrays for no slots', () => {
-    const layout = computeSentenceRowLayout({ slots: [], jellyRect: JELLY_RECT });
+    const layout = computeSentenceRowLayout({
+      slots: [],
+      jellyRect: JELLY_RECT,
+      koiRect: KOI_RECT,
+      conjugatedForm: '',
+      roundPos: 0,
+    });
 
-    expect(layout).toEqual({ xs: [], ys: [], scales: [], configs: [], fontScale: 1 });
+    expect(layout).toEqual({
+      xs: [],
+      ys: [],
+      scales: [],
+      configs: [],
+      fontScale: 1,
+      blankFootprintDiameter: 0,
+    });
   });
 
   it('centers a single-line sentence horizontally and vertically in the jelly zone', () => {
@@ -66,7 +79,13 @@ describe('computeSentenceRowLayout', () => {
       { kind: 'blank' },
       { kind: 'token', text: 'hoy.' },
     ];
-    const layout = computeSentenceRowLayout({ slots, jellyRect: JELLY_RECT });
+    const layout = computeSentenceRowLayout({
+      slots,
+      jellyRect: JELLY_RECT,
+      koiRect: KOI_RECT,
+      conjugatedForm: 'como',
+      roundPos: 0,
+    });
 
     expect(layout.xs).toHaveLength(3);
     expect(layout.ys).toHaveLength(3);
@@ -78,12 +97,42 @@ describe('computeSentenceRowLayout', () => {
     expect(layout.configs[1]?.label).toBe('?');
   });
 
+  it('rolls varied token sizes that are stable for the round', () => {
+    const slots: SentencePromptDisplaySlot[] = [
+      { kind: 'token', text: 'word1' },
+      { kind: 'token', text: 'word2' },
+    ];
+    const layout1 = computeSentenceRowLayout({
+      slots,
+      jellyRect: JELLY_RECT,
+      koiRect: KOI_RECT,
+      conjugatedForm: 'target',
+      roundPos: 0,
+    });
+    const layout2 = computeSentenceRowLayout({
+      slots,
+      jellyRect: JELLY_RECT,
+      koiRect: KOI_RECT,
+      conjugatedForm: 'target',
+      roundPos: 0,
+    });
+
+    expect(layout1.configs[0]?.bellSize).not.toBe(layout1.configs[1]?.bellSize);
+    expect(layout1.configs[0]?.bellSize).toBe(layout2.configs[0]?.bellSize);
+  });
+
   it('wraps a long sentence onto multiple lines', () => {
     const slots: SentencePromptDisplaySlot[] = Array.from({ length: 14 }, (_, index) => ({
       kind: 'token' as const,
       text: `w${index}`,
     }));
-    const layout = computeSentenceRowLayout({ slots, jellyRect: JELLY_RECT });
+    const layout = computeSentenceRowLayout({
+      slots,
+      jellyRect: JELLY_RECT,
+      koiRect: KOI_RECT,
+      conjugatedForm: 'target',
+      roundPos: 0,
+    });
     const uniqueYs = new Set(layout.ys);
 
     expect(uniqueYs.size).toBeGreaterThan(1);
@@ -105,49 +154,32 @@ describe('computeRoundResolutionFlight', () => {
         slots,
         jellyRect: JELLY_RECT,
         koiRect: KOI_RECT,
-        wordLength: 4,
+        conjugatedForm: 'como',
+        roundPos: 0,
       }),
     ).toBeNull();
   });
 
   it('returns fly-from center averaged across letter row and fly-to blank slot geometry', () => {
-    const letterLayout = computeLetterLayout(KOI_RECT, 3);
-    const blank = blankSlotCenter(SLOTS_WITH_BLANK, JELLY_RECT);
+    const conjugatedForm = 'como';
+    const letterLayout = computeLetterLayout(KOI_RECT, conjugatedForm.length);
+    const blank = blankSlotCenter(SLOTS_WITH_BLANK, JELLY_RECT, KOI_RECT, conjugatedForm, 0);
 
     expect(
       computeRoundResolutionFlight({
         slots: SLOTS_WITH_BLANK,
         jellyRect: JELLY_RECT,
         koiRect: KOI_RECT,
-        wordLength: 3,
+        conjugatedForm,
+        roundPos: 0,
       }),
     ).toEqual({
-      fromCenterX: (letterLayout.centers[0]! + letterLayout.centers[2]!) * 0.5,
+      fromCenterX: (letterLayout.centers[0]! + letterLayout.centers[3]!) * 0.5,
       fromCenterY: letterLayout.rowY,
-      fromDiameter: letterLayout.diameter,
+      fromDiameter: blank!.footprintDiameter,
       toCenterX: blank!.x,
       toCenterY: blank!.y,
-      toDiameter: blank!.bellSize * 0.9,
-    });
-  });
-
-  it('falls back to koi zone center when word length is zero', () => {
-    const blank = blankSlotCenter(SLOTS_WITH_BLANK, JELLY_RECT);
-
-    expect(
-      computeRoundResolutionFlight({
-        slots: SLOTS_WITH_BLANK,
-        jellyRect: JELLY_RECT,
-        koiRect: KOI_RECT,
-        wordLength: 0,
-      }),
-    ).toEqual({
-      fromCenterX: KOI_RECT.x + KOI_RECT.w * 0.5,
-      fromCenterY: KOI_RECT.y + KOI_RECT.h * TRANSFORMATION_WORD_ROW_Y_RATIO,
-      fromDiameter: 34,
-      toCenterX: blank!.x,
-      toCenterY: blank!.y,
-      toDiameter: blank!.bellSize * 0.9,
+      toDiameter: blank!.footprintDiameter,
     });
   });
 });
@@ -156,7 +188,7 @@ describe('blankSlotCenter', () => {
   it('returns null when there is no blank slot', () => {
     const slots: SentencePromptDisplaySlot[] = [{ kind: 'token', text: 'hola' }];
 
-    expect(blankSlotCenter(slots, JELLY_RECT)).toBeNull();
+    expect(blankSlotCenter(slots, JELLY_RECT, KOI_RECT, 'target', 0)).toBeNull();
   });
 
   it('returns the same coordinates as sentence row layout for the blank index', () => {
@@ -165,14 +197,22 @@ describe('blankSlotCenter', () => {
       { kind: 'blank' },
       { kind: 'token', text: 'hoy.' },
     ];
-    const layout = computeSentenceRowLayout({ slots, jellyRect: JELLY_RECT });
+    const layout = computeSentenceRowLayout({
+      slots,
+      jellyRect: JELLY_RECT,
+      koiRect: KOI_RECT,
+      conjugatedForm: 'como',
+      roundPos: 0,
+    });
     const blankIndex = 1;
-    const center = blankSlotCenter(slots, JELLY_RECT);
+    const center = blankSlotCenter(slots, JELLY_RECT, KOI_RECT, 'como', 0);
 
     expect(center).toEqual({
       x: layout.xs[blankIndex],
       y: layout.ys[blankIndex],
       bellSize: layout.configs[blankIndex]?.bellSize,
+      footprintDiameter: layout.blankFootprintDiameter,
     });
   });
 });
+
