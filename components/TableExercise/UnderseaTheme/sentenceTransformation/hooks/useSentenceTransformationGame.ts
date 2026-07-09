@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
-import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
+import {
+  type UnderseaThemeOrientation,
+  type ZoneRect,
+} from '../../core/layout/computeUnderseaThemeLayout';
 import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransformationCoreBridge';
-import { computeRoundResolutionFlight } from '../../core/layout/underseaExerciseLayout';
+import {
+  computeRoundResolutionFlight,
+  computeSentenceRowLayout,
+} from '../../core/layout/underseaExerciseLayout';
 import type { RoundResolutionBubbleState } from '../components/TransformationRoundResolutionBubble';
 import type { VariantPickerItem } from '../../wordTransformation/components/TransformationVariantPicker';
 import {
@@ -21,12 +27,14 @@ import {
   createSentenceRoundController,
   createSentenceTransformationExercise,
   findBlankSlotIndex,
+  planSwimPaths,
   shuffleIndices,
   ROUND_RESOLVE_FLY_DURATION_MS,
   type SentencePromptDisplaySlot,
   type SentenceRoundControllerSnapshot,
   type SentenceRoundPhase,
   type SentenceTransformationRound,
+  type SwimPath,
 } from '../domain';
 
 export type SentenceBubbleEnterState = {
@@ -38,7 +46,6 @@ export type SentenceTransformationGame = {
   isCompleted: boolean;
   transitioning: boolean;
   roundPhase: SentenceRoundPhase;
-  exitEdge: SentenceRoundControllerSnapshot['exitEdge'];
   blankSlotIndex: number;
   blankExiting: boolean;
   poppingSlotIndex: number | null;
@@ -58,6 +65,7 @@ export type SentenceTransformationGame = {
   displaySlots: SentencePromptDisplaySlot[];
   conjugatedForm: string;
   roundPos: number;
+  swimPaths: SwimPath[];
   solvedCount: number;
   totalCount: number;
   handleLetterPress: (position: number) => void;
@@ -86,6 +94,9 @@ function roundToSequence(
 
 export type UseSentenceTransformationGameParams = {
   table: TableData;
+  orientation: UnderseaThemeOrientation;
+  screenWidth: number;
+  screenHeight: number;
   koiRect: ZoneRect;
   jellyRect: ZoneRect;
   playPop?: () => void;
@@ -96,6 +107,9 @@ export type UseSentenceTransformationGameParams = {
 
 export function useSentenceTransformationGame({
   table,
+  orientation,
+  screenWidth,
+  screenHeight,
   koiRect,
   jellyRect,
   playPop,
@@ -112,7 +126,6 @@ export function useSentenceTransformationGame({
   const [roundSnapshot, setRoundSnapshot] = useState<SentenceRoundControllerSnapshot>(() => ({
     phase: 'enter',
     roundPos: 0,
-    exitEdge: 'right',
     isSessionComplete: false,
     solvedWord: null,
   }));
@@ -184,6 +197,37 @@ export function useSentenceTransformationGame({
 
   const handleRoundPhaseChangeRef = useRef<() => void>(() => {});
 
+  const slotLayout = useMemo(
+    () =>
+      computeSentenceRowLayout({
+        slots: displaySlots,
+        jellyRect,
+        koiRect,
+        conjugatedForm: currentRound?.conjugatedForm ?? '',
+        roundPos: roundSnapshot.roundPos,
+      }),
+    [displaySlots, jellyRect, koiRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
+  );
+
+  const computeCurrentSwimPaths = useCallback((): SwimPath[] => {
+    if (slotLayout.xs.length === 0) {
+      return [];
+    }
+    const slotCenters = slotLayout.xs.map((x, i) => ({
+      x,
+      y: slotLayout.ys[i] ?? 0,
+    }));
+    return planSwimPaths({
+      orientation,
+      screenWidth,
+      screenHeight,
+      jellyRect,
+      slotCenters,
+    });
+  }, [orientation, screenWidth, screenHeight, jellyRect, slotLayout.xs, slotLayout.ys]);
+
+  const [swimPaths, setSwimPaths] = useState<SwimPath[]>(computeCurrentSwimPaths);
+
   const handleRoundPhaseChange = useCallback(() => {
     const snapshot = roundRef.current?.getSnapshot();
     if (snapshot == null) {
@@ -201,6 +245,7 @@ export function useSentenceTransformationGame({
       if (baseWord.length > 0) {
         configureEnterPhase(baseWord);
       }
+      setSwimPaths(computeCurrentSwimPaths());
       return;
     }
 
@@ -230,14 +275,13 @@ export function useSentenceTransformationGame({
     }
 
     if (snapshot.phase === 'resolve') {
-      // Flight handled by resolutionBubble state
       return;
     }
 
     if (snapshot.phase === 'pop') {
       playSuccessRef.current?.();
     }
-  }, [configureEnterPhase, roundOrder, rounds, syncRoundSnapshot]);
+  }, [configureEnterPhase, roundOrder, rounds, syncRoundSnapshot, computeCurrentSwimPaths]);
 
   handleRoundPhaseChangeRef.current = handleRoundPhaseChange;
 
@@ -255,6 +299,7 @@ export function useSentenceTransformationGame({
 
     if (currentRound != null) {
       configureEnterPhase(currentRound.infinitive);
+      setSwimPaths(computeCurrentSwimPaths());
     }
 
     return () => {
@@ -395,7 +440,6 @@ export function useSentenceTransformationGame({
     isCompleted,
     transitioning,
     roundPhase,
-    exitEdge: roundSnapshot.exitEdge,
     blankSlotIndex,
     blankExiting,
     poppingSlotIndex,
@@ -415,6 +459,7 @@ export function useSentenceTransformationGame({
     displaySlots,
     conjugatedForm: currentRound?.conjugatedForm ?? '',
     roundPos: roundSnapshot.roundPos,
+    swimPaths,
     solvedCount: roundSnapshot.roundPos,
     totalCount: roundOrder.length,
     handleLetterPress,

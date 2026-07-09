@@ -10,7 +10,6 @@ export {
   ROUND_RESOLVE_FLY_DURATION_MS,
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
-  ROUND_ROW_EXIT_EDGE,
   ROUND_SOLVED_POP_DURATION_MS,
   bubbleEnterDurationMs,
   roundEnterDurationMs,
@@ -20,13 +19,16 @@ export {
   type SentenceRoundController,
   type SentenceRoundControllerConfig,
   type SentenceRoundControllerSnapshot,
-  type SentenceRoundExitEdge,
   type SentenceRoundPhase,
 } from './sentenceRoundController';
 export {
   displaySlotsWithSolvedWord,
   findBlankSlotIndex,
 } from './sentenceRowDisplay';
+export {
+  planSwimPaths,
+  type SwimPath,
+} from './swimPathPlanner';
 export { shuffleIndices } from './shuffleIndices';
 export {
   type CreateSentenceTransformationExerciseOptions,

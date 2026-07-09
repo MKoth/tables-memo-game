@@ -1,8 +1,15 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Canvas, matchFont } from '@shopify/react-native-skia';
+import { Platform, StyleSheet, View } from 'react-native';
+import { Canvas, matchFont, type SkFont, type SkImage } from '@shopify/react-native-skia';
 import { GestureDetector } from 'react-native-gesture-handler';
-import { useSharedValue, withTiming, Easing, useAnimatedReaction } from 'react-native-reanimated';
+import {
+  useSharedValue,
+  withTiming,
+  Easing,
+  useAnimatedReaction,
+  useDerivedValue,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { useTapGesture } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useUnderseaThemeAssetsContext } from '../../../core/providers/UnderseaThemeAssetsProvider';
@@ -15,6 +22,7 @@ import {
   BODY_FONT_SIZE,
   JELLYFISH_CLOCK_FPS,
   TAP_MAX_DISTANCE_PX,
+  TILT_AMP_MAX,
 } from '../../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import type { PersistentHighlightKind } from '../../../jellyfish/JellyfishTableLayer/presets/jellyfishTintPresets';
 import {
@@ -22,10 +30,10 @@ import {
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
   ROUND_SOLVED_POP_DURATION_MS,
-  type SentenceRoundExitEdge,
   type SentenceRoundPhase,
 } from '../../domain';
 import type { SentencePromptDisplaySlot } from '../../domain/types';
+import type { SwimPath } from '../../domain/swimPathPlanner';
 import {
   computeSentenceRowLayout,
   type SentenceSlotConfig,
@@ -37,7 +45,7 @@ export type JellyfishSentenceRowLayerProps = {
   conjugatedForm: string;
   roundPos: number;
   roundPhase: SentenceRoundPhase;
-  exitEdge: SentenceRoundExitEdge;
+  swimPaths: SwimPath[];
   blankSlotIndex: number;
   blankExiting: boolean;
   poppingSlotIndex: number | null;
@@ -71,8 +79,111 @@ function toCellConfig(slot: SentenceSlotConfig): CellConfig {
   };
 }
 
-function offscreenOffset(width: number, exitEdge: SentenceRoundExitEdge): number {
-  return exitEdge === 'right' ? width : -width;
+type SlotCellJellyfishProps = {
+  config: CellConfig;
+  layoutX: SharedValue<number[]>;
+  layoutY: SharedValue<number[]>;
+  layoutScale: SharedValue<number[]>;
+  motionAngles: SharedValue<number[]>;
+  motionAmps: SharedValue<number[]>;
+  index: number;
+  tintFlashPreset: SharedValue<number[]>;
+  tintFlashUntil: SharedValue<number[]>;
+  bellImage: SkImage;
+  tentacleImage: SkImage;
+  clock: SharedValue<number>;
+  persistentHighlightKind?: PersistentHighlightKind | null;
+};
+
+function SlotCellJellyfish({
+  config,
+  layoutX,
+  layoutY,
+  layoutScale,
+  motionAngles,
+  motionAmps,
+  index,
+  tintFlashPreset,
+  tintFlashUntil,
+  bellImage,
+  tentacleImage,
+  clock,
+  persistentHighlightKind,
+}: SlotCellJellyfishProps) {
+  const slotMotionAngle = useDerivedValue(() => motionAngles.value[index] ?? 0);
+  const slotMotionAmp = useDerivedValue(() => motionAmps.value[index] ?? 0);
+
+  return (
+    <CellJellyfish
+      config={config}
+      layoutX={layoutX}
+      layoutY={layoutY}
+      layoutScale={layoutScale}
+      motionAngle={slotMotionAngle}
+      motionAmp={slotMotionAmp}
+      tintFlashPreset={tintFlashPreset}
+      tintFlashUntil={tintFlashUntil}
+      bellImage={bellImage}
+      tentacleImage={tentacleImage}
+      clock={clock}
+      persistentHighlightKind={persistentHighlightKind}
+    />
+  );
+}
+
+type SlotCellLabelProps = {
+  config: CellConfig;
+  font: SkFont;
+  layoutX: SharedValue<number[]>;
+  layoutY: SharedValue<number[]>;
+  layoutScale: SharedValue<number[]>;
+  motionAngles: SharedValue<number[]>;
+  motionAmps: SharedValue<number[]>;
+  index: number;
+  retainedLabelRotation: SharedValue<number>;
+  tintFlashPreset: SharedValue<number[]>;
+  tintFlashUntil: SharedValue<number[]>;
+  clock: SharedValue<number>;
+  labelBaseRotation: number;
+  persistentHighlightKind?: PersistentHighlightKind | null;
+};
+
+function SlotCellLabel({
+  config,
+  font,
+  layoutX,
+  layoutY,
+  layoutScale,
+  motionAngles,
+  motionAmps,
+  index,
+  retainedLabelRotation,
+  tintFlashPreset,
+  tintFlashUntil,
+  clock,
+  labelBaseRotation,
+  persistentHighlightKind,
+}: SlotCellLabelProps) {
+  const slotMotionAngle = useDerivedValue(() => motionAngles.value[index] ?? 0);
+  const slotMotionAmp = useDerivedValue(() => motionAmps.value[index] ?? 0);
+
+  return (
+    <CellLabel
+      config={config}
+      font={font}
+      layoutX={layoutX}
+      layoutY={layoutY}
+      layoutScale={layoutScale}
+      motionAngle={slotMotionAngle}
+      motionAmp={slotMotionAmp}
+      retainedLabelRotation={retainedLabelRotation}
+      tintFlashPreset={tintFlashPreset}
+      tintFlashUntil={tintFlashUntil}
+      clock={clock}
+      labelBaseRotation={labelBaseRotation}
+      persistentHighlightKind={persistentHighlightKind}
+    />
+  );
 }
 
 export function JellyfishSentenceRowLayer({
@@ -80,7 +191,7 @@ export function JellyfishSentenceRowLayer({
   conjugatedForm,
   roundPos,
   roundPhase,
-  exitEdge,
+  swimPaths,
   blankSlotIndex,
   blankExiting,
   poppingSlotIndex,
@@ -92,7 +203,6 @@ export function JellyfishSentenceRowLayer({
   const { images } = useUnderseaThemeAssetsContext();
   const { jellyRect, koiRect, labelRotationRad } = useUnderseaThemeLayout();
   const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
-  const { width: screenWidth } = useWindowDimensions();
 
   const layout = useMemo(
     () =>
@@ -119,45 +229,29 @@ export function JellyfishSentenceRowLayer({
 
   const layoutX = useSharedValue<number[]>(layout.xs);
   const renderLayoutX = useSharedValue<number[]>(layout.xs);
+  const renderLayoutY = useSharedValue<number[]>(layout.ys);
   const layoutY = useSharedValue<number[]>(layout.ys);
   const baseLayoutScale = useSharedValue<number[]>(layout.scales);
   const layoutScale = useSharedValue<number[]>(layout.scales);
   const slotAnimScale = useSharedValue<number[]>(layout.scales);
-  const rowOffsetX = useSharedValue(offscreenOffset(screenWidth, exitEdge));
   const zoneLeftSv = useSharedValue(jellyRect.x);
   const zoneTopSv = useSharedValue(jellyRect.y);
   const bellSizesSv = useSharedValue(layout.configs.map((config) => config.bellSize));
   const tintFlashPreset = useSharedValue<number[]>([]);
   const tintFlashUntil = useSharedValue<number[]>([]);
-  const motionAngle = useSharedValue(0);
-  const motionAmp = useSharedValue(0);
   const retainedLabelRotation = useSharedValue(0);
 
-  useEffect(() => {
-    layoutX.value = layout.xs;
-    layoutY.value = layout.ys;
-    baseLayoutScale.value = layout.scales;
-    layoutScale.value = layout.scales;
-    slotAnimScale.value = layout.scales.map(() => 1);
-    zoneLeftSv.value = jellyRect.x;
-    zoneTopSv.value = jellyRect.y;
-    bellSizesSv.value = layout.configs.map((config) => config.bellSize);
-    tintFlashPreset.value = layout.configs.map(() => -1);
-    tintFlashUntil.value = layout.configs.map(() => 0);
-  }, [jellyRect.x, jellyRect.y, layout, baseLayoutScale, layoutScale, layoutX, layoutY, bellSizesSv, slotAnimScale, tintFlashPreset, tintFlashUntil, zoneLeftSv, zoneTopSv]);
-
-  useAnimatedReaction(
-    () => ({
-      xs: layoutX.value,
-      offset: rowOffsetX.value,
-      anim: slotAnimScale.value,
-      base: baseLayoutScale.value,
-    }),
-    ({ xs, offset, anim, base }) => {
-      renderLayoutX.value = xs.map((x) => x + offset);
-      layoutScale.value = base.map((scale, index) => scale * (anim[index] ?? 1));
-    },
-  );
+  const spawnXs = useSharedValue<number[]>([]);
+  const spawnYs = useSharedValue<number[]>([]);
+  const centerXs = useSharedValue<number[]>([]);
+  const centerYs = useSharedValue<number[]>([]);
+  const enterAngles = useSharedValue<number[]>([]);
+  const exitAngles = useSharedValue<number[]>([]);
+  const motionAngles = useSharedValue<number[]>([]);
+  const motionAmps = useSharedValue<number[]>([]);
+  const swimProgress = useSharedValue(1);
+  const blankExitProgress = useSharedValue(0);
+  const blankSlotIndexSv = useSharedValue(-1);
 
   const onRowEnterCompleteRef = React.useRef(onRowEnterComplete);
   onRowEnterCompleteRef.current = onRowEnterComplete;
@@ -177,10 +271,47 @@ export function JellyfishSentenceRowLayer({
   }, []);
 
   useEffect(() => {
+    layoutX.value = layout.xs;
+    layoutY.value = layout.ys;
+    baseLayoutScale.value = layout.scales;
+    layoutScale.value = layout.scales;
+    slotAnimScale.value = layout.scales.map(() => 1);
+    zoneLeftSv.value = jellyRect.x;
+    zoneTopSv.value = jellyRect.y;
+    bellSizesSv.value = layout.configs.map((config) => config.bellSize);
+    tintFlashPreset.value = layout.configs.map(() => -1);
+    tintFlashUntil.value = layout.configs.map(() => 0);
+    blankSlotIndexSv.value = blankSlotIndex;
+  }, [jellyRect.x, jellyRect.y, layout, baseLayoutScale, layoutScale, layoutX, layoutY, bellSizesSv, slotAnimScale, tintFlashPreset, tintFlashUntil, zoneLeftSv, zoneTopSv, blankSlotIndex, blankSlotIndexSv]);
+
+  useEffect(() => {
+    const count = swimPaths.length;
+    if (count === 0) {
+      spawnXs.value = [];
+      spawnYs.value = [];
+      centerXs.value = [];
+      centerYs.value = [];
+      enterAngles.value = [];
+      exitAngles.value = [];
+      return;
+    }
+    const enterAnglesList = swimPaths.map((p) => p.enterAngle);
+    spawnXs.value = swimPaths.map((p) => p.spawnX);
+    spawnYs.value = swimPaths.map((p) => p.spawnY);
+    centerXs.value = swimPaths.map((p) => p.slotCenterX);
+    centerYs.value = swimPaths.map((p) => p.slotCenterY);
+    enterAngles.value = enterAnglesList;
+    exitAngles.value = swimPaths.map((p) => p.exitAngle);
+    motionAngles.value = new Array(count).fill(0);
+    motionAmps.value = new Array(count).fill(0);
+
     if (roundPhase === 'enter') {
-      rowOffsetX.value = offscreenOffset(screenWidth, exitEdge);
-      rowOffsetX.value = withTiming(
-        0,
+      blankExitProgress.value = 0;
+      swimProgress.value = 0;
+      motionAngles.value = enterAnglesList;
+      motionAmps.value = new Array(count).fill(TILT_AMP_MAX);
+      swimProgress.value = withTiming(
+        1,
         {
           duration: ROUND_ROW_ENTER_DURATION_MS,
           easing: Easing.out(Easing.cubic),
@@ -188,16 +319,77 @@ export function JellyfishSentenceRowLayer({
         (finished) => {
           'worklet';
           if (finished) {
+            motionAmps.value = new Array(motionAmps.value.length).fill(0);
             scheduleOnRN(fireRowEnterComplete);
           }
         },
       );
-      return;
     }
+  }, [swimPaths, roundPhase, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, fireRowEnterComplete]);
 
+  useAnimatedReaction(
+    () => ({
+      xs: layoutX.value,
+      ys: layoutY.value,
+      progress: swimProgress.value,
+      blankExitProg: blankExitProgress.value,
+      blankIdx: blankSlotIndexSv.value,
+      sX: spawnXs.value,
+      sY: spawnYs.value,
+      cX: centerXs.value,
+      cY: centerYs.value,
+      anim: slotAnimScale.value,
+      base: baseLayoutScale.value,
+    }),
+    ({ xs, ys, progress, blankExitProg, blankIdx, sX, sY, cX, cY, anim, base }) => {
+      const hasPaths = sX.length > 0 && sX.length === xs.length;
+      const blankExitingNow = blankIdx >= 0 && blankExitProg > 0;
+      renderLayoutX.value = xs.map((x, i) => {
+        if (blankExitingNow && i === blankIdx) {
+          const fromX = cX[i] ?? x;
+          const toX = sX[i] ?? x;
+          return fromX + (toX - fromX) * blankExitProg;
+        }
+        if (!hasPaths) return x;
+        const fromX = sX[i] ?? x;
+        const toX = cX[i] ?? x;
+        return fromX + (toX - fromX) * progress;
+      });
+      renderLayoutY.value = ys.map((y, i) => {
+        if (blankExitingNow && i === blankIdx) {
+          const fromY = cY[i] ?? y;
+          const toY = sY[i] ?? y;
+          return fromY + (toY - fromY) * blankExitProg;
+        }
+        if (!hasPaths) return y;
+        const fromY = sY[i] ?? y;
+        const toY = cY[i] ?? y;
+        return fromY + (toY - fromY) * progress;
+      });
+      layoutScale.value = base.map((scale, index) => scale * (anim[index] ?? 1));
+    },
+  );
+
+  useEffect(() => {
     if (roundPhase === 'exit') {
-      rowOffsetX.value = withTiming(
-        offscreenOffset(screenWidth, exitEdge),
+      const count = layout.configs.length;
+      const amps = new Array(count).fill(0);
+      if (blankSlotIndex >= 0) {
+        motionAngles.value = motionAngles.value.map((_, i) => {
+          return i === blankSlotIndex ? motionAngles.value[i] : (exitAngles.value[i] ?? 0);
+        });
+        for (let i = 0; i < count; i++) {
+          amps[i] = i === blankSlotIndex ? motionAmps.value[i] : TILT_AMP_MAX;
+        }
+      } else {
+        motionAngles.value = exitAngles.value;
+        for (let i = 0; i < count; i++) {
+          amps[i] = TILT_AMP_MAX;
+        }
+      }
+      motionAmps.value = amps;
+      swimProgress.value = withTiming(
+        0,
         {
           duration: ROUND_ROW_EXIT_DURATION_MS,
           easing: Easing.in(Easing.cubic),
@@ -205,17 +397,34 @@ export function JellyfishSentenceRowLayer({
         (finished) => {
           'worklet';
           if (finished) {
+            motionAmps.value = new Array(motionAmps.value.length).fill(0);
             scheduleOnRN(fireRowExitComplete);
           }
         },
       );
     }
-  }, [exitEdge, fireRowEnterComplete, fireRowExitComplete, roundPhase, rowOffsetX, screenWidth]);
+  }, [
+    blankSlotIndex,
+    exitAngles,
+    fireRowExitComplete,
+    layout.configs.length,
+    motionAmps,
+    motionAngles,
+    roundPhase,
+    swimProgress,
+  ]);
 
   useEffect(() => {
     if (!blankExiting || blankSlotIndex < 0) {
       return;
     }
+    blankExitProgress.value = withTiming(
+      1,
+      {
+        duration: ROUND_ROW_EXIT_DURATION_MS,
+        easing: Easing.in(Easing.cubic),
+      },
+    );
     slotAnimScale.value = withTiming(
       slotAnimScale.value.map((_, index) => (index === blankSlotIndex ? 0 : 1)),
       {
@@ -223,7 +432,16 @@ export function JellyfishSentenceRowLayer({
         easing: Easing.in(Easing.cubic),
       },
     );
-  }, [blankExiting, blankSlotIndex, slotAnimScale]);
+    const blankIdx = blankSlotIndex;
+    const toAngle = exitAngles.value[blankIdx] ?? 0;
+    motionAngles.value = motionAngles.value.map((_, i) =>
+      i === blankIdx ? toAngle : 0,
+    );
+    const amps = motionAmps.value.map((_v, i) =>
+      i === blankIdx ? TILT_AMP_MAX : 0,
+    );
+    motionAmps.value = amps;
+  }, [blankExiting, blankSlotIndex, slotAnimScale, blankExitProgress, exitAngles, motionAngles, motionAmps]);
 
   useEffect(() => {
     if (poppingSlotIndex == null || poppingSlotIndex < 0) {
@@ -276,7 +494,7 @@ export function JellyfishSentenceRowLayer({
         event.x + zoneLeftSv.value,
         event.y + zoneTopSv.value,
         renderLayoutX.value,
-        layoutY.value,
+        renderLayoutY.value,
         bellSizesSv.value,
       );
       if (hitIndex < 0) {
@@ -304,14 +522,15 @@ export function JellyfishSentenceRowLayer({
     <>
       <Canvas style={styles.canvas} pointerEvents="none">
         {cellConfigs.map((config) => (
-          <CellJellyfish
+          <SlotCellJellyfish
             key={config.key}
             config={config}
             layoutX={renderLayoutX}
-            layoutY={layoutY}
+            layoutY={renderLayoutY}
             layoutScale={layoutScale}
-            motionAngle={motionAngle}
-            motionAmp={motionAmp}
+            motionAngles={motionAngles}
+            motionAmps={motionAmps}
+            index={config.index}
             tintFlashPreset={tintFlashPreset}
             tintFlashUntil={tintFlashUntil}
             bellImage={images.jellyfishBell}
@@ -321,15 +540,16 @@ export function JellyfishSentenceRowLayer({
           />
         ))}
         {cellConfigs.map((config) => (
-          <CellLabel
+          <SlotCellLabel
             key={`${config.key}-label`}
             config={config}
             font={bodyFont}
             layoutX={renderLayoutX}
-            layoutY={layoutY}
+            layoutY={renderLayoutY}
             layoutScale={layoutScale}
-            motionAngle={motionAngle}
-            motionAmp={motionAmp}
+            motionAngles={motionAngles}
+            motionAmps={motionAmps}
+            index={config.index}
             retainedLabelRotation={retainedLabelRotation}
             tintFlashPreset={tintFlashPreset}
             tintFlashUntil={tintFlashUntil}

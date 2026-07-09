@@ -37,7 +37,7 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
   const table = spanishPresentTable2Plural;
   const soundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
 
-  const { koiRect, jellyRect } = useUnderseaThemeLayout();
+  const { koiRect, jellyRect, orientation, screenWidth, screenHeight } = useUnderseaThemeLayout();
 
   useEffect(() => {
     sounds.startWaterflow();
@@ -56,6 +56,9 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
 
   const game = useSentenceTransformationGame({
     table,
+    orientation,
+    screenWidth,
+    screenHeight,
     koiRect,
     jellyRect,
     playPop: sounds.playBubblePop,
@@ -79,7 +82,7 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
           conjugatedForm={game.conjugatedForm}
           roundPos={game.roundPos}
           roundPhase={game.roundPhase}
-          exitEdge={game.exitEdge}
+          swimPaths={game.swimPaths}
           blankSlotIndex={game.blankSlotIndex}
           blankExiting={game.blankExiting}
           poppingSlotIndex={game.poppingSlotIndex}

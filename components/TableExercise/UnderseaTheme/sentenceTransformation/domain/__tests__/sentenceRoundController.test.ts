@@ -1,7 +1,6 @@
 import {
   bubbleEnterDurationMs,
   ROUND_HOLD_DURATION_MS,
-  ROUND_ROW_EXIT_EDGE,
 } from '../roundResolutionTiming';
 import {
   createSentenceRoundController,
@@ -50,13 +49,12 @@ function runStaggerTimer(
 }
 
 describe('createSentenceRoundController', () => {
-  it('starts in enter on the first round with the configured exit edge', () => {
+  it('starts in enter on the first round', () => {
     const { controller } = createTestController(3);
 
     expect(controller.getSnapshot()).toEqual({
       phase: 'enter',
       roundPos: 0,
-      exitEdge: ROUND_ROW_EXIT_EDGE,
       isSessionComplete: false,
       solvedWord: null,
     });

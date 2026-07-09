@@ -2,10 +2,7 @@ import type { ScheduleTimer } from '../../wordTransformation/domain/coreTypes';
 import {
   bubbleEnterDurationMs,
   ROUND_HOLD_DURATION_MS,
-  ROUND_ROW_EXIT_EDGE,
 } from './roundResolutionTiming';
-
-export type SentenceRoundExitEdge = typeof ROUND_ROW_EXIT_EDGE | 'left';
 
 export type SentenceRoundPhase =
   | 'enter'
@@ -21,7 +18,6 @@ export type SentenceRoundPhase =
 export type SentenceRoundControllerSnapshot = {
   phase: SentenceRoundPhase;
   roundPos: number;
-  exitEdge: SentenceRoundExitEdge;
   isSessionComplete: boolean;
   solvedWord: string | null;
 };
@@ -30,7 +26,6 @@ export type SentenceRoundControllerConfig = {
   roundCount: number;
   scheduleTimer: ScheduleTimer;
   holdDurationMs?: number;
-  exitEdge?: SentenceRoundExitEdge;
   onPhaseChange?: () => void;
   onSessionComplete?: () => void;
 };
@@ -52,7 +47,6 @@ export function createSentenceRoundController({
   roundCount,
   scheduleTimer,
   holdDurationMs = ROUND_HOLD_DURATION_MS,
-  exitEdge = ROUND_ROW_EXIT_EDGE,
   onPhaseChange,
   onSessionComplete,
 }: SentenceRoundControllerConfig): SentenceRoundController {
@@ -76,7 +70,6 @@ export function createSentenceRoundController({
   const getSnapshot = (): SentenceRoundControllerSnapshot => ({
     phase,
     roundPos,
-    exitEdge,
     isSessionComplete,
     solvedWord,
   });
