@@ -11,6 +11,7 @@ export type SentenceRoundPhase =
   | 'enter'
   | 'transform'
   | 'merge'
+  | 'materialize'
   | 'resolve'
   | 'hold'
   | 'pop'
@@ -23,7 +24,6 @@ export type SentenceRoundControllerSnapshot = {
   exitEdge: SentenceRoundExitEdge;
   isSessionComplete: boolean;
   solvedWord: string | null;
-  blankFilled: boolean;
 };
 
 export type SentenceRoundControllerConfig = {
@@ -41,6 +41,7 @@ export type SentenceRoundController = {
   notifyRowEnterComplete: () => void;
   notifySequenceComplete: (solvedWord: string) => void;
   notifyMergeComplete: () => void;
+  notifyMaterializeComplete: () => void;
   notifyResolveComplete: () => void;
   notifyPopComplete: () => void;
   notifyExitComplete: () => void;
@@ -58,7 +59,6 @@ export function createSentenceRoundController({
   let phase: SentenceRoundPhase = 'enter';
   let roundPos = 0;
   let solvedWord: string | null = null;
-  let blankFilled = false;
   let isSessionComplete = false;
   let configuredWordLength = 0;
   let staggerTimerPending = false;
@@ -79,7 +79,6 @@ export function createSentenceRoundController({
     exitEdge,
     isSessionComplete,
     solvedWord,
-    blankFilled,
   });
 
   const scheduleHold = () => {
@@ -111,7 +110,6 @@ export function createSentenceRoundController({
   const beginNextRound = () => {
     roundPos += 1;
     solvedWord = null;
-    blankFilled = false;
 
     if (roundPos >= roundCount) {
       isSessionComplete = true;
@@ -149,6 +147,13 @@ export function createSentenceRoundController({
       if (phase !== 'merge') {
         return;
       }
+      setPhase('materialize');
+    },
+
+    notifyMaterializeComplete() {
+      if (phase !== 'materialize') {
+        return;
+      }
       setPhase('resolve');
     },
 
@@ -156,7 +161,6 @@ export function createSentenceRoundController({
       if (phase !== 'resolve') {
         return;
       }
-      blankFilled = true;
       setPhase('hold');
       scheduleHold();
     },

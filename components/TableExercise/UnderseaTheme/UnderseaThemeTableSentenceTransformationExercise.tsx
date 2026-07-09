@@ -98,7 +98,10 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
             !game.isCompleted ? (
               <TransformationRoundResolutionBubble
                 bubble={game.resolutionBubble}
-                onComplete={game.handleResolveComplete}
+                roundPhase={game.roundPhase}
+                onMaterializeComplete={game.handleMaterializeComplete}
+                onResolveComplete={game.handleResolveComplete}
+                onPopComplete={game.handlePopComplete}
               />
             ) : undefined
           }

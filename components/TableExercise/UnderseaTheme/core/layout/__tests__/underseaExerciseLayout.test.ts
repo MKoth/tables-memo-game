@@ -117,8 +117,8 @@ describe('computeSentenceRowLayout', () => {
       roundPos: 0,
     });
 
-    expect(layout1.configs[0]?.bellSize).not.toBe(layout1.configs[1]?.bellSize);
-    expect(layout1.configs[0]?.bellSize).toBe(layout2.configs[0]?.bellSize);
+    expect(layout1.scales[0]).not.toBe(layout1.scales[1]);
+    expect(layout1.scales[0]).toBe(layout2.scales[0]);
   });
 
   it('caps the blank footprint diameter for very long words', () => {

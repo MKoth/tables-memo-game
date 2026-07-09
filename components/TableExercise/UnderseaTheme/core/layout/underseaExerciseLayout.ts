@@ -104,10 +104,10 @@ export type SentenceRowLayout = {
 };
 
 const SLOT_GAP = 10;
-const LINE_GAP = 18;
-const BODY_BELL_SIZE_MIN = 28;
-const BODY_BELL_SIZE_MAX = 72;
-const TOKEN_SIZE_VARIATION = 0.35;
+const LINE_GAP = 9;
+const BODY_BELL_SIZE_MIN = 50;
+const BODY_BELL_SIZE_MAX =90;
+const TOKEN_SIZE_VARIATION = 0.86;
 
 function clamp(val: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, val));
@@ -165,10 +165,11 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
       : letterLayout.diameter * 1.4;
 
   // Cap the footprint so it doesn't push everything off screen or look absurdly large.
-  // 45% of zone width or 2.5x the max normal bell size is a reasonable upper bound.
-  const maxWidth = Math.min(zoneWidth * 0.45, BODY_BELL_SIZE_MAX * 2.5);
+  // We cap it relative to zone height to ensure wrapped lines still fit.
+  const maxWidth = Math.min(zoneWidth * 0.45, zoneHeight * 0.65, BODY_BELL_SIZE_MAX * 2.0);
   const blankFootprintDiameter = Math.min(naturalWidth, maxWidth);
 
+  const scales: number[] = new Array(slotCount).fill(1);
   const configs: SentenceSlotConfig[] = slots.map((slot, index) => {
     const isBlank = slot.kind === 'blank';
     const label = isBlank ? '?' : slot.text;
@@ -177,9 +178,13 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
     // Varied token sizes (stable for the round)
     // Blank is excluded from the size lottery and uses ~70% of footprint
     const sizeRoll = sr(index + 100, roundPos + 100);
-    const bellSize = isBlank
-      ? blankFootprintDiameter * 0.7
-      : baseBellSize * (1 + (sizeRoll - 0.5) * TOKEN_SIZE_VARIATION);
+    const scale = isBlank ? 1 : 1 + (sizeRoll - 0.5) * TOKEN_SIZE_VARIATION;
+
+    // Ensure final size is at least BODY_BELL_SIZE_MIN
+    const minScale = BODY_BELL_SIZE_MIN / baseBellSize;
+    scales[index] = Math.max(scale, minScale);
+
+    const bellSize = isBlank ? blankFootprintDiameter * 0.7 : baseBellSize;
 
     return {
       key: `slot-${index}`,
@@ -195,10 +200,10 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
     };
   });
 
-  const slotWidths = configs.map((config) =>
+  const slotWidths = configs.map((config, index) =>
     estimateSlotWidth(
       config.label,
-      config.bellSize,
+      config.bellSize * (scales[index] ?? 1),
       config.kind === 'blank',
       blankFootprintDiameter,
     ),
@@ -210,7 +215,7 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
 
   for (let index = 0; index < configs.length; index++) {
     const width = slotWidths[index] ?? baseBellSize;
-    const bellSize = configs[index]?.bellSize ?? baseBellSize;
+    const bellSize = (configs[index]?.bellSize ?? baseBellSize) * (scales[index] ?? 1);
     const nextWidth =
       currentLine.indices.length === 0 ? width : currentLine.width + width;
 
@@ -229,7 +234,9 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
 
   // Use the largest bell size in the row (or baseline) for line height
   const rowMaxBellSize = Math.max(
-    ...configs.map((c) => (c.kind === 'blank' ? blankFootprintDiameter : c.bellSize)),
+    ...configs.map(
+      (c, i) => (c.kind === 'blank' ? blankFootprintDiameter : c.bellSize * (scales[i] ?? 1)),
+    ),
     baseBellSize,
   );
   const lineHeight = rowMaxBellSize + LINE_GAP;
@@ -238,7 +245,6 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
 
   const xs: number[] = new Array(slotCount).fill(zoneLeft + zoneWidth * 0.5);
   const ys: number[] = new Array(slotCount).fill(blockTop + rowMaxBellSize * 0.5);
-  const scales: number[] = new Array(slotCount).fill(1);
 
   lines.forEach((line, lineIndex) => {
     const lineY = blockTop + lineIndex * lineHeight + rowMaxBellSize * 0.5;

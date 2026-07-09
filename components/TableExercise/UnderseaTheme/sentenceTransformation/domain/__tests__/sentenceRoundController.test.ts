@@ -59,7 +59,6 @@ describe('createSentenceRoundController', () => {
       exitEdge: ROUND_ROW_EXIT_EDGE,
       isSessionComplete: false,
       solvedWord: null,
-      blankFilled: false,
     });
   });
 
@@ -89,11 +88,10 @@ describe('createSentenceRoundController', () => {
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'merge',
       solvedWord: 'cantamos',
-      blankFilled: false,
     });
   });
 
-  it('runs merge → resolve → hold on transformation completion', () => {
+  it('runs merge → materialize → resolve → hold on transformation completion', () => {
     const { controller, timers } = createTestController(2);
 
     controller.configureRound({ wordLength: 5 });
@@ -102,13 +100,13 @@ describe('createSentenceRoundController', () => {
     controller.notifySequenceComplete('cantamos');
 
     controller.notifyMergeComplete();
+    expect(controller.getSnapshot().phase).toBe('materialize');
+
+    controller.notifyMaterializeComplete();
     expect(controller.getSnapshot().phase).toBe('resolve');
 
     controller.notifyResolveComplete();
-    expect(controller.getSnapshot()).toMatchObject({
-      phase: 'hold',
-      blankFilled: true,
-    });
+    expect(controller.getSnapshot().phase).toBe('hold');
     const holdTimers = timers.filter((timer) => timer.delayMs === ROUND_HOLD_DURATION_MS);
     expect(holdTimers).toHaveLength(1);
   });
@@ -131,6 +129,7 @@ describe('createSentenceRoundController', () => {
     jest.advanceTimersByTime(bubbleEnterDurationMs(4));
     controller.notifySequenceComplete('hablo');
     controller.notifyMergeComplete();
+    controller.notifyMaterializeComplete();
     controller.notifyResolveComplete();
 
     expect(controller.getSnapshot().phase).toBe('hold');
@@ -152,6 +151,7 @@ describe('createSentenceRoundController', () => {
     runStaggerTimer(timers, 5);
     controller.notifySequenceComplete('cantamos');
     controller.notifyMergeComplete();
+    controller.notifyMaterializeComplete();
     controller.notifyResolveComplete();
     runHoldTimer(timers);
     controller.notifyPopComplete();
@@ -162,7 +162,6 @@ describe('createSentenceRoundController', () => {
       phase: 'enter',
       roundPos: 1,
       solvedWord: null,
-      blankFilled: false,
       isSessionComplete: false,
     });
   });
@@ -184,6 +183,7 @@ describe('createSentenceRoundController', () => {
     runStaggerTimer(timers, 5);
     controller.notifySequenceComplete('cantamos');
     controller.notifyMergeComplete();
+    controller.notifyMaterializeComplete();
     controller.notifyResolveComplete();
     runHoldTimer(timers);
     controller.notifyPopComplete();
@@ -201,6 +201,7 @@ describe('createSentenceRoundController', () => {
     runStaggerTimer(timers, 4);
     controller.notifySequenceComplete('hablo');
     controller.notifyMergeComplete();
+    controller.notifyMaterializeComplete();
     controller.notifyResolveComplete();
     runHoldTimer(timers);
     controller.notifyPopComplete();
@@ -257,6 +258,7 @@ describe('createSentenceRoundController', () => {
     jest.advanceTimersByTime(bubbleEnterDurationMs(4));
     controller.notifySequenceComplete('hablo');
     controller.notifyMergeComplete();
+    controller.notifyMaterializeComplete();
     controller.notifyResolveComplete();
 
     expect(controller.getSnapshot().phase).toBe('hold');

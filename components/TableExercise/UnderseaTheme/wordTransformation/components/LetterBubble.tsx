@@ -105,9 +105,13 @@ export type LetterBubbleProps = {
   onPopSound?: () => void;
   /** Fired on the UI thread at the frame the enter/inflate becomes visible. */
   onEnterSound?: () => void;
+  /** Fired on the UI thread when the enter/inflate animation finishes. */
+  onEnterComplete?: () => void;
   /** Fired on the UI thread when a move/resize animation finishes. */
   onMoveComplete?: () => void;
   onPopComplete?: () => void;
+  /** When true, the label does not scale with the bubble during enter/pop/wobble. */
+  labelFixed?: boolean;
 };
 
 function LetterBubbleComponent({
@@ -129,8 +133,10 @@ function LetterBubbleComponent({
   enterDelayMs,
   onPopSound,
   onEnterSound,
+  onEnterComplete,
   onMoveComplete,
   onPopComplete,
+  labelFixed = false,
 }: LetterBubbleProps) {
   const posX = useSharedValue(initialCenterX ?? centerX);
   const posY = useSharedValue(initialCenterY ?? centerY);
@@ -168,10 +174,19 @@ function LetterBubbleComponent({
     const delay = enterDelayRef.current;
     enterT.value = withDelay(
       delay,
-      withTiming(1, {
-        duration: WORD_LETTER_ENTER_DURATION_MS,
-        easing: Easing.out(Easing.back(1.6)),
-      }),
+      withTiming(
+        1,
+        {
+          duration: WORD_LETTER_ENTER_DURATION_MS,
+          easing: Easing.out(Easing.back(1.6)),
+        },
+        (finished) => {
+          'worklet';
+          if (finished && onEnterComplete != null) {
+            scheduleOnRN(onEnterComplete);
+          }
+        },
+      ),
     );
     const sound = onEnterSoundRef.current;
     if (sound != null) {
@@ -337,7 +352,7 @@ function LetterBubbleComponent({
     const { centerX: cx, centerY: cy, diameter: d } = anim.value;
     const ox = diameter * 0.5;
     const oy = diameter * 0.5;
-    const scale = diameter > 0 ? d / diameter : 1;
+    const scale = labelFixed ? 1 : diameter > 0 ? d / diameter : 1;
     return [
       { translateX: cx - d * 0.5 },
       { translateY: cy - d * 0.5 },

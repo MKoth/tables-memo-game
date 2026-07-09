@@ -65,6 +65,7 @@ export type SentenceTransformationGame = {
   handleVariantPress: (item: VariantPickerItem, source: VariantSourceLayout) => void;
   handleRowEnterComplete: () => void;
   handleMergeComplete: () => void;
+  handleMaterializeComplete: () => void;
   handleResolveComplete: () => void;
   handlePopComplete: () => void;
   handleRowExitComplete: () => void;
@@ -115,7 +116,6 @@ export function useSentenceTransformationGame({
     exitEdge: 'right',
     isSessionComplete: false,
     solvedWord: null,
-    blankFilled: false,
   }));
   const [bubbleEnter, setBubbleEnter] = useState<SentenceBubbleEnterState | null>(null);
   const [resolutionBubble, setResolutionBubble] = useState<RoundResolutionBubbleState | null>(
@@ -174,16 +174,8 @@ export function useSentenceTransformationGame({
   );
 
   const displaySlots = useMemo(() => {
-    const baseSlots = currentRound?.displaySlots ?? [];
-    if (!roundSnapshot.blankFilled || roundSnapshot.solvedWord == null || blankSlotIndex < 0) {
-      return baseSlots;
-    }
-    return displaySlotsWithSolvedWord(
-      baseSlots,
-      blankSlotIndex,
-      roundSnapshot.solvedWord,
-    );
-  }, [blankSlotIndex, currentRound?.displaySlots, roundSnapshot.blankFilled, roundSnapshot.solvedWord]);
+    return currentRound?.displaySlots ?? [];
+  }, [currentRound?.displaySlots]);
 
   const configureEnterPhase = useCallback((baseWord: string) => {
     roundRef.current?.configureRound({ wordLength: baseWord.length });
@@ -218,7 +210,7 @@ export function useSentenceTransformationGame({
       return;
     }
 
-    if (snapshot.phase === 'resolve' && snapshot.solvedWord != null) {
+    if (snapshot.phase === 'materialize' && snapshot.solvedWord != null) {
       const solvedWord = snapshot.solvedWord;
       const flight = computeRoundResolutionFlight({
         slots: roundForSnapshot?.displaySlots ?? [],
@@ -235,6 +227,11 @@ export function useSentenceTransformationGame({
           flyDurationMs: ROUND_RESOLVE_FLY_DURATION_MS,
         });
       }
+      return;
+    }
+
+    if (snapshot.phase === 'resolve') {
+      // Flight handled by resolutionBubble state
       return;
     }
 
@@ -288,6 +285,11 @@ export function useSentenceTransformationGame({
     syncRoundSnapshot();
   }, [syncRoundSnapshot]);
 
+  const handleMaterializeComplete = useCallback(() => {
+    roundRef.current?.notifyMaterializeComplete();
+    syncRoundSnapshot();
+  }, [syncRoundSnapshot]);
+
   const handleResolveComplete = useCallback(() => {
     setResolutionBubble(null);
     roundRef.current?.notifyResolveComplete();
@@ -306,7 +308,12 @@ export function useSentenceTransformationGame({
 
   const roundPhase = roundSnapshot.phase;
   const transitioning = roundPhase !== 'transform';
-  const blankExiting = roundPhase === 'resolve';
+  const blankExiting =
+    roundPhase === 'resolve' ||
+    roundPhase === 'hold' ||
+    roundPhase === 'pop' ||
+    roundPhase === 'exit' ||
+    roundPhase === 'advance';
   const poppingSlotIndex =
     roundPhase === 'pop' && blankSlotIndex >= 0 ? blankSlotIndex : null;
   const mergeWord =
@@ -416,6 +423,7 @@ export function useSentenceTransformationGame({
     handleVariantPress,
     handleRowEnterComplete,
     handleMergeComplete,
+    handleMaterializeComplete,
     handleResolveComplete,
     handlePopComplete,
     handleRowExitComplete,

@@ -5,6 +5,12 @@ import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThem
 import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
 import { LetterBubble } from '../../wordTransformation/components/LetterBubble';
 
+import {
+  ROUND_RESOLVE_FLY_DURATION_MS,
+  ROUND_SOLVED_POP_DURATION_MS,
+  type SentenceRoundPhase,
+} from '../domain';
+
 export type RoundResolutionBubbleState = {
   word: string;
   fromCenterX: number;
@@ -18,14 +24,20 @@ export type RoundResolutionBubbleState = {
 
 export type TransformationRoundResolutionBubbleProps = {
   bubble: RoundResolutionBubbleState | null;
-  onComplete?: () => void;
+  roundPhase: SentenceRoundPhase;
+  onMaterializeComplete?: () => void;
+  onResolveComplete?: () => void;
+  onPopComplete?: () => void;
 };
 
 export function TransformationRoundResolutionBubble({
   bubble,
-  onComplete,
+  roundPhase,
+  onMaterializeComplete,
+  onResolveComplete,
+  onPopComplete,
 }: TransformationRoundResolutionBubbleProps) {
-  const { images } = useUnderseaThemeAssetsContext();
+  const { images, sounds } = useUnderseaThemeAssetsContext();
   const clock = useUnderseaThemeClock();
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
@@ -48,24 +60,40 @@ export function TransformationRoundResolutionBubble({
     return null;
   }
 
+  const isMaterializing = roundPhase === 'materialize';
+  const isResolving = roundPhase === 'resolve';
+  const isHolding = roundPhase === 'hold';
+  const isPopping = roundPhase === 'pop';
+
+  const visible =
+    isMaterializing || isResolving || isHolding || isPopping;
+
+  if (!visible) {
+    return null;
+  }
+
   return (
     <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
       <LetterBubble
         key={bubble.word}
         char={bubble.word}
-        centerX={bubble.toCenterX}
-        centerY={bubble.toCenterY}
-        diameter={bubble.toDiameter}
+        centerX={isMaterializing ? bubble.fromCenterX : bubble.toCenterX}
+        centerY={isMaterializing ? bubble.fromCenterY : bubble.toCenterY}
+        diameter={isMaterializing ? bubble.fromDiameter : bubble.toDiameter}
         initialCenterX={bubble.fromCenterX}
         initialCenterY={bubble.fromCenterY}
         initialDiameter={bubble.fromDiameter}
-        skipEnter
-        moveDurationMs={bubble.flyDurationMs}
-        status="idle"
+        skipEnter={!isMaterializing}
+        labelFixed
+        moveDurationMs={isResolving ? bubble.flyDurationMs : 0}
+        status={isPopping ? 'popped' : 'idle'}
         image={images.bubble}
         font={font}
         clock={clock}
-        onMoveComplete={onComplete}
+        onEnterSound={sounds.playBubbleInflate}
+        onEnterComplete={onMaterializeComplete}
+        onMoveComplete={isResolving ? onResolveComplete : undefined}
+        onPopComplete={onPopComplete}
       />
     </Canvas>
   );
