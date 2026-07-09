@@ -37,6 +37,7 @@ export type MergeLetterLabelsProps = {
   layout: LetterLayout;
   mergeCenterX: number;
   mergeDiameter: number;
+  finalLetterSpacing?: number;
   font: SkFont;
 };
 
@@ -47,6 +48,7 @@ type MergeLetterLabelProps = {
   layout: LetterLayout;
   mergeCenterX: number;
   mergeDiameter: number;
+  finalLetterSpacing?: number;
   font: SkFont;
 };
 
@@ -57,6 +59,7 @@ function MergeLetterLabel({
   layout,
   mergeCenterX,
   mergeDiameter,
+  finalLetterSpacing,
   font,
 }: MergeLetterLabelProps) {
   const initialCenterX = layout.centers[position] ?? mergeCenterX;
@@ -73,6 +76,7 @@ function MergeLetterLabel({
       mergeProgress.value,
       position,
       layout.centers.length,
+      finalLetterSpacing,
     );
     const ox = initialDiameter * 0.5;
     const oy = initialDiameter * 0.5;
@@ -117,6 +121,7 @@ export function MergeLetterLabels({
   layout,
   mergeCenterX,
   mergeDiameter,
+  finalLetterSpacing,
   font,
 }: MergeLetterLabelsProps) {
   return (
@@ -130,6 +135,7 @@ export function MergeLetterLabels({
           layout={layout}
           mergeCenterX={mergeCenterX}
           mergeDiameter={mergeDiameter}
+          finalLetterSpacing={finalLetterSpacing}
           font={font}
         />
       ))}

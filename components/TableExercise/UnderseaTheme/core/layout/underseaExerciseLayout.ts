@@ -8,7 +8,7 @@ import {
 
 const MIN_DIAMETER = 34;
 const MAX_DIAMETER = 74;
-const GAP_RATIO = 0.26;
+export const GAP_RATIO = 0.26;
 
 /** Vertical placement of the current-word bubble row inside the koi zone. */
 export const TRANSFORMATION_WORD_ROW_Y_RATIO = 0.2;

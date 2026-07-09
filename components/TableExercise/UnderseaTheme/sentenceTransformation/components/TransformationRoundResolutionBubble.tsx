@@ -6,8 +6,7 @@ import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvid
 import { LetterBubble } from '../../wordTransformation/components/LetterBubble';
 
 import {
-  ROUND_RESOLVE_FLY_DURATION_MS,
-  ROUND_SOLVED_POP_DURATION_MS,
+  ROUND_MATERIALIZE_DURATION_MS,
   type SentenceRoundPhase,
 } from '../domain';
 
@@ -65,34 +64,48 @@ export function TransformationRoundResolutionBubble({
   const isHolding = roundPhase === 'hold';
   const isPopping = roundPhase === 'pop';
 
-  const visible =
-    isMaterializing || isResolving || isHolding || isPopping;
+  const visible = isMaterializing || isResolving || isHolding || isPopping;
 
   if (!visible) {
     return null;
   }
+
+  const bubbleCenterX = isMaterializing ? bubble.fromCenterX : bubble.toCenterX;
+  const bubbleCenterY = isMaterializing ? bubble.fromCenterY : bubble.toCenterY;
+  const bubbleDiameter = isMaterializing ? bubble.fromDiameter : bubble.toDiameter;
+  const moveDuration = isMaterializing
+    ? ROUND_MATERIALIZE_DURATION_MS
+    : isResolving
+      ? bubble.flyDurationMs
+      : 0;
+  const moveComplete = isMaterializing
+    ? onMaterializeComplete
+    : isResolving
+      ? onResolveComplete
+      : undefined;
 
   return (
     <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
       <LetterBubble
         key={bubble.word}
         char={bubble.word}
-        centerX={isMaterializing ? bubble.fromCenterX : bubble.toCenterX}
-        centerY={isMaterializing ? bubble.fromCenterY : bubble.toCenterY}
-        diameter={isMaterializing ? bubble.fromDiameter : bubble.toDiameter}
+        centerX={bubbleCenterX}
+        centerY={bubbleCenterY}
+        diameter={bubbleDiameter}
         initialCenterX={bubble.fromCenterX}
         initialCenterY={bubble.fromCenterY}
-        initialDiameter={bubble.fromDiameter}
-        skipEnter={!isMaterializing}
+        initialDiameter={
+          isMaterializing ? bubble.fromDiameter * 0.85 : bubble.fromDiameter
+        }
+        skipEnter
         labelFixed
-        moveDurationMs={isResolving ? bubble.flyDurationMs : 0}
+        moveDurationMs={moveDuration}
         status={isPopping ? 'popped' : 'idle'}
         image={images.bubble}
         font={font}
         clock={clock}
         onEnterSound={sounds.playBubbleInflate}
-        onEnterComplete={onMaterializeComplete}
-        onMoveComplete={isResolving ? onResolveComplete : undefined}
+        onMoveComplete={moveComplete}
         onPopComplete={onPopComplete}
       />
     </Canvas>

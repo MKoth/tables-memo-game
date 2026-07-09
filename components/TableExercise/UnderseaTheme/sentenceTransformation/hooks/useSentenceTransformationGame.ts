@@ -20,7 +20,6 @@ import {
 import {
   createSentenceRoundController,
   createSentenceTransformationExercise,
-  displaySlotsWithSolvedWord,
   findBlankSlotIndex,
   shuffleIndices,
   ROUND_RESOLVE_FLY_DURATION_MS,

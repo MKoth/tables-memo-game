@@ -32,7 +32,7 @@ export function TransformationMergeBubbles({
     [koiRect, word.length],
   );
 
-  const { mergeCenterX, mergeDiameter } = useMemo(
+  const { mergeCenterX, mergeDiameter, finalLetterSpacing } = useMemo(
     () => computeMergeTarget(layout, koiRect),
     [koiRect, layout],
   );
@@ -60,10 +60,10 @@ export function TransformationMergeBubbles({
         layout={layout}
         mergeCenterX={mergeCenterX}
         mergeDiameter={mergeDiameter}
+        finalLetterSpacing={finalLetterSpacing}
         bubbleImage={images.bubble}
         bounds={koiRect}
         clock={useUnderseaThemeClock()}
-        // pass through bubbleDeform defaults so metaballs visually match LetterBubble
         bgCutoff={bubbleDeformUniformDefaults.bgCutoff}
         centerClear={bubbleDeformUniformDefaults.centerClear}
         rimClear={bubbleDeformUniformDefaults.rimClear}
@@ -76,6 +76,7 @@ export function TransformationMergeBubbles({
         layout={layout}
         mergeCenterX={mergeCenterX}
         mergeDiameter={mergeDiameter}
+        finalLetterSpacing={finalLetterSpacing}
         font={font}
       />
     </Canvas>

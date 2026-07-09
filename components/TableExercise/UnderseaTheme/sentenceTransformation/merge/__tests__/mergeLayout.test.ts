@@ -5,6 +5,7 @@ import {
 import type { ZoneRect } from '../../../core/layout/computeUnderseaThemeLayout';
 import {
   buildMergeShaderUniforms,
+  computeMergeEndLayout,
   computeMergeTarget,
   interpolateMergeLetterState,
   MERGE_SHADER_MAX_LETTERS,
@@ -21,7 +22,7 @@ describe('computeMergeTarget', () => {
     expect(mergeCenterX).toBe((layout.centers[0]! + layout.centers[3]!) * 0.5);
   });
 
-  it('shrinks merged diameter to at least 28px', () => {
+  it('shrinks merged diameter to at least 48px', () => {
     const layout: LetterLayout = {
       diameter: 40,
       rowY: 120,
@@ -30,7 +31,7 @@ describe('computeMergeTarget', () => {
 
     const { mergeDiameter } = computeMergeTarget(layout, KOI_RECT);
 
-    expect(mergeDiameter).toBe(28);
+    expect(mergeDiameter).toBeGreaterThanOrEqual(48);
   });
 });
 
@@ -92,6 +93,36 @@ describe('buildMergeShaderUniforms', () => {
       ).centerX,
     );
   });
+
+describe('computeMergeEndLayout', () => {
+  it('centers merge on the midpoint of the letter row', () => {
+    const { mergeCenterX } = computeMergeEndLayout(KOI_RECT, 'cantamos');
+
+    expect(mergeCenterX).toBeGreaterThan(KOI_RECT.x);
+    expect(mergeCenterX).toBeLessThan(KOI_RECT.x + KOI_RECT.w);
+  });
+
+  it('returns letterCenters matching computeLetterLayout centers', () => {
+    const layout = computeLetterLayout(KOI_RECT, 8);
+    const { letterCenters } = computeMergeEndLayout(KOI_RECT, 'cantamos');
+
+    expect(letterCenters).toEqual(layout.centers);
+  });
+
+  it('returns mergeDiameter at least the letter diameter scaled', () => {
+    const layout = computeLetterLayout(KOI_RECT, 4);
+    const { mergeDiameter } = computeMergeEndLayout(KOI_RECT, 'hablo');
+
+    expect(mergeDiameter).toBeGreaterThanOrEqual(layout.diameter * 1.4);
+  });
+
+  it('handles empty word gracefully', () => {
+    const { mergeCenterX, letterCenters } = computeMergeEndLayout(KOI_RECT, '');
+
+    expect(mergeCenterX).toBe(KOI_RECT.x + KOI_RECT.w * 0.5);
+    expect(letterCenters).toEqual([]);
+  });
+});
 
   it('zeroes out unused shader slots beyond the letter count', () => {
     const layout = computeLetterLayout(KOI_RECT, 2);

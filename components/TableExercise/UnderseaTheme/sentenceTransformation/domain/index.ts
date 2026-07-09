@@ -5,6 +5,7 @@ export {
 export { expandSentencePromptSlots } from './expandSentencePromptSlots';
 export {
   ROUND_HOLD_DURATION_MS,
+  ROUND_MATERIALIZE_DURATION_MS,
   ROUND_MERGE_DURATION_MS,
   ROUND_RESOLVE_FLY_DURATION_MS,
   ROUND_ROW_ENTER_DURATION_MS,

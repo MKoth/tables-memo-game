@@ -22,6 +22,7 @@ export type MetaballMergeLayerProps = {
   layout: LetterLayout;
   mergeCenterX: number;
   mergeDiameter: number;
+  finalLetterSpacing?: number;
   bubbleImage: SkImage;
   bounds: ZoneRect;
   clock?: SharedValue<number>;
@@ -61,6 +62,7 @@ export function MetaballMergeLayer({
   layout,
   mergeCenterX,
   mergeDiameter,
+  finalLetterSpacing,
   bubbleImage,
   bounds,
   clock,
@@ -81,7 +83,7 @@ export function MetaballMergeLayer({
 
   const uniforms = useDerivedValue(() => {
     const { mergeProgress: progress, letterCount, letterCenters, baseOpacity } =
-      buildMergeShaderUniforms(layout, mergeCenterX, mergeDiameter, mergeProgress.value);
+      buildMergeShaderUniforms(layout, mergeCenterX, mergeDiameter, mergeProgress.value, undefined, finalLetterSpacing);
     const {
       phase: defaultPhase,
       wobbleAmp: defaultWobbleAmp,
