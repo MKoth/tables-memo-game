@@ -121,6 +121,24 @@ describe('computeSentenceRowLayout', () => {
     expect(layout1.configs[0]?.bellSize).toBe(layout2.configs[0]?.bellSize);
   });
 
+  it('caps the blank footprint diameter for very long words', () => {
+    const slots: SentencePromptDisplaySlot[] = [{ kind: 'blank' }];
+    // "extraordinariamente" is 18 letters, will produce a huge natural width
+    const layout = computeSentenceRowLayout({
+      slots,
+      jellyRect: JELLY_RECT,
+      koiRect: KOI_RECT,
+      conjugatedForm: 'extraordinariamente',
+      roundPos: 0,
+    });
+
+    // JELLY_RECT.w is 500. 45% is 225.
+    // BODY_BELL_SIZE_MAX * 2.5 is 72 * 2.5 = 180.
+    // So it should be capped at 180.
+    expect(layout.blankFootprintDiameter).toBeLessThanOrEqual(180);
+    expect(layout.configs[0]?.bellSize).toBeCloseTo(layout.blankFootprintDiameter * 0.7, 1);
+  });
+
   it('wraps a long sentence onto multiple lines', () => {
     const slots: SentencePromptDisplaySlot[] = Array.from({ length: 14 }, (_, index) => ({
       kind: 'token' as const,

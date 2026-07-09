@@ -158,11 +158,16 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
   // Blank footprint diameter: pack the conjugated form at the letter-bubble size for that length
   const letterLayout = computeLetterLayout(koiRect, conjugatedForm.length);
   const gap = letterLayout.diameter * GAP_RATIO;
-  const blankFootprintDiameter =
+  const naturalWidth =
     conjugatedForm.length > 0
       ? conjugatedForm.length * letterLayout.diameter +
         (conjugatedForm.length - 1) * gap
       : letterLayout.diameter * 1.4;
+
+  // Cap the footprint so it doesn't push everything off screen or look absurdly large.
+  // 45% of zone width or 2.5x the max normal bell size is a reasonable upper bound.
+  const maxWidth = Math.min(zoneWidth * 0.45, BODY_BELL_SIZE_MAX * 2.5);
+  const blankFootprintDiameter = Math.min(naturalWidth, maxWidth);
 
   const configs: SentenceSlotConfig[] = slots.map((slot, index) => {
     const isBlank = slot.kind === 'blank';
