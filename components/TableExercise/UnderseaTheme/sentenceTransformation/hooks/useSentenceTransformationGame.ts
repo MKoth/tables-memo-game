@@ -212,7 +212,7 @@ export function useSentenceTransformationGame({
     [displaySlots, jellyRect, koiRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
   );
 
-  const computeCurrentSwimPaths = useCallback((): SwimPath[] => {
+  const swimPaths = useMemo<SwimPath[]>(() => {
     if (slotLayout.xs.length === 0) {
       return [];
     }
@@ -228,36 +228,6 @@ export function useSentenceTransformationGame({
       slotCenters,
     });
   }, [orientation, screenWidth, screenHeight, jellyRect, slotLayout.xs, slotLayout.ys]);
-
-  const computeSwimPathsFromRound = useCallback(
-    (round: SentenceTransformationRound | null, pos: number): SwimPath[] => {
-      const slots = round?.displaySlots ?? [];
-      if (slots.length === 0) {
-        return [];
-      }
-      const freshLayout = computeSentenceRowLayout({
-        slots,
-        jellyRect: jellyRectRef.current,
-        koiRect: koiRectRef.current,
-        conjugatedForm: round?.conjugatedForm ?? '',
-        roundPos: pos,
-      });
-      const slotCenters = freshLayout.xs.map((x, i) => ({
-        x,
-        y: freshLayout.ys[i] ?? 0,
-      }));
-      return planSwimPaths({
-        orientation,
-        screenWidth,
-        screenHeight,
-        jellyRect: jellyRectRef.current,
-        slotCenters,
-      });
-    },
-    [orientation, screenWidth, screenHeight],
-  );
-
-  const [swimPaths, setSwimPaths] = useState<SwimPath[]>(computeCurrentSwimPaths);
 
   const handleRoundPhaseChange = useCallback(() => {
     const snapshot = roundRef.current?.getSnapshot();
@@ -276,7 +246,6 @@ export function useSentenceTransformationGame({
       if (baseWord.length > 0) {
         configureEnterPhase(baseWord);
       }
-      setSwimPaths(computeSwimPathsFromRound(roundForSnapshot, snapshot.roundPos));
       return;
     }
 
@@ -312,7 +281,7 @@ export function useSentenceTransformationGame({
     if (snapshot.phase === 'pop') {
       playPopRef.current?.();
     }
-  }, [configureEnterPhase, roundOrder, rounds, syncRoundSnapshot, computeSwimPathsFromRound]);
+  }, [configureEnterPhase, roundOrder, rounds, syncRoundSnapshot]);
 
   handleRoundPhaseChangeRef.current = handleRoundPhaseChange;
 
@@ -330,7 +299,6 @@ export function useSentenceTransformationGame({
 
     if (currentRound != null) {
       configureEnterPhase(currentRound.infinitive);
-      setSwimPaths(computeSwimPathsFromRound(currentRound, roundSnapshot.roundPos));
     }
 
     return () => {
@@ -378,14 +346,7 @@ export function useSentenceTransformationGame({
   const handleRowExitComplete = useCallback(() => {
     roundRef.current?.notifyExitComplete();
     syncRoundSnapshot();
-    const snapshot = roundRef.current?.getSnapshot();
-    if (snapshot) {
-      const roundIndex = roundOrder[snapshot.roundPos] ?? -1;
-      const roundForSnapshot =
-        roundIndex >= 0 ? rounds[roundIndex] ?? null : null;
-      setSwimPaths(computeSwimPathsFromRound(roundForSnapshot, snapshot.roundPos));
-    }
-  }, [syncRoundSnapshot, roundOrder, rounds, computeSwimPathsFromRound]);
+  }, [syncRoundSnapshot]);
 
   const roundPhase = roundSnapshot.phase;
   const transitioning = roundPhase !== 'transform';
