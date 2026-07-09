@@ -304,8 +304,6 @@ export function JellyfishSentenceRowLayer({
     layoutY.value = layout.ys;
     baseLayoutScale.value = layout.scales;
     slotAnimScale.value = layout.scales.map(() => 1);
-    motionAngles.value = new Array(count).fill(0);
-    motionAmps.value = new Array(count).fill(0);
 
     if (roundPhase === 'enter') {
       blankExitProgress.value = 0;
