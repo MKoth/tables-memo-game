@@ -270,6 +270,11 @@ export function useSentenceTransformationGame({
     const roundForSnapshot =
       roundIndex >= 0 ? rounds[roundIndex] ?? null : null;
 
+    if (snapshot.phase === 'advance') {
+      setSwimPaths(computeSwimPathsFromRound(roundForSnapshot, snapshot.roundPos));
+      return;
+    }
+
     if (snapshot.phase === 'enter') {
       const baseWord = roundForSnapshot?.infinitive ?? '';
       if (baseWord.length > 0) {
