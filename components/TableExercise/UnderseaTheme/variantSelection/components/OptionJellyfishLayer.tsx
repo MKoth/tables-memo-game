@@ -38,6 +38,7 @@ export type OptionJellyfishLayerProps = {
   options: OptionJellyfishState[];
   swimPaths: SwimPath[];
   roundPhase: string;
+  correctAnswerIndex: number;
   onOptionTap: (option: OptionJellyfishState) => void;
 };
 
@@ -205,6 +206,7 @@ export function OptionJellyfishLayer({
   options,
   swimPaths,
   roundPhase,
+  correctAnswerIndex,
   onOptionTap,
 }: OptionJellyfishLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
@@ -253,6 +255,7 @@ export function OptionJellyfishLayer({
   const motionAngles = useSharedValue<number[]>([]);
   const motionAmps = useSharedValue<number[]>([]);
   const swimProgress = useSharedValue(1);
+  const optionExitProgress = useSharedValue<number[]>([]);
 
   const onOptionTapRef = useRef(onOptionTap);
   onOptionTapRef.current = onOptionTap;
@@ -294,6 +297,27 @@ export function OptionJellyfishLayer({
     tintFlashPreset.value = options.map(() => -1);
     tintFlashUntil.value = options.map(() => 0);
   }, [optionLayout.diameter, options, bellSizesSv, tintFlashPreset, tintFlashUntil]);
+
+  const hasAnswer = correctAnswerIndex >= 0;
+  const shouldHideCorrect = hasAnswer && roundPhase !== 'enter' && roundPhase !== 'transform';
+
+  useEffect(() => {
+    if (roundPhase === 'enter') {
+      optionExitProgress.value = options.map(() => 0);
+    }
+  }, [roundPhase, options, optionExitProgress]);
+
+  useEffect(() => {
+    if (!shouldHideCorrect || options.length === 0) return;
+    const count = options.length;
+    const prog = [...optionExitProgress.value];
+    for (let i = 0; i < count; i++) {
+      if (i !== correctAnswerIndex) {
+        prog[i] = 1;
+      }
+    }
+    optionExitProgress.value = prog;
+  }, [shouldHideCorrect, correctAnswerIndex, options.length, optionExitProgress]);
 
   useEffect(() => {
     const count = swimPaths.length;
@@ -354,16 +378,27 @@ export function OptionJellyfishLayer({
       cY: centerYs.value,
       anim: slotAnimScale.value,
       base: baseLayoutScale.value,
+      exitProg: optionExitProgress.value,
     }),
-    ({ xs, ys, progress, sX, sY, cX, cY, anim, base }) => {
+    ({ xs, ys, progress, sX, sY, cX, cY, anim, base, exitProg }) => {
       const hasPaths = sX.length > 0 && sX.length === xs.length;
       renderLayoutX.value = xs.map((x, i) => {
+        if (exitProg[i] > 0) {
+          const fromX = cX[i] ?? x;
+          const toX = sX[i] ?? x;
+          return fromX + (toX - fromX) * exitProg[i];
+        }
         if (!hasPaths) return x;
         const fromX = sX[i] ?? x;
         const toX = cX[i] ?? x;
         return fromX + (toX - fromX) * progress;
       });
       renderLayoutY.value = ys.map((y, i) => {
+        if (exitProg[i] > 0) {
+          const fromY = cY[i] ?? y;
+          const toY = sY[i] ?? y;
+          return fromY + (toY - fromY) * exitProg[i];
+        }
         if (!hasPaths) return y;
         const fromY = sY[i] ?? y;
         const toY = cY[i] ?? y;
@@ -374,7 +409,7 @@ export function OptionJellyfishLayer({
   );
 
   useEffect(() => {
-    if (roundPhase === 'exit') {
+    if (roundPhase === 'exit' && !hasAnswer) {
       const count = options.length;
       const amps = new Array(count).fill(0);
       motionAngles.value = exitAngles.value;
@@ -396,11 +431,18 @@ export function OptionJellyfishLayer({
         },
       );
     }
-  }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress]);
+  }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress, hasAnswer]);
 
   const cellConfigs = useMemo(
     () => options.map(opt => toCellConfig(opt, optionLayout.diameter)),
     [options, optionLayout.diameter],
+  );
+
+  const filterIndex = shouldHideCorrect ? correctAnswerIndex : -1;
+
+  const visibleConfigs = useMemo(
+    () => cellConfigs.filter(c => c.index !== filterIndex),
+    [cellConfigs, filterIndex],
   );
 
   const gestureSize = optionLayout.diameter * 1.1;
@@ -410,7 +452,7 @@ export function OptionJellyfishLayer({
   return (
     <>
       <Canvas style={styles.canvas} pointerEvents="none">
-        {cellConfigs.map(config => (
+        {visibleConfigs.map(config => (
           <SlotOptionCellJellyfish
             key={config.key}
             config={config}
@@ -427,7 +469,7 @@ export function OptionJellyfishLayer({
             clock={clock}
           />
         ))}
-        {cellConfigs.map(config => (
+        {visibleConfigs.map(config => (
           <SlotOptionCellLabel
             key={`${config.key}-label`}
             config={config}
@@ -446,7 +488,7 @@ export function OptionJellyfishLayer({
           />
         ))}
       </Canvas>
-      {options.map((option, idx) => (
+      {!shouldHideCorrect && options.map((option, idx) => (
         <SingleOptionGesture
           key={`gesture-${option.index}`}
           centerX={optionCenters[idx] ?? 0}
