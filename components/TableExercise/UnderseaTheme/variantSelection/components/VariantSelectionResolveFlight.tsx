@@ -17,13 +17,14 @@ import { CellLabel } from '../../jellyfish/JellyfishTableLayer/components/CellLa
 import type { CellConfig } from '../../jellyfish/JellyfishTableLayer/helpers/cellConfigBuilders';
 import {
   BODY_FONT_SIZE,
-  DEFAULT_TRANSLATION_DISPLAY_MS,
   JELLYFISH_CLOCK_FPS,
   TAP_MAX_DISTANCE_PX,
+  TILT_AMP_MAX,
 } from '../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import {
   ROUND_RESOLVE_FLY_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
+  ROUND_TRANSLATION_DISPLAY_MS,
 } from '../domain/roundResolutionTiming';
 
 export type VariantSelectionResolveFlightPhase = 'idle' | 'resolve' | 'hold' | 'exit';
@@ -108,21 +109,34 @@ export function VariantSelectionResolveFlight({
   const onExitCompleteRef = useRef(onExitComplete);
   onExitCompleteRef.current = onExitComplete;
 
-  const [isVisible, setIsVisible] = useState(false);
-  const isVisibleRef = useRef(isVisible);
-  isVisibleRef.current = isVisible;
+  const fireResolveComplete = useCallback(() => {
+    onResolveCompleteRef.current?.();
+  }, []);
+
+  const fireExitComplete = useCallback(() => {
+    onExitCompleteRef.current?.();
+  }, []);
 
   useEffect(() => {
     if (phase === 'idle') {
-      setIsVisible(false);
+      motionAngle.value = withTiming(0, { duration: 200 });
+      motionAmp.value = withTiming(0, { duration: 200 });
       resolveX.value = fromCenterX;
       resolveY.value = fromCenterY;
       return;
     }
 
-    setIsVisible(true);
-
     if (phase === 'resolve') {
+      const angle = Math.atan2(
+        toCenterY - fromCenterY,
+        toCenterX - fromCenterX,
+      );
+      motionAngle.value = angle;
+      motionAmp.value = withTiming(TILT_AMP_MAX, { duration: 300 });
+
+      resolveX.value = fromCenterX;
+      resolveY.value = fromCenterY;
+
       resolveX.value = withTiming(
         toCenterX,
         {
@@ -132,9 +146,7 @@ export function VariantSelectionResolveFlight({
         finished => {
           'worklet';
           if (finished) {
-            if (isVisibleRef.current) {
-              scheduleOnRN(() => onResolveCompleteRef.current?.());
-            }
+            scheduleOnRN(fireResolveComplete);
           }
         },
       );
@@ -145,7 +157,17 @@ export function VariantSelectionResolveFlight({
           easing: Easing.out(Easing.cubic),
         },
       );
+    } else if (phase === 'hold') {
+      motionAngle.value = withTiming(0, { duration: 200 });
+      motionAmp.value = withTiming(0, { duration: 200 });
     } else if (phase === 'exit') {
+      const angle = Math.atan2(
+        toSpawnY - toCenterY,
+        toSpawnX - toCenterX,
+      );
+      motionAngle.value = angle;
+      motionAmp.value = withTiming(TILT_AMP_MAX, { duration: 300 });
+
       resolveX.value = withTiming(
         toSpawnX,
         {
@@ -155,9 +177,7 @@ export function VariantSelectionResolveFlight({
         finished => {
           'worklet';
           if (finished) {
-            if (isVisibleRef.current) {
-              scheduleOnRN(() => onExitCompleteRef.current?.());
-            }
+            scheduleOnRN(fireExitComplete);
           }
         },
       );
@@ -180,7 +200,7 @@ export function VariantSelectionResolveFlight({
     translatedTimeoutRef.current = setTimeout(() => {
       setShowTranslation(false);
       translatedTimeoutRef.current = null;
-    }, DEFAULT_TRANSLATION_DISPLAY_MS);
+    }, ROUND_TRANSLATION_DISPLAY_MS);
   }, [translation]);
 
   const tapGesture = useTapGesture({
@@ -207,7 +227,7 @@ export function VariantSelectionResolveFlight({
 
   const displayLabel = showTranslation && translation ? translation : undefined;
 
-  if (!isVisible) return null;
+  if (phase === 'idle') return null;
 
   return (
     <>

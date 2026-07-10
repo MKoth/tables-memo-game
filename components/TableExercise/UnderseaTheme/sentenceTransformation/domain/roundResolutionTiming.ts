@@ -18,7 +18,7 @@ export const ROUND_MERGE_DURATION_MS = 500;
 export const ROUND_MATERIALIZE_DURATION_MS = 320;
 
 /** Merged bubble glide to the blank slot; blank jellyfish exits concurrently. */
-export const ROUND_RESOLVE_FLY_DURATION_MS = 800;
+export const ROUND_RESOLVE_FLY_DURATION_MS = 3000;
 
 /** Solved word jellyfish pop burst length. */
 export const ROUND_SOLVED_POP_DURATION_MS = BUBBLE_BURST_DURATION_MS;

@@ -49,6 +49,7 @@ export type JellyfishSentenceRowLayerProps = {
   swimPaths: SwimPath[];
   blankSlotIndex: number;
   blankExiting: boolean;
+  blankExitDurationMs?: number;
   poppingSlotIndex: number | null;
   onTokenTap?: () => void;
   onRowEnterComplete?: () => void;
@@ -198,6 +199,7 @@ export function JellyfishSentenceRowLayer({
   swimPaths,
   blankSlotIndex,
   blankExiting,
+  blankExitDurationMs = ROUND_ROW_EXIT_DURATION_MS,
   poppingSlotIndex,
   onTokenTap,
   onRowEnterComplete,
@@ -428,7 +430,7 @@ export function JellyfishSentenceRowLayer({
     blankExitProgress.value = withTiming(
       1,
       {
-        duration: ROUND_ROW_EXIT_DURATION_MS,
+        duration: blankExitDurationMs,
         easing: Easing.in(Easing.cubic),
       },
     );

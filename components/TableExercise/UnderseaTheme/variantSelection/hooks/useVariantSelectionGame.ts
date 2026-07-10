@@ -46,7 +46,7 @@ export type VariantSelectionGame = {
   swimPaths: SwimPath[];
   optionSwimPaths: SwimPath[];
   options: OptionJellyfishState[];
-  correctAnswerIndex: number;
+  correctOptionIndex: number;
   blankSlotIndex: number;
   blankExiting: boolean;
   resolveFlight: ResolutionFlightState | null;
@@ -90,7 +90,7 @@ export function useVariantSelectionGame({
     roundPos: 0,
     isSessionComplete: false,
   }));
-  const [correctAnswerIndex, setCorrectAnswerIndex] = useState(-1);
+  const [correctOptionIndex, setCorrectOptionIndex] = useState(-1);
   const [resolveFlight, setResolveFlight] = useState<ResolutionFlightState | null>(null);
   const roundRef = useRef<ReturnType<typeof createVariantSelectionRoundController> | null>(null);
   const koiRectRef = useRef(koiRect);
@@ -192,7 +192,7 @@ export function useVariantSelectionGame({
   const handleRoundPhaseChangeRef = useRef<() => void>(() => {});
 
   const resetRoundState = useCallback(() => {
-    setCorrectAnswerIndex(-1);
+    setCorrectOptionIndex(-1);
     setResolveFlight(null);
   }, []);
 
@@ -274,14 +274,18 @@ export function useVariantSelectionGame({
       if (roundSnapshot.phase !== 'transform') return;
       if (option.isCorrect) {
         playSuccessRef.current?.();
-        setCorrectAnswerIndex(option.index);
-        roundRef.current?.notifyCorrectAnswer();
+    setCorrectOptionIndex(option.index);
+    roundRef.current?.notifyCorrectSelection();
+        const flight = computeFlight();
+        if (flight != null) {
+          setResolveFlight(flight);
+        }
         syncRoundSnapshot();
       } else {
         playWrongRef.current?.();
       }
     },
-    [roundSnapshot.phase, syncRoundSnapshot],
+    [roundSnapshot.phase, syncRoundSnapshot, computeFlight],
   );
 
   const handleResolveComplete = useCallback(() => {
@@ -295,13 +299,13 @@ export function useVariantSelectionGame({
   }, [syncRoundSnapshot]);
 
   useEffect(() => {
-    if (roundSnapshot.phase === 'resolve' && correctAnswerIndex >= 0 && resolveFlight == null) {
+    if (roundSnapshot.phase === 'resolve' && correctOptionIndex >= 0 && resolveFlight == null) {
       const flight = computeFlight();
       if (flight != null) {
         setResolveFlight(flight);
       }
     }
-  }, [roundSnapshot.phase, correctAnswerIndex, resolveFlight, computeFlight]);
+  }, [roundSnapshot.phase, correctOptionIndex, resolveFlight, computeFlight]);
 
   const translation = useMemo(() => {
     if (currentRound == null) return '';
@@ -327,7 +331,7 @@ export function useVariantSelectionGame({
             : 'idle';
 
   const instruction = useMemo(() => {
-    if (isCompleted) return 'All words completed!';
+    if (isCompleted) return 'All words transformed!';
     if (roundPhase === 'enter') return '';
     if (roundPhase === 'transform') return 'Select the correct form';
     if (roundPhase === 'resolve') return '';
@@ -344,7 +348,7 @@ export function useVariantSelectionGame({
     swimPaths,
     optionSwimPaths,
     options,
-    correctAnswerIndex,
+    correctOptionIndex,
     blankSlotIndex,
     blankExiting,
     resolveFlight,

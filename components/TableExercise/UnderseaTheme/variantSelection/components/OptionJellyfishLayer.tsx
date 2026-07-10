@@ -38,7 +38,7 @@ export type OptionJellyfishLayerProps = {
   options: OptionJellyfishState[];
   swimPaths: SwimPath[];
   roundPhase: string;
-  correctAnswerIndex: number;
+  correctOptionIndex: number;
   onOptionTap: (option: OptionJellyfishState) => void;
 };
 
@@ -206,7 +206,7 @@ export function OptionJellyfishLayer({
   options,
   swimPaths,
   roundPhase,
-  correctAnswerIndex,
+  correctOptionIndex,
   onOptionTap,
 }: OptionJellyfishLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
@@ -298,7 +298,7 @@ export function OptionJellyfishLayer({
     tintFlashUntil.value = options.map(() => 0);
   }, [optionLayout.diameter, options, bellSizesSv, tintFlashPreset, tintFlashUntil]);
 
-  const hasAnswer = correctAnswerIndex >= 0;
+  const hasAnswer = correctOptionIndex >= 0;
   const shouldHideCorrect = hasAnswer && roundPhase !== 'enter' && roundPhase !== 'transform';
 
   useEffect(() => {
@@ -307,17 +307,28 @@ export function OptionJellyfishLayer({
     }
   }, [roundPhase, options, optionExitProgress]);
 
-  useEffect(() => {
-    if (!shouldHideCorrect || options.length === 0) return;
-    const count = options.length;
+  const fireOptionExitAnim = useRef<() => void>(() => {});
+  fireOptionExitAnim.current = () => {
+    'worklet';
     const prog = [...optionExitProgress.value];
-    for (let i = 0; i < count; i++) {
-      if (i !== correctAnswerIndex) {
-        prog[i] = 1;
+    for (let i = 0; i < prog.length; i++) {
+      if (i !== correctOptionIndex && (prog[i] ?? 0) < 1) {
+        prog[i] = withTiming(1, {
+          duration: ROUND_ROW_EXIT_DURATION_MS,
+          easing: Easing.in(Easing.cubic),
+        });
       }
     }
     optionExitProgress.value = prog;
-  }, [shouldHideCorrect, correctAnswerIndex, options.length, optionExitProgress]);
+  };
+
+  useEffect(() => {
+    if (!shouldHideCorrect || options.length === 0) return;
+    runOnUI(() => {
+      'worklet';
+      fireOptionExitAnim.current();
+    })();
+  }, [shouldHideCorrect, correctOptionIndex, options.length, optionExitProgress]);
 
   useEffect(() => {
     const count = swimPaths.length;
@@ -409,36 +420,38 @@ export function OptionJellyfishLayer({
   );
 
   useEffect(() => {
-    if (roundPhase === 'exit' && !hasAnswer) {
-      const count = options.length;
-      const amps = new Array(count).fill(0);
-      motionAngles.value = exitAngles.value;
-      for (let i = 0; i < count; i++) {
-        amps[i] = TILT_AMP_MAX;
-      }
-      motionAmps.value = amps;
-      swimProgress.value = withTiming(
-        0,
-        {
-          duration: ROUND_ROW_EXIT_DURATION_MS,
-          easing: Easing.in(Easing.cubic),
-        },
-        finished => {
-          'worklet';
-          if (finished) {
-            motionAmps.value = new Array(motionAmps.value.length).fill(0);
-          }
-        },
-      );
+    if (roundPhase !== 'exit') return;
+
+    optionExitProgress.value = options.map(() => 0);
+
+    const count = options.length;
+    const amps = new Array(count).fill(0);
+    motionAngles.value = exitAngles.value;
+    for (let i = 0; i < count; i++) {
+      amps[i] = TILT_AMP_MAX;
     }
-  }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress, hasAnswer]);
+    motionAmps.value = amps;
+    swimProgress.value = withTiming(
+      0,
+      {
+        duration: ROUND_ROW_EXIT_DURATION_MS,
+        easing: Easing.in(Easing.cubic),
+      },
+      finished => {
+        'worklet';
+        if (finished) {
+          motionAmps.value = new Array(motionAmps.value.length).fill(0);
+        }
+      },
+    );
+  }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress, optionExitProgress]);
 
   const cellConfigs = useMemo(
     () => options.map(opt => toCellConfig(opt, optionLayout.diameter)),
     [options, optionLayout.diameter],
   );
 
-  const filterIndex = shouldHideCorrect ? correctAnswerIndex : -1;
+  const filterIndex = shouldHideCorrect ? correctOptionIndex : -1;
 
   const visibleConfigs = useMemo(
     () => cellConfigs.filter(c => c.index !== filterIndex),
@@ -488,7 +501,7 @@ export function OptionJellyfishLayer({
           />
         ))}
       </Canvas>
-      {!shouldHideCorrect && options.map((option, idx) => (
+      {roundPhase !== 'enter' && !shouldHideCorrect && options.map((option, idx) => (
         <SingleOptionGesture
           key={`gesture-${option.index}`}
           centerX={optionCenters[idx] ?? 0}

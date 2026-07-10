@@ -71,7 +71,7 @@ describe('createVariantSelectionRoundController', () => {
   it('moves from transform to resolve on correct answer', () => {
     const { controller } = createTestController(2);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'resolve',
     });
@@ -79,14 +79,14 @@ describe('createVariantSelectionRoundController', () => {
 
   it('ignores correct answer when not in transform', () => {
     const { controller } = createTestController(2);
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     expect(controller.getSnapshot().phase).toBe('enter');
   });
 
   it('moves from resolve to hold and schedules hold timer', () => {
     const { controller, timers } = createTestController(2);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
     const holdTimers = timers.filter(timer => timer.delayMs === ROUND_HOLD_DURATION_MS);
@@ -106,7 +106,7 @@ describe('createVariantSelectionRoundController', () => {
       onPhaseChange,
     });
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
     jest.advanceTimersByTime(1499);
@@ -120,7 +120,7 @@ describe('createVariantSelectionRoundController', () => {
   it('moves from hold to exit when hold timer fires', () => {
     const { controller, timers } = createTestController(2);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
     runHoldTimer(timers);
@@ -130,7 +130,7 @@ describe('createVariantSelectionRoundController', () => {
   it('moves from exit to advance and schedules next round', () => {
     const { controller, timers } = createTestController(3);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     runHoldTimer(timers);
     expect(controller.getSnapshot().phase).toBe('exit');
@@ -156,7 +156,7 @@ describe('createVariantSelectionRoundController', () => {
       onPhaseChange: () => recordedPhases.push(ctrl.getSnapshot().phase),
     });
     ctrl.notifyRowEnterComplete();
-    ctrl.notifyCorrectAnswer();
+    ctrl.notifyCorrectSelection();
     ctrl.notifyResolveComplete();
     runHoldTimer(timerList);
     ctrl.notifyExitComplete();
@@ -169,7 +169,7 @@ describe('createVariantSelectionRoundController', () => {
   it('marks session complete after the final round exits', () => {
     const { controller, timers, onSessionComplete } = createTestController(1);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     runHoldTimer(timers);
     controller.notifyExitComplete();
@@ -184,8 +184,8 @@ describe('createVariantSelectionRoundController', () => {
   it('ignores duplicate correct-answer events', () => {
     const { controller, onPhaseChange } = createTestController(2);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
+    controller.notifyCorrectSelection();
     expect(controller.getSnapshot().phase).toBe('resolve');
     expect(onPhaseChange).toHaveBeenCalledTimes(2);
   });
@@ -193,7 +193,7 @@ describe('createVariantSelectionRoundController', () => {
   it('ignores duplicate resolve-complete events', () => {
     const { controller } = createTestController(2);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     controller.notifyResolveComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
@@ -202,7 +202,7 @@ describe('createVariantSelectionRoundController', () => {
   it('ignores duplicate exit-complete events', () => {
     const { controller, timers } = createTestController(2);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     runHoldTimer(timers);
     controller.notifyExitComplete();
@@ -219,7 +219,7 @@ describe('createVariantSelectionRoundController', () => {
   it('fires onSessionComplete after all rounds completed', () => {
     const { controller, timers, onSessionComplete } = createTestController(1);
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     runHoldTimer(timers);
     controller.notifyExitComplete();
@@ -237,7 +237,7 @@ describe('createVariantSelectionRoundController', () => {
       holdDurationMs: 1500,
     });
     controller.notifyRowEnterComplete();
-    controller.notifyCorrectAnswer();
+    controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
     controller.dispose();

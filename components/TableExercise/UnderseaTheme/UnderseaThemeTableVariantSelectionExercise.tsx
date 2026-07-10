@@ -22,6 +22,7 @@ import { JellyfishSentenceRowLayer } from './sentenceTransformation/components/J
 import { useVariantSelectionGame } from './variantSelection/hooks/useVariantSelectionGame';
 import { OptionJellyfishLayer } from './variantSelection/components/OptionJellyfishLayer';
 import { VariantSelectionResolveFlight } from './variantSelection/components/VariantSelectionResolveFlight';
+import { ROUND_RESOLVE_FLY_DURATION_MS } from './variantSelection/domain/roundResolutionTiming';
 
 const DECORATIVE_KOI_Z = 2;
 const SENTENCE_ROW_LAYER_Z = 5;
@@ -82,6 +83,7 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
           swimPaths={game.swimPaths}
           blankSlotIndex={game.blankSlotIndex}
           blankExiting={game.blankExiting}
+          blankExitDurationMs={ROUND_RESOLVE_FLY_DURATION_MS}
           poppingSlotIndex={null}
           onTokenTap={handleTokenTap}
           onRowEnterComplete={game.handleRowEnterComplete}
@@ -93,7 +95,7 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
           options={game.options}
           swimPaths={game.optionSwimPaths}
           roundPhase={game.roundPhase}
-          correctAnswerIndex={game.correctAnswerIndex}
+          correctOptionIndex={game.correctOptionIndex}
           onOptionTap={game.handleOptionTap}
         />
       </View>

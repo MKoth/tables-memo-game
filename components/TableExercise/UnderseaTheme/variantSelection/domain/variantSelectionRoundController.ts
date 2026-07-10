@@ -29,7 +29,7 @@ export type VariantSelectionRoundControllerConfig = {
 export type VariantSelectionRoundController = {
   getSnapshot: () => VariantSelectionRoundControllerSnapshot;
   notifyRowEnterComplete: () => void;
-  notifyCorrectAnswer: () => void;
+  notifyCorrectSelection: () => void;
   notifyResolveComplete: () => void;
   notifyExitComplete: () => void;
   dispose: () => void;
@@ -92,7 +92,7 @@ export function createVariantSelectionRoundController({
       setPhase('transform');
     },
 
-    notifyCorrectAnswer() {
+    notifyCorrectSelection() {
       if (phase !== 'transform') return;
       setPhase('resolve');
     },
