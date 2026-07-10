@@ -10,11 +10,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TableExercise } from './components/TableExercise/TableExercise';
 import { TableSentenceTransformationExercise } from './components/TableExercise/TableSentenceTransformationExercise';
+import { TableVariantSelectionExercise } from './components/TableExercise/TableVariantSelectionExercise';
 import { TableWordTransformationExercise } from './components/TableExercise/TableWordTransformationExercise';
 
-/** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' */
-const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' =
-  'sentenceTransformation';
+/** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' */
+const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' =
+  'variantSelection';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -36,6 +37,8 @@ function AppContent() {
         <TableExercise />
       ) : ACTIVE_EXERCISE === 'wordTransformation' ? (
         <TableWordTransformationExercise />
+      ) : ACTIVE_EXERCISE === 'variantSelection' ? (
+        <TableVariantSelectionExercise />
       ) : (
         <TableSentenceTransformationExercise />
       )}
