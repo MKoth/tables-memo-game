@@ -12,10 +12,11 @@ import { TableExercise } from './components/TableExercise/TableExercise';
 import { TableSentenceTransformationExercise } from './components/TableExercise/TableSentenceTransformationExercise';
 import { TableVariantSelectionExercise } from './components/TableExercise/TableVariantSelectionExercise';
 import { TableWordTransformationExercise } from './components/TableExercise/TableWordTransformationExercise';
+import { TableWordLearningTranslationChoiceExercise } from './components/TableExercise/TableWordLearningTranslationChoiceExercise';
 
-/** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' */
-const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' =
-  'variantSelection';
+/** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' */
+const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' =
+  'translationChoice';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -39,6 +40,8 @@ function AppContent() {
         <TableWordTransformationExercise />
       ) : ACTIVE_EXERCISE === 'variantSelection' ? (
         <TableVariantSelectionExercise />
+      ) : ACTIVE_EXERCISE === 'translationChoice' ? (
+        <TableWordLearningTranslationChoiceExercise />
       ) : (
         <TableSentenceTransformationExercise />
       )}
