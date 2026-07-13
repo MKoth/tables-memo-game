@@ -1,5 +1,6 @@
 import type { WordList } from '../../../../../../data/wordsData';
 import { shuffleIndices as defaultShuffleIndices } from '../../../sentenceTransformation/domain/shuffleIndices';
+import { shuffleArray } from '../../shared/shuffleArray';
 import { selectTranslationDistractors } from './selectTranslationDistractors';
 import type {
   CreateTranslationChoiceExerciseOptions,
@@ -18,11 +19,7 @@ export function buildTranslationChoiceRounds(
       ...distractors.map(form => ({ form, isCorrect: false })),
     ];
 
-    const shuffled = [...options];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
-    }
+    const shuffled = shuffleArray(options);
 
     return {
       english: word.english,

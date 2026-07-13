@@ -11,6 +11,7 @@ import {
 import { planSwimPaths, type SwimPath } from '../../../sentenceTransformation/domain/swimPathPlanner';
 import {
   buildCascadeRevealOrder,
+  computeCascadeCompleteDelayMs,
   mapLettersWithCascade,
 } from '../../../wordTransformation/letterCascade';
 import type { LetterBubbleModel } from '../../../wordTransformation/domain/coreTypes';
@@ -36,13 +37,7 @@ export type TranslationChoiceGame = {
   optionSwimPaths: SwimPath[];
   options: OptionJellyfishState[];
   correctOptionIndex: number;
-  instruction: string;
-  solvedCount: number;
-  totalCount: number;
-  handleEnterComplete: () => void;
   handleOptionTap: (option: OptionJellyfishState) => void;
-  handleResolveComplete: () => void;
-  handleExitComplete: () => void;
 };
 
 export type UseTranslationChoiceGameParams = {
@@ -152,12 +147,13 @@ export function useTranslationChoiceGame({
   const spanishLetters = useMemo<LetterBubbleModel[]>(() => {
     if (currentRound == null) return [];
     const showSpanish =
+      roundSnapshot.phase === 'resolve' ||
       roundSnapshot.phase === 'hold' ||
       roundSnapshot.phase === 'exit' ||
       roundSnapshot.phase === 'advance';
     if (!showSpanish) return [];
     const word = currentRound.spanish;
-    const phase = roundSnapshot.phase === 'hold' ? 'enter' : 'exit';
+    const phase = roundSnapshot.phase === 'resolve' || roundSnapshot.phase === 'hold' ? 'enter' : 'exit';
     return mapLettersWithCascade({
       word,
       keyPrefix: `spanish-${roundSnapshot.roundPos}`,
@@ -209,10 +205,36 @@ export function useTranslationChoiceGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roundOrder.length]);
 
-  const handleEnterComplete = useCallback(() => {
-    roundRef.current?.notifyEnterComplete();
-    syncRoundSnapshot();
-  }, [syncRoundSnapshot]);
+  useEffect(() => {
+    if (roundSnapshot.phase !== 'enter') return;
+    const englishWord = currentRound?.english ?? '';
+    const delayMs = computeCascadeCompleteDelayMs(englishWord.length, 'enter');
+    const id = setTimeout(() => {
+      roundRef.current?.notifyEnterComplete();
+      syncRoundSnapshot();
+    }, delayMs);
+    return () => clearTimeout(id);
+  }, [roundSnapshot.phase, roundSnapshot.roundPos, currentRound, syncRoundSnapshot]);
+
+  useEffect(() => {
+    if (roundSnapshot.phase !== 'resolve') return;
+    const id = setTimeout(() => {
+      roundRef.current?.notifyResolveComplete();
+      syncRoundSnapshot();
+    }, 800);
+    return () => clearTimeout(id);
+  }, [roundSnapshot.phase, syncRoundSnapshot]);
+
+  useEffect(() => {
+    if (roundSnapshot.phase !== 'exit') return;
+    const spanishWord = currentRound?.spanish ?? '';
+    const delayMs = computeCascadeCompleteDelayMs(spanishWord.length, 'exit');
+    const id = setTimeout(() => {
+      roundRef.current?.notifyExitComplete();
+      syncRoundSnapshot();
+    }, delayMs);
+    return () => clearTimeout(id);
+  }, [roundSnapshot.phase, currentRound, syncRoundSnapshot]);
 
   const handleOptionTap = useCallback(
     (option: OptionJellyfishState) => {
@@ -229,25 +251,6 @@ export function useTranslationChoiceGame({
     [roundSnapshot.phase, syncRoundSnapshot],
   );
 
-  const handleResolveComplete = useCallback(() => {
-    roundRef.current?.notifyResolveComplete();
-    syncRoundSnapshot();
-  }, [syncRoundSnapshot]);
-
-  const handleExitComplete = useCallback(() => {
-    roundRef.current?.notifyExitComplete();
-    syncRoundSnapshot();
-  }, [syncRoundSnapshot]);
-
-  const instruction = useMemo(() => {
-    if (isCompleted) return 'All words learned!';
-    if (roundSnapshot.phase === 'enter') return '';
-    if (roundSnapshot.phase === 'transform') return 'Select the correct translation';
-    if (roundSnapshot.phase === 'resolve') return '';
-    if (roundSnapshot.phase === 'hold' || roundSnapshot.phase === 'exit' || roundSnapshot.phase === 'advance') return 'Nice!';
-    return '';
-  }, [isCompleted, roundSnapshot.phase]);
-
   return {
     isCompleted,
     roundPhase: roundSnapshot.phase,
@@ -257,12 +260,6 @@ export function useTranslationChoiceGame({
     optionSwimPaths,
     options,
     correctOptionIndex,
-    instruction,
-    solvedCount: roundSnapshot.roundPos,
-    totalCount: roundOrder.length,
-    handleEnterComplete,
     handleOptionTap,
-    handleResolveComplete,
-    handleExitComplete,
   };
 }
