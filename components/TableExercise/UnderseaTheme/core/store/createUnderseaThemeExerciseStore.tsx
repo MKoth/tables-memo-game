@@ -26,6 +26,11 @@ export const WORD_TRANSFORMATION_STORE_CONFIG: UnderseaThemeExerciseStoreConfig 
   getNextTutorialStep: (current) => current,
 };
 
+export const WORD_LEARNING_STORE_CONFIG: UnderseaThemeExerciseStoreConfig = {
+  tutorialStartStep: 'fish',
+  getNextTutorialStep: (current) => current,
+};
+
 export type UnderseaThemeExerciseState = {
   tutorialStep: TutorialStep;
   helpVisible: boolean;

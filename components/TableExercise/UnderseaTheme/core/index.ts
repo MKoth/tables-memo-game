@@ -46,6 +46,7 @@ export {
   useUnderseaThemeExerciseStore,
   TABLE_EXERCISE_STORE_CONFIG,
   WORD_TRANSFORMATION_STORE_CONFIG,
+  WORD_LEARNING_STORE_CONFIG,
   type UnderseaThemeExerciseState,
   type UnderseaThemeExerciseStore,
   type UnderseaThemeExerciseStoreConfig,
