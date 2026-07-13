@@ -1,6 +1,6 @@
 # Lang Tables Learn Game
 
-A React Native app for learning verb conjugation tables through undersea-themed interactive exercises.
+A React Native app for learning Spanish through undersea-themed interactive exercises — verb conjugation tables and individual vocabulary.
 
 ## Language
 
@@ -87,3 +87,47 @@ _Avoid_: sentence bar, word strip, jellyfish line
 **Decorative koi**:
 Background fish that swim across the full screen without carrying words, accepting taps, or participating in capture or transformation.
 _Avoid_: ambient koi, swimming decoration
+
+**Word entry**:
+A single Spanish–English translation pair (`spanish`, `english`). The atomic unit of vocabulary data, analogous to a body cell in conjugation tables.
+_Avoid_: vocabulary item, flashcard, term
+
+**Word list**:
+A named collection of word entries (`id`, `title`, `words[]`) that serves as the dataset for word-learning exercises. Analogous to a `TableData` for conjugation exercises.
+_Avoid_: vocabulary list, deck, word set
+
+**Translation choice exercise**:
+A word-learning exercise where the learner sees an English word as letter bubbles in the koi zone and selects the correct Spanish translation from three option jellyfish in the jelly zone. On correct selection the English bubbles pop and the Spanish word inflates in the same koi-zone position (a clean swap); all jellyfish exit simultaneously along their remembered swim-in paths.
+_Avoid_: word variant selection, vocabulary quiz, translation picker
+
+**Translation spelling exercise**:
+A word-learning exercise where the learner sees an English word as letter bubbles and spells the Spanish translation letter-by-letter by tapping shuffled letter bubbles (including 2–3 distractor letters not present in the target word). Letters must be selected left-to-right; tapping any instance of a repeated letter counts as correct. On completion the remaining distractor letters pop, then the English word pops, then the spelled Spanish word pops.
+_Avoid_: word transformation, letter spelling, type the word
+
+**Translation choice round controller**:
+The round lifecycle for translation choice: enter (English letter bubbles inflate, option jellyfish swim in), transform (user taps a jellyfish; wrong = red flash), resolve (English bubbles pop, Spanish word inflates, all jellyfish exit along remembered paths), hold (~3 s reading pause), exit (Spanish letter bubbles pop in cascade), advance (brief gap before next round).
+_Avoid_: translation choice phases, choice lifecycle
+
+**Translation spelling round controller**:
+The round lifecycle for translation spelling: enter (English word inflates, shuffled letter bubbles appear), transform (user taps letters left-to-right; wrong = red wiggle; correct letters fly to the row below English), resolve (remaining distractor letters pop, English word pops, Spanish word pops in sequential cascade), exit (screen clears), advance (next round).
+_Avoid_: spelling phases, typing lifecycle
+
+**Word learning store config**:
+A dedicated zustand store configuration (`WORD_LEARNING_STORE_CONFIG`) for word-learning exercises, separate from the conjugation exercise store configs. Word-learning exercises have no conjugation table or sentence row, so their tutorial flow and initial state differ.
+_Avoid_: word transformation store config, shared store
+
+**Translation distractor words**:
+The two incorrect Spanish words shown as option jellyfish in translation choice. Drawn from other entries in the same word list, excluding the target entry. The word list must contain at least three entries for a valid round.
+_Avoid_: wrong translations, decoy words, foil translations
+
+**Translation direction**:
+Word-learning exercises present English as the prompt and Spanish as the answer. The word entry model supports both directions but exercises are English → Spanish only.
+_Avoid_: bidirectional translation, reverse translation
+
+**Accented character identity**:
+Accented characters (á, é, í, ó, ú, ñ, ü) are distinct letters in translation spelling — 'a' and 'á' do not match each other. The letter pool contains exact characters from the Spanish word and comparison is exact character match.
+_Avoid_: accent-insensitive, normalized comparison
+
+**Word prompt row**:
+The English word displayed as letter bubbles in the koi zone for word-learning exercises. In translation spelling, the Spanish word being constructed appears directly below it in the same zone, both centered vertically. The shuffled letter pool sits in the jelly zone below.
+_Avoid_: prompt display, English row, source word
