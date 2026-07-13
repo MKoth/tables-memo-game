@@ -3,3 +3,4 @@ export { UnderseaThemeTableWordTransformationExercise } from './UnderseaThemeTab
 export { UnderseaThemeTableSentenceTransformationExercise } from './UnderseaThemeTableSentenceTransformationExercise';
 export { UnderseaThemeTableVariantSelectionExercise } from './UnderseaThemeTableVariantSelectionExercise';
 export { UnderseaThemeWordLearningTranslationChoiceExercise } from './UnderseaThemeWordLearningTranslationChoiceExercise';
+export { UnderseaThemeWordLearningTranslationSpellingExercise } from './UnderseaThemeWordLearningTranslationSpellingExercise';

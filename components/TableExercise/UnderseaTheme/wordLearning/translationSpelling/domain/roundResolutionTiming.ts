@@ -1,0 +1,1 @@
+export const ROUND_ADVANCE_DELAY_MS = 400;
