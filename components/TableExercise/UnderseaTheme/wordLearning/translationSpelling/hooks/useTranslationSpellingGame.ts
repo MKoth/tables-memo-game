@@ -6,7 +6,7 @@ import type {
 } from '../../../core/layout/computeUnderseaThemeLayout';
 import {
   computeLetterLayout,
-  TRANSFORMATION_WORD_ROW_Y_RATIO,
+  computePoolLetterLayout,
 } from '../../../core/layout/underseaExerciseLayout';
 import {
   buildCascadeRevealOrder,
@@ -69,18 +69,18 @@ export type UseTranslationSpellingGameParams = {
   orientation: UnderseaThemeOrientation;
   koiRect: ZoneRect;
   jellyRect: ZoneRect;
-  playSuccess?: () => void;
+  playBubbleInflate?: () => void;
   playWrong?: () => void;
 };
 
-const SPANISH_WORD_ROW_Y_RATIO = 0.55;
+const SPANISH_WORD_ROW_Y_RATIO = 0.6;
 const RESOLVE_PAUSE_MS = 200;
 
 export function useTranslationSpellingGame({
   wordList,
   koiRect,
   jellyRect,
-  playSuccess,
+  playBubbleInflate,
   playWrong,
 }: UseTranslationSpellingGameParams): TranslationSpellingGame {
   const exercise = useMemo(() => createTranslationSpellingExercise(wordList), [wordList]);
@@ -93,17 +93,19 @@ export function useTranslationSpellingGame({
   const [englishCascadeOrder, setEnglishCascadeOrder] = useState<number[]>([]);
   const [poolLetters, setPoolLetters] = useState<PoolLetterState[]>([]);
   const [spanishLetterStates, setSpanishLetterStates] = useState<SpanishLetterState[]>([]);
+
   const [nextExpectedPosition, setNextExpectedPosition] = useState(0);
   const [activeFlight, setActiveFlight] = useState<LetterFlightState | null>(null);
   const [englishPopped, setEnglishPopped] = useState(false);
   const [spanishPopped, setSpanishPopped] = useState(false);
+  const [spanishPopOrder, setSpanishPopOrder] = useState<number[]>([]);
   const roundRef = useRef<ReturnType<typeof createTranslationSpellingRoundController> | null>(null);
   const koiRectRef = useRef(koiRect);
   const jellyRectRef = useRef(jellyRect);
   koiRectRef.current = koiRect;
   jellyRectRef.current = jellyRect;
-  const playSuccessRef = useRef(playSuccess);
-  playSuccessRef.current = playSuccess;
+  const playBubbleInflateRef = useRef(playBubbleInflate);
+  playBubbleInflateRef.current = playBubbleInflate;
   const playWrongRef = useRef(playWrong);
   playWrongRef.current = playWrong;
 
@@ -126,21 +128,22 @@ export function useTranslationSpellingGame({
   const poolLayout = useMemo(() => {
     const count = poolLetters.length;
     if (count === 0) {
-      return { diameter: 0, rowY: 0, centers: [] };
+      return { diameter: 0, positions: [] as Array<{ centerX: number; centerY: number }> };
     }
-    return computeLetterLayout(jellyRect, count, TRANSFORMATION_WORD_ROW_Y_RATIO);
-  }, [jellyRect, poolLetters.length]);
+    return computePoolLetterLayout(koiRect, count);
+  }, [koiRect, poolLetters.length]);
 
   const spanishLayout = useMemo(() => {
     const word = currentRound?.spanish ?? '';
     if (word.length === 0) {
       return { diameter: 0, rowY: 0, centers: [] };
     }
-    return computeLetterLayout(koiRect, word.length, SPANISH_WORD_ROW_Y_RATIO);
-  }, [koiRect, currentRound?.spanish]);
+    return computeLetterLayout(jellyRect, word.length, SPANISH_WORD_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
+  }, [jellyRect, currentRound?.spanish]);
 
   const englishLetters = useMemo<LetterBubbleModel[]>(() => {
     if (currentRound == null) return [];
+    if (roundSnapshot.phase === 'advance') return [];
     const word = currentRound.english;
     const phase = roundSnapshot.phase === 'enter' || roundSnapshot.phase === 'transform' ? 'enter' : 'exit';
     return mapLettersWithCascade({
@@ -160,6 +163,7 @@ export function useTranslationSpellingGame({
     return word.split('').map((char, position) => {
       const state = spanishLetterStates[position];
       const isPopped = spanishPopped && state?.filled;
+      const popIndex = spanishPopOrder.indexOf(position);
       return {
         key: `spanish-${roundSnapshot.roundPos}:${position}`,
         char,
@@ -167,23 +171,27 @@ export function useTranslationSpellingGame({
         popped: isPopped ?? false,
         wrong: false,
         skipEnter: !state?.filled,
-        popDelayMs: spanishPopped && state?.filled ? position * 320 : undefined,
+        popDelayMs: spanishPopped && state?.filled && popIndex >= 0 ? popIndex * 320 : undefined,
       };
     });
-  }, [currentRound, roundSnapshot.roundPos, spanishLetterStates, spanishPopped]);
+  }, [currentRound, roundSnapshot.roundPos, spanishLetterStates, spanishPopped, spanishPopOrder]);
 
   const handleRoundPhaseChangeRef = useRef<() => void>(() => {});
 
   const resetRoundState = useCallback(() => {
-    if (currentRound == null) return;
-    const englishOrder = buildCascadeRevealOrder(currentRound.english.length);
-    const poolOrder = buildCascadeRevealOrder(currentRound.letterPool.length);
+    const snapshot = roundRef.current?.getSnapshot();
+    if (snapshot == null) return;
+    const roundIdx = roundOrder[snapshot.roundPos] ?? -1;
+    const round = roundIdx >= 0 ? rounds[roundIdx] ?? null : null;
+    if (round == null) return;
+    const englishOrder = buildCascadeRevealOrder(round.english.length);
+    const poolOrder = buildCascadeRevealOrder(round.letterPool.length);
     setEnglishCascadeOrder(englishOrder);
     setPoolLetters(
-      currentRound.letterPool.map((char, i) => {
+      round.letterPool.map((char, i) => {
         const cascadeIndex = poolOrder.indexOf(i);
         return {
-          id: `pool-${roundSnapshot.roundPos}-${i}`,
+          id: `pool-${snapshot.roundPos}-${i}`,
           char,
           used: false,
           wrong: false,
@@ -194,7 +202,7 @@ export function useTranslationSpellingGame({
       }),
     );
     setSpanishLetterStates(
-      currentRound.spanish.split('').map(char => ({
+      round.spanish.split('').map(char => ({
         char,
         filled: false,
         popped: false,
@@ -204,12 +212,17 @@ export function useTranslationSpellingGame({
     setActiveFlight(null);
     setEnglishPopped(false);
     setSpanishPopped(false);
-  }, [currentRound, roundSnapshot.roundPos]);
+    setSpanishPopOrder([]);
+  }, [roundOrder, rounds]);
 
   const handleRoundPhaseChange = useCallback(() => {
     const snapshot = roundRef.current?.getSnapshot();
     if (snapshot == null) return;
     syncRoundSnapshot();
+
+    if (snapshot.phase === 'advance') {
+      setSpanishLetterStates([]);
+    }
 
     if (snapshot.phase === 'enter') {
       resetRoundState();
@@ -229,6 +242,7 @@ export function useTranslationSpellingGame({
       onSessionComplete: syncRoundSnapshot,
     });
     roundRef.current = controller;
+    handleRoundPhaseChangeRef.current();
     return () => {
       controller.dispose();
       roundRef.current = null;
@@ -281,6 +295,7 @@ export function useTranslationSpellingGame({
     );
 
     const t2 = setTimeout(() => {
+      setSpanishPopOrder(buildCascadeRevealOrder(currentRound?.spanish.length ?? 0));
       setSpanishPopped(true);
     }, distractorCascadeDelay + RESOLVE_PAUSE_MS + englishCascadeDelay + RESOLVE_PAUSE_MS);
 
@@ -299,7 +314,8 @@ export function useTranslationSpellingGame({
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [roundSnapshot.phase, currentRound, poolLetters, syncRoundSnapshot]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundSnapshot.phase, currentRound, syncRoundSnapshot]);
 
   useEffect(() => {
     if (roundSnapshot.phase !== 'exit') return;
@@ -323,9 +339,10 @@ export function useTranslationSpellingGame({
       const isCorrect = matchLetter(poolLetter.char, nextExpectedPosition, currentRound?.spanish ?? '');
 
       if (isCorrect) {
-        playSuccessRef.current?.();
-        const fromCenterX = poolLayout.centers[poolIndex] ?? 0;
-        const fromCenterY = poolLayout.rowY;
+        playBubbleInflateRef.current?.();
+        const fromPos = poolLayout.positions[poolIndex];
+        const fromCenterX = fromPos?.centerX ?? 0;
+        const fromCenterY = fromPos?.centerY ?? 0;
         const toCenterX = spanishLayout.centers[nextExpectedPosition] ?? 0;
         const toCenterY = spanishLayout.rowY;
 

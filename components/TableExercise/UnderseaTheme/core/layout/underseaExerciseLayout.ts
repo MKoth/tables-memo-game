@@ -9,11 +9,17 @@ import {
 const MIN_DIAMETER = 34;
 const MAX_DIAMETER = 74;
 export const GAP_RATIO = 0.26;
+const POOL_GAP_RATIO = 0.18;
+const POOL_MIN_DIAMETER = 45;
+const POOL_MAX_COLUMNS = 6;
+const POOL_ROW_GAP_RATIO = 0.3;
 
 /** Vertical placement of the current-word bubble row inside the koi zone. */
 export const TRANSFORMATION_WORD_ROW_Y_RATIO = 0.2;
 /** Vertical placement of the insert-variant bubble row inside the koi zone. */
 export const TRANSFORMATION_VARIANT_ROW_Y_RATIO = 0.65;
+/** Vertical placement of pool letter bubbles inside the koi zone. */
+export const POOL_ROW_Y_RATIO = 0.5;
 
 export type LetterLayout = {
   diameter: number;
@@ -25,21 +31,24 @@ export function computeLetterLayout(
   koiRect: ZoneRect,
   count: number,
   rowYRatio = TRANSFORMATION_WORD_ROW_Y_RATIO,
+  opts?: { gapRatio?: number; minDiameter?: number },
 ): LetterLayout {
   const rowY = koiRect.y + koiRect.h * rowYRatio;
   if (count <= 0) {
     return { diameter: MIN_DIAMETER, rowY, centers: [] };
   }
 
+  const gapRatio = opts?.gapRatio ?? GAP_RATIO;
+  const minDiameter = opts?.minDiameter ?? MIN_DIAMETER;
   const maxRowWidth = koiRect.w * 0.9;
-  const denom = count + (count - 1) * GAP_RATIO;
+  const denom = count + (count - 1) * gapRatio;
   const widthLimited = maxRowWidth / denom;
   const heightLimited = koiRect.h * 0.18;
   const diameter = Math.max(
-    MIN_DIAMETER,
+    minDiameter,
     Math.min(MAX_DIAMETER, widthLimited, heightLimited),
   );
-  const gap = diameter * GAP_RATIO;
+  const gap = diameter * gapRatio;
   const total = count * diameter + (count - 1) * gap;
   const startX = koiRect.x + koiRect.w * 0.5 - total * 0.5;
 
@@ -49,6 +58,55 @@ export function computeLetterLayout(
   );
 
   return { diameter, rowY, centers };
+}
+
+export type PoolLetterPosition = {
+  centerX: number;
+  centerY: number;
+};
+
+export type PoolLetterLayout = {
+  diameter: number;
+  positions: PoolLetterPosition[];
+};
+
+export function computePoolLetterLayout(
+  koiRect: ZoneRect,
+  count: number,
+): PoolLetterLayout {
+  if (count <= 0) {
+    return { diameter: POOL_MIN_DIAMETER, positions: [] };
+  }
+
+  const maxRowWidth = koiRect.w * 0.9;
+  const maxColumns = Math.min(count, POOL_MAX_COLUMNS);
+  const denom = maxColumns + (maxColumns - 1) * POOL_GAP_RATIO;
+  const widthLimited = maxRowWidth / denom;
+  const heightLimited = (koiRect.h * 0.7) / Math.ceil(count / maxColumns);
+  const diameter = Math.max(
+    POOL_MIN_DIAMETER,
+    Math.min(MAX_DIAMETER, widthLimited, heightLimited),
+  );
+  const gap = diameter * POOL_GAP_RATIO;
+  const rowHeight = diameter * (1 + POOL_ROW_GAP_RATIO);
+
+  const rows = Math.ceil(count / maxColumns);
+  const totalBlockHeight = rows * rowHeight - diameter * POOL_ROW_GAP_RATIO;
+  const blockCenterY = koiRect.y + koiRect.h * POOL_ROW_Y_RATIO;
+
+  const positions: PoolLetterPosition[] = [];
+  for (let i = 0; i < count; i++) {
+    const row = Math.floor(i / maxColumns);
+    const col = i % maxColumns;
+    const lettersInRow = Math.min(maxColumns, count - row * maxColumns);
+    const rowWidth = lettersInRow * diameter + (lettersInRow - 1) * gap;
+    const rowStartX = koiRect.x + koiRect.w * 0.5 - rowWidth * 0.5;
+    const centerX = rowStartX + col * (diameter + gap) + diameter * 0.5;
+    const centerY = blockCenterY - totalBlockHeight * 0.5 + row * rowHeight + diameter * 0.5;
+    positions.push({ centerX, centerY });
+  }
+
+  return { diameter, positions };
 }
 
 export type InsertPreviewLayout = {

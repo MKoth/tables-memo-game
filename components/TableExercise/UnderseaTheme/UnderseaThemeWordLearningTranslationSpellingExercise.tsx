@@ -16,16 +16,17 @@ import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThem
 import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { UnderseaThemeCornerControls } from './ui';
-import { TransformationWordBubbles } from './wordTransformation/components/TransformationWordBubbles';
 import { LetterBubble } from './wordTransformation/components/LetterBubble';
 import { useTranslationSpellingGame } from './wordLearning/translationSpelling/hooks/useTranslationSpellingGame';
-import { computeLetterLayout, TRANSFORMATION_WORD_ROW_Y_RATIO } from './core/layout/underseaExerciseLayout';
+import { computeLetterLayout, computePoolLetterLayout, TRANSFORMATION_WORD_ROW_Y_RATIO } from './core/layout/underseaExerciseLayout';
 
 const DECORATIVE_KOI_Z = 2;
 const ENGLISH_WORD_LAYER_Z = 5;
 const SPANISH_WORD_LAYER_Z = 6;
 const POOL_LAYER_Z = 10;
 const FLIGHT_LAYER_Z = 11;
+
+const SPANISH_ROW_Y_RATIO = 0.6;
 
 type TranslationSpellingContentProps = {
   sounds: UnderseaThemeSoundController;
@@ -53,28 +54,38 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
     orientation,
     koiRect,
     jellyRect,
-    playSuccess: sounds.playSuccessClick,
+    playBubbleInflate: sounds.playBubbleInflate,
     playWrong: sounds.playWrongClick,
   });
 
   const { images } = useUnderseaThemeAssetsContext();
   const clock = useUnderseaThemeClock();
 
+  const englishLayout = useMemo(() => {
+    const count = game.englishLetters.length;
+    if (count === 0) return { diameter: 0, rowY: 0, centers: [] };
+    return computeLetterLayout(jellyRect, count, TRANSFORMATION_WORD_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
+  }, [jellyRect, game.englishLetters.length]);
+
+  const spanishLayout = useMemo(() => {
+    const count = game.spanishLetters.length;
+    if (count === 0) return { diameter: 0, rowY: 0, centers: [] };
+    return computeLetterLayout(jellyRect, count, SPANISH_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
+  }, [jellyRect, game.spanishLetters.length]);
+
   const poolLayout = useMemo(() => {
-    if (game.poolLetters.length === 0) {
-      return { diameter: 0, rowY: 0, centers: [] };
-    }
-    return computeLetterLayout(jellyRect, game.poolLetters.length, TRANSFORMATION_WORD_ROW_Y_RATIO);
-  }, [jellyRect, game.poolLetters.length]);
+    const count = game.poolLetters.length;
+    if (count === 0) return { diameter: 0, positions: [] };
+    return computePoolLetterLayout(koiRect, count);
+  }, [koiRect, game.poolLetters.length]);
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
+  const wordFont = useMemo(
+    () => matchFont({ fontFamily, fontSize: Math.max(16, englishLayout.diameter * 0.5), fontWeight: '700' }),
+    [englishLayout.diameter, fontFamily],
+  );
   const poolFont = useMemo(
-    () =>
-      matchFont({
-        fontFamily,
-        fontSize: Math.max(16, poolLayout.diameter * 0.5),
-        fontWeight: '700',
-      }),
+    () => matchFont({ fontFamily, fontSize: Math.max(16, poolLayout.diameter * 0.5), fontWeight: '700' }),
     [poolLayout.diameter, fontFamily],
   );
 
@@ -83,34 +94,73 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
       <UnderseaThemeBackground />
       <DecorativeKoiLayer zIndex={DECORATIVE_KOI_Z} />
       <View style={styles.englishWordLayer} pointerEvents="box-none">
-        <TransformationWordBubbles
-          letters={game.englishLetters}
-          interactive={false}
-          onLetterPress={() => {}}
-          playInflate={sounds.playBubbleInflate}
-          playPop={sounds.playBubblePop}
-        />
+        <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+          {game.englishLetters.map(letter => {
+            const centerX = englishLayout.centers[letter.position] ?? 0;
+            return (
+              <LetterBubble
+                key={letter.key}
+                char={letter.char}
+                centerX={centerX}
+                centerY={englishLayout.rowY}
+                diameter={englishLayout.diameter}
+                initialCenterX={letter.skipEnter ? centerX : undefined}
+                initialCenterY={letter.skipEnter ? englishLayout.rowY : undefined}
+                initialDiameter={letter.skipEnter ? englishLayout.diameter : undefined}
+                skipEnter={letter.skipEnter}
+                status={letter.popped ? 'popped' : 'idle'}
+                popDelayMs={letter.popDelayMs}
+                enterDelayMs={letter.enterDelayMs}
+                image={images.bubble}
+                font={wordFont}
+                clock={clock}
+                onPopSound={letter.popDelayMs != null ? sounds.playBubblePop : undefined}
+                onEnterSound={letter.enterDelayMs != null ? sounds.playBubbleInflate : undefined}
+              />
+            );
+          })}
+        </Canvas>
       </View>
       <View style={styles.spanishWordLayer} pointerEvents="box-none">
-        <TransformationWordBubbles
-          letters={game.spanishLetters}
-          interactive={false}
-          onLetterPress={() => {}}
-          playInflate={sounds.playBubbleInflate}
-          playPop={sounds.playBubblePop}
-        />
+        <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+          {game.spanishLetters.filter(l => !l.skipEnter).map(letter => {
+            const centerX = spanishLayout.centers[letter.position] ?? 0;
+            return (
+              <LetterBubble
+                key={letter.key}
+                char={letter.char}
+                centerX={centerX}
+                centerY={spanishLayout.rowY}
+                diameter={spanishLayout.diameter}
+                initialCenterX={letter.skipEnter ? centerX : undefined}
+                initialCenterY={letter.skipEnter ? spanishLayout.rowY : undefined}
+                initialDiameter={letter.skipEnter ? spanishLayout.diameter : undefined}
+                skipEnter={letter.skipEnter}
+                status={letter.popped ? 'popped' : 'idle'}
+                popDelayMs={letter.popDelayMs}
+                enterDelayMs={letter.enterDelayMs}
+                image={images.bubble}
+                font={wordFont}
+                clock={clock}
+                onPopSound={letter.popDelayMs != null ? sounds.playBubblePop : undefined}
+                onEnterSound={letter.enterDelayMs != null ? sounds.playBubbleInflate : undefined}
+              />
+            );
+          })}
+        </Canvas>
       </View>
       <View style={styles.poolLayer} pointerEvents="box-none">
         <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
           {game.poolLetters.map((letter, index) => {
             if (letter.used || letter.popped) return null;
-            const centerX = poolLayout.centers[index] ?? 0;
+            const pos = poolLayout.positions[index];
+            if (pos == null) return null;
             return (
               <LetterBubble
                 key={letter.id}
                 char={letter.char}
-                centerX={centerX}
-                centerY={poolLayout.rowY}
+                centerX={pos.centerX}
+                centerY={pos.centerY}
                 diameter={poolLayout.diameter}
                 status={letter.wrong ? 'wrong' : letter.popping ? 'popped' : 'idle'}
                 popDelayMs={letter.popping ? letter.popDelayMs : undefined}
@@ -127,7 +177,8 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           {game.poolLetters.map((letter, index) => {
             if (letter.used || letter.popped || letter.popping) return null;
-            const cx = poolLayout.centers[index] ?? 0;
+            const pos = poolLayout.positions[index];
+            if (pos == null) return null;
             return (
               <Pressable
                 key={letter.id}
@@ -135,8 +186,8 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
                 style={[
                   styles.hit,
                   {
-                    left: cx - poolLayout.diameter * 0.5,
-                    top: poolLayout.rowY - poolLayout.diameter * 0.5,
+                    left: pos.centerX - poolLayout.diameter * 0.5,
+                    top: pos.centerY - poolLayout.diameter * 0.5,
                     width: poolLayout.diameter,
                     height: poolLayout.diameter,
                   },
@@ -152,14 +203,14 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
             <LetterBubble
               key={game.activeFlight.id}
               char={game.activeFlight.char}
-              centerX={game.activeFlight.landed ? game.activeFlight.toCenterX : game.activeFlight.fromCenterX}
-              centerY={game.activeFlight.landed ? game.activeFlight.toCenterY : game.activeFlight.fromCenterY}
-              diameter={game.activeFlight.landed ? game.activeFlight.toDiameter : game.activeFlight.fromDiameter}
-              initialCenterX={game.activeFlight.landed ? game.activeFlight.toCenterX : game.activeFlight.fromCenterX}
-              initialCenterY={game.activeFlight.landed ? game.activeFlight.toCenterY : game.activeFlight.fromCenterY}
-              initialDiameter={game.activeFlight.landed ? game.activeFlight.toDiameter : game.activeFlight.fromDiameter}
+              centerX={game.activeFlight.toCenterX}
+              centerY={game.activeFlight.toCenterY}
+              diameter={game.activeFlight.toDiameter}
+              initialCenterX={game.activeFlight.fromCenterX}
+              initialCenterY={game.activeFlight.fromCenterY}
+              initialDiameter={game.activeFlight.fromDiameter}
               skipEnter
-              moveDurationMs={game.activeFlight.landed ? 0 : game.activeFlight.flyDurationMs}
+              moveDurationMs={game.activeFlight.flyDurationMs}
               status="idle"
               image={images.bubble}
               font={poolFont}
