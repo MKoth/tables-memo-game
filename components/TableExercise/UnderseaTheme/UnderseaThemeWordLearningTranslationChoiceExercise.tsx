@@ -66,6 +66,7 @@ function TranslationChoiceContent({ sounds }: TranslationChoiceContentProps) {
           onLetterPress={() => {}}
           playInflate={sounds.playBubbleInflate}
           playPop={sounds.playBubblePop}
+          zoneRect={jellyRect}
         />
       </View>
       <View style={styles.spanishWordLayer} pointerEvents="box-none">
@@ -75,6 +76,7 @@ function TranslationChoiceContent({ sounds }: TranslationChoiceContentProps) {
           onLetterPress={() => {}}
           playInflate={sounds.playBubbleInflate}
           playPop={sounds.playBubblePop}
+          zoneRect={jellyRect}
         />
       </View>
       <View style={styles.optionLayer} pointerEvents="box-none">
@@ -82,6 +84,7 @@ function TranslationChoiceContent({ sounds }: TranslationChoiceContentProps) {
           options={game.options}
           swimPaths={game.optionSwimPaths}
           roundPhase={game.roundPhase}
+          roundPos={game.roundPos}
           correctOptionIndex={game.correctOptionIndex}
           onOptionTap={game.handleOptionTap}
         />

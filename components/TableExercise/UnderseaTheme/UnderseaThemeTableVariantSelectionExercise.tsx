@@ -95,6 +95,7 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
           options={game.options}
           swimPaths={game.optionSwimPaths}
           roundPhase={game.roundPhase}
+          roundPos={game.roundPos}
           correctOptionIndex={game.correctOptionIndex}
           onOptionTap={game.handleOptionTap}
         />

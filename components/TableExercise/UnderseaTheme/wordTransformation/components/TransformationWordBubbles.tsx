@@ -40,6 +40,8 @@ export type TransformationWordBubblesProps = {
   playPop?: () => void;
   /** Fired (UI-thread synced) as each letter inflates during the enter cascade. */
   playInflate?: () => void;
+  /** Override the zone rect used for letter layout. Defaults to koiRect. */
+  zoneRect?: import('../../core/layout/computeUnderseaThemeLayout').ZoneRect;
 };
 
 export function TransformationWordBubbles({
@@ -51,8 +53,10 @@ export function TransformationWordBubbles({
   onLetterPress,
   playPop,
   playInflate,
+  zoneRect: zoneRectProp,
 }: TransformationWordBubblesProps) {
   const { koiRect } = useUnderseaThemeLayout();
+  const zoneRect = zoneRectProp ?? koiRect;
   const { images } = useUnderseaThemeAssetsContext();
   const clock = useUnderseaThemeClock();
 
@@ -63,26 +67,26 @@ export function TransformationWordBubbles({
   );
 
   const layout = useMemo(
-    () => computeLetterLayout(koiRect, letters.length),
-    [koiRect, letters.length],
+    () => computeLetterLayout(zoneRect, letters.length),
+    [zoneRect, letters.length],
   );
 
   const mergeLayout = useMemo(
-    () => (mergeWord ? computeLetterLayout(koiRect, mergeWord.length) : null),
-    [koiRect, mergeWord],
+    () => (mergeWord ? computeLetterLayout(zoneRect, mergeWord.length) : null),
+    [zoneRect, mergeWord],
   );
 
   const { mergeCenterX, mergeDiameter } = useMemo(
-    () => (mergeLayout ? computeMergeTarget(mergeLayout, koiRect) : { mergeCenterX: 0, mergeDiameter: 0 }),
-    [koiRect, mergeLayout],
+    () => (mergeLayout ? computeMergeTarget(mergeLayout, zoneRect) : { mergeCenterX: 0, mergeDiameter: 0 }),
+    [zoneRect, mergeLayout],
   );
 
   const previewLayout = useMemo(
     () =>
       insertPreview == null
         ? null
-        : computeLetterLayout(koiRect, insertPreview.targetLetterCount),
-    [insertPreview, koiRect],
+        : computeLetterLayout(zoneRect, insertPreview.targetLetterCount),
+    [insertPreview, zoneRect],
   );
 
   const activeLayout = mergeLayout ?? previewLayout ?? layout;
@@ -169,7 +173,7 @@ export function TransformationWordBubbles({
               mergeCenterX={mergeCenterX}
               mergeDiameter={mergeDiameter}
               bubbleImage={images.bubble}
-              bounds={koiRect}
+              bounds={zoneRect}
               clock={clock}
               // pass through bubbleDeform defaults so metaballs visually match LetterBubble
               bgCutoff={bubbleDeformUniformDefaults.bgCutoff}

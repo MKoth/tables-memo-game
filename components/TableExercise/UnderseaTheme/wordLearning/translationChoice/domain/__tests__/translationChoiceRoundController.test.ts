@@ -83,11 +83,20 @@ describe('createTranslationChoiceRoundController', () => {
     expect(controller.getSnapshot().phase).toBe('enter');
   });
 
-  it('moves from resolve to hold and schedules hold timer', () => {
+  it('moves from resolve to reveal on resolve complete', () => {
+    const { controller } = createTestController(2);
+    controller.notifyEnterComplete();
+    controller.notifyCorrectSelection();
+    controller.notifyResolveComplete();
+    expect(controller.getSnapshot().phase).toBe('reveal');
+  });
+
+  it('moves from reveal to hold and schedules hold timer', () => {
     const { controller, timers } = createTestController(2);
     controller.notifyEnterComplete();
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
+    controller.notifyRevealComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
     const holdTimers = timers.filter(timer => timer.delayMs === ROUND_HOLD_DURATION_MS);
     expect(holdTimers).toHaveLength(1);
@@ -108,6 +117,7 @@ describe('createTranslationChoiceRoundController', () => {
     controller.notifyEnterComplete();
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
+    controller.notifyRevealComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
     jest.advanceTimersByTime(1499);
     expect(controller.getSnapshot().phase).toBe('hold');
@@ -122,6 +132,7 @@ describe('createTranslationChoiceRoundController', () => {
     controller.notifyEnterComplete();
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
+    controller.notifyRevealComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
     runHoldTimer(timers);
     expect(controller.getSnapshot().phase).toBe('exit');
@@ -132,6 +143,7 @@ describe('createTranslationChoiceRoundController', () => {
     controller.notifyEnterComplete();
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
+    controller.notifyRevealComplete();
     runHoldTimer(timers);
     expect(controller.getSnapshot().phase).toBe('exit');
     controller.notifyExitComplete();
@@ -158,6 +170,7 @@ describe('createTranslationChoiceRoundController', () => {
     ctrl.notifyEnterComplete();
     ctrl.notifyCorrectSelection();
     ctrl.notifyResolveComplete();
+    ctrl.notifyRevealComplete();
     runHoldTimer(timerList);
     ctrl.notifyExitComplete();
     expect(recordedPhases).toContain('advance');
@@ -171,6 +184,7 @@ describe('createTranslationChoiceRoundController', () => {
     controller.notifyEnterComplete();
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
+    controller.notifyRevealComplete();
     runHoldTimer(timers);
     controller.notifyExitComplete();
     expect(controller.getSnapshot()).toMatchObject({
@@ -196,7 +210,7 @@ describe('createTranslationChoiceRoundController', () => {
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
     controller.notifyResolveComplete();
-    expect(controller.getSnapshot().phase).toBe('hold');
+    expect(controller.getSnapshot().phase).toBe('reveal');
   });
 
   it('ignores duplicate exit-complete events', () => {
@@ -204,6 +218,7 @@ describe('createTranslationChoiceRoundController', () => {
     controller.notifyEnterComplete();
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
+    controller.notifyRevealComplete();
     runHoldTimer(timers);
     controller.notifyExitComplete();
     controller.notifyExitComplete();
@@ -221,6 +236,7 @@ describe('createTranslationChoiceRoundController', () => {
     controller.notifyEnterComplete();
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
+    controller.notifyRevealComplete();
     runHoldTimer(timers);
     controller.notifyExitComplete();
     expect(onSessionComplete).toHaveBeenCalledTimes(1);
@@ -239,6 +255,7 @@ describe('createTranslationChoiceRoundController', () => {
     controller.notifyEnterComplete();
     controller.notifyCorrectSelection();
     controller.notifyResolveComplete();
+    controller.notifyRevealComplete();
     expect(controller.getSnapshot().phase).toBe('hold');
     controller.dispose();
     jest.advanceTimersByTime(2000);

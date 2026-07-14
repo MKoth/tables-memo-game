@@ -17,7 +17,7 @@ import { TableWordLearningTranslationSpellingExercise } from './components/Table
 
 /** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' */
 const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' =
-  'translationSpelling';
+  'translationChoice';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';

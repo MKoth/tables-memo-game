@@ -114,8 +114,8 @@ export function useTranslationChoiceGame({
     if (count === 0) {
       return { diameter: 0, rowY: 0, centers: [] };
     }
-    return computeLetterLayout(jellyRect, count, TRANSFORMATION_WORD_ROW_Y_RATIO);
-  }, [currentRound?.options.length, jellyRect]);
+    return computeLetterLayout(koiRect, count, 0.5);
+  }, [currentRound?.options.length, koiRect]);
 
   const optionSwimPaths = useMemo<SwimPath[]>(() => {
     if (optionLayout.centers.length === 0) return [];
@@ -127,14 +127,19 @@ export function useTranslationChoiceGame({
       orientation,
       screenWidth,
       screenHeight,
-      jellyRect,
+      jellyRect: koiRect,
       slotCenters,
     });
-  }, [orientation, screenWidth, screenHeight, jellyRect, optionLayout.centers, optionLayout.rowY]);
+  }, [orientation, screenWidth, screenHeight, koiRect, optionLayout.centers, optionLayout.rowY]);
 
   const englishLetters = useMemo<LetterBubbleModel[]>(() => {
     if (currentRound == null) return [];
     const word = currentRound.english;
+    const showEnglish =
+      roundSnapshot.phase === 'enter' ||
+      roundSnapshot.phase === 'transform' ||
+      roundSnapshot.phase === 'resolve';
+    if (!showEnglish) return [];
     const phase = roundSnapshot.phase === 'enter' || roundSnapshot.phase === 'transform' ? 'enter' : 'exit';
     return mapLettersWithCascade({
       word,
@@ -147,13 +152,13 @@ export function useTranslationChoiceGame({
   const spanishLetters = useMemo<LetterBubbleModel[]>(() => {
     if (currentRound == null) return [];
     const showSpanish =
-      roundSnapshot.phase === 'resolve' ||
+      roundSnapshot.phase === 'reveal' ||
       roundSnapshot.phase === 'hold' ||
-      roundSnapshot.phase === 'exit' ||
-      roundSnapshot.phase === 'advance';
+      roundSnapshot.phase === 'exit';
     if (!showSpanish) return [];
     const word = currentRound.spanish;
-    const phase = roundSnapshot.phase === 'resolve' || roundSnapshot.phase === 'hold' ? 'enter' : 'exit';
+    const phase =
+      roundSnapshot.phase === 'reveal' || roundSnapshot.phase === 'hold' ? 'enter' : 'exit';
     return mapLettersWithCascade({
       word,
       keyPrefix: `spanish-${roundSnapshot.roundPos}`,
@@ -180,7 +185,7 @@ export function useTranslationChoiceGame({
       return;
     }
 
-    if (snapshot.phase === 'resolve') {
+    if (snapshot.phase === 'reveal') {
       setSpanishCascadeOrder(buildCascadeRevealOrder(currentRound?.spanish.length ?? 0));
     }
   }, [syncRoundSnapshot, resetRoundState, currentRound]);
@@ -218,12 +223,25 @@ export function useTranslationChoiceGame({
 
   useEffect(() => {
     if (roundSnapshot.phase !== 'resolve') return;
+    const englishWord = currentRound?.english ?? '';
+    const delayMs = computeCascadeCompleteDelayMs(englishWord.length, 'exit');
     const id = setTimeout(() => {
       roundRef.current?.notifyResolveComplete();
       syncRoundSnapshot();
-    }, 800);
+    }, delayMs);
     return () => clearTimeout(id);
-  }, [roundSnapshot.phase, syncRoundSnapshot]);
+  }, [roundSnapshot.phase, currentRound, syncRoundSnapshot]);
+
+  useEffect(() => {
+    if (roundSnapshot.phase !== 'reveal') return;
+    const spanishWord = currentRound?.spanish ?? '';
+    const delayMs = computeCascadeCompleteDelayMs(spanishWord.length, 'enter');
+    const id = setTimeout(() => {
+      roundRef.current?.notifyRevealComplete();
+      syncRoundSnapshot();
+    }, delayMs);
+    return () => clearTimeout(id);
+  }, [roundSnapshot.phase, currentRound, syncRoundSnapshot]);
 
   useEffect(() => {
     if (roundSnapshot.phase !== 'exit') return;

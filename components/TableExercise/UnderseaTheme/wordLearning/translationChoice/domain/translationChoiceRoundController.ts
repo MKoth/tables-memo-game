@@ -8,6 +8,7 @@ export type TranslationChoiceRoundPhase =
   | 'enter'
   | 'transform'
   | 'resolve'
+  | 'reveal'
   | 'hold'
   | 'exit'
   | 'advance';
@@ -31,6 +32,7 @@ export type TranslationChoiceRoundController = {
   notifyEnterComplete: () => void;
   notifyCorrectSelection: () => void;
   notifyResolveComplete: () => void;
+  notifyRevealComplete: () => void;
   notifyExitComplete: () => void;
   dispose: () => void;
 };
@@ -99,6 +101,11 @@ export function createTranslationChoiceRoundController({
 
     notifyResolveComplete() {
       if (phase !== 'resolve') return;
+      setPhase('reveal');
+    },
+
+    notifyRevealComplete() {
+      if (phase !== 'reveal') return;
       setPhase('hold');
       scheduleHold();
     },

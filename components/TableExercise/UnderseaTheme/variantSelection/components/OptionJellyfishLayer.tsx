@@ -30,6 +30,7 @@ import {
   ROUND_ROW_EXIT_DURATION_MS,
 } from '../../sentenceTransformation/domain';
 import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from '../../core/layout/underseaExerciseLayout';
+import { rollBodyTint } from '../../jellyfish/jellyfishVisualTokens';
 import { triggerJellyfishTintFlash } from '../../jellyfish/JellyfishTableLayer/worklets/jellyfishTableWorklets';
 import type { OptionJellyfishState } from '../hooks/useVariantSelectionGame';
 import type { SwimPath } from '../../sentenceTransformation/domain/swimPathPlanner';
@@ -38,11 +39,13 @@ export type OptionJellyfishLayerProps = {
   options: OptionJellyfishState[];
   swimPaths: SwimPath[];
   roundPhase: string;
+  roundPos: number;
   correctOptionIndex: number;
   onOptionTap: (option: OptionJellyfishState) => void;
 };
 
-function toCellConfig(option: OptionJellyfishState, bellSize: number): CellConfig {
+function toCellConfig(option: OptionJellyfishState, bellSize: number, roundPos: number): CellConfig {
+  const tint = rollBodyTint(option.index, roundPos);
   return {
     key: `option-${option.index}`,
     index: option.index,
@@ -56,13 +59,7 @@ function toCellConfig(option: OptionJellyfishState, bellSize: number): CellConfi
     labelFillColor: 'rgba(255,255,255,0.95)',
     labelStrokeColor: 'rgba(20,40,60,0.92)',
     translation: '',
-    tintMode: 2 as const,
-    tintStrength: 0.9,
-    tintA: [0.6, 1.3, 1.8] as const,
-    tintB: [0.5, 1.15, 1.6] as const,
-    tintC: [0.4, 0.95, 1.35] as const,
-    animatedTint: true,
-    tintWaveSpeed: 0.35,
+    ...tint,
   };
 }
 
@@ -206,6 +203,7 @@ export function OptionJellyfishLayer({
   options,
   swimPaths,
   roundPhase,
+  roundPos,
   correctOptionIndex,
   onOptionTap,
 }: OptionJellyfishLayerProps) {
@@ -219,9 +217,12 @@ export function OptionJellyfishLayer({
     return computeLetterLayout(koiRect, count, TRANSFORMATION_VARIANT_ROW_Y_RATIO);
   }, [options.length, koiRect]);
 
-  const optionCenters = useMemo(() => {
-    return optionLayout.centers;
-  }, [optionLayout.centers]);
+  const gestureCenters = useMemo(() => {
+    if (swimPaths.length > 0) {
+      return swimPaths.map(p => ({ x: p.slotCenterX, y: p.slotCenterY }));
+    }
+    return optionLayout.centers.map(x => ({ x, y: optionLayout.rowY }));
+  }, [swimPaths, optionLayout.centers, optionLayout.rowY]);
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const bodyFont = useMemo(
@@ -299,7 +300,6 @@ export function OptionJellyfishLayer({
   }, [optionLayout.diameter, options, bellSizesSv, tintFlashPreset, tintFlashUntil]);
 
   const hasAnswer = correctOptionIndex >= 0;
-  const shouldHideCorrect = hasAnswer && roundPhase !== 'enter' && roundPhase !== 'transform';
 
   useEffect(() => {
     if (roundPhase === 'enter') {
@@ -312,7 +312,7 @@ export function OptionJellyfishLayer({
     'worklet';
     const prog = [...optionExitProgress.value];
     for (let i = 0; i < prog.length; i++) {
-      if (i !== correctOptionIndex && (prog[i] ?? 0) < 1) {
+      if ((prog[i] ?? 0) < 1) {
         prog[i] = withTiming(1, {
           duration: ROUND_ROW_EXIT_DURATION_MS,
           easing: Easing.in(Easing.cubic),
@@ -323,12 +323,12 @@ export function OptionJellyfishLayer({
   };
 
   useEffect(() => {
-    if (!shouldHideCorrect || options.length === 0) return;
+    if (!hasAnswer || options.length === 0) return;
     runOnUI(() => {
       'worklet';
       fireOptionExitAnim.current();
     })();
-  }, [shouldHideCorrect, correctOptionIndex, options.length, optionExitProgress]);
+  }, [hasAnswer, correctOptionIndex, options.length, optionExitProgress]);
 
   useEffect(() => {
     const count = swimPaths.length;
@@ -420,7 +420,7 @@ export function OptionJellyfishLayer({
   );
 
   useEffect(() => {
-    if (roundPhase !== 'exit') return;
+    if (roundPhase !== 'resolve') return;
 
     optionExitProgress.value = options.map(() => 0);
 
@@ -447,15 +447,8 @@ export function OptionJellyfishLayer({
   }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress, optionExitProgress]);
 
   const cellConfigs = useMemo(
-    () => options.map(opt => toCellConfig(opt, optionLayout.diameter)),
-    [options, optionLayout.diameter],
-  );
-
-  const filterIndex = shouldHideCorrect ? correctOptionIndex : -1;
-
-  const visibleConfigs = useMemo(
-    () => cellConfigs.filter(c => c.index !== filterIndex),
-    [cellConfigs, filterIndex],
+    () => options.map(opt => toCellConfig(opt, optionLayout.diameter, roundPos)),
+    [options, optionLayout.diameter, roundPos],
   );
 
   const gestureSize = optionLayout.diameter * 1.1;
@@ -465,7 +458,7 @@ export function OptionJellyfishLayer({
   return (
     <>
       <Canvas style={styles.canvas} pointerEvents="none">
-        {visibleConfigs.map(config => (
+        {cellConfigs.map(config => (
           <SlotOptionCellJellyfish
             key={config.key}
             config={config}
@@ -482,7 +475,7 @@ export function OptionJellyfishLayer({
             clock={clock}
           />
         ))}
-        {visibleConfigs.map(config => (
+        {cellConfigs.map(config => (
           <SlotOptionCellLabel
             key={`${config.key}-label`}
             config={config}
@@ -501,11 +494,11 @@ export function OptionJellyfishLayer({
           />
         ))}
       </Canvas>
-      {roundPhase !== 'enter' && !shouldHideCorrect && options.map((option, idx) => (
+      {roundPhase !== 'enter' && options.map((option, idx) => (
         <SingleOptionGesture
           key={`gesture-${option.index}`}
-          centerX={optionCenters[idx] ?? 0}
-          centerY={optionLayout.rowY}
+          centerX={gestureCenters[idx]?.x ?? 0}
+          centerY={gestureCenters[idx]?.y ?? 0}
           size={gestureSize}
           onTap={() => fireOptionTap(option.index)}
         />
