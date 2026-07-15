@@ -323,8 +323,7 @@ export function MatchJellyfishLayer({
   return (
     <GestureDetector gesture={gesture}>
       <View
-        style={[styles.container, zIndex != null && { zIndex }]}
-        pointerEvents="box-none">
+        style={[styles.container, zIndex != null && { zIndex }]}>
         <Canvas style={styles.canvas} pointerEvents="none">
           {words.map((_, index) => {
             const tint = jellyfishTints[index];
