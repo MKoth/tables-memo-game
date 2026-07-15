@@ -50,6 +50,9 @@ export function MatchKoiLayer({
     originX: number;
     originY: number;
   } | null>(null);
+  const [poolHiddenFishIndex, setPoolHiddenFishIndex] = useState<number | null>(
+    null,
+  );
   const transitionRafRef = useRef<number | null>(null);
   const soundsRef = useRef(sounds);
   soundsRef.current = sounds;
@@ -117,6 +120,7 @@ export function MatchKoiLayer({
     (_intent: number) => {
       sessionController?.release();
       cancelTransitionRaf();
+      setPoolHiddenFishIndex(null);
       transitionRafRef.current = requestAnimationFrame(() => {
         transitionRafRef.current = null;
         setSelection(null);
@@ -220,7 +224,12 @@ export function MatchKoiLayer({
       cancelTransitionRaf();
       soundsRef.current?.playBubbleInflate();
       sim.armCapture(fishIndex, originX, originY);
+      setPoolHiddenFishIndex(null);
       setSelection({ word, fishIndex, originX, originY });
+      transitionRafRef.current = requestAnimationFrame(() => {
+        transitionRafRef.current = null;
+        setPoolHiddenFishIndex(fishIndex);
+      });
     },
     [cancelTransitionRaf, sessionController, sim],
   );
@@ -258,7 +267,7 @@ export function MatchKoiLayer({
         images={images}
         masks={masks}
         interactive
-        capturedFishIndex={selection?.fishIndex ?? null}
+        capturedFishIndex={poolHiddenFishIndex}
         onFishSelect={handleFishSelect}
       />
       {bubbleOverlay}
