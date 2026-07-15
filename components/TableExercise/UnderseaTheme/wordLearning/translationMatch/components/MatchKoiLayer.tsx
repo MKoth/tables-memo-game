@@ -108,25 +108,6 @@ export function MatchKoiLayer({
   const targetCenterY = height * 0.5;
   const targetDiameter = Math.min(width, height) * BUBBLE_DIAMETER_RATIO;
 
-  useAnimatedReaction(
-    () => phase.value,
-    (currentPhase, prevPhase) => {
-      if (keepOutDiskSv == null) {
-        return;
-      }
-      if (currentPhase === BubblePhase.Idle) {
-        keepOutDiskSv.value = {
-          centerX: targetCenterX,
-          centerY: targetCenterY,
-          radius: targetDiameter * 0.6,
-        };
-      } else if (prevPhase != null && prevPhase === BubblePhase.Idle && currentPhase !== BubblePhase.Idle) {
-        keepOutDiskSv.value = null;
-      }
-    },
-    [keepOutDiskSv, targetCenterX, targetCenterY, targetDiameter],
-  );
-
   const bubbleConfig = useMemo(
     () => ({
       originX: selection?.originX ?? 0,
@@ -186,6 +167,25 @@ export function MatchKoiLayer({
     handleBurstEnd,
     selection != null,
     requestReleaseWorklet,
+  );
+
+  useAnimatedReaction(
+    () => phase.value,
+    (currentPhase, prevPhase) => {
+      if (keepOutDiskSv == null) {
+        return;
+      }
+      if (currentPhase === BubblePhase.Idle) {
+        keepOutDiskSv.value = {
+          centerX: targetCenterX,
+          centerY: targetCenterY,
+          radius: targetDiameter * 0.6,
+        };
+      } else if (prevPhase != null && prevPhase === BubblePhase.Idle && currentPhase !== BubblePhase.Idle) {
+        keepOutDiskSv.value = null;
+      }
+    },
+    [keepOutDiskSv, targetCenterX, targetCenterY, targetDiameter],
   );
 
   const startBurst = useCallback(
