@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
 import { Canvas, Glyphs, Group, matchFont } from '@shopify/react-native-skia';
 import type { SkFont, SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
@@ -17,7 +16,7 @@ import {
 import { LABEL_STROKE_WIDTH, LABEL_TILT_PX } from '../../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import { rollBodyTint, sr } from '../../../jellyfish/jellyfishVisualTokens';
 import { useJellyfishRoamingLoop } from '../hooks/useJellyfishRoamingLoop';
-import { useMatchJellyfishTapGestures } from '../jellyfish/useMatchJellyfishTapGestures';
+import type { JellyfishTapData } from '../jellyfish/useCombinedMatchGestures';
 
 const MATCH_JELLYFISH_Z = 4;
 const JELLYFISH_BELL_SIZE_MIN = 55;
@@ -220,9 +219,7 @@ export type MatchJellyfishLayerProps = {
   matchedIndicesSv?: SharedValue<number[]>;
   englishWordsByIndexSv?: SharedValue<string[]>;
   exitTargetsSv?: SharedValue<Record<number, { tx: number; ty: number }>>;
-  onCorrectMatchJs?: (hitIdx: number) => void;
-  onWrongMatchJs?: (hitIdx: number) => void;
-  onNeutralTapJs?: (hitIdx: number) => void;
+  tapDataRef?: React.MutableRefObject<JellyfishTapData | null>;
 };
 
 export function MatchJellyfishLayer({
@@ -232,9 +229,7 @@ export function MatchJellyfishLayer({
   matchedIndicesSv,
   englishWordsByIndexSv,
   exitTargetsSv,
-  onCorrectMatchJs,
-  onWrongMatchJs,
-  onNeutralTapJs,
+  tapDataRef,
 }: MatchJellyfishLayerProps) {
   const { width, height } = useWindowDimensions();
   const { images } = useUnderseaThemeAssetsContext();
@@ -300,31 +295,29 @@ export function MatchJellyfishLayer({
     [fontFamily],
   );
 
-  const gesture = useMatchJellyfishTapGestures({
-    layoutX,
-    layoutY,
-    layoutScale,
-    bellSizes,
-    tintFlashPreset,
-    tintFlashUntil,
-    clock,
-    capturedEnglishSv: capturedEnglishSv ?? fallbackCapturedEnglishSv,
-    matchedIndicesSv: activeMatchedIndicesSv,
-    englishWordsByIndexSv: englishWordsByIndexSv ?? fallbackEnglishWordsByIndexSv,
-    onCorrectMatchJs: onCorrectMatchJs ?? (() => {}),
-    onWrongMatchJs: onWrongMatchJs ?? (() => {}),
-    onNeutralTapJs: onNeutralTapJs ?? (() => {}),
-  });
+  if (tapDataRef) {
+    tapDataRef.current = {
+      layoutX,
+      layoutY,
+      layoutScale,
+      bellSizes,
+      tintFlashPreset,
+      tintFlashUntil,
+      clock,
+      matchedIndicesSv: activeMatchedIndicesSv,
+      capturedEnglishSv: capturedEnglishSv ?? fallbackCapturedEnglishSv,
+      englishWordsByIndexSv: englishWordsByIndexSv ?? fallbackEnglishWordsByIndexSv,
+    };
+  }
 
   if (width === 0 || height === 0 || count === 0) {
     return null;
   }
 
   return (
-    <GestureDetector gesture={gesture}>
-      <View
-        style={[styles.container, zIndex != null && { zIndex }]}>
-        <Canvas style={styles.canvas} pointerEvents="none">
+    <View
+      style={[styles.container, zIndex != null && { zIndex }]}>
+      <Canvas style={styles.canvas} pointerEvents="none">
           {words.map((_, index) => {
             const tint = jellyfishTints[index];
             const bellSize = bellSizes[index] ?? JELLYFISH_BELL_SIZE_MIN;
@@ -371,7 +364,6 @@ export function MatchJellyfishLayer({
           ))}
         </Canvas>
       </View>
-    </GestureDetector>
   );
 }
 

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
+import { GestureDetector } from 'react-native-gesture-handler';
 import { allWordLists } from '../../../data/wordsData';
 import { UnderseaThemeBackground } from './background';
 import {
@@ -22,6 +23,8 @@ import {
 import { TINT_FLASH_MS } from './jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import { MatchKoiLayer } from './wordLearning/translationMatch/components/MatchKoiLayer';
 import { MatchJellyfishLayer } from './wordLearning/translationMatch/components/MatchJellyfishLayer';
+import { useCombinedMatchGestures } from './wordLearning/translationMatch/jellyfish/useCombinedMatchGestures';
+import type { JellyfishTapData, KoiTapData } from './wordLearning/translationMatch/jellyfish/useCombinedMatchGestures';
 
 const MATCH_JELLYFISH_Z = 4;
 
@@ -75,13 +78,8 @@ function TranslationMatchContent({
 
   const exitTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
-  useEffect(() => {
-    const timers = exitTimersRef.current;
-    return () => {
-      timers.forEach(t => clearTimeout(t));
-      timers.clear();
-    };
-  }, []);
+  const jellyfishTapDataRef = useRef<JellyfishTapData | null>(null);
+  const koiTapDataRef = useRef<KoiTapData | null>(null);
 
   const handleCorrectMatchJs = useCallback(
     (hitIdx: number) => {
@@ -129,6 +127,14 @@ function TranslationMatchContent({
     [sounds],
   );
 
+  const combinedGesture = useCombinedMatchGestures({
+    jellyfishTapDataRef,
+    koiTapDataRef,
+    onCorrectMatchJs: handleCorrectMatchJs,
+    onWrongMatchJs: handleWrongMatchJs,
+    onNeutralTapJs: handleNeutralTapJs,
+  });
+
   useEffect(() => {
     sounds.startWaterflow();
     return () => {
@@ -148,6 +154,8 @@ function TranslationMatchContent({
         sounds={sounds}
         sessionController={sessionController}
         triggerEscapeRef={triggerEscapeRef}
+        tapDataRef={koiTapDataRef}
+        interactive={false}
       />
       <MatchJellyfishLayer
         words={spanishWords}
@@ -156,10 +164,11 @@ function TranslationMatchContent({
         matchedIndicesSv={matchedIndicesSv}
         englishWordsByIndexSv={englishWordsByIndexSv}
         exitTargetsSv={exitTargetsSv}
-        onCorrectMatchJs={handleCorrectMatchJs}
-        onWrongMatchJs={handleWrongMatchJs}
-        onNeutralTapJs={handleNeutralTapJs}
+        tapDataRef={jellyfishTapDataRef}
       />
+      <GestureDetector gesture={combinedGesture}>
+        <View style={[StyleSheet.absoluteFill, styles.gestureCapture]} pointerEvents="auto" />
+      </GestureDetector>
       <UnderseaThemeCornerControls helpVisible={false} />
     </View>
   );
@@ -236,5 +245,8 @@ export function UnderseaThemeWordLearningTranslationMatchExercise() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  gestureCapture: {
+    zIndex: 10,
   },
 });

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
 import {
   useUnderseaThemeAssetsContext,
   useUnderseaThemeLayout,
@@ -9,12 +8,14 @@ import type { UnderseaThemeSoundController } from '../../../core/assets/useUnder
 import { KoiFishLayer } from '../../../koi/fish/KoiFishLayer';
 import { KoiCaptureOverlay } from '../../../koi/capture/KoiCaptureOverlay';
 import {
+  BubblePhase,
   BurstIntent,
   useBubbleAnimation,
 } from '../../../koi/bubbles/useBubbleAnimation';
 import { useKoiCaptureSharedState } from '../../../koi/KoiSwimZone/hooks/useKoiCaptureSharedState';
 import type {
   KoiCaptureSharedState,
+  KoiFishSimulation,
 } from '../../../koi/simulation/useKoiFishSimulation';
 import {
   useKoiFishSimulation,
@@ -22,6 +23,7 @@ import {
 import { BUBBLE_DIAMETER_RATIO } from '../../../koi/KoiSwimZone/types';
 import { releaseCapturedFishWorklet } from '../../../koi/capture/releaseFishToPool';
 import type { MatchSessionController } from '../domain/matchSessionController';
+import type { KoiTapData } from '../jellyfish/useCombinedMatchGestures';
 
 const MATCH_KOI_Z = 3;
 const MATCH_BUBBLE_Z = 5;
@@ -31,6 +33,8 @@ export type MatchKoiLayerProps = {
   sounds?: UnderseaThemeSoundController;
   sessionController?: MatchSessionController;
   triggerEscapeRef?: React.MutableRefObject<(() => void) | null>;
+  tapDataRef?: React.MutableRefObject<KoiTapData | null>;
+  interactive?: boolean;
 };
 
 export function MatchKoiLayer({
@@ -38,6 +42,8 @@ export function MatchKoiLayer({
   sounds,
   sessionController,
   triggerEscapeRef,
+  tapDataRef,
+  interactive = true,
 }: MatchKoiLayerProps) {
   const { width, height } = useWindowDimensions();
   const layout = useUnderseaThemeLayout();
@@ -68,6 +74,15 @@ export function MatchKoiLayer({
     releaseRequestSv,
     releaseContextSv,
     eliminatedFishSv,
+    escapeActiveSv,
+    escapeStageSv,
+    escapeTargetXSv,
+    escapeTargetYSv,
+    offScreenTargetXSv,
+    offScreenTargetYSv,
+    escapeExitEdgeSv,
+    escapeCompleteTriggeredSv,
+    escapeOverlayDismissTriggeredSv,
   } = shared;
 
   const swimRect = useMemo(
@@ -119,22 +134,14 @@ export function MatchKoiLayer({
     }
   }, [releaseContextSv, releaseRequestSv]);
 
+  const simRef = useRef<KoiFishSimulation>(null!);
+
   const handleBurstEnd = useCallback(
     (intent: number) => {
-      const action =
-        intent === BurstIntent.Release ? 'release' : 'escape';
-      if (action === 'release') {
-        sessionController?.release();
+      if (intent === BurstIntent.Escape) {
+        return;
       }
-      if (action === 'escape') {
-        const sel = selectionRef.current;
-        if (sel != null) {
-          const current = eliminatedFishSv.value;
-          if (!current.includes(sel.fishIndex)) {
-            eliminatedFishSv.value = [...current, sel.fishIndex];
-          }
-        }
-      }
+      sessionController?.release();
       cancelTransitionRaf();
       setPoolHiddenFishIndex(null);
       transitionRafRef.current = requestAnimationFrame(() => {
@@ -142,7 +149,7 @@ export function MatchKoiLayer({
         setSelection(null);
       });
     },
-    [cancelTransitionRaf, eliminatedFishSv, sessionController],
+    [cancelTransitionRaf, sessionController],
   );
 
   const {
@@ -166,7 +173,40 @@ export function MatchKoiLayer({
   );
 
   if (triggerEscapeRef) {
-    triggerEscapeRef.current = () => startBurst(BurstIntent.Escape);
+    triggerEscapeRef.current = () => {
+      const margin = 400;
+      const edge = Math.floor(Math.random() * 4);
+      let tx: number;
+      let ty: number;
+      switch (edge) {
+        case 0:
+          tx = Math.random() * width;
+          ty = -margin;
+          break;
+        case 1:
+          tx = Math.random() * width;
+          ty = height + margin;
+          break;
+        case 2:
+          tx = -margin;
+          ty = Math.random() * height;
+          break;
+        default:
+          tx = width + margin;
+          ty = Math.random() * height;
+          break;
+      }
+      escapeTargetXSv.value = tx;
+      escapeTargetYSv.value = ty;
+      offScreenTargetXSv.value = tx;
+      offScreenTargetYSv.value = ty;
+      escapeExitEdgeSv.value = edge;
+      escapeStageSv.value = 1;
+      escapeCompleteTriggeredSv.value = false;
+      escapeOverlayDismissTriggeredSv.value = false;
+      escapeActiveSv.value = true;
+      startBurst(BurstIntent.Escape);
+    };
   }
 
   const captureState = useMemo<KoiCaptureSharedState>(
@@ -206,8 +246,44 @@ export function MatchKoiLayer({
     ],
   );
 
-  const onEscapeOverlayDismissSv = useSharedValue(false);
-  const onEscapeCompleteSv = useSharedValue(false);
+  const handleEscapeOverlayDismiss = useCallback(() => {
+    cancelTransitionRaf();
+    transitionRafRef.current = requestAnimationFrame(() => {
+      transitionRafRef.current = null;
+      setSelection(null);
+    });
+  }, [cancelTransitionRaf]);
+
+  const handleEscapeComplete = useCallback(() => {
+    const fishIndex = capturedFishIndexSv.value;
+    if (fishIndex >= 0) {
+      const current = eliminatedFishSv.value;
+      if (!current.includes(fishIndex)) {
+        eliminatedFishSv.value = [...current, fishIndex];
+      }
+    }
+    escapeActiveSv.value = false;
+    escapeStageSv.value = 0;
+    escapeCompleteTriggeredSv.value = false;
+    escapeOverlayDismissTriggeredSv.value = false;
+    capturedFishIndexSv.value = -1;
+    phase.value = BubblePhase.None;
+    cancelTransitionRaf();
+    setPoolHiddenFishIndex(null);
+    transitionRafRef.current = requestAnimationFrame(() => {
+      transitionRafRef.current = null;
+      setSelection(null);
+    });
+  }, [
+    cancelTransitionRaf,
+    capturedFishIndexSv,
+    eliminatedFishSv,
+    escapeActiveSv,
+    escapeCompleteTriggeredSv,
+    escapeOverlayDismissTriggeredSv,
+    escapeStageSv,
+    phase,
+  ]);
 
   const sim = useKoiFishSimulation({
     width,
@@ -218,12 +294,8 @@ export function MatchKoiLayer({
     captureState,
     releaseRequestSv,
     eliminatedFishSv,
-    onEscapeOverlayDismiss: () => {
-      onEscapeOverlayDismissSv.value = true;
-    },
-    onEscapeComplete: () => {
-      onEscapeCompleteSv.value = true;
-    },
+    onEscapeOverlayDismiss: handleEscapeOverlayDismiss,
+    onEscapeComplete: handleEscapeComplete,
   });
 
   releaseContextSv.value = {
@@ -231,6 +303,7 @@ export function MatchKoiLayer({
     sharedPositions: sim.sharedPositions,
     captureState,
   };
+  simRef.current = sim;
 
   const handleFishSelect = useCallback(
     (word: string, fishIndex: number, originX: number, originY: number) => {
@@ -253,6 +326,21 @@ export function MatchKoiLayer({
     },
     [cancelTransitionRaf, sessionController, sim],
   );
+
+  if (tapDataRef) {
+    tapDataRef.current = {
+      positionsSv: sim.sharedPositions,
+      count: sim.runtimeEntries.length,
+      hitRadius: sim.hitRadius,
+      eliminatedFishSv,
+      words,
+      onFishSelect: handleFishSelect,
+      bubbleAnim: anim,
+      bubblePhase: phase,
+      escapeActiveSv: shared.escapeActiveSv,
+      startBurst,
+    };
+  }
 
   const capturedEntry =
     selection != null ? sim.runtimeEntries[selection.fishIndex] : null;
@@ -287,7 +375,7 @@ export function MatchKoiLayer({
           sim={sim}
           images={images}
           masks={masks}
-          interactive
+          interactive={interactive}
           capturedFishIndex={poolHiddenFishIndex}
           onFishSelect={handleFishSelect}
         />
