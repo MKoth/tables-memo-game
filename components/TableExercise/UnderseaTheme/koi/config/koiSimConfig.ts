@@ -34,7 +34,7 @@ export const KOI_SPLASH_FAST_MIN_NORM = 0.6;
 export const KOI_SPLASH_MIN_DELTA_NORM = 0.28;
 
 /** Fraction of fish body inset used as exit-complete threshold. */
-export const KOI_EXIT_COMPLETE_BODY_RATIO = 0.35;
+export const KOI_EXIT_COMPLETE_BODY_RATIO = 1.5;
 
 /** Initial speed/amplitude multipliers when spawning a fish runtime. */
 export const KOI_SPAWN_INITIAL_SPEED_RATIO = 0.5;
