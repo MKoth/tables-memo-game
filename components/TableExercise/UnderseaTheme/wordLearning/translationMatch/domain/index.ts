@@ -15,3 +15,10 @@ export {
   type RoamingTarget,
   type Zone,
 } from './jellyfishRoaming';
+export {
+  createMatchSessionController,
+  type MatchSessionController,
+  type MatchSessionControllerConfig,
+  type MatchSessionControllerSnapshot,
+  type MatchSessionPhase,
+} from './matchSessionController';

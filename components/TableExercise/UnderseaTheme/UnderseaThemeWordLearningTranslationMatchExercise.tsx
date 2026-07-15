@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { allWordLists } from '../../../data/wordsData';
 import { UnderseaThemeBackground } from './background';
@@ -13,17 +13,25 @@ import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThem
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { UnderseaThemeCornerControls } from './ui';
 import { sampleMatchSession } from './wordLearning/translationMatch/domain/sampleMatchSession';
+import {
+  createMatchSessionController,
+  type MatchSessionController,
+} from './wordLearning/translationMatch/domain/matchSessionController';
 import { MatchKoiLayer } from './wordLearning/translationMatch/components/MatchKoiLayer';
 import { MatchJellyfishLayer } from './wordLearning/translationMatch/components/MatchJellyfishLayer';
 
-const MATCH_KOI_Z = 3;
+const MATCH_KOI_Z = 5;
 const MATCH_JELLYFISH_Z = 4;
 
 type TranslationMatchContentProps = {
   sounds: UnderseaThemeSoundController;
+  sessionController: MatchSessionController;
 };
 
-function TranslationMatchContent({ sounds }: TranslationMatchContentProps) {
+function TranslationMatchContent({
+  sounds,
+  sessionController,
+}: TranslationMatchContentProps) {
   const soundEnabled = useUnderseaThemeExerciseStore(state => state.soundEnabled);
 
   const entries = useMemo(() => sampleMatchSession(allWordLists), []);
@@ -44,7 +52,12 @@ function TranslationMatchContent({ sounds }: TranslationMatchContentProps) {
   return (
     <View style={styles.container}>
       <UnderseaThemeBackground />
-      <MatchKoiLayer words={englishWords} zIndex={MATCH_KOI_Z} />
+      <MatchKoiLayer
+        words={englishWords}
+        zIndex={MATCH_KOI_Z}
+        sounds={sounds}
+        sessionController={sessionController}
+      />
       <MatchJellyfishLayer words={spanishWords} zIndex={MATCH_JELLYFISH_Z} />
       <UnderseaThemeCornerControls helpVisible={false} />
     </View>
@@ -53,10 +66,28 @@ function TranslationMatchContent({ sounds }: TranslationMatchContentProps) {
 
 function TranslationMatchContentWithSounds() {
   const { sounds } = useUnderseaThemeAssetsContext();
+
+  const sessionControllerRef = useRef<MatchSessionController | null>(null);
+  if (sessionControllerRef.current == null) {
+    sessionControllerRef.current = createMatchSessionController({
+      pairCount: 8,
+    });
+  }
+
+  useEffect(() => {
+    const ctrl = sessionControllerRef.current;
+    return () => {
+      ctrl?.dispose();
+    };
+  }, []);
+
   return (
     <UnderseaThemeRuntimeProvider>
       <UnderseaThemeClockProvider>
-        <TranslationMatchContent sounds={sounds} />
+        <TranslationMatchContent
+          sounds={sounds}
+          sessionController={sessionControllerRef.current}
+        />
       </UnderseaThemeClockProvider>
     </UnderseaThemeRuntimeProvider>
   );
