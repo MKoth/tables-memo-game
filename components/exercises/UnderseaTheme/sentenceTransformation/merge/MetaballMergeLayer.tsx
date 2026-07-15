@@ -11,9 +11,9 @@ import {
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
-import type { LetterLayout } from '../../core/layout/underseaExerciseLayout';
+import type { LetterLayout } from '../../../core/layout/exerciseLayout';
 import { buildMergeShaderUniforms } from './mergeLayout';
-import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
+import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
 import { METABALL_MERGE_SKSL } from '../../shaders/metaballMerge.sksl';
 import { bubbleDeformUniformDefaults } from '../../shaders/bubbleDeform.sksl';
 

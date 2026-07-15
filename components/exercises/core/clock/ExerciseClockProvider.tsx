@@ -5,17 +5,17 @@ import type { SharedValue } from 'react-native-reanimated';
 import { useThrottledClock } from './useThrottledClock';
 
 /** Master scene clock rate — consumers down-sample for slower layers. */
-export const UNDERSEA_SCENE_CLOCK_FPS = 30;
+export const EXERCISE_SCENE_CLOCK_FPS = 30;
 
-type UnderseaThemeClockContextValue = {
+type ExerciseClockContextValue = {
   clock: SharedValue<number>;
   setClockActive: (active: boolean) => void;
 };
 
-const UnderseaThemeClockContext = createContext<UnderseaThemeClockContextValue | null>(null);
+const ExerciseClockContext = createContext<ExerciseClockContextValue | null>(null);
 
-export function UnderseaThemeClockProvider({ children }: { children: ReactNode }) {
-  const { clock, setActive: setClockActive } = useThrottledClock(UNDERSEA_SCENE_CLOCK_FPS);
+export function ExerciseClockProvider({ children }: { children: ReactNode }) {
+  const { clock, setActive: setClockActive } = useThrottledClock(EXERCISE_SCENE_CLOCK_FPS);
 
   useEffect(() => {
     const syncActive = (state: AppStateStatus) => {
@@ -27,16 +27,16 @@ export function UnderseaThemeClockProvider({ children }: { children: ReactNode }
   }, [setClockActive]);
 
   return (
-    <UnderseaThemeClockContext.Provider value={{ clock, setClockActive }}>
+    <ExerciseClockContext.Provider value={{ clock, setClockActive }}>
       {children}
-    </UnderseaThemeClockContext.Provider>
+    </ExerciseClockContext.Provider>
   );
 }
 
-export function useUnderseaThemeClock(): SharedValue<number> {
-  const ctx = useContext(UnderseaThemeClockContext);
+export function useExerciseClock(): SharedValue<number> {
+  const ctx = useContext(ExerciseClockContext);
   if (!ctx) {
-    throw new Error('useUnderseaThemeClock must be used within UnderseaThemeClockProvider');
+    throw new Error('useExerciseClock must be used within ExerciseClockProvider');
   }
   return ctx.clock;
 }
@@ -44,8 +44,8 @@ export function useUnderseaThemeClock(): SharedValue<number> {
 /**
  * Down-sample the shared scene clock to a lower FPS without a second frame loop.
  */
-export function useUnderseaThemeClockQuantized(fps: number): SharedValue<number> {
-  const clock = useUnderseaThemeClock();
+export function useExerciseClockQuantized(fps: number): SharedValue<number> {
+  const clock = useExerciseClock();
   const step = 1000 / fps;
   return useDerivedValue(() => {
     'worklet';

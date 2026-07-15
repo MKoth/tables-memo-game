@@ -13,8 +13,8 @@ import {
 import { useTapGesture } from 'react-native-gesture-handler';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useUnderseaThemeAssetsContext } from '../../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeLayout } from '../../../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeClockQuantized } from '../../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseLayout } from '../../../../core';
+import { useExerciseClockQuantized } from '../../../../core';
 import { CellJellyfish } from '../../../jellyfish/JellyfishTableLayer/components/CellJellyfish';
 import { CellLabel } from '../../../jellyfish/JellyfishTableLayer/components/CellLabel';
 import type { CellConfig } from '../../../jellyfish/JellyfishTableLayer/helpers/cellConfigBuilders';
@@ -37,7 +37,7 @@ import type { SwimPath } from '../../domain/swimPathPlanner';
 import {
   computeSentenceRowLayout,
   type SentenceSlotConfig,
-} from '../../../core/layout/underseaExerciseLayout';
+} from '../../../../core/layout/exerciseLayout';
 import { findSentenceSlotAtTap } from './sentenceRowWorklets';
 import { triggerJellyfishTintFlash } from '../../../jellyfish/JellyfishTableLayer/worklets/jellyfishTableWorklets';
 
@@ -207,8 +207,8 @@ export function JellyfishSentenceRowLayer({
   onRowExitComplete,
 }: JellyfishSentenceRowLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
-  const { jellyRect, koiRect, labelRotationRad } = useUnderseaThemeLayout();
-  const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
+  const { jellyRect, koiRect, labelRotationRad } = useExerciseLayout();
+  const clock = useExerciseClockQuantized(JELLYFISH_CLOCK_FPS);
 
   const layout = useMemo(
     () =>

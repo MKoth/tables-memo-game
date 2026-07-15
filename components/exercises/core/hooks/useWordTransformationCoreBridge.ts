@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useReducer, useRef, useState, type MutableRefObject } from 'react';
-import type { ZoneRect } from '../layout/computeUnderseaThemeLayout';
-import { computeLetterLayout } from '../layout/underseaExerciseLayout';
+import type { ZoneRect } from '../layout/computeExerciseLayout';
+import { computeLetterLayout } from '../layout/exerciseLayout';
 import {
   createWordTransformationCore,
   type VariantPickerPressItem,
   type VariantSourceLayout,
   type WordOperationSequence,
   type WordTransformationCoreSnapshot,
-} from '../../wordTransformation/domain';
+} from '../../UnderseaTheme/wordTransformation/domain';
 
 export type UseWordTransformationCoreBridgeParams = {
   koiRect: ZoneRect;

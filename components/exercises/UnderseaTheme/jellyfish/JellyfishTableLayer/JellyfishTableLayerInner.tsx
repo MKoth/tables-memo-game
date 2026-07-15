@@ -8,9 +8,9 @@ import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { runOnUI, useSharedValue } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { BubblePhase } from '../../koi/bubbles';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
-import { useUnderseaThemeClockQuantized } from '../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseLayout } from '../../../core';
+import { useExerciseRuntime } from '../../../core';
+import { useExerciseClockQuantized } from '../../../core';
 import {
   BODY_FONT_SIZE,
   HEADER_FONT_SIZE,
@@ -51,10 +51,10 @@ export function JellyfishTableLayerInner({
   extraRevealedBodyIndices,
   controllerRef,
 }: JellyfishTableLayerInnerProps) {
-  const { publishJellyBridge } = useUnderseaThemeRuntime();
+  const { publishJellyBridge } = useExerciseRuntime();
   const { height } = useWindowDimensions();
-  const { jellyRect, labelRotationRad } = useUnderseaThemeLayout();
-  const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
+  const { jellyRect, labelRotationRad } = useExerciseLayout();
+  const clock = useExerciseClockQuantized(JELLYFISH_CLOCK_FPS);
 
   const nGridCols = table.colHeaders.length + 1;
   const nGridRows = table.rowHeaders.length + 1;

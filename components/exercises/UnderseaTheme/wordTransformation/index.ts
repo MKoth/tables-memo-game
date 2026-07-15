@@ -12,7 +12,7 @@ export {
   TRANSFORMATION_WORD_ROW_Y_RATIO,
   type InsertPreviewLayout,
   type LetterLayout,
-} from '../core/layout/underseaExerciseLayout';
+} from '../../core/layout/exerciseLayout';
 export {
   TransformationBubbleLayer,
   type TransformationBubbleLayerProps,

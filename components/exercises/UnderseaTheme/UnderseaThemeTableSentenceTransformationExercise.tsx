@@ -3,17 +3,17 @@ import { StyleSheet, View } from 'react-native';
 import { spanishPresentTable2Plural } from '../../../data/tableData';
 import { UnderseaThemeBackground } from './background';
 import {
-  UnderseaThemeClockProvider,
-  UnderseaThemeRuntimeProvider,
+  ExerciseClockProvider,
+  ExerciseRuntimeProvider,
   WORD_TRANSFORMATION_STORE_CONFIG,
-  useUnderseaThemeAssetsContext,
-  useUnderseaThemeExerciseStore,
-  useUnderseaThemeLayout,
-} from './core';
+  useExerciseLayout,
+  useExerciseStore,
+} from '../core';
+import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
 import {
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
   TRANSFORMATION_WORD_ROW_Y_RATIO,
-} from './core/layout/underseaExerciseLayout';
+} from '../core/layout/exerciseLayout';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
@@ -35,9 +35,9 @@ type SentenceTransformationContentProps = {
 
 function SentenceTransformationContent({ sounds }: SentenceTransformationContentProps) {
   const table = spanishPresentTable2Plural;
-  const soundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
+  const soundEnabled = useExerciseStore((state) => state.soundEnabled);
 
-  const { koiRect, jellyRect, orientation, screenWidth, screenHeight } = useUnderseaThemeLayout();
+  const { koiRect, jellyRect, orientation, screenWidth, screenHeight } = useExerciseLayout();
 
   useEffect(() => {
     sounds.startWaterflow();
@@ -143,11 +143,11 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
 function SentenceTransformationContentWithSounds() {
   const { sounds } = useUnderseaThemeAssetsContext();
   return (
-    <UnderseaThemeRuntimeProvider>
-      <UnderseaThemeClockProvider>
+    <ExerciseRuntimeProvider>
+      <ExerciseClockProvider>
         <SentenceTransformationContent sounds={sounds} />
-      </UnderseaThemeClockProvider>
-    </UnderseaThemeRuntimeProvider>
+      </ExerciseClockProvider>
+    </ExerciseRuntimeProvider>
   );
 }
 

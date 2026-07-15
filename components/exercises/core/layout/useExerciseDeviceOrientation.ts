@@ -3,10 +3,10 @@ import Orientation, {
   useDeviceOrientationChange,
   useOrientationChange,
 } from 'react-native-orientation-locker';
-import type { UnderseaThemeOrientation } from './computeUnderseaThemeLayout';
+import type { ExerciseOrientation } from './computeExerciseLayout';
 
 /** Returns null for orientations we ignore (upside-down, unknown). */
-function mapOrientation(type: string): UnderseaThemeOrientation | null {
+function mapOrientation(type: string): ExerciseOrientation | null {
   if (type === 'PORTRAIT-UPSIDEDOWN' || type === 'PORTRAIT-UPSIDE-DOWN') {
     return null;
   }
@@ -22,12 +22,12 @@ function mapOrientation(type: string): UnderseaThemeOrientation | null {
   }
 }
 
-function readInitialOrientation(): UnderseaThemeOrientation {
+function readInitialOrientation(): ExerciseOrientation {
   return mapOrientation(Orientation.getInitialOrientation()) ?? 'portrait';
 }
 
-export function useUnderseaThemeDeviceOrientation(): UnderseaThemeOrientation {
-  const [orientation, setOrientation] = useState<UnderseaThemeOrientation>(readInitialOrientation);
+export function useExerciseDeviceOrientation(): ExerciseOrientation {
+  const [orientation, setOrientation] = useState<ExerciseOrientation>(readInitialOrientation);
 
   const applyOrientation = useCallback((type: string) => {
     const mapped = mapOrientation(type);

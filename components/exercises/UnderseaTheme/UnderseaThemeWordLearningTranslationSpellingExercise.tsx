@@ -4,21 +4,21 @@ import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { animalsWordList } from '../../../data/wordsData';
 import { UnderseaThemeBackground } from './background';
 import {
-  UnderseaThemeClockProvider,
-  UnderseaThemeRuntimeProvider,
+  ExerciseClockProvider,
+  ExerciseRuntimeProvider,
   WORD_LEARNING_STORE_CONFIG,
-  useUnderseaThemeAssetsContext,
-  useUnderseaThemeClock,
-  useUnderseaThemeExerciseStore,
-  useUnderseaThemeLayout,
-} from './core';
+  useExerciseClock,
+  useExerciseLayout,
+  useExerciseStore,
+} from '../core';
+import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { UnderseaThemeCornerControls } from './ui';
 import { LetterBubble } from './wordTransformation/components/LetterBubble';
 import { useTranslationSpellingGame } from './wordLearning/translationSpelling/hooks/useTranslationSpellingGame';
-import { computeLetterLayout, computePoolLetterLayout, TRANSFORMATION_WORD_ROW_Y_RATIO } from './core/layout/underseaExerciseLayout';
+import { computeLetterLayout, computePoolLetterLayout, TRANSFORMATION_WORD_ROW_Y_RATIO } from '../core/layout/exerciseLayout';
 
 const DECORATIVE_KOI_Z = 2;
 const ENGLISH_WORD_LAYER_Z = 5;
@@ -34,9 +34,9 @@ type TranslationSpellingContentProps = {
 
 function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps) {
   const wordList = animalsWordList;
-  const soundEnabled = useUnderseaThemeExerciseStore(state => state.soundEnabled);
+  const soundEnabled = useExerciseStore(state => state.soundEnabled);
 
-  const { koiRect, jellyRect, orientation } = useUnderseaThemeLayout();
+  const { koiRect, jellyRect, orientation } = useExerciseLayout();
 
   useEffect(() => {
     sounds.startWaterflow();
@@ -59,7 +59,7 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
   });
 
   const { images } = useUnderseaThemeAssetsContext();
-  const clock = useUnderseaThemeClock();
+  const clock = useExerciseClock();
 
   const englishLayout = useMemo(() => {
     const count = game.englishLetters.length;
@@ -227,11 +227,11 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
 function TranslationSpellingContentWithSounds() {
   const { sounds } = useUnderseaThemeAssetsContext();
   return (
-    <UnderseaThemeRuntimeProvider>
-      <UnderseaThemeClockProvider>
+    <ExerciseRuntimeProvider>
+      <ExerciseClockProvider>
         <TranslationSpellingContent sounds={sounds} />
-      </UnderseaThemeClockProvider>
-    </UnderseaThemeRuntimeProvider>
+      </ExerciseClockProvider>
+    </ExerciseRuntimeProvider>
   );
 }
 

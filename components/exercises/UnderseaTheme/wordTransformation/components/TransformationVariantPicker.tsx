@@ -2,13 +2,13 @@ import React, { useMemo } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { useExerciseClock } from '../../../core';
+import { useExerciseLayout } from '../../../core';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
 import {
   computeLetterLayout,
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
-} from '../../core/layout/underseaExerciseLayout';
+} from '../../../core/layout/exerciseLayout';
 
 export type VariantPickerItem = {
   id: string;
@@ -59,9 +59,9 @@ export function TransformationVariantPicker({
   onSelect,
   playPop,
 }: TransformationVariantPickerProps) {
-  const { koiRect } = useUnderseaThemeLayout();
+  const { koiRect } = useExerciseLayout();
   const { images } = useUnderseaThemeAssetsContext();
-  const clock = useUnderseaThemeClock();
+  const clock = useExerciseClock();
 
   const layout = useMemo(
     () => computeLetterLayout(koiRect, items.length, TRANSFORMATION_VARIANT_ROW_Y_RATIO),

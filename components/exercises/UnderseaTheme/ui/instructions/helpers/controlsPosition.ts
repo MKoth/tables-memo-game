@@ -1,4 +1,4 @@
-import type { ControlsAnchor, UnderseaThemeLayout } from '../../../core/layout/computeUnderseaThemeLayout';
+import type { ControlsAnchor, ExerciseLayout } from '../../../../core/layout/computeExerciseLayout';
 import { HELP_BUTTON_SIZE } from '../constants';
 
 export type EdgeInsets = {
@@ -58,7 +58,7 @@ const INSTRUCTION_BAR_BOTTOM_MARGIN = 20;
 
 /** Positions the transformation instruction bar inside the koi interaction zone. */
 export function computeInstructionBarPosition(
-  layout: UnderseaThemeLayout,
+  layout: ExerciseLayout,
   insets: EdgeInsets,
 ): {
   left: number;

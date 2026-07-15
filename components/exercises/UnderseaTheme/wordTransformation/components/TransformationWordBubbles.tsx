@@ -2,13 +2,13 @@ import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { useExerciseClock } from '../../../core';
+import { useExerciseLayout } from '../../../core';
 import {
   computeLetterLayout,
   previewCenterForLetter,
   type InsertPreviewLayout,
-} from '../../core/layout/underseaExerciseLayout';
+} from '../../../core/layout/exerciseLayout';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
 import type { LetterBubbleModel } from '../domain';
 
@@ -41,7 +41,7 @@ export type TransformationWordBubblesProps = {
   /** Fired (UI-thread synced) as each letter inflates during the enter cascade. */
   playInflate?: () => void;
   /** Override the zone rect used for letter layout. Defaults to koiRect. */
-  zoneRect?: import('../../core/layout/computeUnderseaThemeLayout').ZoneRect;
+  zoneRect?: import('../../../core/layout/computeExerciseLayout').ZoneRect;
 };
 
 export function TransformationWordBubbles({
@@ -55,10 +55,10 @@ export function TransformationWordBubbles({
   playInflate,
   zoneRect: zoneRectProp,
 }: TransformationWordBubblesProps) {
-  const { koiRect } = useUnderseaThemeLayout();
+  const { koiRect } = useExerciseLayout();
   const zoneRect = zoneRectProp ?? koiRect;
   const { images } = useUnderseaThemeAssetsContext();
-  const clock = useUnderseaThemeClock();
+  const clock = useExerciseClock();
 
   const mergeProgress = useMergeProgress(
     ROUND_MERGE_DURATION_MS,

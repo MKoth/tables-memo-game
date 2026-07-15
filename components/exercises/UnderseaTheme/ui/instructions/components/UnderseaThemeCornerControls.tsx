@@ -8,8 +8,8 @@ import {
   vec,
 } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUnderseaThemeLayout } from '../../../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeExerciseStore } from '../../../core/store/createUnderseaThemeExerciseStore';
+import { useExerciseLayout } from '../../../../core/providers/ExerciseLayoutProvider';
+import { useExerciseStore } from '../../../../core/store/createExerciseStore';
 import { UiDropPanel } from '../UiDropPanel';
 import {
   CORNER_BUTTON_GAP,
@@ -165,11 +165,11 @@ export function UnderseaThemeCornerControls({
   helpVisible: helpVisibleProp,
   helpDisabled: helpDisabledProp,
 }: UnderseaThemeCornerControlsProps = {}) {
-  const storeSoundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
-  const storeToggleSound = useUnderseaThemeExerciseStore((state) => state.toggleSound);
-  const storeHelpVisible = useUnderseaThemeExerciseStore((state) => state.helpVisible);
-  const storeStartTutorial = useUnderseaThemeExerciseStore((state) => state.startTutorial);
-  const tutorialStep = useUnderseaThemeExerciseStore((state) => state.tutorialStep);
+  const storeSoundEnabled = useExerciseStore((state) => state.soundEnabled);
+  const storeToggleSound = useExerciseStore((state) => state.toggleSound);
+  const storeHelpVisible = useExerciseStore((state) => state.helpVisible);
+  const storeStartTutorial = useExerciseStore((state) => state.startTutorial);
+  const tutorialStep = useExerciseStore((state) => state.tutorialStep);
 
   const soundEnabled = soundEnabledProp ?? storeSoundEnabled;
   const onSoundToggle = onSoundToggleProp ?? storeToggleSound;
@@ -177,7 +177,7 @@ export function UnderseaThemeCornerControls({
   const onHelpPress = onHelpPressProp ?? storeStartTutorial;
   const helpDisabled = helpDisabledProp ?? tutorialStep !== 'idle';
   const insets = useSafeAreaInsets();
-  const { controlsAnchor } = useUnderseaThemeLayout();
+  const { controlsAnchor } = useExerciseLayout();
   const position = computeControlsPosition(controlsAnchor, insets, HELP_MARGIN);
 
   return (

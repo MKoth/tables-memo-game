@@ -13,8 +13,8 @@ import { useDerivedValue } from 'react-native-reanimated';
 import { useBubbleTapGesture } from '../gestures/useBubbleTapGesture';
 import { BubbleInstance } from './BubbleInstance';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseLayout } from '../../../core';
+import { useExerciseClock } from '../../../core';
 import {
   type BubbleAnimState,
   type BurstIntentValue,
@@ -46,8 +46,8 @@ export function KoiWordBubble({
   targetDiameter,
 }: KoiWordBubbleProps) {
   const { width, height } = useWindowDimensions();
-  const { labelRotationRad } = useUnderseaThemeLayout();
-  const clock = useUnderseaThemeClock();
+  const { labelRotationRad } = useExerciseLayout();
+  const clock = useExerciseClock();
   const { images } = useUnderseaThemeAssetsContext();
   const bubbleImage = images.bubble;
 

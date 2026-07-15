@@ -1,4 +1,4 @@
-import type { LetterLayout } from '../../core/layout/underseaExerciseLayout';
+import type { LetterLayout } from '../../../core/layout/exerciseLayout';
 import type { Operation, WordOperationSequence } from './types';
 
 export type LetterBubbleModel = {

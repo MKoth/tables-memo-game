@@ -3,9 +3,9 @@ import type { SharedValue } from 'react-native-reanimated';
 import {
   computeOffScreenEscapeTarget,
   escapeExitEdgeCode,
-  type UnderseaThemeOrientation,
+  type ExerciseOrientation,
   type ZoneRect,
-} from '../../../core/layout/computeUnderseaThemeLayout';
+} from '../../../../core/layout/computeExerciseLayout';
 import { BubblePhase } from '../../bubbles/useBubbleAnimation';
 import type { KoiCaptureSharedStateBundle } from './useKoiCaptureSharedState';
 import type { BubbleSelection } from '../types';
@@ -14,7 +14,7 @@ type UseKoiEscapeFlowParams = KoiCaptureSharedStateBundle & {
   width: number;
   height: number;
   koiRect: ZoneRect;
-  orientation: UnderseaThemeOrientation;
+  orientation: ExerciseOrientation;
   layoutKey: string;
   targetCenterX: number;
   targetCenterY: number;

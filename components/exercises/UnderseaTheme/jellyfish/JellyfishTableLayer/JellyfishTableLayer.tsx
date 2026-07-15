@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
+import { useExerciseRuntime } from '../../../core';
 import { JellyfishTableLayerInner } from './JellyfishTableLayerInner';
 import { DEFAULT_TRANSLATION_DISPLAY_MS } from './config/jellyfishTableLayerConfig';
 import type { JellyfishTableLayerProps } from './types';
@@ -25,7 +25,7 @@ export function JellyfishTableLayer({
   controllerRef,
 }: JellyfishTableLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
-  const { captureBridge, onJellyfishMatchSuccess } = useUnderseaThemeRuntime();
+  const { captureBridge, onJellyfishMatchSuccess } = useExerciseRuntime();
   const bellImage = images.jellyfishBell;
   const tentacleImage = images.jellyfishTentacles;
 

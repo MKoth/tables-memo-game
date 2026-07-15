@@ -1,13 +1,13 @@
 import React from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeClock } from '../core/clock/UnderseaThemeClockProvider';
+import { useExerciseClock } from '../../core';
 import { UnderseaThemeSceneBackground } from './UnderseaThemeSceneBackground';
 
 export function UnderseaThemeBackground() {
   const { width, height } = useWindowDimensions();
   const { images } = useUnderseaThemeAssetsContext();
-  const clock = useUnderseaThemeClock();
+  const clock = useExerciseClock();
 
   if (width === 0 || height === 0) {
     return null;

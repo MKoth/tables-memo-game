@@ -10,8 +10,8 @@ import {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeClockQuantized } from '../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseLayout } from '../../../core';
+import { useExerciseClockQuantized } from '../../../core';
 import { CellJellyfish } from '../../jellyfish/JellyfishTableLayer/components/CellJellyfish';
 import { CellLabel } from '../../jellyfish/JellyfishTableLayer/components/CellLabel';
 import type { CellConfig } from '../../jellyfish/JellyfishTableLayer/helpers/cellConfigBuilders';
@@ -87,8 +87,8 @@ export function VariantSelectionResolveFlight({
   onExitComplete,
 }: VariantSelectionResolveFlightProps) {
   const { images } = useUnderseaThemeAssetsContext();
-  const { labelRotationRad } = useUnderseaThemeLayout();
-  const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
+  const { labelRotationRad } = useExerciseLayout();
+  const clock = useExerciseClockQuantized(JELLYFISH_CLOCK_FPS);
 
   const resolveX = useSharedValue(fromCenterX);
   const resolveY = useSharedValue(fromCenterY);

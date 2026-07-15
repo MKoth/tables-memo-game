@@ -1,5 +1,5 @@
 import type { SharedValue } from 'react-native-reanimated';
-import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
+import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
 import type { BubbleAnimState } from '../bubbles/useBubbleAnimation';
 import type { KoiRuntimeEntry, SwimZone } from './types';
 

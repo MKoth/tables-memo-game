@@ -1,6 +1,6 @@
 /**
- * Screen-space layout for the undersea exercise across device orientations.
- * Koi and jellyfish zones split the screen; controls anchor to the koi outer corner.
+ * Screen-space layout for the exercise across device orientations.
+ * Word-sprite and roamer zones split the screen; controls anchor to the roamer outer corner.
  */
 
 import type { LayoutBounds } from './layoutBounds';
@@ -9,7 +9,7 @@ import {
   LAYOUT_ZONE_TOP_RATIO,
 } from './zoneLayoutConstants';
 
-export type UnderseaThemeOrientation =
+export type ExerciseOrientation =
   | 'portrait'
   | 'landscapeLeft'
   | 'landscapeRight';
@@ -22,12 +22,12 @@ export type ZoneRect = {
 };
 
 export type ControlsAnchor = {
-  /** Which screen edges the control cluster hugs (outer koi corner). */
+  /** Which screen edges the control cluster hugs (outer roamer corner). */
   edge: 'bottomRight' | 'bottomLeft' | 'topRight' | 'topLeft';
 };
 
-export type UnderseaThemeLayout = {
-  orientation: UnderseaThemeOrientation;
+export type ExerciseLayout = {
+  orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
   koiRect: ZoneRect;
@@ -76,7 +76,7 @@ function landscapeLayout(width: number, height: number): {
   };
 }
 
-function computeControlsAnchor(orientation: UnderseaThemeOrientation): ControlsAnchor {
+function computeControlsAnchor(orientation: ExerciseOrientation): ControlsAnchor {
   if (orientation === 'portrait') {
     return { edge: 'bottomRight' };
   }
@@ -99,11 +99,11 @@ export function escapeExitEdgeCode(edge: EscapeExitEdge): number {
   }
 }
 
-export function computeUnderseaThemeLayout(
+export function computeExerciseLayout(
   screenWidth: number,
   screenHeight: number,
-  orientation: UnderseaThemeOrientation,
-): UnderseaThemeLayout {
+  orientation: ExerciseOrientation,
+): ExerciseLayout {
   let koiRect: ZoneRect;
   let jellyRect: ZoneRect;
 
@@ -123,7 +123,7 @@ export function computeUnderseaThemeLayout(
     }
   }
 
-  const jellyLayoutBounds: UnderseaThemeLayout['jellyLayoutBounds'] = {
+  const jellyLayoutBounds: ExerciseLayout['jellyLayoutBounds'] = {
     width: jellyRect.w,
     height: screenHeight,
     nGridCols: 0,
@@ -146,12 +146,12 @@ export function computeUnderseaThemeLayout(
   };
 }
 
-/** Off-screen escape point beyond the screen edge on the koi side away from jelly. */
+/** Off-screen escape point beyond the screen edge on the roamer side away from word-sprite. */
 export function computeOffScreenEscapeTarget(
   koiRect: ZoneRect,
   screenWidth: number,
   screenHeight: number,
-  orientation: UnderseaThemeOrientation,
+  orientation: ExerciseOrientation,
 ): { x: number; y: number; exitEdge: EscapeExitEdge } {
   const margin = 120 * 1.5;
   const cx = koiRect.x + koiRect.w * 0.5;

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseClock } from '../../../core';
 import { LetterBubble } from './LetterBubble';
 import type { InsertAnimationState } from '../domain';
 
@@ -16,7 +16,7 @@ export type TransformationInsertFlightProps = {
  */
 export function TransformationInsertFlight({ flight }: TransformationInsertFlightProps) {
   const { images } = useUnderseaThemeAssetsContext();
-  const clock = useUnderseaThemeClock();
+  const clock = useExerciseClock();
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const font = useMemo(() => {

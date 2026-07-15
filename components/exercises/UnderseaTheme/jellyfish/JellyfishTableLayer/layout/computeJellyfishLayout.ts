@@ -6,14 +6,14 @@
  * a jellyfish at gridCol 2 is always between cols 1 and 3 on screen.
  */
 
-import type { LayoutBounds } from '../../../core/layout/layoutBounds';
+import type { LayoutBounds } from '../../../../core/layout/layoutBounds';
 import { computeJellyfishFontScale } from '../../jellyfishVisualTokens';
 
-export type { LayoutBounds } from '../../../core/layout/layoutBounds';
+export type { LayoutBounds } from '../../../../core/layout/layoutBounds';
 export {
   LAYOUT_ZONE_HEIGHT_RATIO,
   LAYOUT_ZONE_TOP_RATIO,
-} from '../../../core/layout/zoneLayoutConstants';
+} from '../../../../core/layout/zoneLayoutConstants';
 
 export type LayoutParticle = {
   gridCol: number;

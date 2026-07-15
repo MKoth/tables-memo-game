@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { WordList } from '../../../../../../data/wordsData';
 import type {
-  UnderseaThemeOrientation,
+  ExerciseOrientation,
   ZoneRect,
-} from '../../../core/layout/computeUnderseaThemeLayout';
+} from '../../../../core/layout/computeExerciseLayout';
 import {
   computeLetterLayout,
   TRANSFORMATION_WORD_ROW_Y_RATIO,
-} from '../../../core/layout/underseaExerciseLayout';
+} from '../../../../core/layout/exerciseLayout';
 import { planSwimPaths, type SwimPath } from '../../../sentenceTransformation/domain/swimPathPlanner';
 import {
   buildCascadeRevealOrder,
@@ -42,7 +42,7 @@ export type TranslationChoiceGame = {
 
 export type UseTranslationChoiceGameParams = {
   wordList: WordList;
-  orientation: UnderseaThemeOrientation;
+  orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
   koiRect: ZoneRect;

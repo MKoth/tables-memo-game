@@ -5,7 +5,7 @@ import { GestureDetector, useTapGesture } from 'react-native-gesture-handler';
 import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseClock } from '../../../core';
 import { LetterBubble } from '../../wordTransformation/components/LetterBubble';
 import { TAP_MAX_DISTANCE_PX } from '../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 
@@ -45,7 +45,7 @@ export function TransformationRoundResolutionBubble({
   onPopComplete,
 }: TransformationRoundResolutionBubbleProps) {
   const { images, sounds } = useUnderseaThemeAssetsContext();
-  const clock = useUnderseaThemeClock();
+  const clock = useExerciseClock();
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const fontSize = useMemo(() => {

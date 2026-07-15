@@ -2,12 +2,12 @@ import { createContext, useContext, useRef, type ReactNode } from 'react';
 import { createStore, useStore, type StoreApi } from 'zustand';
 import type { TutorialStep } from '../types/bridgeTypes';
 
-export type UnderseaThemeExerciseStoreConfig = {
+export type ExerciseStoreConfig = {
   tutorialStartStep: Exclude<TutorialStep, 'idle'>;
   getNextTutorialStep: (current: TutorialStep) => TutorialStep;
 };
 
-export const TABLE_EXERCISE_STORE_CONFIG: UnderseaThemeExerciseStoreConfig = {
+export const TABLE_EXERCISE_STORE_CONFIG: ExerciseStoreConfig = {
   tutorialStartStep: 'fish',
   getNextTutorialStep: (current) => {
     if (current === 'fish') {
@@ -21,17 +21,17 @@ export const TABLE_EXERCISE_STORE_CONFIG: UnderseaThemeExerciseStoreConfig = {
 };
 
 /** Placeholder until word-transformation tutorial steps are defined in phase 4. */
-export const WORD_TRANSFORMATION_STORE_CONFIG: UnderseaThemeExerciseStoreConfig = {
+export const WORD_TRANSFORMATION_STORE_CONFIG: ExerciseStoreConfig = {
   tutorialStartStep: 'fish',
   getNextTutorialStep: (current) => current,
 };
 
-export const WORD_LEARNING_STORE_CONFIG: UnderseaThemeExerciseStoreConfig = {
+export const WORD_LEARNING_STORE_CONFIG: ExerciseStoreConfig = {
   tutorialStartStep: 'fish',
   getNextTutorialStep: (current) => current,
 };
 
-export type UnderseaThemeExerciseState = {
+export type ExerciseState = {
   tutorialStep: TutorialStep;
   helpVisible: boolean;
   soundEnabled: boolean;
@@ -42,12 +42,12 @@ export type UnderseaThemeExerciseState = {
   toggleSound: () => void;
 };
 
-export type UnderseaThemeExerciseStore = StoreApi<UnderseaThemeExerciseState>;
+export type ExerciseStore = StoreApi<ExerciseState>;
 
-export function createUnderseaThemeExerciseStore(
-  config: UnderseaThemeExerciseStoreConfig,
-): UnderseaThemeExerciseStore {
-  return createStore<UnderseaThemeExerciseState>((set) => ({
+export function createExerciseStore(
+  config: ExerciseStoreConfig,
+): ExerciseStore {
+  return createStore<ExerciseState>((set) => ({
     tutorialStep: 'idle',
     helpVisible: true,
     soundEnabled: true,
@@ -62,36 +62,36 @@ export function createUnderseaThemeExerciseStore(
   }));
 }
 
-const UnderseaThemeExerciseStoreContext = createContext<UnderseaThemeExerciseStore | null>(
+const ExerciseStoreContext = createContext<ExerciseStore | null>(
   null,
 );
 
-export function UnderseaThemeExerciseStoreProvider({
+export function ExerciseStoreProvider({
   config,
   children,
 }: {
-  config: UnderseaThemeExerciseStoreConfig;
+  config: ExerciseStoreConfig;
   children: ReactNode;
 }) {
-  const storeRef = useRef<UnderseaThemeExerciseStore | null>(null);
+  const storeRef = useRef<ExerciseStore | null>(null);
   if (storeRef.current == null) {
-    storeRef.current = createUnderseaThemeExerciseStore(config);
+    storeRef.current = createExerciseStore(config);
   }
 
   return (
-    <UnderseaThemeExerciseStoreContext.Provider value={storeRef.current}>
+    <ExerciseStoreContext.Provider value={storeRef.current}>
       {children}
-    </UnderseaThemeExerciseStoreContext.Provider>
+    </ExerciseStoreContext.Provider>
   );
 }
 
-export function useUnderseaThemeExerciseStore<T>(
-  selector: (state: UnderseaThemeExerciseState) => T,
+export function useExerciseStore<T>(
+  selector: (state: ExerciseState) => T,
 ): T {
-  const store = useContext(UnderseaThemeExerciseStoreContext);
+  const store = useContext(ExerciseStoreContext);
   if (store == null) {
     throw new Error(
-      'useUnderseaThemeExerciseStore must be used within UnderseaThemeExerciseStoreProvider',
+      'useExerciseStore must be used within ExerciseStoreProvider',
     );
   }
   return useStore(store, selector);

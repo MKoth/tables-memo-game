@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { useExerciseLayout } from '../../../core';
 import { KoiFishLayer } from '../fish/KoiFishLayer';
 import { useBubbleAnimation } from '../bubbles/useBubbleAnimation';
 import { BUBBLE_DIAMETER_RATIO } from '../KoiSwimZone/types';
@@ -24,7 +24,7 @@ export function DecorativeKoiLayer({
   fishCount = DECORATIVE_KOI_COUNT,
 }: DecorativeKoiLayerProps) {
   const { width, height } = useWindowDimensions();
-  const layout = useUnderseaThemeLayout();
+  const layout = useExerciseLayout();
   const { images: assetImages } = useUnderseaThemeAssetsContext();
   const images = assetImages.koi;
   const masks = assetImages.koiMasks;

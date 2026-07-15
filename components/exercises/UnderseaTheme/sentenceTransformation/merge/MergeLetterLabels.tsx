@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Glyphs, Group, vec, type SkFont } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
-import type { LetterLayout } from '../../core/layout/underseaExerciseLayout';
+import type { LetterLayout } from '../../../core/layout/exerciseLayout';
 import {
   interpolateMergeLetterState,
   interpolateMergeLetterStateAt,

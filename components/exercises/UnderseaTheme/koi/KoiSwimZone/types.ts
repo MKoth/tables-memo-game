@@ -25,7 +25,7 @@ export type KoiSwimZoneController = {
   dispatchEscapeTo: (targetX: number, targetY: number, hitIdx?: number) => void;
 };
 
-export type { KoiCaptureBridge } from '../../core/types/bridgeTypes';
+export type { KoiCaptureBridge } from '../../../core/types/bridgeTypes';
 
 export type KoiSwimZoneProps = {
   words: string[];

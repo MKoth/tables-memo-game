@@ -13,8 +13,8 @@ import {
 import { useTapGesture } from 'react-native-gesture-handler';
 import { scheduleOnRN, runOnUI } from 'react-native-worklets';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeClockQuantized } from '../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseLayout } from '../../../core';
+import { useExerciseClockQuantized } from '../../../core';
 import { CellJellyfish } from '../../jellyfish/JellyfishTableLayer/components/CellJellyfish';
 import { CellLabel } from '../../jellyfish/JellyfishTableLayer/components/CellLabel';
 import type { CellConfig } from '../../jellyfish/JellyfishTableLayer/helpers/cellConfigBuilders';
@@ -29,7 +29,7 @@ import {
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
 } from '../../sentenceTransformation/domain';
-import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from '../../core/layout/underseaExerciseLayout';
+import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from '../../../core/layout/exerciseLayout';
 import { rollBodyTint } from '../../jellyfish/jellyfishVisualTokens';
 import { triggerJellyfishTintFlash } from '../../jellyfish/JellyfishTableLayer/worklets/jellyfishTableWorklets';
 import type { OptionJellyfishState } from '../hooks/useVariantSelectionGame';
@@ -208,8 +208,8 @@ export function OptionJellyfishLayer({
   onOptionTap,
 }: OptionJellyfishLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
-  const { koiRect, labelRotationRad } = useUnderseaThemeLayout();
-  const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
+  const { koiRect, labelRotationRad } = useExerciseLayout();
+  const clock = useExerciseClockQuantized(JELLYFISH_CLOCK_FPS);
 
   const optionLayout = useMemo(() => {
     const count = options.length;

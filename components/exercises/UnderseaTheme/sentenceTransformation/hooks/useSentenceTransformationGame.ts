@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
 import {
-  type UnderseaThemeOrientation,
+  type ExerciseOrientation,
   type ZoneRect,
-} from '../../core/layout/computeUnderseaThemeLayout';
-import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransformationCoreBridge';
+} from '../../../core/layout/computeExerciseLayout';
+import { useWordTransformationCoreBridge } from '../../../core/hooks/useWordTransformationCoreBridge';
 import {
   computeRoundResolutionFlight,
   computeSentenceRowLayout,
-} from '../../core/layout/underseaExerciseLayout';
+} from '../../../core/layout/exerciseLayout';
 import type { RoundResolutionBubbleState } from '../components/TransformationRoundResolutionBubble';
 import type { VariantPickerItem } from '../../wordTransformation/components/TransformationVariantPicker';
 import {
@@ -95,7 +95,7 @@ function roundToSequence(
 
 export type UseSentenceTransformationGameParams = {
   table: TableData;
-  orientation: UnderseaThemeOrientation;
+  orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
   koiRect: ZoneRect;

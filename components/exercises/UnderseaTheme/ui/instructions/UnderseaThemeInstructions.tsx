@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Canvas } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { useUnderseaThemeRuntime } from '../../core/providers/UnderseaThemeRuntimeProvider';
-import { useUnderseaThemeExerciseStore } from '../../core/store/createUnderseaThemeExerciseStore';
+import { useExerciseLayout } from '../../../core/providers/ExerciseLayoutProvider';
+import { useExerciseRuntime } from '../../../core/providers/ExerciseRuntimeProvider';
+import { useExerciseStore } from '../../../core/store/createExerciseStore';
 import { TutorialSpotlightOverlay } from './components/TutorialSpotlightOverlay';
 import { InstructionTooltip } from './components/UnderseaThemeCornerControls';
 import { HELP_MARGIN, INSTRUCTIONS_Z } from './constants';
@@ -30,13 +30,13 @@ export {
 } from './components/UnderseaThemeCornerControls';
 
 export function UnderseaThemeInstructions() {
-  const step = useUnderseaThemeExerciseStore((state) => state.tutorialStep);
-  const nextTutorialStep = useUnderseaThemeExerciseStore((state) => state.nextTutorialStep);
-  const dismissTutorial = useUnderseaThemeExerciseStore((state) => state.dismissTutorial);
-  const { koiBridge, jellyBridge } = useUnderseaThemeRuntime();
+  const step = useExerciseStore((state) => state.tutorialStep);
+  const nextTutorialStep = useExerciseStore((state) => state.nextTutorialStep);
+  const dismissTutorial = useExerciseStore((state) => state.dismissTutorial);
+  const { koiBridge, jellyBridge } = useExerciseRuntime();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { controlsAnchor } = useUnderseaThemeLayout();
+  const { controlsAnchor } = useExerciseLayout();
   const [fishTargetIndex, setFishTargetIndex] = useState<number | null>(null);
   const [jellyTargetIndex, setJellyTargetIndex] = useState<number | null>(null);
   const [headerTargetIndex, setHeaderTargetIndex] = useState<number | null>(null);

@@ -1,5 +1,5 @@
 import { planSwimPaths } from '../swimPathPlanner';
-import type { UnderseaThemeOrientation } from '../../../core/layout/computeUnderseaThemeLayout';
+import type { ExerciseOrientation } from '../../../../core/layout/computeExerciseLayout';
 
 const SCREEN_WIDTH = 390;
 const SCREEN_HEIGHT = 844;
@@ -31,7 +31,7 @@ function assertExitAngleReversesEnter(path: { enterAngle: number; exitAngle: num
 }
 
 function planForOrientation(
-  orientation: UnderseaThemeOrientation,
+  orientation: ExerciseOrientation,
   slotCount: number,
 ) {
   const centers =

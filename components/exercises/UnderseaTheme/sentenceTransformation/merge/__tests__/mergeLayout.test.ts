@@ -1,8 +1,8 @@
 import {
   computeLetterLayout,
   type LetterLayout,
-} from '../../../core/layout/underseaExerciseLayout';
-import type { ZoneRect } from '../../../core/layout/computeUnderseaThemeLayout';
+} from '../../../../core/layout/exerciseLayout';
+import type { ZoneRect } from '../../../../core/layout/computeExerciseLayout';
 import {
   buildMergeShaderUniforms,
   computeMergeEndLayout,

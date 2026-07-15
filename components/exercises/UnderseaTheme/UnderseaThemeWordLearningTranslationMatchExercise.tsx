@@ -6,12 +6,12 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import { allWordLists } from '../../../data/wordsData';
 import { UnderseaThemeBackground } from './background';
 import {
-  UnderseaThemeClockProvider,
-  UnderseaThemeRuntimeProvider,
+  ExerciseClockProvider,
+  ExerciseRuntimeProvider,
   WORD_LEARNING_STORE_CONFIG,
-  useUnderseaThemeAssetsContext,
-  useUnderseaThemeExerciseStore,
-} from './core';
+  useExerciseStore,
+} from '../core';
+import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { UnderseaThemeCornerControls } from './ui';
@@ -72,7 +72,7 @@ function TranslationMatchContent({
   exitTargetsSv,
   keepOutDiskSv,
 }: TranslationMatchContentProps) {
-  const soundEnabled = useUnderseaThemeExerciseStore(state => state.soundEnabled);
+  const soundEnabled = useExerciseStore(state => state.soundEnabled);
   const { width, height } = useWindowDimensions();
 
   const entries = useMemo(() => sampleMatchSession(allWordLists), []);
@@ -238,8 +238,8 @@ function TranslationMatchContentWithSounds() {
   );
 
   return (
-    <UnderseaThemeRuntimeProvider>
-      <UnderseaThemeClockProvider>
+    <ExerciseRuntimeProvider>
+      <ExerciseClockProvider>
         <TranslationMatchContent
           sounds={sounds}
           sessionController={sessionController}
@@ -249,8 +249,8 @@ function TranslationMatchContentWithSounds() {
           exitTargetsSv={exitTargetsSv}
           keepOutDiskSv={keepOutDiskSv}
         />
-      </UnderseaThemeClockProvider>
-    </UnderseaThemeRuntimeProvider>
+      </ExerciseClockProvider>
+    </ExerciseRuntimeProvider>
   );
 }
 

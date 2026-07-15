@@ -3,18 +3,18 @@ import { StyleSheet, View } from 'react-native';
 import { getTableBodyWords, spanishPresentTable2Plural } from '../../../data/tableData';
 import { UnderseaThemeBackground } from './background';
 import {
-  UnderseaThemeClockProvider,
-  UnderseaThemeRuntimeProvider,
+  ExerciseClockProvider,
+  ExerciseRuntimeProvider,
   WORD_TRANSFORMATION_STORE_CONFIG,
-  useUnderseaThemeAssetsContext,
-  useUnderseaThemeExerciseStore,
-  useUnderseaThemeLayout,
-  useUnderseaThemeRuntime,
-} from './core';
+  useExerciseLayout,
+  useExerciseRuntime,
+  useExerciseStore,
+} from '../core';
+import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
 import {
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
   TRANSFORMATION_WORD_ROW_Y_RATIO,
-} from './core/layout/underseaExerciseLayout';
+} from '../core/layout/exerciseLayout';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
 import { KoiSwimZone, type KoiSwimZoneController } from './koi';
@@ -38,10 +38,10 @@ type WordTransformationContentProps = {
 function WordTransformationContent({ sounds }: WordTransformationContentProps) {
   const table = spanishPresentTable2Plural;
   const words = useMemo(() => getTableBodyWords(table), [table]);
-  const soundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
+  const soundEnabled = useExerciseStore((state) => state.soundEnabled);
 
-  const { jellyBridge } = useUnderseaThemeRuntime();
-  const { jellyRect, koiRect } = useUnderseaThemeLayout();
+  const { jellyBridge } = useExerciseRuntime();
+  const { jellyRect, koiRect } = useExerciseLayout();
 
   const koiControllerRef = useRef<KoiSwimZoneController | null>(null);
   const handleSequenceSolved = useKoiEscapeCoordinator({
@@ -149,11 +149,11 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
 function WordTransformationContentWithSounds() {
   const { sounds } = useUnderseaThemeAssetsContext();
   return (
-    <UnderseaThemeRuntimeProvider>
-      <UnderseaThemeClockProvider>
+    <ExerciseRuntimeProvider>
+      <ExerciseClockProvider>
         <WordTransformationContent sounds={sounds} />
-      </UnderseaThemeClockProvider>
-    </UnderseaThemeRuntimeProvider>
+      </ExerciseClockProvider>
+    </ExerciseRuntimeProvider>
   );
 }
 

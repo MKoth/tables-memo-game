@@ -1,4 +1,4 @@
-import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
+import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
 import type { ScheduleTimer } from '../../wordTransformation/domain';
 import type { WordOperationSequence } from '../../wordTransformation/domain/types';
 import type { KoiSwimZoneController } from '../KoiSwimZone/types';

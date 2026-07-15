@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import { computeLetterLayout } from '../../../core/layout/underseaExerciseLayout';
-import type { ZoneRect } from '../../../core/layout/computeUnderseaThemeLayout';
+import { computeLetterLayout } from '../../../../core/layout/exerciseLayout';
+import type { ZoneRect } from '../../../../core/layout/computeExerciseLayout';
 import {
   buildMergeShaderUniforms,
   computeMergeTarget,
@@ -37,8 +37,8 @@ jest.mock('@shopify/react-native-skia', () => {
   };
 });
 
-jest.mock('../../../core/providers/UnderseaThemeLayoutProvider', () => ({
-  useUnderseaThemeLayout: () => ({ koiRect: KOI_RECT }),
+jest.mock('../../../../core/providers/ExerciseLayoutProvider', () => ({
+  useExerciseLayout: () => ({ koiRect: KOI_RECT }),
 }));
 
 jest.mock('../../../core/providers/UnderseaThemeAssetsProvider', () => ({

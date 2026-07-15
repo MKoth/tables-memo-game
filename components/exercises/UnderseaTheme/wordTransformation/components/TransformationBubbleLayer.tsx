@@ -1,5 +1,5 @@
 import React, { useMemo, type ReactNode } from 'react';
-import type { InsertPreviewLayout } from '../../core/layout/underseaExerciseLayout';
+import type { InsertPreviewLayout } from '../../../core/layout/exerciseLayout';
 import type { InsertAnimationState, LetterBubbleModel } from '../domain';
 import { TransformationInsertFlight } from './TransformationInsertFlight';
 import {

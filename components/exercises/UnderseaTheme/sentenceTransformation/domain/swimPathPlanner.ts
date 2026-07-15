@@ -1,5 +1,5 @@
-import type { UnderseaThemeOrientation } from '../../core/layout/computeUnderseaThemeLayout';
-import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
+import type { ExerciseOrientation } from '../../../core/layout/computeExerciseLayout';
+import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
 
 export type SwimPath = {
   spawnX: number;
@@ -11,7 +11,7 @@ export type SwimPath = {
 };
 
 export type SwimPathPlannerInput = {
-  orientation: UnderseaThemeOrientation;
+  orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
   jellyRect: ZoneRect;
@@ -20,11 +20,11 @@ export type SwimPathPlannerInput = {
 
 const SPAWN_MARGIN = 120;
 
-function isPortrait(orientation: UnderseaThemeOrientation): boolean {
+function isPortrait(orientation: ExerciseOrientation): boolean {
   return orientation === 'portrait';
 }
 
-function allowedEdges(orientation: UnderseaThemeOrientation): ('top' | 'left' | 'right' | 'bottom')[] {
+function allowedEdges(orientation: ExerciseOrientation): ('top' | 'left' | 'right' | 'bottom')[] {
   if (isPortrait(orientation)) {
     return ['top', 'left', 'right'];
   }

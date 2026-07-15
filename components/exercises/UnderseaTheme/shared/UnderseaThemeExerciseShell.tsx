@@ -1,15 +1,15 @@
 import React, { type ReactNode } from 'react';
 import { useUnderseaThemeAssets } from '../core/assets/useUnderseaThemeAssets';
 import { UnderseaThemeAssetsProvider } from '../core/providers/UnderseaThemeAssetsProvider';
-import { UnderseaThemeLayoutProvider } from '../core/providers/UnderseaThemeLayoutProvider';
+import { ExerciseLayoutProvider } from '../../core/providers/ExerciseLayoutProvider';
 import {
-  UnderseaThemeExerciseStoreProvider,
-  type UnderseaThemeExerciseStoreConfig,
-} from '../core/store/createUnderseaThemeExerciseStore';
+  ExerciseStoreProvider,
+  type ExerciseStoreConfig,
+} from '../../core/store/createExerciseStore';
 import { UnderseaThemeLoadingScreen } from '../ui/loading/UnderseaThemeLoadingScreen';
 
 export type UnderseaThemeExerciseShellProps = {
-  storeConfig: UnderseaThemeExerciseStoreConfig;
+  storeConfig: ExerciseStoreConfig;
   children: ReactNode;
 };
 
@@ -39,10 +39,10 @@ export function UnderseaThemeExerciseShell({
   children,
 }: UnderseaThemeExerciseShellProps) {
   return (
-    <UnderseaThemeExerciseStoreProvider config={storeConfig}>
-      <UnderseaThemeLayoutProvider>
+    <ExerciseStoreProvider config={storeConfig}>
+      <ExerciseLayoutProvider>
         <UnderseaThemeExerciseShellContent>{children}</UnderseaThemeExerciseShellContent>
-      </UnderseaThemeLayoutProvider>
-    </UnderseaThemeExerciseStoreProvider>
+      </ExerciseLayoutProvider>
+    </ExerciseStoreProvider>
   );
 }

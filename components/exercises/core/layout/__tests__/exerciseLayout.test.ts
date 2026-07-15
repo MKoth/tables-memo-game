@@ -1,4 +1,4 @@
-import type { SentencePromptDisplaySlot } from '../../../sentenceTransformation/domain/types';
+import type { SentencePromptDisplaySlot } from '../../../UnderseaTheme/sentenceTransformation/domain/types';
 import {
   blankSlotCenter,
   computeLetterLayout,
@@ -6,8 +6,8 @@ import {
   computeSentenceRowLayout,
   previewCenterForLetter,
   TRANSFORMATION_WORD_ROW_Y_RATIO,
-} from '../underseaExerciseLayout';
-import type { ZoneRect } from '../computeUnderseaThemeLayout';
+} from '../exerciseLayout';
+import type { ZoneRect } from '../computeExerciseLayout';
 
 const KOI_RECT: ZoneRect = { x: 100, y: 200, w: 400, h: 300 };
 const JELLY_RECT: ZoneRect = { x: 50, y: 80, w: 500, h: 220 };
@@ -123,7 +123,6 @@ describe('computeSentenceRowLayout', () => {
 
   it('caps the blank footprint diameter for very long words', () => {
     const slots: SentencePromptDisplaySlot[] = [{ kind: 'blank' }];
-    // "extraordinariamente" is 18 letters, will produce a huge natural width
     const layout = computeSentenceRowLayout({
       slots,
       jellyRect: JELLY_RECT,
@@ -132,9 +131,6 @@ describe('computeSentenceRowLayout', () => {
       roundPos: 0,
     });
 
-    // JELLY_RECT.w is 500. 45% is 225.
-    // BODY_BELL_SIZE_MAX * 2.5 is 72 * 2.5 = 180.
-    // So it should be capped at 180.
     expect(layout.blankFootprintDiameter).toBeLessThanOrEqual(180);
     expect(layout.configs[0]?.bellSize).toBeCloseTo(layout.blankFootprintDiameter * 0.7, 1);
   });
@@ -233,4 +229,3 @@ describe('blankSlotCenter', () => {
     });
   });
 });
-

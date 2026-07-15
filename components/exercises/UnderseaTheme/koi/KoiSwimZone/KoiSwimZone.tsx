@@ -1,7 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useLayoutEffect, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { useExerciseLayout } from '../../../core';
 import { KoiFishLayer } from '../fish/KoiFishLayer';
 import { useKoiCaptureFlow } from './hooks/useKoiCaptureFlow';
 import type { KoiSwimZoneController, KoiSwimZoneProps } from './types';
@@ -28,7 +28,7 @@ export const KoiSwimZone = forwardRef<KoiSwimZoneController, KoiSwimZoneProps>(
     ref,
   ) {
     const { width, height } = useWindowDimensions();
-    const layout = useUnderseaThemeLayout();
+    const layout = useExerciseLayout();
     const { koiRect, orientation, layoutKey } = layout;
     const { images: assetImages } = useUnderseaThemeAssetsContext();
     const images = assetImages.koi;

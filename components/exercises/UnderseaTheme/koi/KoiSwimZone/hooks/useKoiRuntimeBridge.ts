@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
-import { useUnderseaThemeRuntime } from '../../../core/providers/UnderseaThemeRuntimeProvider';
+import { useExerciseRuntime } from '../../../../core';
 import type { BubbleSelection } from '../types';
 
 type UseKoiRuntimeBridgeParams = {
@@ -25,7 +25,7 @@ export function useKoiRuntimeBridge({
   sim,
   eliminatedFishSv,
 }: UseKoiRuntimeBridgeParams) {
-  const { publishCaptureBridge, publishKoiBridge } = useUnderseaThemeRuntime();
+  const { publishCaptureBridge, publishKoiBridge } = useExerciseRuntime();
   const bubbleOverlayRef = useRef(bubbleOverlay);
   bubbleOverlayRef.current = bubbleOverlay;
 

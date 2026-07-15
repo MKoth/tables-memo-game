@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+import { useExerciseLayout } from '../../../core/providers/ExerciseLayoutProvider';
 import { UiDropPanel } from './UiDropPanel';
 import { INSTRUCTION_BAR_Z, TOOLTIP_CORNER_RADIUS } from './constants';
 import { computeInstructionBarPosition } from './helpers/controlsPosition';
@@ -23,7 +23,7 @@ export function TransformationInstructionBar({
   centerY,
 }: TransformationInstructionBarProps) {
   const insets = useSafeAreaInsets();
-  const layout = useUnderseaThemeLayout();
+  const layout = useExerciseLayout();
   const position = computeInstructionBarPosition(layout, insets);
   const [panelHeight, setPanelHeight] = useState(72);
   const top = centerY != null ? centerY - panelHeight * 0.5 : position.top;

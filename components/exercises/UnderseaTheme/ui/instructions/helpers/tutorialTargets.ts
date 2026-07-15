@@ -1,7 +1,7 @@
 import type {
   JellyfishLayoutBridge,
   KoiSimBridge,
-} from '../../../core/types/bridgeTypes';
+} from '../../../../core/types/bridgeTypes';
 
 export function pickRandomFishIndex(bridge: KoiSimBridge): number | null {
   const eliminated = bridge.eliminatedFishSv.value;

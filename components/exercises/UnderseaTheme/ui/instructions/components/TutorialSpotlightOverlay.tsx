@@ -11,7 +11,7 @@ import type {
   JellyfishLayoutBridge,
   KoiFishRuntimePosition,
   KoiSimBridge,
-} from '../../../core/types/bridgeTypes';
+} from '../../../../core/types/bridgeTypes';
 import {
   FISH_SPOTLIGHT_SCALE,
   GUIDE_LINE_COLOR,

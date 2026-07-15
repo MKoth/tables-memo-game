@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { WordList } from '../../../../../../data/wordsData';
 import type {
-  UnderseaThemeOrientation,
+  ExerciseOrientation,
   ZoneRect,
-} from '../../../core/layout/computeUnderseaThemeLayout';
+} from '../../../../core/layout/computeExerciseLayout';
 import {
   computeLetterLayout,
   computePoolLetterLayout,
-} from '../../../core/layout/underseaExerciseLayout';
+} from '../../../../core/layout/exerciseLayout';
 import {
   buildCascadeRevealOrder,
   computeCascadeCompleteDelayMs,
@@ -66,7 +66,7 @@ export type TranslationSpellingGame = {
 
 export type UseTranslationSpellingGameParams = {
   wordList: WordList;
-  orientation: UnderseaThemeOrientation;
+  orientation: ExerciseOrientation;
   koiRect: ZoneRect;
   jellyRect: ZoneRect;
   playBubbleInflate?: () => void;

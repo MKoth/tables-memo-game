@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
 import {
-  type UnderseaThemeOrientation,
+  type ExerciseOrientation,
   type ZoneRect,
-} from '../../core/layout/computeUnderseaThemeLayout';
+} from '../../../core/layout/computeExerciseLayout';
 import {
   blankSlotCenter,
   computeSentenceRowLayout,
   computeLetterLayout,
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
-} from '../../core/layout/underseaExerciseLayout';
+} from '../../../core/layout/exerciseLayout';
 import { planSwimPaths, type SwimPath } from '../../sentenceTransformation/domain/swimPathPlanner';
 import { findBlankSlotIndex } from '../../sentenceTransformation/domain/sentenceRowDisplay';
 import type { SentencePromptDisplaySlot } from '../../sentenceTransformation/domain/types';
@@ -64,7 +64,7 @@ export type VariantSelectionGame = {
 
 export type UseVariantSelectionGameParams = {
   table: TableData;
-  orientation: UnderseaThemeOrientation;
+  orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
   koiRect: ZoneRect;

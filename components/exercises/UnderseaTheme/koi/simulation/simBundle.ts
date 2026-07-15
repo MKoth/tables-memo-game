@@ -1,7 +1,7 @@
 import { makeMutable, type SharedValue } from 'react-native-reanimated';
 import { KOI_SETTINGS } from '../config/koiFishSettings';
 import { KOI_FISH_BODY_INSET } from '../config/koiInstanceConfig';
-import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
+import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
 import type { KoiRuntimeEntry, SwimZone } from './types';
 import { createFishRuntime } from './createFishRuntime';
 import { createKoiSpawnsFromWords } from './createKoiSpawns';

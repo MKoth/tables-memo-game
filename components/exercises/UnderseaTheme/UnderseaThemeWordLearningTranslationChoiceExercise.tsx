@@ -3,13 +3,13 @@ import { StyleSheet, View } from 'react-native';
 import { animalsWordList } from '../../../data/wordsData';
 import { UnderseaThemeBackground } from './background';
 import {
-  UnderseaThemeClockProvider,
-  UnderseaThemeRuntimeProvider,
+  ExerciseClockProvider,
+  ExerciseRuntimeProvider,
   WORD_LEARNING_STORE_CONFIG,
-  useUnderseaThemeAssetsContext,
-  useUnderseaThemeExerciseStore,
-  useUnderseaThemeLayout,
-} from './core';
+  useExerciseLayout,
+  useExerciseStore,
+} from '../core';
+import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
@@ -29,9 +29,9 @@ type TranslationChoiceContentProps = {
 
 function TranslationChoiceContent({ sounds }: TranslationChoiceContentProps) {
   const wordList = animalsWordList;
-  const soundEnabled = useUnderseaThemeExerciseStore(state => state.soundEnabled);
+  const soundEnabled = useExerciseStore(state => state.soundEnabled);
 
-  const { koiRect, jellyRect, orientation, screenWidth, screenHeight } = useUnderseaThemeLayout();
+  const { koiRect, jellyRect, orientation, screenWidth, screenHeight } = useExerciseLayout();
 
   useEffect(() => {
     sounds.startWaterflow();
@@ -97,11 +97,11 @@ function TranslationChoiceContent({ sounds }: TranslationChoiceContentProps) {
 function TranslationChoiceContentWithSounds() {
   const { sounds } = useUnderseaThemeAssetsContext();
   return (
-    <UnderseaThemeRuntimeProvider>
-      <UnderseaThemeClockProvider>
+    <ExerciseRuntimeProvider>
+      <ExerciseClockProvider>
         <TranslationChoiceContent sounds={sounds} />
-      </UnderseaThemeClockProvider>
-    </UnderseaThemeRuntimeProvider>
+      </ExerciseClockProvider>
+    </ExerciseRuntimeProvider>
   );
 }
 

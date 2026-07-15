@@ -1,67 +1,30 @@
 export {
-  computeOffScreenEscapeTarget,
-  computeUnderseaThemeLayout,
-  escapeExitEdgeCode,
-  type ControlsAnchor,
-  type EscapeExitEdge,
-  type UnderseaThemeLayout,
-  type UnderseaThemeOrientation,
-  type ZoneRect,
-} from './layout/computeUnderseaThemeLayout';
-export { useUnderseaThemeDeviceOrientation } from './layout/useUnderseaThemeDeviceOrientation';
-export type { LayoutBounds } from './layout/layoutBounds';
-export {
-  LAYOUT_ZONE_HEIGHT_RATIO,
-  LAYOUT_ZONE_TOP_RATIO,
-} from './layout/zoneLayoutConstants';
-
-export {
-  UnderseaThemeClockProvider,
-  UNDERSEA_SCENE_CLOCK_FPS,
-  useUnderseaThemeClock,
-  useUnderseaThemeClockQuantized,
-} from './clock/UnderseaThemeClockProvider';
-export { useThrottledClock, type ThrottledClock } from './clock/useThrottledClock';
-
-export {
-  UnderseaThemeLayoutProvider,
-  useUnderseaThemeLayout,
-} from './providers/UnderseaThemeLayoutProvider';
-export {
-  UnderseaThemeRuntimeProvider,
-  useUnderseaThemeRuntime,
-} from './providers/UnderseaThemeRuntimeProvider';
+  UNDERSEA_IMAGE_ASSETS,
+  UNDERSEA_PRIORITY_IMAGE_SOURCE,
+  UNDERSEA_BULK_IMAGE_ENTRIES,
+  UNDERSEA_STONE_SOURCES,
+  UNDERSEA_SEAWEED_SOURCES,
+  UNDERSEA_KOI_SOURCES,
+  UNDERSEA_KOI_MASK_SOURCES,
+  UNDERSEA_IMAGE_COUNT,
+  UNDERSEA_SOUND_COUNT,
+  UNDERSEA_PRELOAD_TOTAL,
+  SFX_VOLUME,
+  SUCCESS_CLICK_VOLUME,
+  UNDERSEA_SOUND_ASSETS,
+  WATERFLOW_VOLUME,
+  type StoneVariant,
+  type SeaweedVariant,
+  type KoiImageKey,
+  type UnderseaThemeImages,
+} from './assets/underseaThemeAssets';
+export { useUnderseaThemeAssets } from './assets/useUnderseaThemeAssets';
+export type { UnderseaThemeAssetsLoading, UnderseaThemeAssetsReady, UnderseaThemeAssets } from './assets/useUnderseaThemeAssets';
 export {
   UnderseaThemeAssetsProvider,
   useUnderseaThemeAssetsContext,
 } from './providers/UnderseaThemeAssetsProvider';
-
-export { useUnderseaThemeAssets } from './assets/useUnderseaThemeAssets';
-export type { UnderseaThemeImages } from './assets/underseaThemeAssets';
-export type { UnderseaThemeSoundController } from './assets/useUnderseaThemeSounds';
-
-export {
-  createUnderseaThemeExerciseStore,
-  UnderseaThemeExerciseStoreProvider,
-  useUnderseaThemeExerciseStore,
-  TABLE_EXERCISE_STORE_CONFIG,
-  WORD_TRANSFORMATION_STORE_CONFIG,
-  WORD_LEARNING_STORE_CONFIG,
-  type UnderseaThemeExerciseState,
-  type UnderseaThemeExerciseStore,
-  type UnderseaThemeExerciseStoreConfig,
-} from './store/createUnderseaThemeExerciseStore';
-
 export type {
-  JellyfishLayoutBridge,
-  KoiCaptureBridge,
-  KoiFishRuntimePosition,
-  KoiSimBridge,
-  TutorialStep,
-} from './types/bridgeTypes';
-
-export {
-  useWordTransformationCoreBridge,
-  type UseWordTransformationCoreBridgeParams,
-  type UseWordTransformationCoreBridgeResult,
-} from './hooks/useWordTransformationCoreBridge';
+  UnderseaThemeAssetsContextValue,
+} from './providers/UnderseaThemeAssetsProvider';
+export type { UnderseaThemeSoundController } from './assets/useUnderseaThemeSounds';

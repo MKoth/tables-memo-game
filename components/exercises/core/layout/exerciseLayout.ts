@@ -1,10 +1,10 @@
-import type { SentencePromptDisplaySlot } from '../../sentenceTransformation/domain/types';
-import type { ZoneRect } from './computeUnderseaThemeLayout';
+import type { SentencePromptDisplaySlot } from '../../UnderseaTheme/sentenceTransformation/domain/types';
+import type { ZoneRect } from './computeExerciseLayout';
 import {
   computeJellyfishFontScale,
   rollBodyTint,
   sr,
-} from '../../jellyfish/jellyfishVisualTokens';
+} from '../../UnderseaTheme/jellyfish/jellyfishVisualTokens';
 
 const MIN_DIAMETER = 34;
 const MAX_DIAMETER = 74;
@@ -393,4 +393,3 @@ export function computeRoundResolutionFlight(
     toDiameter: blank.footprintDiameter,
   };
 }
-

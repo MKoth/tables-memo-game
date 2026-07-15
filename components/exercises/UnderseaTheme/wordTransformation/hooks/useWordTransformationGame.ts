@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TableData } from '../../../../../data/tableData';
-import type { ZoneRect } from '../../core/layout/computeUnderseaThemeLayout';
-import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransformationCoreBridge';
+import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
+import { useWordTransformationCoreBridge } from '../../../core/hooks/useWordTransformationCoreBridge';
 import type { VariantPickerItem } from '../components/TransformationVariantPicker';
 import {
   buildCascadeRevealOrder,

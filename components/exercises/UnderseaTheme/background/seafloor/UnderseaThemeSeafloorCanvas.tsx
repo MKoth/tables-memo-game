@@ -9,7 +9,7 @@ import {
   type SkImage,
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
-import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseClock } from '../../../core';
 import {
   MAX_DRIFT_LAYERS,
   UNDERSEA_SEAFLOOR_BACKGROUND_SKSL,
@@ -104,7 +104,7 @@ export function UnderseaThemeSeafloorCanvas({
   width,
   height,
 }: UnderseaThemeSeafloorCanvasProps) {
-  const clock = useUnderseaThemeClock();
+  const clock = useExerciseClock();
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
   const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
 

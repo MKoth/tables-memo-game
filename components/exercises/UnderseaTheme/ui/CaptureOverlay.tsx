@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useUnderseaThemeRuntime } from '../core/providers/UnderseaThemeRuntimeProvider';
+import { useExerciseRuntime } from '../../core/providers/ExerciseRuntimeProvider';
 
 /** Below jellyfish — bubble visible but jellyfish remain tappable for matching. */
 const CAPTURE_OVERLAY_Z = 3;
@@ -8,7 +8,7 @@ const CAPTURE_OVERLAY_Z = 3;
 const ESCAPE_OVERLAY_Z = 10;
 
 export function CaptureOverlay() {
-  const { captureBridge } = useUnderseaThemeRuntime();
+  const { captureBridge } = useExerciseRuntime();
 
   if (captureBridge?.overlay == null) {
     return null;

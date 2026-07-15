@@ -2,14 +2,14 @@ import React, { useMemo } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
-import { computeLetterLayout } from '../../core/layout/underseaExerciseLayout';
+import { useExerciseLayout } from '../../../core';
+import { computeLetterLayout } from '../../../core/layout/exerciseLayout';
 import { ROUND_MERGE_DURATION_MS } from '../domain/roundResolutionTiming';
 import { MergeLetterLabels } from '../merge/MergeLetterLabels';
 import { MetaballMergeLayer } from '../merge/MetaballMergeLayer';
 import { computeMergeTarget } from '../merge/mergeLayout';
 import { useMergeProgress } from '../merge/useMergeProgress';
-import { useUnderseaThemeClock } from '../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseClock } from '../../../core';
 import { bubbleDeformUniformDefaults } from '../../shaders/bubbleDeform.sksl';
 
 export type TransformationMergeBubblesProps = {
@@ -23,7 +23,7 @@ export function TransformationMergeBubbles({
   durationMs = ROUND_MERGE_DURATION_MS,
   onComplete,
 }: TransformationMergeBubblesProps) {
-  const { koiRect } = useUnderseaThemeLayout();
+  const { koiRect } = useExerciseLayout();
   const { images } = useUnderseaThemeAssetsContext();
   const mergeProgress = useMergeProgress(durationMs, onComplete);
 
@@ -63,7 +63,7 @@ export function TransformationMergeBubbles({
         finalLetterSpacing={finalLetterSpacing}
         bubbleImage={images.bubble}
         bounds={koiRect}
-        clock={useUnderseaThemeClock()}
+        clock={useExerciseClock()}
         bgCutoff={bubbleDeformUniformDefaults.bgCutoff}
         centerClear={bubbleDeformUniformDefaults.centerClear}
         rimClear={bubbleDeformUniformDefaults.rimClear}

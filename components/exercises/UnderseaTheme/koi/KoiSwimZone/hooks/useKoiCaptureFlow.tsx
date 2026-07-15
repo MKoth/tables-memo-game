@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { UnderseaThemeSoundController } from '../../../core/assets/useUnderseaThemeSounds';
 import type {
-  UnderseaThemeOrientation,
+  ExerciseOrientation,
   ZoneRect,
-} from '../../../core/layout/computeUnderseaThemeLayout';
+} from '../../../../core/layout/computeExerciseLayout';
 import { KoiCaptureOverlay } from '../../capture/KoiCaptureOverlay';
 import { releaseCapturedFishWorklet } from '../../capture/releaseFishToPool';
 import {
@@ -26,7 +26,7 @@ type UseKoiCaptureFlowParams = {
   width: number;
   height: number;
   koiRect: ZoneRect;
-  orientation: UnderseaThemeOrientation;
+  orientation: ExerciseOrientation;
   layoutKey: string;
   images: Record<'koi1' | 'koi2' | 'koi3', SkImage>;
   masks: Record<'koi1' | 'koi2' | 'koi3', SkImage>;

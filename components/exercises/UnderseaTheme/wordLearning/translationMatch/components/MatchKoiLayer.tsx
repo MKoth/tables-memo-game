@@ -2,10 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useAnimatedReaction } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
-import {
-  useUnderseaThemeAssetsContext,
-  useUnderseaThemeLayout,
-} from '../../../core';
+import { useUnderseaThemeAssetsContext } from '../../../core';
+import { useExerciseLayout } from '../../../../core';
 import type { UnderseaThemeSoundController } from '../../../core/assets/useUnderseaThemeSounds';
 import { KoiFishLayer } from '../../../koi/fish/KoiFishLayer';
 import { KoiCaptureOverlay } from '../../../koi/capture/KoiCaptureOverlay';
@@ -51,7 +49,7 @@ export function MatchKoiLayer({
   keepOutDiskSv,
 }: MatchKoiLayerProps) {
   const { width, height } = useWindowDimensions();
-  const layout = useUnderseaThemeLayout();
+  const layout = useExerciseLayout();
   const { images: assetImages } = useUnderseaThemeAssetsContext();
   const images = assetImages.koi;
   const masks = assetImages.koiMasks;

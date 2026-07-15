@@ -10,10 +10,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { UnderseaThemeImages } from '../../core/assets/underseaThemeAssets';
 import {
-  UnderseaThemeClockProvider,
-  useUnderseaThemeClock,
-} from '../../core/clock/UnderseaThemeClockProvider';
-import { useUnderseaThemeLayout } from '../../core/providers/UnderseaThemeLayoutProvider';
+  ExerciseClockProvider,
+  useExerciseClock,
+} from '../../../core/clock/ExerciseClockProvider';
+import { useExerciseLayout } from '../../../core/providers/ExerciseLayoutProvider';
 import { UnderseaThemeSceneBackground } from '../../background/UnderseaThemeSceneBackground';
 
 const FALLBACK_COLOR = '#061828';
@@ -42,7 +42,7 @@ function UnderseaThemeLoadingBackground({
   width: number;
   height: number;
 }) {
-  const clock = useUnderseaThemeClock();
+  const clock = useExerciseClock();
 
   return (
     <UnderseaThemeSceneBackground
@@ -65,7 +65,7 @@ export function UnderseaThemeLoadingScreen({
 }: UnderseaThemeLoadingScreenProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { koiRect, screenHeight, orientation } = useUnderseaThemeLayout();
+  const { koiRect, screenHeight, orientation } = useExerciseLayout();
   const animatedProgress = useSharedValue(0);
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export function UnderseaThemeLoadingScreen({
   return (
     <View style={styles.container} pointerEvents="none">
       {seafloorImage != null ? (
-        <UnderseaThemeClockProvider>
+        <ExerciseClockProvider>
           <UnderseaThemeLoadingBackground
             seafloorImage={seafloorImage}
             stoneImages={stoneImages}
@@ -115,7 +115,7 @@ export function UnderseaThemeLoadingScreen({
             width={width}
             height={height}
           />
-        </UnderseaThemeClockProvider>
+        </ExerciseClockProvider>
       ) : (
         <View style={styles.fallback} />
       )}

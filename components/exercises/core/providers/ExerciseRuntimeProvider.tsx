@@ -11,9 +11,9 @@ import type {
   KoiCaptureBridge,
   KoiSimBridge,
 } from '../types/bridgeTypes';
-import { useUnderseaThemeExerciseStore } from '../store/createUnderseaThemeExerciseStore';
+import { useExerciseStore } from '../store/createExerciseStore';
 
-type UnderseaThemeRuntimeContextValue = {
+type ExerciseRuntimeContextValue = {
   captureBridge: KoiCaptureBridge | null;
   koiBridge: KoiSimBridge | null;
   jellyBridge: JellyfishLayoutBridge | null;
@@ -23,10 +23,10 @@ type UnderseaThemeRuntimeContextValue = {
   onJellyfishMatchSuccess: (targetX: number, targetY: number, hitIdx: number) => void;
 };
 
-const UnderseaThemeRuntimeContext =
-  createContext<UnderseaThemeRuntimeContextValue | null>(null);
+const ExerciseRuntimeContext =
+  createContext<ExerciseRuntimeContextValue | null>(null);
 
-export function UnderseaThemeRuntimeProvider({
+export function ExerciseRuntimeProvider({
   children,
 }: {
   children: React.ReactNode;
@@ -35,7 +35,7 @@ export function UnderseaThemeRuntimeProvider({
   const [koiBridge, setKoiBridge] = useState<KoiSimBridge | null>(null);
   const [jellyBridge, setJellyBridge] = useState<JellyfishLayoutBridge | null>(null);
   const captureBridgeRef = useRef<KoiCaptureBridge | null>(null);
-  const setHelpVisible = useUnderseaThemeExerciseStore((state) => state.setHelpVisible);
+  const setHelpVisible = useExerciseStore((state) => state.setHelpVisible);
 
   const publishCaptureBridge = useCallback((bridge: KoiCaptureBridge | null) => {
     setCaptureBridge((prev) => {
@@ -93,17 +93,17 @@ export function UnderseaThemeRuntimeProvider({
   );
 
   return (
-    <UnderseaThemeRuntimeContext.Provider value={value}>
+    <ExerciseRuntimeContext.Provider value={value}>
       {children}
-    </UnderseaThemeRuntimeContext.Provider>
+    </ExerciseRuntimeContext.Provider>
   );
 }
 
-export function useUnderseaThemeRuntime(): UnderseaThemeRuntimeContextValue {
-  const runtime = useContext(UnderseaThemeRuntimeContext);
+export function useExerciseRuntime(): ExerciseRuntimeContextValue {
+  const runtime = useContext(ExerciseRuntimeContext);
   if (runtime == null) {
     throw new Error(
-      'useUnderseaThemeRuntime must be used within UnderseaThemeRuntimeProvider',
+      'useExerciseRuntime must be used within ExerciseRuntimeProvider',
     );
   }
   return runtime;

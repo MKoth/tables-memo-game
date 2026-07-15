@@ -3,12 +3,12 @@ import { StyleSheet, View } from 'react-native';
 import { getTableBodyWords, spanishPresentTable2Plural } from '../../../data/tableData';
 import { UnderseaThemeBackground } from './background';
 import {
-  UnderseaThemeClockProvider,
-  UnderseaThemeRuntimeProvider,
+  ExerciseClockProvider,
+  ExerciseRuntimeProvider,
   TABLE_EXERCISE_STORE_CONFIG,
-  useUnderseaThemeAssetsContext,
-  useUnderseaThemeExerciseStore,
-} from './core';
+  useExerciseStore,
+} from '../core';
+import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
 import { KoiSwimZone } from './koi';
@@ -28,8 +28,8 @@ type UnderseaThemeExerciseContentProps = {
 function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentProps) {
   const table = spanishPresentTable2Plural;
   const words = useMemo(() => getTableBodyWords(table), [table]);
-  const tutorialStep = useUnderseaThemeExerciseStore((state) => state.tutorialStep);
-  const soundEnabled = useUnderseaThemeExerciseStore((state) => state.soundEnabled);
+  const tutorialStep = useExerciseStore((state) => state.tutorialStep);
+  const soundEnabled = useExerciseStore((state) => state.soundEnabled);
   const tutorialActive = tutorialStep !== 'idle';
 
   const handleJellyfishSound = useCallback((kind: JellyfishSoundKind) => {
@@ -56,8 +56,8 @@ function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentPr
   }, [sounds, soundEnabled]);
 
   return (
-    <UnderseaThemeRuntimeProvider>
-      <UnderseaThemeClockProvider>
+    <ExerciseRuntimeProvider>
+      <ExerciseClockProvider>
         <View style={styles.container}>
           <UnderseaThemeBackground />
           <KoiSwimZone
@@ -76,8 +76,8 @@ function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentPr
           {tutorialActive && <UnderseaThemeInstructions />}
           <UnderseaThemeCornerControls />
         </View>
-      </UnderseaThemeClockProvider>
-    </UnderseaThemeRuntimeProvider>
+      </ExerciseClockProvider>
+    </ExerciseRuntimeProvider>
   );
 }
 

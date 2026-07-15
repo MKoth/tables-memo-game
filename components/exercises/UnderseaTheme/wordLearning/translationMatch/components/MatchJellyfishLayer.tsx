@@ -5,7 +5,7 @@ import type { SkFont, SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
 import { useUnderseaThemeAssetsContext } from '../../../core/providers/UnderseaThemeAssetsProvider';
-import { useUnderseaThemeClockQuantized } from '../../../core/clock/UnderseaThemeClockProvider';
+import { useExerciseClockQuantized } from '../../../../core';
 import { JellyfishInstance, type JellyfishDynamicOverrides } from '../../../jellyfish/JellyfishTableLayer/components/JellyfishInstance/JellyfishInstance';
 import {
   JELLYFISH_DEFAULT_WOBBLE,
@@ -238,7 +238,7 @@ export function MatchJellyfishLayer({
   const { images } = useUnderseaThemeAssetsContext();
   const bellImage = images.jellyfishBell;
   const tentacleImage = images.jellyfishTentacles;
-  const clock = useUnderseaThemeClockQuantized(JELLYFISH_CLOCK_FPS);
+  const clock = useExerciseClockQuantized(JELLYFISH_CLOCK_FPS);
 
   const count = words.length;
 
