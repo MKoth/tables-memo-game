@@ -1,22 +1,17 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useExerciseLayout } from '../../../core/providers/ExerciseLayoutProvider';
-import { UiDropPanel } from './UiDropPanel';
+import { useExerciseLayout } from '../core/providers/ExerciseLayoutProvider';
+import { DropPanel } from './DropPanel';
 import { INSTRUCTION_BAR_Z, TOOLTIP_CORNER_RADIUS } from './constants';
-import { computeInstructionBarPosition } from './helpers/controlsPosition';
+import { computeInstructionBarPosition } from './controlsPosition';
 
 export type TransformationInstructionBarProps = {
   message: string;
   zIndex?: number;
-  /** When set, vertically centers the bar on this screen Y instead of the default bottom anchor. */
   centerY?: number;
 };
 
-/**
- * Non-interactive instruction text in the koi zone.
- * Defaults to the bottom anchor; pass `centerY` to place between bubble rows.
- */
 export function TransformationInstructionBar({
   message,
   zIndex = INSTRUCTION_BAR_Z,
@@ -48,7 +43,7 @@ export function TransformationInstructionBar({
             setPanelHeight(height);
           }
         }}>
-        <UiDropPanel
+        <DropPanel
           width={position.width}
           height={panelHeight}
           cornerRadius={TOOLTIP_CORNER_RADIUS}

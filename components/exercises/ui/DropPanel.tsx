@@ -1,22 +1,20 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-/** Matches the prior glass tint: vec3(0.32, 0.68, 0.96). */
 export const UI_DROP_FILL = 'rgba(82, 173, 245, 0.42)';
 export const UI_DROP_BORDER = 'rgba(191, 235, 255, 0.55)';
 
-export type UiDropPanelProps = {
+export type DropPanelProps = {
   width: number;
   height: number;
-  /** Defaults to half of the smaller dimension (circle / pill). */
   cornerRadius?: number;
 };
 
-export function UiDropPanel({
+export function DropPanel({
   width,
   height,
   cornerRadius,
-}: UiDropPanelProps) {
+}: DropPanelProps) {
   const cornerR = cornerRadius ?? Math.min(width, height) * 0.5;
 
   const panelStyle = useMemo(

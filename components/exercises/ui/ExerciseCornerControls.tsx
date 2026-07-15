@@ -8,9 +8,9 @@ import {
   vec,
 } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useExerciseLayout } from '../../../../core/providers/ExerciseLayoutProvider';
-import { useExerciseStore } from '../../../../core/store/createExerciseStore';
-import { UiDropPanel } from '../UiDropPanel';
+import { useExerciseLayout } from '../core/providers/ExerciseLayoutProvider';
+import { useExerciseStore } from '../core/store/createExerciseStore';
+import { DropPanel } from './DropPanel';
 import {
   CORNER_BUTTON_GAP,
   HELP_BUTTON_SIZE,
@@ -18,25 +18,25 @@ import {
   HELP_MARGIN,
   TOOLTIP_CORNER_RADIUS,
   TOOLTIP_MIN_WIDTH,
-} from '../constants';
-import { computeControlsPosition } from '../helpers/controlsPosition';
+} from './constants';
+import { computeControlsPosition } from './controlsPosition';
 
-type UnderseaThemeIconButtonProps = {
+type ExerciseIconButtonProps = {
   onPress: () => void;
   disabled?: boolean;
   accessibilityLabel: string;
   children: React.ReactNode;
 };
 
-function UnderseaThemeIconButton({
+function ExerciseIconButton({
   onPress,
   disabled = false,
   accessibilityLabel,
   children,
-}: UnderseaThemeIconButtonProps) {
+}: ExerciseIconButtonProps) {
   return (
     <View style={styles.helpButtonShell}>
-      <UiDropPanel width={HELP_BUTTON_SIZE} height={HELP_BUTTON_SIZE} />
+      <DropPanel width={HELP_BUTTON_SIZE} height={HELP_BUTTON_SIZE} />
       <Pressable
         onPress={onPress}
         disabled={disabled}
@@ -113,44 +113,44 @@ function SoundIcon({ muted, size = 26 }: { muted: boolean; size?: number }) {
   );
 }
 
-export type UnderseaThemeHelpButtonProps = {
+export type ExerciseHelpButtonProps = {
   onPress: () => void;
   disabled?: boolean;
 };
 
-export type UnderseaThemeSoundToggleButtonProps = {
+export type ExerciseSoundToggleButtonProps = {
   enabled: boolean;
   onToggle: () => void;
 };
 
-export function UnderseaThemeSoundToggleButton({
+export function ExerciseSoundToggleButton({
   enabled,
   onToggle,
-}: UnderseaThemeSoundToggleButtonProps) {
+}: ExerciseSoundToggleButtonProps) {
   return (
-    <UnderseaThemeIconButton
+    <ExerciseIconButton
       onPress={onToggle}
       accessibilityLabel={enabled ? 'Mute sound' : 'Unmute sound'}>
       <SoundIcon muted={!enabled} />
-    </UnderseaThemeIconButton>
+    </ExerciseIconButton>
   );
 }
 
-export function UnderseaThemeHelpButton({
+export function ExerciseHelpButton({
   onPress,
   disabled = false,
-}: UnderseaThemeHelpButtonProps) {
+}: ExerciseHelpButtonProps) {
   return (
-    <UnderseaThemeIconButton
+    <ExerciseIconButton
       onPress={onPress}
       disabled={disabled}
       accessibilityLabel="Show instructions">
       <Text style={styles.helpButtonText}>?</Text>
-    </UnderseaThemeIconButton>
+    </ExerciseIconButton>
   );
 }
 
-export type UnderseaThemeCornerControlsProps = {
+export type ExerciseCornerControlsProps = {
   soundEnabled?: boolean;
   onSoundToggle?: () => void;
   onHelpPress?: () => void;
@@ -158,13 +158,13 @@ export type UnderseaThemeCornerControlsProps = {
   helpDisabled?: boolean;
 };
 
-export function UnderseaThemeCornerControls({
+export function ExerciseCornerControls({
   soundEnabled: soundEnabledProp,
   onSoundToggle: onSoundToggleProp,
   onHelpPress: onHelpPressProp,
   helpVisible: helpVisibleProp,
   helpDisabled: helpDisabledProp,
-}: UnderseaThemeCornerControlsProps = {}) {
+}: ExerciseCornerControlsProps = {}) {
   const storeSoundEnabled = useExerciseStore((state) => state.soundEnabled);
   const storeToggleSound = useExerciseStore((state) => state.toggleSound);
   const storeHelpVisible = useExerciseStore((state) => state.helpVisible);
@@ -189,16 +189,16 @@ export function UnderseaThemeCornerControls({
       ]}
       pointerEvents="box-none">
       <View style={styles.cornerRow}>
-        <UnderseaThemeSoundToggleButton enabled={soundEnabled} onToggle={onSoundToggle} />
+        <ExerciseSoundToggleButton enabled={soundEnabled} onToggle={onSoundToggle} />
         {helpVisible && (
-          <UnderseaThemeHelpButton onPress={onHelpPress} disabled={helpDisabled} />
+          <ExerciseHelpButton onPress={onHelpPress} disabled={helpDisabled} />
         )}
       </View>
     </View>
   );
 }
 
-type InstructionTooltipProps = {
+export type InstructionTooltipProps = {
   message: string;
   stepLabel?: string;
   actionLabel: string;
@@ -233,7 +233,7 @@ export function InstructionTooltip({
             setPanelSize({ width, height });
           }
         }}>
-        <UiDropPanel
+        <DropPanel
           width={panelSize.width}
           height={panelSize.height}
           cornerRadius={TOOLTIP_CORNER_RADIUS}

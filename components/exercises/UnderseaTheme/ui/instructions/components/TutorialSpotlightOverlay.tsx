@@ -18,7 +18,7 @@ import {
   JELLY_SPOTLIGHT_SCALE,
   OVERLAY_DARK,
   SPOTLIGHT_RING_COLOR,
-} from '../constants';
+} from '../themeConstants';
 
 type SpotlightDimProps = {
   width: number;

@@ -5,29 +5,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useExerciseLayout } from '../../../core/providers/ExerciseLayoutProvider';
 import { useExerciseRuntime } from '../../../core/providers/ExerciseRuntimeProvider';
 import { useExerciseStore } from '../../../core/store/createExerciseStore';
+import {
+  InstructionTooltip,
+  HELP_MARGIN,
+  INSTRUCTIONS_Z,
+  computeTooltipPosition,
+} from '../../../ui';
 import { TutorialSpotlightOverlay } from './components/TutorialSpotlightOverlay';
-import { InstructionTooltip } from './components/UnderseaThemeCornerControls';
-import { HELP_MARGIN, INSTRUCTIONS_Z } from './constants';
-import { computeTooltipPosition } from './helpers/controlsPosition';
 import {
   pickRandomFishIndex,
   pickRandomHeaderJellyIndex,
   pickRandomJellyIndex,
 } from './helpers/tutorialTargets';
-
-export {
-  INSTRUCTIONS_Z,
-  HELP_BUTTON_Z,
-} from './constants';
-
-export {
-  UnderseaThemeCornerControls,
-  UnderseaThemeHelpButton,
-  UnderseaThemeSoundToggleButton,
-  type UnderseaThemeHelpButtonProps,
-  type UnderseaThemeCornerControlsProps,
-  type UnderseaThemeSoundToggleButtonProps,
-} from './components/UnderseaThemeCornerControls';
 
 export function UnderseaThemeInstructions() {
   const step = useExerciseStore((state) => state.tutorialStep);

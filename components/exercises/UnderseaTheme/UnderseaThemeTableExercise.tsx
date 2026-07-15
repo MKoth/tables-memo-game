@@ -12,12 +12,9 @@ import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAss
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
 import { KoiSwimZone } from './koi';
-import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
-import {
-  CaptureOverlay,
-  UnderseaThemeCornerControls,
-  UnderseaThemeInstructions,
-} from './ui';
+import { ExerciseShell } from '../shared';
+import { CaptureOverlay, ExerciseCornerControls } from '../ui';
+import { UnderseaThemeInstructions } from './ui';
 
 const JELLYFISH_LAYER_Z = 5;
 
@@ -74,7 +71,7 @@ function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentPr
             />
           </View>
           {tutorialActive && <UnderseaThemeInstructions />}
-          <UnderseaThemeCornerControls />
+          <ExerciseCornerControls />
         </View>
       </ExerciseClockProvider>
     </ExerciseRuntimeProvider>
@@ -88,9 +85,9 @@ function UnderseaThemeExerciseContentWithSounds() {
 
 export function UnderseaThemeTableExercise() {
   return (
-    <UnderseaThemeExerciseShell storeConfig={TABLE_EXERCISE_STORE_CONFIG}>
+    <ExerciseShell storeConfig={TABLE_EXERCISE_STORE_CONFIG}>
       <UnderseaThemeExerciseContentWithSounds />
-    </UnderseaThemeExerciseShell>
+    </ExerciseShell>
   );
 }
 

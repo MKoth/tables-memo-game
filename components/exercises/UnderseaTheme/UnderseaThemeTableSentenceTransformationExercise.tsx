@@ -16,8 +16,8 @@ import {
 } from '../core/layout/exerciseLayout';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer';
-import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
-import { TransformationInstructionBar, UnderseaThemeCornerControls } from './ui';
+import { ExerciseShell } from '../shared';
+import { TransformationInstructionBar, ExerciseCornerControls } from '../ui';
 import { TransformationBubbleLayer } from './wordTransformation';
 import { JellyfishSentenceRowLayer } from './sentenceTransformation/components/JellyfishSentenceRowLayer/JellyfishSentenceRowLayer';
 import { TransformationRoundResolutionBubble } from './sentenceTransformation/components/TransformationRoundResolutionBubble';
@@ -135,7 +135,7 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
         message={game.instruction}
         centerY={instructionCenterY}
       />
-      <UnderseaThemeCornerControls helpVisible={false} />
+      <ExerciseCornerControls helpVisible={false} />
     </View>
   );
 }
@@ -153,9 +153,9 @@ function SentenceTransformationContentWithSounds() {
 
 export function UnderseaThemeTableSentenceTransformationExercise() {
   return (
-    <UnderseaThemeExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
+    <ExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
       <SentenceTransformationContentWithSounds />
-    </UnderseaThemeExerciseShell>
+    </ExerciseShell>
   );
 }
 

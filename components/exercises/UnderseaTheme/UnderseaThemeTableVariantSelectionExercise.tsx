@@ -16,8 +16,8 @@ import {
 } from '../core/layout/exerciseLayout';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer';
-import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
-import { TransformationInstructionBar, UnderseaThemeCornerControls } from './ui';
+import { ExerciseShell } from '../shared';
+import { TransformationInstructionBar, ExerciseCornerControls } from '../ui';
 import { JellyfishSentenceRowLayer } from './sentenceTransformation/components/JellyfishSentenceRowLayer/JellyfishSentenceRowLayer';
 import { useVariantSelectionGame } from './variantSelection/hooks/useVariantSelectionGame';
 import { OptionJellyfishLayer } from './variantSelection/components/OptionJellyfishLayer';
@@ -122,7 +122,7 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
         message={game.instruction}
         centerY={instructionCenterY}
       />
-      <UnderseaThemeCornerControls helpVisible={false} />
+      <ExerciseCornerControls helpVisible={false} />
     </View>
   );
 }
@@ -140,9 +140,9 @@ function VariantSelectionContentWithSounds() {
 
 export function UnderseaThemeTableVariantSelectionExercise() {
   return (
-    <UnderseaThemeExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
+    <ExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
       <VariantSelectionContentWithSounds />
-    </UnderseaThemeExerciseShell>
+    </ExerciseShell>
   );
 }
 

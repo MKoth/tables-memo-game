@@ -1,5 +1,5 @@
-import type { ControlsAnchor, ExerciseLayout } from '../../../../core/layout/computeExerciseLayout';
-import { HELP_BUTTON_SIZE } from '../constants';
+import type { ControlsAnchor, ExerciseLayout } from '../core/layout/computeExerciseLayout';
+import { HELP_BUTTON_SIZE } from './constants';
 
 export type EdgeInsets = {
   top: number;
@@ -56,7 +56,6 @@ export function computeTooltipPosition(
 const INSTRUCTION_BAR_HORIZONTAL_MARGIN = 16;
 const INSTRUCTION_BAR_BOTTOM_MARGIN = 20;
 
-/** Positions the transformation instruction bar inside the koi interaction zone. */
 export function computeInstructionBarPosition(
   layout: ExerciseLayout,
   insets: EdgeInsets,

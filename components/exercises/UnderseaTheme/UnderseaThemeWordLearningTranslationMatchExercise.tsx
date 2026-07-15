@@ -13,8 +13,8 @@ import {
 } from '../core';
 import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
-import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
-import { UnderseaThemeCornerControls } from './ui';
+import { ExerciseShell } from '../shared';
+import { ExerciseCornerControls } from '../ui';
 import type { KeepOutDisk } from './wordLearning/translationMatch/domain/jellyfishRoaming';
 import { sampleMatchSession } from './wordLearning/translationMatch/domain/sampleMatchSession';
 import {
@@ -182,7 +182,7 @@ function TranslationMatchContent({
       <GestureDetector gesture={combinedGesture}>
         <View style={[StyleSheet.absoluteFill, styles.gestureCapture]} pointerEvents="auto" />
       </GestureDetector>
-      <UnderseaThemeCornerControls helpVisible={false} />
+      <ExerciseCornerControls helpVisible={false} />
     </View>
   );
 }
@@ -256,9 +256,9 @@ function TranslationMatchContentWithSounds() {
 
 export function UnderseaThemeWordLearningTranslationMatchExercise() {
   return (
-    <UnderseaThemeExerciseShell storeConfig={WORD_LEARNING_STORE_CONFIG}>
+    <ExerciseShell storeConfig={WORD_LEARNING_STORE_CONFIG}>
       <TranslationMatchContentWithSounds />
-    </UnderseaThemeExerciseShell>
+    </ExerciseShell>
   );
 }
 

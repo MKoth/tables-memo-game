@@ -1,10 +1,8 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useExerciseRuntime } from '../../core/providers/ExerciseRuntimeProvider';
+import { useExerciseRuntime } from '../core/providers/ExerciseRuntimeProvider';
 
-/** Below jellyfish — bubble visible but jellyfish remain tappable for matching. */
 const CAPTURE_OVERLAY_Z = 3;
-/** Above jellyfish — fish stays visible while swimming through the table zone. */
 const ESCAPE_OVERLAY_Z = 10;
 
 export function CaptureOverlay() {

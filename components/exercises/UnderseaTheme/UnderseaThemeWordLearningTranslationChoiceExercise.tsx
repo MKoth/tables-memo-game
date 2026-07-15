@@ -12,8 +12,8 @@ import {
 import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer';
-import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
-import { UnderseaThemeCornerControls } from './ui';
+import { ExerciseShell } from '../shared';
+import { ExerciseCornerControls } from '../ui';
 import { TransformationWordBubbles } from './wordTransformation/components/TransformationWordBubbles';
 import { OptionJellyfishLayer } from './variantSelection/components/OptionJellyfishLayer';
 import { useTranslationChoiceGame } from './wordLearning/translationChoice/hooks/useTranslationChoiceGame';
@@ -89,7 +89,7 @@ function TranslationChoiceContent({ sounds }: TranslationChoiceContentProps) {
           onOptionTap={game.handleOptionTap}
         />
       </View>
-      <UnderseaThemeCornerControls helpVisible={false} />
+      <ExerciseCornerControls helpVisible={false} />
     </View>
   );
 }
@@ -107,9 +107,9 @@ function TranslationChoiceContentWithSounds() {
 
 export function UnderseaThemeWordLearningTranslationChoiceExercise() {
   return (
-    <UnderseaThemeExerciseShell storeConfig={WORD_LEARNING_STORE_CONFIG}>
+    <ExerciseShell storeConfig={WORD_LEARNING_STORE_CONFIG}>
       <TranslationChoiceContentWithSounds />
-    </UnderseaThemeExerciseShell>
+    </ExerciseShell>
   );
 }
 

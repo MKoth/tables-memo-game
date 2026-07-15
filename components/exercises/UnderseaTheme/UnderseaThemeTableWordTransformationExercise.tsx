@@ -19,8 +19,8 @@ import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThem
 import { JellyfishTableLayer, type JellyfishSoundKind } from './jellyfish';
 import { KoiSwimZone, type KoiSwimZoneController } from './koi';
 import { useKoiEscapeCoordinator } from './koi/escape/useKoiEscapeCoordinator';
-import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
-import { CaptureOverlay, TransformationInstructionBar, UnderseaThemeCornerControls } from './ui';
+import { ExerciseShell } from '../shared';
+import { CaptureOverlay, TransformationInstructionBar, ExerciseCornerControls } from '../ui';
 import {
   TransformationBubbleLayer,
   useWordTransformationGame,
@@ -141,7 +141,7 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
         message={game.instruction}
         centerY={instructionCenterY}
       />
-      <UnderseaThemeCornerControls helpVisible={false} />
+      <ExerciseCornerControls helpVisible={false} />
     </View>
   );
 }
@@ -159,9 +159,9 @@ function WordTransformationContentWithSounds() {
 
 export function UnderseaThemeTableWordTransformationExercise() {
   return (
-    <UnderseaThemeExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
+    <ExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
       <WordTransformationContentWithSounds />
-    </UnderseaThemeExerciseShell>
+    </ExerciseShell>
   );
 }
 

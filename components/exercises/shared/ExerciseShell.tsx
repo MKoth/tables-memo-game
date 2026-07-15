@@ -1,19 +1,19 @@
 import React, { type ReactNode } from 'react';
-import { useUnderseaThemeAssets } from '../core/assets/useUnderseaThemeAssets';
-import { UnderseaThemeAssetsProvider } from '../core/providers/UnderseaThemeAssetsProvider';
-import { ExerciseLayoutProvider } from '../../core/providers/ExerciseLayoutProvider';
+import { useUnderseaThemeAssets } from '../UnderseaTheme/core/assets/useUnderseaThemeAssets';
+import { UnderseaThemeAssetsProvider } from '../UnderseaTheme/core/providers/UnderseaThemeAssetsProvider';
+import { ExerciseLayoutProvider } from '../core/providers/ExerciseLayoutProvider';
 import {
   ExerciseStoreProvider,
   type ExerciseStoreConfig,
-} from '../../core/store/createExerciseStore';
-import { UnderseaThemeLoadingScreen } from '../ui/loading/UnderseaThemeLoadingScreen';
+} from '../core/store/createExerciseStore';
+import { UnderseaThemeLoadingScreen } from '../UnderseaTheme/ui/loading/UnderseaThemeLoadingScreen';
 
-export type UnderseaThemeExerciseShellProps = {
+export type ExerciseShellProps = {
   storeConfig: ExerciseStoreConfig;
   children: ReactNode;
 };
 
-function UnderseaThemeExerciseShellContent({ children }: { children: ReactNode }) {
+function ExerciseShellContent({ children }: { children: ReactNode }) {
   const assets = useUnderseaThemeAssets();
 
   if (assets.phase !== 'ready') {
@@ -34,14 +34,14 @@ function UnderseaThemeExerciseShellContent({ children }: { children: ReactNode }
   );
 }
 
-export function UnderseaThemeExerciseShell({
+export function ExerciseShell({
   storeConfig,
   children,
-}: UnderseaThemeExerciseShellProps) {
+}: ExerciseShellProps) {
   return (
     <ExerciseStoreProvider config={storeConfig}>
       <ExerciseLayoutProvider>
-        <UnderseaThemeExerciseShellContent>{children}</UnderseaThemeExerciseShellContent>
+        <ExerciseShellContent>{children}</ExerciseShellContent>
       </ExerciseLayoutProvider>
     </ExerciseStoreProvider>
   );
