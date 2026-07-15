@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SkImage } from '@shopify/react-native-skia';
-import { loadSkiaImage } from './loadSkiaImage';
+import { loadSkiaImage } from '../../../core/assets/loadSkiaImage';
 import type { UnderseaThemeImages } from './underseaThemeAssets';
 import {
   UNDERSEA_BULK_IMAGE_ENTRIES,
