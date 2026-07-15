@@ -179,7 +179,7 @@ export function MatchKoiLayer({
         keepOutDiskSv.value = {
           centerX: targetCenterX,
           centerY: targetCenterY,
-          radius: targetDiameter * 0.6,
+          radius: targetDiameter * 1.0,
         };
       } else if (prevPhase != null && prevPhase === BubblePhase.Idle && currentPhase !== BubblePhase.Idle) {
         keepOutDiskSv.value = null;

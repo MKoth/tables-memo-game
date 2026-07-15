@@ -186,7 +186,16 @@ export function stepJellyfish(
   const combinedAngle =
     moveMag > 0.001 ? Math.atan2(moveDy, moveDx) : Math.atan2(targetDy, targetDx);
 
-  const moveDist = speed * dt;
+  let fleeSpeed = speed;
+  if (keepOutDisk != null) {
+    const fx = state.x - keepOutDisk.centerX;
+    const fy = state.y - keepOutDisk.centerY;
+    if (Math.hypot(fx, fy) < keepOutDisk.radius) {
+      fleeSpeed = speed * 2;
+    }
+  }
+
+  const moveDist = fleeSpeed * dt;
   const desiredX = state.x + Math.cos(combinedAngle) * moveDist;
   const desiredY = state.y + Math.sin(combinedAngle) * moveDist;
 
