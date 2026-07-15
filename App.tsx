@@ -64,7 +64,7 @@ function ExerciseScreen({
           styles.backButton,
           { top: insets.top + 8, left: insets.left + 8 },
         ]}>
-        <Text style={styles.backButtonText}>← Back</Text>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
       <Exercise />
     </View>
@@ -141,15 +141,18 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     zIndex: 100,
-    backgroundColor: '#2ecc71',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: 'rgba(46, 204, 113, 0.6)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  backButtonText: {
+  backArrow: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: '700',
+    marginTop: -2,
   },
 });
 
