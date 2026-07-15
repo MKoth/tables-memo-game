@@ -1,13 +1,14 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import { useState } from 'react';
+import {
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TableExercise } from './components/exercises/TableExercise';
 import { TableSentenceTransformationExercise } from './components/exercises/TableSentenceTransformationExercise';
 import { TableVariantSelectionExercise } from './components/exercises/TableVariantSelectionExercise';
@@ -16,41 +17,92 @@ import { TableWordLearningTranslationChoiceExercise } from './components/exercis
 import { TableWordLearningTranslationSpellingExercise } from './components/exercises/TableWordLearningTranslationSpellingExercise';
 import { TableWordLearningTranslationMatchExercise } from './components/exercises/TableWordLearningTranslationMatchExercise';
 
-/** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' | 'translationMatch' */
-const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' | 'translationMatch' =
-  'translationMatch';
+type ExerciseKey =
+  | 'table'
+  | 'wordTransformation'
+  | 'sentenceTransformation'
+  | 'variantSelection'
+  | 'translationChoice'
+  | 'translationSpelling'
+  | 'translationMatch';
+
+const EXERCISES: { key: ExerciseKey; label: string }[] = [
+  { key: 'table', label: 'Table (Conjugation)' },
+  { key: 'wordTransformation', label: 'Word Transformation' },
+  { key: 'sentenceTransformation', label: 'Sentence Transformation' },
+  { key: 'variantSelection', label: 'Variant Selection' },
+  { key: 'translationChoice', label: 'Translation Choice' },
+  { key: 'translationSpelling', label: 'Translation Spelling' },
+  { key: 'translationMatch', label: 'Translation Match' },
+];
+
+const EXERCISE_COMPONENTS: Record<ExerciseKey, React.ComponentType> = {
+  table: TableExercise,
+  wordTransformation: TableWordTransformationExercise,
+  sentenceTransformation: TableSentenceTransformationExercise,
+  variantSelection: TableVariantSelectionExercise,
+  translationChoice: TableWordLearningTranslationChoiceExercise,
+  translationSpelling: TableWordLearningTranslationSpellingExercise,
+  translationMatch: TableWordLearningTranslationMatchExercise,
+};
+
+function ExerciseScreen({
+  exerciseKey,
+  onBack,
+}: {
+  exerciseKey: ExerciseKey;
+  onBack: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const Exercise = EXERCISE_COMPONENTS[exerciseKey];
+
+  return (
+    <View style={styles.container}>
+      <Pressable
+        onPress={onBack}
+        style={[
+          styles.backButton,
+          { top: insets.top + 8, left: insets.left + 8 },
+        ]}>
+        <Text style={styles.backButtonText}>← Back</Text>
+      </Pressable>
+      <Exercise />
+    </View>
+  );
+}
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+  const [activeExercise, setActiveExercise] = useState<ExerciseKey | null>(null);
 
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-        <AppContent />
+        {activeExercise ? (
+          <ExerciseScreen
+            exerciseKey={activeExercise}
+            onBack={() => setActiveExercise(null)}
+          />
+        ) : (
+          <MenuScreen onSelect={setActiveExercise} />
+        )}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
-function AppContent() {
+function MenuScreen({ onSelect }: { onSelect: (key: ExerciseKey) => void }) {
   return (
-    <View style={styles.container}>
-      {ACTIVE_EXERCISE === 'table' ? (
-        <TableExercise />
-      ) : ACTIVE_EXERCISE === 'wordTransformation' ? (
-        <TableWordTransformationExercise />
-      ) : ACTIVE_EXERCISE === 'variantSelection' ? (
-        <TableVariantSelectionExercise />
-      ) : ACTIVE_EXERCISE === 'translationChoice' ? (
-        <TableWordLearningTranslationChoiceExercise />
-      ) : ACTIVE_EXERCISE === 'translationSpelling' ? (
-        <TableWordLearningTranslationSpellingExercise />
-      ) : ACTIVE_EXERCISE === 'translationMatch' ? (
-        <TableWordLearningTranslationMatchExercise />
-      ) : (
-        <TableSentenceTransformationExercise />
-      )}
+    <View style={styles.menu}>
+      {EXERCISES.map(ex => (
+        <Pressable
+          key={ex.key}
+          style={({ pressed }) => [styles.menuButton, pressed && styles.menuButtonPressed]}
+          onPress={() => onSelect(ex.key)}>
+          <Text style={styles.menuButtonText}>{ex.label}</Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -61,6 +113,43 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  menu: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    padding: 24,
+  },
+  menuButton: {
+    width: '100%',
+    maxWidth: 320,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    backgroundColor: '#1a1a2e',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  menuButtonPressed: {
+    opacity: 0.7,
+  },
+  menuButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  backButton: {
+    position: 'absolute',
+    zIndex: 100,
+    backgroundColor: '#2ecc71',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 
