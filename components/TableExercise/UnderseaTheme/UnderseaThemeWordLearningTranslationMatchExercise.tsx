@@ -20,7 +20,6 @@ import {
 import { MatchKoiLayer } from './wordLearning/translationMatch/components/MatchKoiLayer';
 import { MatchJellyfishLayer } from './wordLearning/translationMatch/components/MatchJellyfishLayer';
 
-const MATCH_KOI_Z = 5;
 const MATCH_JELLYFISH_Z = 4;
 
 type TranslationMatchContentProps = {
@@ -54,7 +53,6 @@ function TranslationMatchContent({
       <UnderseaThemeBackground />
       <MatchKoiLayer
         words={englishWords}
-        zIndex={MATCH_KOI_Z}
         sounds={sounds}
         sessionController={sessionController}
       />

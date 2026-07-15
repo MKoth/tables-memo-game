@@ -24,17 +24,16 @@ import { releaseCapturedFishWorklet } from '../../../koi/capture/releaseFishToPo
 import type { MatchSessionController } from '../domain/matchSessionController';
 
 const MATCH_KOI_Z = 3;
+const MATCH_BUBBLE_Z = 5;
 
 export type MatchKoiLayerProps = {
   words: string[];
-  zIndex?: number;
   sounds?: UnderseaThemeSoundController;
   sessionController?: MatchSessionController;
 };
 
 export function MatchKoiLayer({
   words,
-  zIndex = MATCH_KOI_Z,
   sounds,
   sessionController,
 }: MatchKoiLayerProps) {
@@ -259,19 +258,27 @@ export function MatchKoiLayer({
   }
 
   return (
-    <View
-      style={[styles.container, zIndex != null && { zIndex }]}
-      pointerEvents="box-none">
-      <KoiFishLayer
-        sim={sim}
-        images={images}
-        masks={masks}
-        interactive
-        capturedFishIndex={poolHiddenFishIndex}
-        onFishSelect={handleFishSelect}
-      />
-      {bubbleOverlay}
-    </View>
+    <>
+      <View
+        style={[styles.container, { zIndex: MATCH_KOI_Z }]}
+        pointerEvents="box-none">
+        <KoiFishLayer
+          sim={sim}
+          images={images}
+          masks={masks}
+          interactive
+          capturedFishIndex={poolHiddenFishIndex}
+          onFishSelect={handleFishSelect}
+        />
+      </View>
+      {bubbleOverlay != null && (
+        <View
+          style={[styles.container, { zIndex: MATCH_BUBBLE_Z }]}
+          pointerEvents="box-none">
+          {bubbleOverlay}
+        </View>
+      )}
+    </>
   );
 }
 
