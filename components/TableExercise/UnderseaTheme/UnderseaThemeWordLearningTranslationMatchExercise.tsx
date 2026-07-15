@@ -29,22 +29,28 @@ import type { JellyfishTapData, KoiTapData } from './wordLearning/translationMat
 
 const MATCH_JELLYFISH_Z = 4;
 
-function randomOffscreenTarget(
+function closestOffscreenTarget(
+  x: number,
+  y: number,
   width: number,
   height: number,
 ): { tx: number; ty: number } {
   const margin = 200;
-  const edge = Math.floor(Math.random() * 4);
-  switch (edge) {
-    case 0:
-      return { tx: -margin, ty: Math.random() * height };
-    case 1:
-      return { tx: width + margin, ty: Math.random() * height };
-    case 2:
-      return { tx: Math.random() * width, ty: -margin };
-    default:
-      return { tx: Math.random() * width, ty: height + margin };
+  const distLeft = x;
+  const distRight = width - x;
+  const distTop = y;
+  const distBottom = height - y;
+  const min = Math.min(distLeft, distRight, distTop, distBottom);
+  if (min === distLeft) {
+    return { tx: -margin, ty: y };
   }
+  if (min === distRight) {
+    return { tx: width + margin, ty: y };
+  }
+  if (min === distTop) {
+    return { tx: x, ty: -margin };
+  }
+  return { tx: x, ty: height + margin };
 }
 
 type TranslationMatchContentProps = {
@@ -96,7 +102,9 @@ function TranslationMatchContent({
       triggerEscapeRef.current?.();
 
       const timer = setTimeout(() => {
-        const target = randomOffscreenTarget(width, height);
+        const jx = jellyfishTapDataRef.current?.layoutX.value[hitIdx] ?? width * 0.5;
+        const jy = jellyfishTapDataRef.current?.layoutY.value[hitIdx] ?? height * 0.5;
+        const target = closestOffscreenTarget(jx, jy, width, height);
         const current = { ...exitTargetsSv.value };
         current[hitIdx] = target;
         exitTargetsSv.value = current;
