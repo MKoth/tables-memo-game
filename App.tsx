@@ -14,10 +14,11 @@ import { TableVariantSelectionExercise } from './components/TableExercise/TableV
 import { TableWordTransformationExercise } from './components/TableExercise/TableWordTransformationExercise';
 import { TableWordLearningTranslationChoiceExercise } from './components/TableExercise/TableWordLearningTranslationChoiceExercise';
 import { TableWordLearningTranslationSpellingExercise } from './components/TableExercise/TableWordLearningTranslationSpellingExercise';
+import { TableWordLearningTranslationMatchExercise } from './components/TableExercise/TableWordLearningTranslationMatchExercise';
 
-/** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' */
-const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' =
-  'translationChoice';
+/** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' | 'translationMatch' */
+const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' | 'translationMatch' =
+  'translationMatch';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -45,6 +46,8 @@ function AppContent() {
         <TableWordLearningTranslationChoiceExercise />
       ) : ACTIVE_EXERCISE === 'translationSpelling' ? (
         <TableWordLearningTranslationSpellingExercise />
+      ) : ACTIVE_EXERCISE === 'translationMatch' ? (
+        <TableWordLearningTranslationMatchExercise />
       ) : (
         <TableSentenceTransformationExercise />
       )}

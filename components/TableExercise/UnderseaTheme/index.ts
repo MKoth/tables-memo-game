@@ -4,3 +4,4 @@ export { UnderseaThemeTableSentenceTransformationExercise } from './UnderseaThem
 export { UnderseaThemeTableVariantSelectionExercise } from './UnderseaThemeTableVariantSelectionExercise';
 export { UnderseaThemeWordLearningTranslationChoiceExercise } from './UnderseaThemeWordLearningTranslationChoiceExercise';
 export { UnderseaThemeWordLearningTranslationSpellingExercise } from './UnderseaThemeWordLearningTranslationSpellingExercise';
+export { UnderseaThemeWordLearningTranslationMatchExercise } from './UnderseaThemeWordLearningTranslationMatchExercise';
