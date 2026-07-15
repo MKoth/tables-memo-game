@@ -1,2 +1,0 @@
-export const ROUND_HOLD_DURATION_MS = 3000;
-export const ROUND_ADVANCE_DELAY_MS = 400;
