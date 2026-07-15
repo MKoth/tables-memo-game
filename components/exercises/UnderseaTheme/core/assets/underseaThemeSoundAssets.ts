@@ -4,7 +4,7 @@ export const SFX_VOLUME = 0.8;
 export const SUCCESS_CLICK_VOLUME = 1.0;
 
 export const UNDERSEA_SOUND_ASSETS = {
-  waterflow: require('../../../../../assets/sounds/undersea_theme/waterflow.wav'),
+  waterflow: require('../../../../../assets/sounds/undersea_theme/waterflow.m4a'),
   splash: [
     require('../../../../../assets/sounds/undersea_theme/splash1.mp3'),
     require('../../../../../assets/sounds/undersea_theme/splash2.mp3'),
