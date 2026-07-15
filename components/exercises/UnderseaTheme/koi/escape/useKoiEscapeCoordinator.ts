@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
-import type { WordOperationSequence } from '../../wordTransformation/domain';
+import type { WordOperationSequence } from '../../../wordTransformation/domain';
 import type { KoiSwimZoneController } from '../KoiSwimZone/types';
 import {
   createKoiEscapeCoordinator,

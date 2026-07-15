@@ -21,7 +21,7 @@ import { TransformationInstructionBar, ExerciseCornerControls } from '../ui';
 import { TransformationBubbleLayer } from './wordTransformation';
 import { JellyfishSentenceRowLayer } from './sentenceTransformation/components/JellyfishSentenceRowLayer/JellyfishSentenceRowLayer';
 import { TransformationRoundResolutionBubble } from './sentenceTransformation/components/TransformationRoundResolutionBubble';
-import { useSentenceTransformationGame } from './sentenceTransformation/hooks/useSentenceTransformationGame';
+import { useSentenceTransformationGame } from '../sentenceTransformation/hooks/useSentenceTransformationGame';
 
 /** Behind sentence row and bubbles per PRD z-order. */
 const DECORATIVE_KOI_Z = 2;

@@ -7,7 +7,7 @@ import {
   type VariantSourceLayout,
   type WordOperationSequence,
   type WordTransformationCoreSnapshot,
-} from '../../UnderseaTheme/wordTransformation/domain';
+} from '../../wordTransformation/domain';
 
 export type UseWordTransformationCoreBridgeParams = {
   koiRect: ZoneRect;

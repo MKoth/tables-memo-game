@@ -4,7 +4,7 @@ import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
 import { useExerciseClock } from '../../../core';
 import { LetterBubble } from './LetterBubble';
-import type { InsertAnimationState } from '../domain';
+import type { InsertAnimationState } from '../../../wordTransformation/domain';
 
 export type TransformationInsertFlightProps = {
   flight: InsertAnimationState | null;

@@ -31,9 +31,9 @@ import {
   ROUND_ROW_EXIT_DURATION_MS,
   ROUND_SOLVED_POP_DURATION_MS,
   type SentenceRoundPhase,
-} from '../../domain';
-import type { SentencePromptDisplaySlot } from '../../domain/types';
-import type { SwimPath } from '../../domain/swimPathPlanner';
+} from '../../../../sentenceTransformation/domain';
+import type { SentencePromptDisplaySlot } from '../../../../sentenceTransformation/domain/types';
+import type { SwimPath } from '../../../../sentenceTransformation/domain/swimPathPlanner';
 import {
   computeSentenceRowLayout,
   type SentenceSlotConfig,

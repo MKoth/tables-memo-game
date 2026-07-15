@@ -12,7 +12,7 @@ import {
   BurstIntent,
   useBubbleAnimation,
 } from '../../../koi/bubbles/useBubbleAnimation';
-import type { KeepOutDisk } from '../domain/jellyfishRoaming';
+import type { KeepOutDisk } from '../../../../wordLearning/translationMatch/domain/jellyfishRoaming';
 import { useKoiCaptureSharedState } from '../../../koi/KoiSwimZone/hooks/useKoiCaptureSharedState';
 import type {
   KoiCaptureSharedState,
@@ -23,7 +23,7 @@ import {
 } from '../../../koi/simulation/useKoiFishSimulation';
 import { BUBBLE_DIAMETER_RATIO } from '../../../koi/KoiSwimZone/types';
 import { releaseCapturedFishWorklet } from '../../../koi/capture/releaseFishToPool';
-import type { MatchSessionController } from '../domain/matchSessionController';
+import type { MatchSessionController } from '../../../../wordLearning/translationMatch/domain/matchSessionController';
 import type { KoiTapData } from '../jellyfish/useCombinedMatchGestures';
 
 const MATCH_KOI_Z = 3;

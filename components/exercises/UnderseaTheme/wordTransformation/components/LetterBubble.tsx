@@ -22,7 +22,7 @@ import {
   BUBBLE_IDLE_WOBBLE,
   WORD_TRANSFORMATION_BUBBLE_OPACITY,
 } from '../../koi/bubbles/bubbleAnimPresets';
-import { WORD_LETTER_ENTER_DURATION_MS } from '../insertAnimationTiming';
+import { WORD_LETTER_ENTER_DURATION_MS } from '../../../wordTransformation/insertAnimationTiming';
 import type { BubbleAnimState } from '../../koi/bubbles/bubbleAnimTypes';
 
 const LABEL_STROKE_WIDTH = 2;

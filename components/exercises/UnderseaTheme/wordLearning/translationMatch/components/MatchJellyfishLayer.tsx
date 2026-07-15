@@ -15,8 +15,8 @@ import {
 } from '../../../jellyfish/JellyfishTableLayer/presets/jellyfishTintPresets';
 import { LABEL_STROKE_WIDTH, LABEL_TILT_PX } from '../../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import { rollBodyTint, sr } from '../../../jellyfish/jellyfishVisualTokens';
-import type { KeepOutDisk } from '../domain/jellyfishRoaming';
-import { useJellyfishRoamingLoop } from '../hooks/useJellyfishRoamingLoop';
+import type { KeepOutDisk } from '../../../../wordLearning/translationMatch/domain/jellyfishRoaming';
+import { useJellyfishRoamingLoop } from '../../../../wordLearning/translationMatch/hooks/useJellyfishRoamingLoop';
 import type { JellyfishTapData } from '../jellyfish/useCombinedMatchGestures';
 
 const MATCH_JELLYFISH_Z = 4;

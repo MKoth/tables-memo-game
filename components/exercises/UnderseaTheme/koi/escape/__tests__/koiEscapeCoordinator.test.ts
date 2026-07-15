@@ -4,7 +4,7 @@ import {
   resolveJellyfishEscapeTarget,
   type KoiEscapeCoordinatorDeps,
 } from '../koiEscapeCoordinator';
-import type { WordOperationSequence } from '../../../wordTransformation/domain';
+import type { WordOperationSequence } from '../../../../wordTransformation/domain';
 
 const sampleSequence: WordOperationSequence = {
   rowIndex: 1,

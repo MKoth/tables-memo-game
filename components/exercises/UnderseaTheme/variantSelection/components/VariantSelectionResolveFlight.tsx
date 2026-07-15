@@ -25,7 +25,7 @@ import {
   ROUND_RESOLVE_FLY_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
   ROUND_TRANSLATION_DISPLAY_MS,
-} from '../domain/roundResolutionTiming';
+} from '../../../variantSelection/domain/roundResolutionTiming';
 
 export type VariantSelectionResolveFlightPhase = 'idle' | 'resolve' | 'hold' | 'exit';
 

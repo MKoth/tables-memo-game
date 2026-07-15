@@ -23,8 +23,8 @@ import { ExerciseShell } from '../shared';
 import { CaptureOverlay, TransformationInstructionBar, ExerciseCornerControls } from '../ui';
 import {
   TransformationBubbleLayer,
-  useWordTransformationGame,
 } from './wordTransformation';
+import { useWordTransformationGame } from '../wordTransformation/hooks/useWordTransformationGame';
 
 const JELLYFISH_LAYER_Z = 5;
 /** Above jellyfish so escaping koi swim over table cells. */

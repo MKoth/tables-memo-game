@@ -28,12 +28,12 @@ import { JELLYFISH_TINT_PRESET_INDEX, type JellyfishTintPresetIndex } from '../.
 import {
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
-} from '../../sentenceTransformation/domain';
+} from '../../../sentenceTransformation/domain';
 import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from '../../../core/layout/exerciseLayout';
 import { rollBodyTint } from '../../jellyfish/jellyfishVisualTokens';
 import { triggerJellyfishTintFlash } from '../../jellyfish/JellyfishTableLayer/worklets/jellyfishTableWorklets';
-import type { OptionJellyfishState } from '../hooks/useVariantSelectionGame';
-import type { SwimPath } from '../../sentenceTransformation/domain/swimPathPlanner';
+import type { OptionJellyfishState } from '../../../variantSelection/hooks/useVariantSelectionGame';
+import type { SwimPath } from '../../../sentenceTransformation/domain/swimPathPlanner';
 
 export type OptionJellyfishLayerProps = {
   options: OptionJellyfishState[];

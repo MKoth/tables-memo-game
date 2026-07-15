@@ -16,7 +16,7 @@ import { ExerciseShell } from '../shared';
 import { ExerciseCornerControls } from '../ui';
 import { TransformationWordBubbles } from './wordTransformation/components/TransformationWordBubbles';
 import { OptionJellyfishLayer } from './variantSelection/components/OptionJellyfishLayer';
-import { useTranslationChoiceGame } from './wordLearning/translationChoice/hooks/useTranslationChoiceGame';
+import { useTranslationChoiceGame } from '../wordLearning/translationChoice/hooks/useTranslationChoiceGame';
 
 const DECORATIVE_KOI_Z = 2;
 const ENGLISH_WORD_LAYER_Z = 5;

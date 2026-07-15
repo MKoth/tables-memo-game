@@ -17,7 +17,7 @@ import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer'
 import { ExerciseShell } from '../shared';
 import { ExerciseCornerControls } from '../ui';
 import { LetterBubble } from './wordTransformation/components/LetterBubble';
-import { useTranslationSpellingGame } from './wordLearning/translationSpelling/hooks/useTranslationSpellingGame';
+import { useTranslationSpellingGame } from '../wordLearning/translationSpelling/hooks/useTranslationSpellingGame';
 import { computeLetterLayout, computePoolLetterLayout, TRANSFORMATION_WORD_ROW_Y_RATIO } from '../core/layout/exerciseLayout';
 
 const DECORATIVE_KOI_Z = 2;

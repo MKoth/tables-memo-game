@@ -1,10 +1,3 @@
-export * from './domain';
-export {
-  useWordTransformationGame,
-  type WordTransformationGame,
-  type WordTransitionPhase,
-  type WordTransitionState,
-} from './hooks/useWordTransformationGame';
 export {
   computeLetterLayout,
   previewCenterForLetter,

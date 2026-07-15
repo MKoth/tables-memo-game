@@ -4,7 +4,7 @@ import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../core/providers/UnderseaThemeAssetsProvider';
 import { useExerciseLayout } from '../../../core';
 import { computeLetterLayout } from '../../../core/layout/exerciseLayout';
-import { ROUND_MERGE_DURATION_MS } from '../domain/roundResolutionTiming';
+import { ROUND_MERGE_DURATION_MS } from '../../../sentenceTransformation/domain/roundResolutionTiming';
 import { MergeLetterLabels } from '../merge/MergeLetterLabels';
 import { MetaballMergeLayer } from '../merge/MetaballMergeLayer';
 import { computeMergeTarget } from '../merge/mergeLayout';

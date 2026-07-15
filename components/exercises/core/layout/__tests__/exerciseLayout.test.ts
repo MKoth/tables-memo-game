@@ -1,4 +1,4 @@
-import type { SentencePromptDisplaySlot } from '../../../UnderseaTheme/sentenceTransformation/domain/types';
+import type { SentencePromptDisplaySlot } from '../../../sentenceTransformation/domain/types';
 import {
   blankSlotCenter,
   computeLetterLayout,

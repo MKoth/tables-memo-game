@@ -10,10 +10,10 @@ import {
   type InsertPreviewLayout,
 } from '../../../core/layout/exerciseLayout';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
-import type { LetterBubbleModel } from '../domain';
+import type { LetterBubbleModel } from '../../../wordTransformation/domain';
 
 import { bubbleDeformUniformDefaults } from '../../shaders/bubbleDeform.sksl';
-import { ROUND_MERGE_DURATION_MS } from '../../sentenceTransformation/domain/roundResolutionTiming';
+import { ROUND_MERGE_DURATION_MS } from '../../../sentenceTransformation/domain/roundResolutionTiming';
 import { MergeLetterLabels } from '../../sentenceTransformation/merge/MergeLetterLabels';
 import { MetaballMergeLayer } from '../../sentenceTransformation/merge/MetaballMergeLayer';
 import { computeMergeTarget } from '../../sentenceTransformation/merge/mergeLayout';

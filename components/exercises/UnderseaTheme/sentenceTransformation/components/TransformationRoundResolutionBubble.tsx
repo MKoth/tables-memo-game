@@ -12,20 +12,12 @@ import { TAP_MAX_DISTANCE_PX } from '../../jellyfish/JellyfishTableLayer/config/
 import {
   ROUND_MATERIALIZE_DURATION_MS,
   type SentenceRoundPhase,
-} from '../domain';
+} from '../../../sentenceTransformation/domain';
 
 const TRANSLATION_WOBBLE_MS = 800;
 
-export type RoundResolutionBubbleState = {
-  word: string;
-  fromCenterX: number;
-  fromCenterY: number;
-  fromDiameter: number;
-  toCenterX: number;
-  toCenterY: number;
-  toDiameter: number;
-  flyDurationMs: number;
-};
+import type { RoundResolutionBubbleState } from '../../../sentenceTransformation/domain/roundResolutionBubbleState';
+export type { RoundResolutionBubbleState } from '../../../sentenceTransformation/domain/roundResolutionBubbleState';
 
 export type TransformationRoundResolutionBubbleProps = {
   bubble: RoundResolutionBubbleState | null;

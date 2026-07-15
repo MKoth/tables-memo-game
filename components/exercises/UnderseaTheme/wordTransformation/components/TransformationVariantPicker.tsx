@@ -9,15 +9,9 @@ import {
   computeLetterLayout,
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
 } from '../../../core/layout/exerciseLayout';
+import type { VariantPickerItem } from '../../../wordTransformation/domain/coreTypes';
 
-export type VariantPickerItem = {
-  id: string;
-  label: string;
-  /** UI-thread stagger when this variant pops during insert dismiss. */
-  popDelayMs?: number;
-  /** True during dismiss — bubble plays a staggered pop (see popDelayMs). */
-  popping?: boolean;
-};
+export type { VariantPickerItem } from '../../../wordTransformation/domain/coreTypes';
 
 function statusFor(
   item: VariantPickerItem,

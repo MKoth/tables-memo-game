@@ -15,12 +15,12 @@ import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAss
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { ExerciseShell } from '../shared';
 import { ExerciseCornerControls } from '../ui';
-import type { KeepOutDisk } from './wordLearning/translationMatch/domain/jellyfishRoaming';
-import { sampleMatchSession } from './wordLearning/translationMatch/domain/sampleMatchSession';
+import type { KeepOutDisk } from '../wordLearning/translationMatch/domain/jellyfishRoaming';
+import { sampleMatchSession } from '../wordLearning/translationMatch/domain/sampleMatchSession';
 import {
   createMatchSessionController,
   type MatchSessionController,
-} from './wordLearning/translationMatch/domain/matchSessionController';
+} from '../wordLearning/translationMatch/domain/matchSessionController';
 import { TINT_FLASH_MS } from './jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import { MatchKoiLayer } from './wordLearning/translationMatch/components/MatchKoiLayer';
 import { MatchJellyfishLayer } from './wordLearning/translationMatch/components/MatchJellyfishLayer';

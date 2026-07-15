@@ -19,10 +19,10 @@ import { DecorativeKoiLayer } from './koi/DecorativeKoiLayer/DecorativeKoiLayer'
 import { ExerciseShell } from '../shared';
 import { TransformationInstructionBar, ExerciseCornerControls } from '../ui';
 import { JellyfishSentenceRowLayer } from './sentenceTransformation/components/JellyfishSentenceRowLayer/JellyfishSentenceRowLayer';
-import { useVariantSelectionGame } from './variantSelection/hooks/useVariantSelectionGame';
+import { useVariantSelectionGame } from '../variantSelection/hooks/useVariantSelectionGame';
 import { OptionJellyfishLayer } from './variantSelection/components/OptionJellyfishLayer';
 import { VariantSelectionResolveFlight } from './variantSelection/components/VariantSelectionResolveFlight';
-import { ROUND_RESOLVE_FLY_DURATION_MS } from './variantSelection/domain/roundResolutionTiming';
+import { ROUND_RESOLVE_FLY_DURATION_MS } from '../variantSelection/domain/roundResolutionTiming';
 
 const DECORATIVE_KOI_Z = 2;
 const SENTENCE_ROW_LAYER_Z = 5;
