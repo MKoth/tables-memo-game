@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useAnimatedReaction } from 'react-native-reanimated';
+import type { SharedValue } from 'react-native-reanimated';
 import {
   useUnderseaThemeAssetsContext,
   useUnderseaThemeLayout,
@@ -12,6 +14,7 @@ import {
   BurstIntent,
   useBubbleAnimation,
 } from '../../../koi/bubbles/useBubbleAnimation';
+import type { KeepOutDisk } from '../domain/jellyfishRoaming';
 import { useKoiCaptureSharedState } from '../../../koi/KoiSwimZone/hooks/useKoiCaptureSharedState';
 import type {
   KoiCaptureSharedState,
@@ -35,6 +38,7 @@ export type MatchKoiLayerProps = {
   triggerEscapeRef?: React.MutableRefObject<(() => void) | null>;
   tapDataRef?: React.MutableRefObject<KoiTapData | null>;
   interactive?: boolean;
+  keepOutDiskSv?: SharedValue<KeepOutDisk | null>;
 };
 
 export function MatchKoiLayer({
@@ -44,6 +48,7 @@ export function MatchKoiLayer({
   triggerEscapeRef,
   tapDataRef,
   interactive = true,
+  keepOutDiskSv,
 }: MatchKoiLayerProps) {
   const { width, height } = useWindowDimensions();
   const layout = useUnderseaThemeLayout();
@@ -102,6 +107,25 @@ export function MatchKoiLayer({
   const targetCenterX = width * 0.5;
   const targetCenterY = height * 0.5;
   const targetDiameter = Math.min(width, height) * BUBBLE_DIAMETER_RATIO;
+
+  useAnimatedReaction(
+    () => phase.value,
+    (currentPhase, prevPhase) => {
+      if (keepOutDiskSv == null) {
+        return;
+      }
+      if (currentPhase === BubblePhase.Idle) {
+        keepOutDiskSv.value = {
+          centerX: targetCenterX,
+          centerY: targetCenterY,
+          radius: targetDiameter * 0.6,
+        };
+      } else if (prevPhase != null && prevPhase === BubblePhase.Idle && currentPhase !== BubblePhase.Idle) {
+        keepOutDiskSv.value = null;
+      }
+    },
+    [keepOutDiskSv, targetCenterX, targetCenterY, targetDiameter],
+  );
 
   const bubbleConfig = useMemo(
     () => ({

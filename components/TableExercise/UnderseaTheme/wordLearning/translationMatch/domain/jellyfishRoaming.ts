@@ -40,6 +40,8 @@ const JELLYFISH_SWIM_DURATION_MIN = 2.0;
 const JELLYFISH_SWIM_DURATION_MAX = 8.0;
 const JELLYFISH_IDLE_DURATION_MIN = 0;
 const JELLYFISH_IDLE_DURATION_MAX = 0;
+const JELLYFISH_KEEP_OUT_STEER = 8.0;
+const JELLYFISH_KEEP_OUT_TARGET_PAD = 20;
 
 export function pickRoamingTarget(
   zone: Zone,
@@ -56,7 +58,7 @@ export function pickRoamingTarget(
     if (
       keepOutDisk != null &&
       Math.hypot(x - keepOutDisk.centerX, y - keepOutDisk.centerY) <
-        keepOutDisk.radius + 20
+        keepOutDisk.radius + JELLYFISH_KEEP_OUT_TARGET_PAD
     ) {
       continue;
     }
@@ -94,7 +96,6 @@ export function stepJellyfish(
   let newX = state.x;
   let newY = state.y;
   let heading = state.heading;
-  const wasClamped = false;
 
   if (state.state === JELLYFISH_STATE_IDLE) {
     if (newTimer <= 0) {
@@ -149,6 +150,17 @@ export function stepJellyfish(
       const weight = overlap * overlap;
       sepDx += (sx / sd) * weight * JELLYFISH_SEPARATION_STEER;
       sepDy += (sy / sd) * weight * JELLYFISH_SEPARATION_STEER;
+    }
+  }
+
+  if (keepOutDisk != null) {
+    const kx = state.x - keepOutDisk.centerX;
+    const ky = state.y - keepOutDisk.centerY;
+    const kd = Math.hypot(kx, ky);
+    if (kd < keepOutDisk.radius && kd > 0.1) {
+      const overlap = 1 - kd / keepOutDisk.radius;
+      sepDx += (kx / kd) * overlap * JELLYFISH_KEEP_OUT_STEER;
+      sepDy += (ky / kd) * overlap * JELLYFISH_KEEP_OUT_STEER;
     }
   }
 

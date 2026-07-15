@@ -9,6 +9,7 @@ import {
   pickRoamingTarget,
   stepJellyfish,
   type JellyfishState,
+  type KeepOutDisk,
   type Zone,
 } from '../domain/jellyfishRoaming';
 
@@ -22,6 +23,7 @@ type JellyfishRoamingLoopParams = {
   zoneHeight: number;
   matchedIndicesSv?: SharedValue<number[]>;
   exitTargetsSv?: SharedValue<Record<number, { tx: number; ty: number }>>;
+  keepOutDiskSv?: SharedValue<KeepOutDisk | null>;
 };
 
 export type JellyfishRoamingLoopResult = {
@@ -38,6 +40,7 @@ export function useJellyfishRoamingLoop({
   zoneHeight,
   matchedIndicesSv,
   exitTargetsSv,
+  keepOutDiskSv,
 }: JellyfishRoamingLoopParams): JellyfishRoamingLoopResult {
   const layoutX = useSharedValue<number[]>([]);
   const layoutY = useSharedValue<number[]>([]);
@@ -246,12 +249,14 @@ export function useJellyfishRoamingLoop({
         JELLYFISH_SPEED +
         (Math.random() - 0.5) * JELLYFISH_SPEED_VARIANCE * 2;
 
+      const disk = keepOutDiskSv?.value ?? null;
+
       const next = stepJellyfish(
         state,
         dt,
         speed,
         zone,
-        null,
+        disk,
         states,
         i,
         Math.random,

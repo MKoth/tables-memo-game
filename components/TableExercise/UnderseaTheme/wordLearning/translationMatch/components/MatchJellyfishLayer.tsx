@@ -15,6 +15,7 @@ import {
 } from '../../../jellyfish/JellyfishTableLayer/presets/jellyfishTintPresets';
 import { LABEL_STROKE_WIDTH, LABEL_TILT_PX } from '../../../jellyfish/JellyfishTableLayer/config/jellyfishTableLayerConfig';
 import { rollBodyTint, sr } from '../../../jellyfish/jellyfishVisualTokens';
+import type { KeepOutDisk } from '../domain/jellyfishRoaming';
 import { useJellyfishRoamingLoop } from '../hooks/useJellyfishRoamingLoop';
 import type { JellyfishTapData } from '../jellyfish/useCombinedMatchGestures';
 
@@ -220,6 +221,7 @@ export type MatchJellyfishLayerProps = {
   englishWordsByIndexSv?: SharedValue<string[]>;
   exitTargetsSv?: SharedValue<Record<number, { tx: number; ty: number }>>;
   tapDataRef?: React.MutableRefObject<JellyfishTapData | null>;
+  keepOutDiskSv?: SharedValue<KeepOutDisk | null>;
 };
 
 export function MatchJellyfishLayer({
@@ -230,6 +232,7 @@ export function MatchJellyfishLayer({
   englishWordsByIndexSv,
   exitTargetsSv,
   tapDataRef,
+  keepOutDiskSv,
 }: MatchJellyfishLayerProps) {
   const { width, height } = useWindowDimensions();
   const { images } = useUnderseaThemeAssetsContext();
@@ -268,6 +271,7 @@ export function MatchJellyfishLayer({
     zoneHeight: height,
     matchedIndicesSv: activeMatchedIndicesSv,
     exitTargetsSv: exitTargetsSv ?? fallbackExitTargetsSv,
+    keepOutDiskSv,
   });
 
   const bellSizes = useMemo(() => {

@@ -15,6 +15,7 @@ import {
 import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
 import { UnderseaThemeExerciseShell } from './shared/UnderseaThemeExerciseShell';
 import { UnderseaThemeCornerControls } from './ui';
+import type { KeepOutDisk } from './wordLearning/translationMatch/domain/jellyfishRoaming';
 import { sampleMatchSession } from './wordLearning/translationMatch/domain/sampleMatchSession';
 import {
   createMatchSessionController,
@@ -53,6 +54,7 @@ type TranslationMatchContentProps = {
   matchedIndicesSv: SharedValue<number[]>;
   englishWordsByIndexSv: SharedValue<string[]>;
   exitTargetsSv: SharedValue<Record<number, { tx: number; ty: number }>>;
+  keepOutDiskSv: SharedValue<KeepOutDisk | null>;
 };
 
 function TranslationMatchContent({
@@ -62,6 +64,7 @@ function TranslationMatchContent({
   matchedIndicesSv,
   englishWordsByIndexSv,
   exitTargetsSv,
+  keepOutDiskSv,
 }: TranslationMatchContentProps) {
   const soundEnabled = useUnderseaThemeExerciseStore(state => state.soundEnabled);
   const { width, height } = useWindowDimensions();
@@ -156,6 +159,7 @@ function TranslationMatchContent({
         triggerEscapeRef={triggerEscapeRef}
         tapDataRef={koiTapDataRef}
         interactive={false}
+        keepOutDiskSv={keepOutDiskSv}
       />
       <MatchJellyfishLayer
         words={spanishWords}
@@ -165,6 +169,7 @@ function TranslationMatchContent({
         englishWordsByIndexSv={englishWordsByIndexSv}
         exitTargetsSv={exitTargetsSv}
         tapDataRef={jellyfishTapDataRef}
+        keepOutDiskSv={keepOutDiskSv}
       />
       <GestureDetector gesture={combinedGesture}>
         <View style={[StyleSheet.absoluteFill, styles.gestureCapture]} pointerEvents="auto" />
@@ -177,6 +182,7 @@ function TranslationMatchContent({
 function useSyncedSessionController(
   capturedEnglishSv: SharedValue<string>,
   matchedIndicesSv: SharedValue<number[]>,
+  onSessionComplete?: () => void,
 ): MatchSessionController {
   const ctrlRef = useRef<MatchSessionController | null>(null);
 
@@ -192,6 +198,7 @@ function useSyncedSessionController(
         capturedEnglishSv.value = snapshot.capturedEnglish ?? '';
         matchedIndicesSv.value = snapshot.matchedIndices;
       },
+      onSessionComplete,
     });
   }
 
@@ -212,10 +219,14 @@ function TranslationMatchContentWithSounds() {
   const matchedIndicesSv = useSharedValue<number[]>([]);
   const englishWordsByIndexSv = useSharedValue<string[]>([]);
   const exitTargetsSv = useSharedValue<Record<number, { tx: number; ty: number }>>({});
+  const keepOutDiskSv = useSharedValue<KeepOutDisk | null>(null);
 
   const sessionController = useSyncedSessionController(
     capturedEnglishSv,
     matchedIndicesSv,
+    () => {
+      sounds.playFanfare();
+    },
   );
 
   return (
@@ -228,6 +239,7 @@ function TranslationMatchContentWithSounds() {
           matchedIndicesSv={matchedIndicesSv}
           englishWordsByIndexSv={englishWordsByIndexSv}
           exitTargetsSv={exitTargetsSv}
+          keepOutDiskSv={keepOutDiskSv}
         />
       </UnderseaThemeClockProvider>
     </UnderseaThemeRuntimeProvider>

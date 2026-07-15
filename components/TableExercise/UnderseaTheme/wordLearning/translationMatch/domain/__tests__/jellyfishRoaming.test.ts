@@ -202,4 +202,42 @@ describe('stepJellyfish', () => {
     const next = stepJellyfish(state, dt, JELLYFISH_SPEED, zone, null, [state], 0, rng);
     expect(next.state).toBe(JELLYFISH_STATE_SWIMMING);
   });
+
+  it('nudges jellyfish away from keep-out disk when inside', () => {
+    const disk: KeepOutDisk = { centerX: 200, centerY: 400, radius: 80 };
+    const state = makeState({
+      x: 200,
+      y: 400,
+      targetX: 220,
+      targetY: 420,
+    });
+    const dt = 0.1;
+    const next = stepJellyfish(
+      state,
+      dt,
+      JELLYFISH_SPEED,
+      zone,
+      disk,
+      [state],
+      0,
+      rng,
+    );
+    const distToCenter = Math.hypot(next.x - 200, next.y - 400);
+    expect(distToCenter).toBeGreaterThan(0);
+  });
+
+  it('does not nudge when keepOutDisk is null', () => {
+    const state = makeState({
+      x: 200,
+      y: 400,
+      targetX: 220,
+      targetY: 420,
+    });
+    const dt = 0.1;
+    const next = stepJellyfish(state, dt, JELLYFISH_SPEED, zone, null, [state], 0, rng);
+    const expectedX = 200 + Math.cos(Math.atan2(20, 20)) * JELLYFISH_SPEED * dt;
+    const expectedY = 400 + Math.sin(Math.atan2(20, 20)) * JELLYFISH_SPEED * dt;
+    expect(next.x).toBeCloseTo(expectedX, 1);
+    expect(next.y).toBeCloseTo(expectedY, 1);
+  });
 });
