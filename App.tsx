@@ -8,13 +8,13 @@
 import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { TableExercise } from './components/TableExercise/TableExercise';
-import { TableSentenceTransformationExercise } from './components/TableExercise/TableSentenceTransformationExercise';
-import { TableVariantSelectionExercise } from './components/TableExercise/TableVariantSelectionExercise';
-import { TableWordTransformationExercise } from './components/TableExercise/TableWordTransformationExercise';
-import { TableWordLearningTranslationChoiceExercise } from './components/TableExercise/TableWordLearningTranslationChoiceExercise';
-import { TableWordLearningTranslationSpellingExercise } from './components/TableExercise/TableWordLearningTranslationSpellingExercise';
-import { TableWordLearningTranslationMatchExercise } from './components/TableExercise/TableWordLearningTranslationMatchExercise';
+import { TableExercise } from './components/exercises/TableExercise';
+import { TableSentenceTransformationExercise } from './components/exercises/TableSentenceTransformationExercise';
+import { TableVariantSelectionExercise } from './components/exercises/TableVariantSelectionExercise';
+import { TableWordTransformationExercise } from './components/exercises/TableWordTransformationExercise';
+import { TableWordLearningTranslationChoiceExercise } from './components/exercises/TableWordLearningTranslationChoiceExercise';
+import { TableWordLearningTranslationSpellingExercise } from './components/exercises/TableWordLearningTranslationSpellingExercise';
+import { TableWordLearningTranslationMatchExercise } from './components/exercises/TableWordLearningTranslationMatchExercise';
 
 /** Dev switch: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' | 'translationMatch' */
 const ACTIVE_EXERCISE: 'table' | 'wordTransformation' | 'sentenceTransformation' | 'variantSelection' | 'translationChoice' | 'translationSpelling' | 'translationMatch' =
