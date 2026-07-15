@@ -104,6 +104,40 @@ _Avoid_: word variant selection, vocabulary quiz, translation picker
 A word-learning exercise where the learner sees an English word as letter bubbles and spells the Spanish translation letter-by-letter by tapping shuffled letter bubbles (including 2–3 distractor letters not present in the target word). Letters must be selected left-to-right; tapping any instance of a repeated letter counts as correct. On completion the remaining distractor letters pop, then the English word pops, then the spelled Spanish word pops.
 _Avoid_: word transformation, letter spelling, type the word
 
+**Translation match exercise**:
+A word-learning exercise where the learner matches English words (carried by koi) to their Spanish translations (carried by jellyfish) by capturing a koi in a bubble and tapping the corresponding jellyfish. Koi and jellyfish free-roam the whole screen on separate layers and do not collide across species. Session-based: the field persists across match lifecycles; when the last pair has matched and exited, the fanfare plays and the scene goes empty (no auto-reload of a fresh field).
+_Avoid_: match exercise, vocabulary match, pairing exercise, fish match
+
+**Roaming target**:
+The jellyfish movement model in the translation match exercise: a jellyfish picks a random target point inside the screen zone, swims toward it linearly, and on arrival picks a new one — a chained sequence of A→B swims. Distinct from the koi SWIMMING↔IDLE random-wander sim; gives jellyfish a calm drifting feel that pairs with their cosmetic deform-shader swim cycle. Jelly-vs-jelly separation reuses the koi spatial-hash approach (overlap-weighted heading steer) without sharing the koi state machine.
+_Avoid_: jellyfish wander, jellyfish idle swim, drifting jelly
+
+**Capture bubble**:
+The bubble that encloses a captured koi in the translation match exercise, showing the koi's English word as its label. Inflates at the koi's tap position, then travels with the fish inside to the screen center where it settles into idle. On a correct jellyfish match it pops (Escape burst) releasing the fish; on a tap of the bubble itself it pops (Release burst) releasing the fish back to the field. Inverts the table-exercise bubble, which shows the Spanish conjugated form. Renders above jellyfish (high z) so a tap on a spot where the bubble is always pops the bubble, even if a jellyfish is visually under it — the bubble keep-out disk exists to make that case rare.
+_Avoid_: koi bubble, word bubble (reserved for round resolution), selection bubble
+
+**Bubble keep-out disk**:
+A circular region at the capture bubble's idle position (screen center) that jellyfish avoid while the bubble is active. Activated only when the capture bubble reaches idle — not during its inflate or travel phases. Jellyfish roaming-target picking rejects points inside the disk, and separation adds a nudge if a jelly drifts in. Ensures jellyfish stay tappable (the bubble does not occlude them) while a koi is captured. Deactivates when the bubble pops.
+_Avoid_: bubble exclusion zone, jellyfish avoidance area, bubble shield
+
+**Match field**:
+The set of koi and jellyfish on screen during a translation match exercise session. Strict 1:1 pairing: N koi (each carrying one English word) and N matching jellyfish (each carrying the corresponding Spanish word). No distractor jellyfish — every jellyfish on the field matches exactly one koi on the field. The field persists across match lifecycles; the session ends (fanfare, empty scene) when the last pair has exited.
+_Avoid_: pool, word set, board, scene population
+
+**Match session word pool**:
+The source of words for a translation match exercise session: all four word lists (`animals`, `food`, `common-verbs`, `household`) merged into one 24-entry pool. Each session samples 8 distinct entries uniformly at random without replacement, with a guard rejecting any sample where two entries share the same Spanish or English string — so string-based matching (captured English → jellyfish Spanish) stays unambiguous and the 1:1 match field is preserved. Category blending is intentional — a session may mix animals, food, verbs, and household items.
+_Avoid_: session deck, match word set, vocabulary pool
+
+**Matched pair**:
+The bookkeeping unit in the translation match exercise: a pair index links a koi to its matching jellyfish (1:1 per the match field). A pair is marked matched at resolve — the moment a correct jellyfish tap confirms the match — not after exit-pair completes. From that point the pair's koi and jellyfish are removed from the sim's movement, collision, and tap hit-tests; their exit animations run as purely cosmetic overlays. The field is cleared when every pair index is matched; the fanfare fires at the resolve of the last pair, before the last exit visuals have finished.
+_Avoid_: completed pair, finished pair, resolved pair
+
+**Match lifecycle**:
+The per-pair sequence in the translation match exercise: `capture` (tap a koi → it is enclosed in a bubble showing its English word) → `select` (tap a jellyfish; correct = green glow, wrong = red glow) → `resolve` (bubble pops, fish and jellyfish released) → `exit-pair` (both leave the screen in a random direction and disappear). Multiple match lifecycles can interleave against the persistent field. Distinct from Round, which names the row-based cycle in round-based exercises.
+
+On a correct match, resolve and exit-pair run as two independent escapes in parallel: the bubble pops (Escape burst, pop sound), the fish swims offscreen from the bubble's center position in its own random direction (directed-escape model), and the jellyfish freezes at its match position, glows green for ~800 ms (reusing the tint-flash preset), then swims offscreen in its own random direction. On a wrong match, the tapped jellyfish flashes red (~800 ms) and the lifecycle waits at `select` for another tap; the bubble stays, the keep-out disk stays active.
+_Avoid_: round, turn, pair cycle, match cycle
+
 **Translation choice round controller**:
 The round lifecycle for translation choice: enter (English letter bubbles inflate, option jellyfish swim in), transform (user taps a jellyfish; wrong = red flash), resolve (English bubbles pop, Spanish word inflates, all jellyfish exit along remembered paths), hold (~3 s reading pause), exit (Spanish letter bubbles pop in cascade), advance (brief gap before next round).
 _Avoid_: translation choice phases, choice lifecycle
