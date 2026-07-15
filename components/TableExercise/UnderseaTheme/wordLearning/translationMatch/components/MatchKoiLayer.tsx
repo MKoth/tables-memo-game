@@ -30,12 +30,14 @@ export type MatchKoiLayerProps = {
   words: string[];
   sounds?: UnderseaThemeSoundController;
   sessionController?: MatchSessionController;
+  triggerEscapeRef?: React.MutableRefObject<(() => void) | null>;
 };
 
 export function MatchKoiLayer({
   words,
   sounds,
   sessionController,
+  triggerEscapeRef,
 }: MatchKoiLayerProps) {
   const { width, height } = useWindowDimensions();
   const layout = useUnderseaThemeLayout();
@@ -55,6 +57,8 @@ export function MatchKoiLayer({
   const transitionRafRef = useRef<number | null>(null);
   const soundsRef = useRef(sounds);
   soundsRef.current = sounds;
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
 
   const shared = useKoiCaptureSharedState(width);
   const {
@@ -116,8 +120,21 @@ export function MatchKoiLayer({
   }, [releaseContextSv, releaseRequestSv]);
 
   const handleBurstEnd = useCallback(
-    (_intent: number) => {
-      sessionController?.release();
+    (intent: number) => {
+      const action =
+        intent === BurstIntent.Release ? 'release' : 'escape';
+      if (action === 'release') {
+        sessionController?.release();
+      }
+      if (action === 'escape') {
+        const sel = selectionRef.current;
+        if (sel != null) {
+          const current = eliminatedFishSv.value;
+          if (!current.includes(sel.fishIndex)) {
+            eliminatedFishSv.value = [...current, sel.fishIndex];
+          }
+        }
+      }
       cancelTransitionRaf();
       setPoolHiddenFishIndex(null);
       transitionRafRef.current = requestAnimationFrame(() => {
@@ -125,7 +142,7 @@ export function MatchKoiLayer({
         setSelection(null);
       });
     },
-    [cancelTransitionRaf, sessionController],
+    [cancelTransitionRaf, eliminatedFishSv, sessionController],
   );
 
   const {
@@ -147,6 +164,10 @@ export function MatchKoiLayer({
     },
     [startBurstRaw],
   );
+
+  if (triggerEscapeRef) {
+    triggerEscapeRef.current = () => startBurst(BurstIntent.Escape);
+  }
 
   const captureState = useMemo<KoiCaptureSharedState>(
     () => ({

@@ -13,11 +13,15 @@ import {
 } from '../domain/jellyfishRoaming';
 
 const TILT_LERP_FACTOR = 0.12;
+const EXIT_SPEED_MULTIPLIER = 6;
+const EXIT_MARGIN = 120;
 
 type JellyfishRoamingLoopParams = {
   count: number;
   zoneWidth: number;
   zoneHeight: number;
+  matchedIndicesSv?: SharedValue<number[]>;
+  exitTargetsSv?: SharedValue<Record<number, { tx: number; ty: number }>>;
 };
 
 export type JellyfishRoamingLoopResult = {
@@ -32,6 +36,8 @@ export function useJellyfishRoamingLoop({
   count,
   zoneWidth,
   zoneHeight,
+  matchedIndicesSv,
+  exitTargetsSv,
 }: JellyfishRoamingLoopParams): JellyfishRoamingLoopResult {
   const layoutX = useSharedValue<number[]>([]);
   const layoutY = useSharedValue<number[]>([]);
@@ -118,6 +124,9 @@ export function useJellyfishRoamingLoop({
     const tims = stateTimersSv.value;
     const n = Math.min(xs.length, ys.length, hds.length, txs.length, tys.length, sts.length, tims.length, count);
 
+    const matched = matchedIndicesSv?.value ?? [];
+    const exits = exitTargetsSv?.value ?? {};
+
     const zone: Zone = {
       x: 0,
       y: 0,
@@ -147,7 +156,79 @@ export function useJellyfishRoamingLoop({
     const newSts: number[] = [];
     const newTims: number[] = [];
 
+    const isMatched = (idx: number): boolean => {
+      for (let m = 0; m < matched.length; m++) {
+        if (matched[m] === idx) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     for (let i = 0; i < n; i++) {
+      const hasExitTarget = exits[i] != null;
+
+      if (isMatched(i) && !hasExitTarget) {
+        newXs.push(xs[i] ?? 0);
+        newYs.push(ys[i] ?? 0);
+        newHds.push(hds[i] ?? 0);
+        newAmps.push(0);
+        newTxs.push(txs[i] ?? 0);
+        newTys.push(tys[i] ?? 0);
+        newSts.push(JELLYFISH_STATE_IDLE);
+        newTims.push(tims[i] ?? 0);
+        continue;
+      }
+
+      if (hasExitTarget) {
+        const exit = exits[i]!;
+        const cx = xs[i] ?? 0;
+        const cy = ys[i] ?? 0;
+        const dx = exit.tx - cx;
+        const dy = exit.ty - cy;
+        const dist = Math.hypot(dx, dy);
+        const speed = JELLYFISH_SPEED * EXIT_SPEED_MULTIPLIER;
+        const moveDist = speed * dt;
+
+        let newX: number;
+        let newY: number;
+        if (dist <= moveDist) {
+          newX = exit.tx;
+          newY = exit.ty;
+        } else {
+          const angle = Math.atan2(dy, dx);
+          newX = cx + Math.cos(angle) * moveDist;
+          newY = cy + Math.sin(angle) * moveDist;
+        }
+
+        const offScreen =
+          newX < -EXIT_MARGIN ||
+          newX > zone.w + EXIT_MARGIN ||
+          newY < -EXIT_MARGIN ||
+          newY > zone.h + EXIT_MARGIN;
+
+        if (offScreen) {
+          newXs.push(newX);
+          newYs.push(newY);
+          newHds.push(Math.atan2(dy, dx));
+          newAmps.push(0);
+          newTxs.push(exit.tx);
+          newTys.push(exit.ty);
+          newSts.push(JELLYFISH_STATE_IDLE);
+          newTims.push(0);
+        } else {
+          newXs.push(newX);
+          newYs.push(newY);
+          newHds.push(Math.atan2(dy, dx));
+          newAmps.push(0.04);
+          newTxs.push(exit.tx);
+          newTys.push(exit.ty);
+          newSts.push(JELLYFISH_STATE_SWIMMING);
+          newTims.push(10);
+        }
+        continue;
+      }
+
       const state = states[i];
       if (state == null) {
         newXs.push(0);

@@ -1,4 +1,4 @@
-export type MatchSessionPhase = 'idle' | 'select';
+export type MatchSessionPhase = 'idle' | 'select' | 'resolve';
 
 export type MatchSessionControllerSnapshot = {
   phase: MatchSessionPhase;
@@ -18,7 +18,9 @@ export type MatchSessionController = {
   getSnapshot: () => MatchSessionControllerSnapshot;
   captureFish: (fishIndex: number, english: string) => boolean;
   release: () => void;
-  correctMatch: (fishIndex: number) => void;
+  correctMatch: (pairIndex: number) => void;
+  wrongMatch: () => void;
+  resolveComplete: () => void;
   dispose: () => void;
 };
 
@@ -72,15 +74,34 @@ export function createMatchSessionController({
       setPhase('idle');
     },
 
-    correctMatch(fishIndex: number) {
-      if (matchedIndices.includes(fishIndex)) {
+    correctMatch(pairIndex: number) {
+      if (phase !== 'select') {
         return;
       }
-      matchedIndices.push(fishIndex);
+      if (matchedIndices.includes(pairIndex)) {
+        return;
+      }
+      matchedIndices.push(pairIndex);
+      setPhase('resolve');
       if (matchedIndices.length >= pairCount && !sessionCompleteFired) {
         sessionCompleteFired = true;
         onSessionComplete?.();
       }
+    },
+
+    wrongMatch() {
+      if (phase !== 'select') {
+        return;
+      }
+    },
+
+    resolveComplete() {
+      if (phase !== 'resolve') {
+        return;
+      }
+      capturedFishIndex = -1;
+      capturedEnglish = null;
+      setPhase('idle');
     },
 
     dispose() {
