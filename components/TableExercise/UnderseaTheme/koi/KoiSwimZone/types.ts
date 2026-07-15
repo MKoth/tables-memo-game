@@ -1,7 +1,7 @@
 import type { RefObject } from 'react';
 import type { UnderseaThemeSoundController } from '../../core/assets/useUnderseaThemeSounds';
 
-export const BUBBLE_DIAMETER_RATIO = 0.9;
+export const BUBBLE_DIAMETER_RATIO = 0.65;
 
 export type BubbleSelection = {
   word: string;

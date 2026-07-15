@@ -204,20 +204,20 @@ export function MatchKoiLayer({
       let ty: number;
       switch (edge) {
         case 0:
-          tx = Math.random() * width;
+          tx = width * 0.5;
           ty = -margin;
           break;
         case 1:
-          tx = Math.random() * width;
+          tx = width * 0.5;
           ty = height + margin;
           break;
         case 2:
           tx = -margin;
-          ty = Math.random() * height;
+          ty = height * 0.5;
           break;
         default:
           tx = width + margin;
-          ty = Math.random() * height;
+          ty = height * 0.5;
           break;
       }
       escapeTargetXSv.value = tx;
