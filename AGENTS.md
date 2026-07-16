@@ -38,29 +38,44 @@ React Native 0.85.3 app for learning Spanish verb conjugations via undersea-them
 
 ### Architecture
 
-Three exercises sharing a word-transformation core (see `docs/adr/0001-shared-word-transformation-core.md`):
+Theme-agnostic exercise framework with a `Theme` interface (see `docs/theme-structure-guide.md` and `docs/adr/0003-theme-agnostic-exercise-architecture.md`). Seven exercises share a word-transformation core (see `docs/adr/0001-shared-word-transformation-core.md`):
 
-- **TableExercise** — conjugation table visible as jellyfish; solved form fills table cell
-- **WordTransformationExercise** — infinitive → conjugated form via letter delete/insert bubbles
-- **SentenceTransformationExercise** — sentence prompt with a blank slot; solved form lands in slot
+- **Table transformation** — conjugation table visible as WordSprites; solved form fills table cell
+- **Word transformation** — infinitive → conjugated form via letter delete/insert bubbles
+- **Sentence transformation** — sentence prompt with a blank slot; solved form lands in slot
+- **Variant selection** — correct conjugation from three option WordSprites
+- **Translation choice** — English word, select Spanish translation from options
+- **Translation spelling** — spell Spanish translation letter-by-letter from a pool
+- **Translation match** — match English words (Roamers) to Spanish translations (WordSprites)
 
-All live under `components/TableExercise/UnderseaTheme/`.
+Generic framework lives under `components/exercises/`; the undersea theme lives under `components/exercises/themes/undersea/`.
 
 ```
-UnderseaTheme/
-├── core/          # Layout, clock, store (zustand), assets, providers, hooks
-├── wordTransformation/  # Letter bubbles, variant picker, insert flight
-├── sentenceTransformation/  # Round lifecycle, jellyfish sentence row, metaball merge
-├── shared/        # Exercise shell wrapper
-├── jellyfish/     # Jellyfish visuals
-├── koi/           # Decorative background fish
-├── background/    # Undersea scene
-└── shaders/       # Skia shaders (metaball merge)
+components/exercises/
+├── core/              # Generic infrastructure: clock, store, layout, providers, bridge types
+├── shared/            # ExerciseShell, ExerciseLoadingScreen, ExerciseTutorial
+├── ui/                # Generic chrome: corner controls, instruction bar, drop panel, capture overlay
+├── themeContract/     # Theme interface and ThemeContext
+├── wordTransformation/    # Mechanic: domain + hooks (visual layers in theme)
+├── sentenceTransformation/ # Mechanic: domain + hooks (visual layers in theme)
+├── variantSelection/       # Mechanic: domain + hooks (visual layers in theme)
+├── wordLearning/           # Three mechanics: translationChoice, translationMatch, translationSpelling
+├── themes/undersea/        # Undersea theme implementation
+│   ├── core/          # Theme-specific asset loaders, manifests, types
+│   ├── carrier/       # WordSprite table layer (jellyfish)
+│   ├── roamer/        # Roamer swim zone, simulation, capture (koi)
+│   ├── scenery/       # Seafloor, stones, seaweed
+│   ├── shaders/       # Undersea-specific Skia shaders
+│   ├── ui/            # Tutorial spotlight, loading backdrop
+│   └── exercises/     # Per-mechanic visual layers (bubbles, merge, sentence row, options, match)
+└── Table*.tsx         # Seven public exercise entry components
 ```
+
+Generic terms: **WordSprite** (floating word-display role), **Roamer** (roaming capturable-creature role), **Scenery** (scene background). The undersea theme realises these as jellyfish, koi, and seafloor respectively. See `CONTEXT.md` for the full glossary.
 
 ### State management
 
-zustand stores created via `createUnderseaThemeExerciseStore()` in `core/store/`.
+zustand stores created via `createExerciseStore()` in `core/store/`.
 
 ### Key deps
 

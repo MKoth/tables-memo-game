@@ -1,8 +1,36 @@
 # Lang Tables Learn Game
 
-A React Native app for learning Spanish through undersea-themed interactive exercises — verb conjugation tables and individual vocabulary.
+A React Native app for learning Spanish through interactive exercises — verb conjugation tables and individual vocabulary. The exercise framework is theme-agnostic; the current undersea theme supplies the visuals.
 
 ## Language
+
+### Generic architecture terms
+
+**WordSprite**:
+The generic floating word-display role in the exercise framework. A WordSprite carries a word (a conjugated form, a sentence token, or an option) and renders it as a tappable visual element. The undersea theme realises this role as a jellyfish; another theme could use a rose, a cloud, or any other visual. The name applies to every layer that displays words: table cells, sentence-row tokens, option pickers, and match-field sprites.
+_Avoid_: jellyfish (use only when describing the undersea realisation specifically)
+
+**Roamer**:
+The generic roaming capturable-creature role in the exercise framework. A Roamer free-roams the screen on a simulation layer, can be tapped or captured, and carries a word (typically in the translation-match exercise). The undersea theme realises this role as a koi fish; another theme could use a bird, a butterfly, or any other roaming creature.
+_Avoid_: koi, fish (use only when describing the undersea realisation specifically)
+
+**Scenery**:
+The generic scene-background role in the exercise framework. Scenery fills the visual background behind the exercises. The undersea theme realises this as a seafloor with stones and seaweed; another theme could use a garden, a sky, or any other scene.
+_Avoid_: background, seafloor (use only when describing the undersea realisation specifically)
+
+**Theme**:
+A visual adapter that implements the `Theme` interface and supplies all theme-specific visuals to the generic exercise framework. A theme provides: scenery, WordSprite layers, Roamer layers, word-transformation visuals, round-resolution visuals, tutorial overrides, loading-screen backdrop, shaders, layout config, sound controller, and per-mechanic visual layers. The exercise mechanics program to the `Theme` interface; a theme is the only place that names concrete visual creatures. See `docs/theme-structure-guide.md` for the full contract.
+_Avoid_: UnderseaTheme
+
+**ExerciseShell**:
+The generic top-level wrapper that mounts every exercise. The shell obtains assets through the `Theme` contract, manages the loading screen, tutorial overlay, instruction chrome, and corner controls, and renders the exercise content inside a themed scene. It is theme-agnostic — it never names a concrete visual creature.
+_Avoid_: UnderseaThemeShell, exercise wrapper
+
+**Exercise core**:
+The generic infrastructure shared by all exercises, living under `exercises/core/`: the clock provider, the zustand store factory and provider, the layout engine (zone splitting by orientation), the runtime and layout providers, the bridge types, the asset interface (load phase, ready gate, progress), and the hooks that connect mechanics to visuals. The exercise core never names a theme entity.
+_Avoid_: UnderseaThemeCore
+
+### Domain terms
 
 **Table**:
 A conjugation grid: row headers (pronouns), column headers (infinitives), and body cells (conjugated forms).
@@ -21,11 +49,11 @@ The shared mechanic of turning an infinitive into a conjugated form through lett
 _Avoid_: spelling game, letter puzzle
 
 **Table transformation exercise**:
-An exercise where the learner transforms an infinitive while a full conjugation table is visible as jellyfish; the solved form fills its matching table cell.
+An exercise where the learner transforms an infinitive while a full conjugation table is visible as WordSprites (undersea realisation: jellyfish); the solved form fills its matching table cell.
 _Avoid_: table exercise, grid exercise, word transformation exercise
 
 **Sentence transformation exercise**:
-An exercise where the learner transforms an infinitive while a sentence prompt is visible as a row of jellyfish; round resolution lands a word bubble in the blank-slot footprint, then the round exits and the next prompt appears.
+An exercise where the learner transforms an infinitive while a sentence prompt is visible as a row of WordSprites (undersea realisation: jellyfish); round resolution lands a word bubble in the blank-slot footprint, then the round exits and the next prompt appears.
 _Avoid_: sentence exercise, fill-in-the-blank exercise
 
 **Sentence prompt**:
@@ -33,16 +61,16 @@ A short contextual sentence tied to one table body cell, made of an ordered list
 _Avoid_: sentence, example sentence, fill-in-the-blank
 
 **Blank slot**:
-The single token position in a sentence prompt reserved for the conjugated form. Its layout footprint is fixed at round enter — from the word-bubble diameter in sentence transformation, or from the correct option jellyfish bell diameter in variant selection. A smaller highlighted jellyfish marked with `?` (about 70% of the footprint diameter) sits centered inside that footprint until it exits during resolve. After that exit, the sentence row no longer draws a jellyfish there — the landed word bubble or option jellyfish occupies the footprint through hold until it exits with the row.
+The single token position in a sentence prompt reserved for the conjugated form. Its layout footprint is fixed at round enter — from the word-bubble diameter in sentence transformation, or from the correct option WordSprite bell diameter in variant selection. A smaller highlighted WordSprite marked with `?` (about 70% of the footprint diameter) sits centered inside that footprint until it exits during resolve. After that exit, the sentence row no longer draws a WordSprite there — the landed word bubble or option WordSprite occupies the footprint through hold until it exits with the row.
 _Avoid_: gap, placeholder, underline
 
 **Variant selection exercise**:
-An exercise where the learner selects the correct conjugated form from three option jellyfish (one correct answer and two distractors) displayed below a sentence prompt with a blank slot. No letter manipulation — the learner taps a jellyfish to submit their choice. The selected jellyfish then flies to the blank slot position; distractors exit immediately along their remembered swim-in paths.
+An exercise where the learner selects the correct conjugated form from three option WordSprites (undersea realisation: jellyfish; one correct answer and two distractors) displayed below a sentence prompt with a blank slot. No letter manipulation — the learner taps a WordSprite to submit their choice. The selected WordSprite then flies to the blank slot position; distractors exit immediately along their remembered swim-in paths.
 _Avoid_: multiple choice exercise, picker exercise, quiz
 
-**Option jellyfish**:
-A jellyfish that carries a conjugated form in the variant selection exercise. Three are shown per round: the correct form and two distractor forms from the same infinitive but different pronoun rows. They swim in from offscreen at round enter (same swim-path model as sentence token jellyfish) and sit in the option-zone below the sentence row. On correct selection the chosen one flies to the blank slot; on wrong selection it flashes red and the round waits for another tap.
-_Avoid_: variant jellyfish, choice bubble, answer jellyfish
+**Option WordSprite**:
+A WordSprite that carries a conjugated form in the variant selection exercise. Three are shown per round: the correct form and two distractor forms from the same infinitive but different pronoun rows. They swim in from offscreen at round enter (same swim-path model as sentence token WordSprites) and sit in the option-zone below the sentence row. On correct selection the chosen one flies to the blank slot; on wrong selection it flashes red and the round waits for another tap. The undersea realisation renders these as jellyfish.
+_Avoid_: option jellyfish, variant jellyfish, choice bubble, answer jellyfish
 
 **Distractor forms**:
 The two incorrect conjugated forms shown as distractors in a variant selection exercise round. Selected randomly from the same infinitive column, excluding the target pronoun row.
@@ -53,7 +81,7 @@ One cycle of the sentence transformation or variant selection exercise — from 
 _Avoid_: level, stage, turn
 
 **Round resolution**:
-The animated sequence after the last transformation operation succeeds: metaball merge, immediate swap to a word bubble that materializes (shell grows to full size) at the merge site, that bubble then flies to the blank-slot footprint while the blank jellyfish starts exiting early along its remembered entrance path using the shared row-swim duration (often still leaving after the bubble has landed), resolve completes when the word bubble lands, the landed word bubble holds in the footprint, that bubble pops, then the remaining token jellyfish exit along their remembered paths.
+The animated sequence after the last transformation operation succeeds: metaball merge, immediate swap to a word bubble that materializes (shell grows to full size) at the merge site, that bubble then flies to the blank-slot footprint while the blank WordSprite starts exiting early along its remembered entrance path using the shared row-swim duration (often still leaving after the bubble has landed), resolve completes when the word bubble lands, the landed word bubble holds in the footprint, that bubble pops, then the remaining token WordSprites exit along their remembered paths.
 _Avoid_: completion animation, success sequence
 
 **Metaball merge**:
@@ -77,16 +105,16 @@ The brief round phase after metaball merge where the word bubble replaces the me
 _Avoid_: inflate (reserved for letter-bubble appear), appear, bubble enter
 
 **Round entrance**:
-How the next round arrives after the previous round exits: each jellyfish (sentence tokens, blank slot, and option jellyfish in variant selection) swims in on its own linear path from an offscreen spawn point to its slot. In sentence transformation, the infinitive letter bubbles then inflate. Allowed spawn edges are orientation-gated — portrait: top/left/right (no bottom); landscape: top/bottom/right (no left) — so paths avoid the word-transformation zone. Spawn points are assigned in row order along those edges so trajectories do not cross; the blank slot gets a path like any other. All jellyfish start together and share one enter duration (different path lengths ⇒ different speeds); enter completes when the last arrives. Row exit mirrors that: remaining jellyfish start together, share one exit duration, and exit completes when the last has left; each retraces its entrance path (blank may reverse early during resolve and is not re-exited with the row). For variant selection, the two distractor option jellyfish that did not get selected exit immediately on correct selection. Paths are remembered for the round — a mid-round orientation change may reflow resting slot positions, but does not replan those paths until the next round. The first round of a session uses the same per-jellyfish swim-in.
+How the next round arrives after the previous round exits: each WordSprite (sentence tokens, blank slot, and option WordSprites in variant selection) swims in on its own linear path from an offscreen spawn point to its slot. In sentence transformation, the infinitive letter bubbles then inflate. Allowed spawn edges are orientation-gated — portrait: top/left/right (no bottom); landscape: top/bottom/right (no left) — so paths avoid the word-transformation zone. Spawn points are assigned in row order along those edges so trajectories do not cross; the blank slot gets a path like any other. All WordSprites start together and share one enter duration (different path lengths ⇒ different speeds); enter completes when the last arrives. Row exit mirrors that: remaining WordSprites start together, share one exit duration, and exit completes when the last has left; each retraces its entrance path (blank may reverse early during resolve and is not re-exited with the row). For variant selection, the two distractor option WordSprites that did not get selected exit immediately on correct selection. Paths are remembered for the round — a mid-round orientation change may reflow resting slot positions, but does not replan those paths until the next round. The first round of a session uses the same per-WordSprite swim-in.
 _Avoid_: row transition, sentence intro
 
 **Sentence row**:
-The horizontal (or wrapped) layout of jellyfish showing one sentence prompt, placed in the jelly zone. Token jellyfish use per-slot rolled sizes; the blank slot reserves a footprint sized to the word bubble. One line when the sentence fits; longer sentences wrap to additional lines, with the block centered vertically in the zone.
+The horizontal (or wrapped) layout of WordSprites showing one sentence prompt, placed in the WordSprite zone. Token WordSprites use per-slot rolled sizes; the blank slot reserves a footprint sized to the word bubble. One line when the sentence fits; longer sentences wrap to additional lines, with the block centered vertically in the zone.
 _Avoid_: sentence bar, word strip, jellyfish line
 
-**Decorative koi**:
-Background fish that swim across the full screen without carrying words, accepting taps, or participating in capture or transformation.
-_Avoid_: ambient koi, swimming decoration
+**Decorative Roamer**:
+Background Roamers that swim across the full screen without carrying words, accepting taps, or participating in capture or transformation. The undersea realisation renders these as koi fish.
+_Avoid_: decorative koi, ambient koi, swimming decoration
 
 **Word entry**:
 A single Spanish–English translation pair (`spanish`, `english`). The atomic unit of vocabulary data, analogous to a body cell in conjugation tables.
@@ -97,7 +125,7 @@ A named collection of word entries (`id`, `title`, `words[]`) that serves as the
 _Avoid_: vocabulary list, deck, word set
 
 **Translation choice exercise**:
-A word-learning exercise where the learner sees an English word as letter bubbles in the koi zone and selects the correct Spanish translation from three option jellyfish in the jelly zone. On correct selection the English bubbles pop and the Spanish word inflates in the same koi-zone position (a clean swap); all jellyfish exit simultaneously along their remembered swim-in paths.
+A word-learning exercise where the learner sees an English word as letter bubbles in the Roamer zone and selects the correct Spanish translation from three option WordSprites (undersea realisation: jellyfish) in the WordSprite zone. On correct selection the English bubbles pop and the Spanish word inflates in the same Roamer-zone position (a clean swap); all WordSprites exit simultaneously along their remembered swim-in paths.
 _Avoid_: word variant selection, vocabulary quiz, translation picker
 
 **Translation spelling exercise**:
@@ -105,41 +133,41 @@ A word-learning exercise where the learner sees an English word as letter bubble
 _Avoid_: word transformation, letter spelling, type the word
 
 **Translation match exercise**:
-A word-learning exercise where the learner matches English words (carried by koi) to their Spanish translations (carried by jellyfish) by capturing a koi in a bubble and tapping the corresponding jellyfish. Koi and jellyfish free-roam the whole screen on separate layers and do not collide across species. Session-based: the field persists across match lifecycles; when the last pair has matched and exited, the fanfare plays and the scene goes empty (no auto-reload of a fresh field).
+A word-learning exercise where the learner matches English words (carried by Roamers, undersea realisation: koi) to their Spanish translations (carried by WordSprites, undersea realisation: jellyfish) by capturing a Roamer in a bubble and tapping the corresponding WordSprite. Roamers and WordSprites free-roam the whole screen on separate layers and do not collide across species. Session-based: the field persists across match lifecycles; when the last pair has matched and exited, the fanfare plays and the scene goes empty (no auto-reload of a fresh field).
 _Avoid_: match exercise, vocabulary match, pairing exercise, fish match
 
 **Roaming target**:
-The jellyfish movement model in the translation match exercise: a jellyfish picks a random target point inside the screen zone, swims toward it linearly, and on arrival picks a new one — a chained sequence of A→B swims. Distinct from the koi SWIMMING↔IDLE random-wander sim; gives jellyfish a calm drifting feel that pairs with their cosmetic deform-shader swim cycle. Jelly-vs-jelly separation reuses the koi spatial-hash approach (overlap-weighted heading steer) without sharing the koi state machine.
+The WordSprite movement model in the translation match exercise: a WordSprite picks a random target point inside the screen zone, swims toward it linearly, and on arrival picks a new one — a chained sequence of A→B swims. Distinct from the Roamer SWIMMING↔IDLE random-wander sim; gives WordSprites a calm drifting feel that pairs with their cosmetic deform-shader swim cycle. WordSprite-vs-WordSprite separation reuses the Roamer spatial-hash approach (overlap-weighted heading steer) without sharing the Roamer state machine.
 _Avoid_: jellyfish wander, jellyfish idle swim, drifting jelly
 
 **Capture bubble**:
-The bubble that encloses a captured koi in the translation match exercise, showing the koi's English word as its label. Inflates at the koi's tap position, then travels with the fish inside to the screen center where it settles into idle. On a correct jellyfish match it pops (Escape burst) releasing the fish; on a tap of the bubble itself it pops (Release burst) releasing the fish back to the field. Inverts the table-exercise bubble, which shows the Spanish conjugated form. Renders above jellyfish (high z) so a tap on a spot where the bubble is always pops the bubble, even if a jellyfish is visually under it — the bubble keep-out disk exists to make that case rare.
+The bubble that encloses a captured Roamer in the translation match exercise, showing the Roamer's English word as its label. Inflates at the Roamer's tap position, then travels with the creature inside to the screen center where it settles into idle. On a correct WordSprite match it pops (Escape burst) releasing the creature; on a tap of the bubble itself it pops (Release burst) releasing the creature back to the field. Inverts the table-exercise bubble, which shows the Spanish conjugated form. Renders above WordSprites (high z) so a tap on a spot where the bubble is always pops the bubble, even if a WordSprite is visually under it — the bubble keep-out disk exists to make that case rare.
 _Avoid_: koi bubble, word bubble (reserved for round resolution), selection bubble
 
 **Bubble keep-out disk**:
-A circular region at the capture bubble's idle position (screen center) that jellyfish avoid while the bubble is active. Activated only when the capture bubble reaches idle — not during its inflate or travel phases. Jellyfish roaming-target picking rejects points inside the disk, and separation adds a nudge if a jelly drifts in. Ensures jellyfish stay tappable (the bubble does not occlude them) while a koi is captured. Deactivates when the bubble pops.
+A circular region at the capture bubble's idle position (screen center) that WordSprites avoid while the bubble is active. Activated only when the capture bubble reaches idle — not during its inflate or travel phases. WordSprite roaming-target picking rejects points inside the disk, and separation adds a nudge if a WordSprite drifts in. Ensures WordSprites stay tappable (the bubble does not occlude them) while a Roamer is captured. Deactivates when the bubble pops.
 _Avoid_: bubble exclusion zone, jellyfish avoidance area, bubble shield
 
 **Match field**:
-The set of koi and jellyfish on screen during a translation match exercise session. Strict 1:1 pairing: N koi (each carrying one English word) and N matching jellyfish (each carrying the corresponding Spanish word). No distractor jellyfish — every jellyfish on the field matches exactly one koi on the field. The field persists across match lifecycles; the session ends (fanfare, empty scene) when the last pair has exited.
+The set of Roamers and WordSprites on screen during a translation match exercise session. Strict 1:1 pairing: N Roamers (each carrying one English word) and N matching WordSprites (each carrying the corresponding Spanish word). No distractor WordSprites — every WordSprite on the field matches exactly one Roamer on the field. The field persists across match lifecycles; the session ends (fanfare, empty scene) when the last pair has exited.
 _Avoid_: pool, word set, board, scene population
 
 **Match session word pool**:
-The source of words for a translation match exercise session: all four word lists (`animals`, `food`, `common-verbs`, `household`) merged into one 24-entry pool. Each session samples 8 distinct entries uniformly at random without replacement, with a guard rejecting any sample where two entries share the same Spanish or English string — so string-based matching (captured English → jellyfish Spanish) stays unambiguous and the 1:1 match field is preserved. Category blending is intentional — a session may mix animals, food, verbs, and household items.
+The source of words for a translation match exercise session: all four word lists (`animals`, `food`, `common-verbs`, `household`) merged into one 24-entry pool. Each session samples 8 distinct entries uniformly at random without replacement, with a guard rejecting any sample where two entries share the same Spanish or English string — so string-based matching (captured English → WordSprite Spanish) stays unambiguous and the 1:1 match field is preserved. Category blending is intentional — a session may mix animals, food, verbs, and household items.
 _Avoid_: session deck, match word set, vocabulary pool
 
 **Matched pair**:
-The bookkeeping unit in the translation match exercise: a pair index links a koi to its matching jellyfish (1:1 per the match field). A pair is marked matched at resolve — the moment a correct jellyfish tap confirms the match — not after exit-pair completes. From that point the pair's koi and jellyfish are removed from the sim's movement, collision, and tap hit-tests; their exit animations run as purely cosmetic overlays. The field is cleared when every pair index is matched; the fanfare fires at the resolve of the last pair, before the last exit visuals have finished.
+The bookkeeping unit in the translation match exercise: a pair index links a Roamer to its matching WordSprite (1:1 per the match field). A pair is marked matched at resolve — the moment a correct WordSprite tap confirms the match — not after exit-pair completes. From that point the pair's Roamer and WordSprite are removed from the sim's movement, collision, and tap hit-tests; their exit animations run as purely cosmetic overlays. The field is cleared when every pair index is matched; the fanfare fires at the resolve of the last pair, before the last exit visuals have finished.
 _Avoid_: completed pair, finished pair, resolved pair
 
 **Match lifecycle**:
-The per-pair sequence in the translation match exercise: `capture` (tap a koi → it is enclosed in a bubble showing its English word) → `select` (tap a jellyfish; correct = green glow, wrong = red glow) → `resolve` (bubble pops, fish and jellyfish released) → `exit-pair` (both leave the screen in a random direction and disappear). Multiple match lifecycles can interleave against the persistent field. Distinct from Round, which names the row-based cycle in round-based exercises.
+The per-pair sequence in the translation match exercise: `capture` (tap a Roamer → it is enclosed in a bubble showing its English word) → `select` (tap a WordSprite; correct = green glow, wrong = red glow) → `resolve` (bubble pops, creature and WordSprite released) → `exit-pair` (both leave the screen in a random direction and disappear). Multiple match lifecycles can interleave against the persistent field. Distinct from Round, which names the row-based cycle in round-based exercises.
 
-On a correct match, resolve and exit-pair run as two independent escapes in parallel: the bubble pops (Escape burst, pop sound), the fish swims offscreen from the bubble's center position in its own random direction (directed-escape model), and the jellyfish freezes at its match position, glows green for ~800 ms (reusing the tint-flash preset), then swims offscreen in its own random direction. On a wrong match, the tapped jellyfish flashes red (~800 ms) and the lifecycle waits at `select` for another tap; the bubble stays, the keep-out disk stays active.
+On a correct match, resolve and exit-pair run as two independent escapes in parallel: the bubble pops (Escape burst, pop sound), the creature swims offscreen from the bubble's center position in its own random direction (directed-escape model), and the WordSprite freezes at its match position, glows green for ~800 ms (reusing the tint-flash preset), then swims offscreen in its own random direction. On a wrong match, the tapped WordSprite flashes red (~800 ms) and the lifecycle waits at `select` for another tap; the bubble stays, the keep-out disk stays active.
 _Avoid_: round, turn, pair cycle, match cycle
 
 **Translation choice round controller**:
-The round lifecycle for translation choice: enter (English letter bubbles inflate, option jellyfish swim in), transform (user taps a jellyfish; wrong = red flash), resolve (English bubbles pop, Spanish word inflates, all jellyfish exit along remembered paths), hold (~3 s reading pause), exit (Spanish letter bubbles pop in cascade), advance (brief gap before next round).
+The round lifecycle for translation choice: enter (English letter bubbles inflate, option WordSprites swim in), transform (user taps a WordSprite; wrong = red flash), resolve (English bubbles pop, Spanish word inflates, all WordSprites exit along remembered paths), hold (~3 s reading pause), exit (Spanish letter bubbles pop in cascade), advance (brief gap before next round).
 _Avoid_: translation choice phases, choice lifecycle
 
 **Translation spelling round controller**:
@@ -151,7 +179,7 @@ A dedicated zustand store configuration (`WORD_LEARNING_STORE_CONFIG`) for word-
 _Avoid_: word transformation store config, shared store
 
 **Translation distractor words**:
-The two incorrect Spanish words shown as option jellyfish in translation choice. Drawn from other entries in the same word list, excluding the target entry. The word list must contain at least three entries for a valid round.
+The two incorrect Spanish words shown as option WordSprites in translation choice. Drawn from other entries in the same word list, excluding the target entry. The word list must contain at least three entries for a valid round.
 _Avoid_: wrong translations, decoy words, foil translations
 
 **Translation direction**:
@@ -163,5 +191,5 @@ Accented characters (á, é, í, ó, ú, ñ, ü) are distinct letters in transla
 _Avoid_: accent-insensitive, normalized comparison
 
 **Word prompt row**:
-The English word displayed as letter bubbles in the koi zone for word-learning exercises. In translation spelling, the Spanish word being constructed appears directly below it in the same zone, both centered vertically. The shuffled letter pool sits in the jelly zone below.
+The English word displayed as letter bubbles in the Roamer zone for word-learning exercises. In translation spelling, the Spanish word being constructed appears directly below it in the same zone, both centered vertically. The shuffled letter pool sits in the WordSprite zone below.
 _Avoid_: prompt display, English row, source word
