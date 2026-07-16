@@ -20,6 +20,7 @@ import { BUBBLE_DIAMETER_RATIO, type BubbleSelection } from '../types';
 import { useRoamerCaptureSharedState } from './useRoamerCaptureSharedState';
 import { useRoamerEscapeFlow } from './useRoamerEscapeFlow';
 import { useRoamerRuntimeBridge } from './useRoamerRuntimeBridge';
+import type { RoamerImageKey } from '../../config/roamerFishSettings';
 
 type UseRoamerCaptureFlowParams = {
   words: string[];
@@ -28,8 +29,8 @@ type UseRoamerCaptureFlowParams = {
   roamerRect: ZoneRect;
   orientation: ExerciseOrientation;
   layoutKey: string;
-  images: Record<'roamer1' | 'roamer2' | 'roamer3', SkImage>;
-  masks: Record<'roamer1' | 'roamer2' | 'roamer3', SkImage>;
+  images: Record<RoamerImageKey, SkImage>;
+  masks: Record<RoamerImageKey, SkImage>;
   sounds?: UnderseaThemeSoundController;
   /** When false, fish swim directly to wordSprite without bubble inflate/pop. */
   bubbleCaptureEnabled?: boolean;

@@ -7,7 +7,7 @@ import {
 import type { RoamerImageKey } from '../config/roamerFishSettings';
 import type { RoamerSpawn } from './types';
 
-const ROAMER_IMAGE_KEYS: RoamerImageKey[] = ['roamer1', 'roamer2', 'roamer3'];
+const ROAMER_IMAGE_KEYS: RoamerImageKey[] = ['koi1', 'koi2', 'koi3'];
 
 function pickSpotColor(): readonly [number, number, number] {
   return KOI_SPOT_PALETTE[Math.floor(Math.random() * KOI_SPOT_PALETTE.length)];
@@ -29,7 +29,7 @@ export function createRandomVisualSpawn(): Omit<RoamerSpawn, 'word'> {
     bodyTintStrength: hasBodyTint ? 1 : 0,
     overlayMaskKey: hasOverlay
       ? ROAMER_IMAGE_KEYS[Math.floor(Math.random() * ROAMER_IMAGE_KEYS.length)]
-      : 'roamer1',
+      : 'koi1',
     overlayColor: hasOverlay ? pickSpotColor() : spotColor,
     overlayStrength: hasOverlay ? 1 : 0,
     xRatio: 0.12 + Math.random() * 0.76,

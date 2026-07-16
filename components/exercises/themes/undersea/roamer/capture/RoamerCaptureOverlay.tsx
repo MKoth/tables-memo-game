@@ -4,6 +4,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import { RoamerCapturedFishCanvas } from './RoamerCapturedFishCanvas';
 import { RoamerWordBubble } from '../bubbles/RoamerWordBubble';
 import type { BubbleAnimState, BurstIntentValue } from '../bubbles/bubbleAnimTypes';
+import type { RoamerImageKey } from '../config/roamerFishSettings';
 import type { RoamerFishSimulation } from '../simulation/captureTypes';
 import type { RoamerRuntimeEntry } from '../simulation/types';
 
@@ -16,8 +17,8 @@ type RoamerCaptureOverlayProps = {
   escapeOverlayActive: boolean;
   startBurst: (intent?: BurstIntentValue) => void;
   targetDiameter: number;
-  images: Record<'roamer1' | 'roamer2' | 'roamer3', SkImage>;
-  masks: Record<'roamer1' | 'roamer2' | 'roamer3', SkImage>;
+  images: Record<RoamerImageKey, SkImage>;
+  masks: Record<RoamerImageKey, SkImage>;
   renderProps: RoamerFishSimulation['renderProps'];
 };
 

@@ -8,52 +8,52 @@ export {
 } from './underseaThemeSoundAssets';
 
 export const UNDERSEA_IMAGE_ASSETS = {
-  seafloor: require('../../../../../assets/images/undersea_theme/seafloor/seafloor.png'),
+  seafloor: require('../../../../../../assets/images/undersea_theme/seafloor/seafloor.png'),
   stones: {
-    1: require('../../../../../assets/images/undersea_theme/stones/stone1.png'),
-    2: require('../../../../../assets/images/undersea_theme/stones/stone2.png'),
-    3: require('../../../../../assets/images/undersea_theme/stones/stone3.png'),
-    4: require('../../../../../assets/images/undersea_theme/stones/stone4.png'),
-    5: require('../../../../../assets/images/undersea_theme/stones/stone5.png'),
-    6: require('../../../../../assets/images/undersea_theme/stones/stone6.png'),
-    7: require('../../../../../assets/images/undersea_theme/stones/stone7.png'),
-    8: require('../../../../../assets/images/undersea_theme/stones/stone8.png'),
-    9: require('../../../../../assets/images/undersea_theme/stones/stone9.png'),
-    starfish1: require('../../../../../assets/images/undersea_theme/stones/starfish1.png'),
-    starfish2: require('../../../../../assets/images/undersea_theme/stones/starfish2.png'),
-    starfish3: require('../../../../../assets/images/undersea_theme/stones/starfish3.png'),
-    seashell1: require('../../../../../assets/images/undersea_theme/stones/seashell1.png'),
-    seashell2: require('../../../../../assets/images/undersea_theme/stones/seashell2.png'),
-    seashell3: require('../../../../../assets/images/undersea_theme/stones/seashell3.png'),
-    seashell4: require('../../../../../assets/images/undersea_theme/stones/seashell4.png'),
-    seashell5: require('../../../../../assets/images/undersea_theme/stones/seashell5.png'),
+    1: require('../../../../../../assets/images/undersea_theme/stones/stone1.png'),
+    2: require('../../../../../../assets/images/undersea_theme/stones/stone2.png'),
+    3: require('../../../../../../assets/images/undersea_theme/stones/stone3.png'),
+    4: require('../../../../../../assets/images/undersea_theme/stones/stone4.png'),
+    5: require('../../../../../../assets/images/undersea_theme/stones/stone5.png'),
+    6: require('../../../../../../assets/images/undersea_theme/stones/stone6.png'),
+    7: require('../../../../../../assets/images/undersea_theme/stones/stone7.png'),
+    8: require('../../../../../../assets/images/undersea_theme/stones/stone8.png'),
+    9: require('../../../../../../assets/images/undersea_theme/stones/stone9.png'),
+    starfish1: require('../../../../../../assets/images/undersea_theme/stones/starfish1.png'),
+    starfish2: require('../../../../../../assets/images/undersea_theme/stones/starfish2.png'),
+    starfish3: require('../../../../../../assets/images/undersea_theme/stones/starfish3.png'),
+    seashell1: require('../../../../../../assets/images/undersea_theme/stones/seashell1.png'),
+    seashell2: require('../../../../../../assets/images/undersea_theme/stones/seashell2.png'),
+    seashell3: require('../../../../../../assets/images/undersea_theme/stones/seashell3.png'),
+    seashell4: require('../../../../../../assets/images/undersea_theme/stones/seashell4.png'),
+    seashell5: require('../../../../../../assets/images/undersea_theme/stones/seashell5.png'),
   },
   seaweed: {
-    1: require('../../../../../assets/images/undersea_theme/seaweed/seaweed1.png'),
-    2: require('../../../../../assets/images/undersea_theme/seaweed/seaweed2.png'),
-    3: require('../../../../../assets/images/undersea_theme/seaweed/seaweed3.png'),
-    4: require('../../../../../assets/images/undersea_theme/seaweed/seaweed4.png'),
-    5: require('../../../../../assets/images/undersea_theme/seaweed/seaweed5.png'),
-    6: require('../../../../../assets/images/undersea_theme/seaweed/seaweed6.png'),
+    1: require('../../../../../../assets/images/undersea_theme/seaweed/seaweed1.png'),
+    2: require('../../../../../../assets/images/undersea_theme/seaweed/seaweed2.png'),
+    3: require('../../../../../../assets/images/undersea_theme/seaweed/seaweed3.png'),
+    4: require('../../../../../../assets/images/undersea_theme/seaweed/seaweed4.png'),
+    5: require('../../../../../../assets/images/undersea_theme/seaweed/seaweed5.png'),
+    6: require('../../../../../../assets/images/undersea_theme/seaweed/seaweed6.png'),
   },
-  roamer: {
-    roamer1: require('../../../../../assets/images/undersea_theme/roamer/roamer1.png'),
-    roamer2: require('../../../../../assets/images/undersea_theme/roamer/roamer2.png'),
-    roamer3: require('../../../../../assets/images/undersea_theme/roamer/roamer3.png'),
+  koi: {
+    koi1: require('../../../../../../assets/images/undersea_theme/koi/koi1.png'),
+    koi2: require('../../../../../../assets/images/undersea_theme/koi/koi2.png'),
+    koi3: require('../../../../../../assets/images/undersea_theme/koi/koi3.png'),
   },
-  roamerMasks: {
-    roamer1: require('../../../../../assets/images/undersea_theme/roamer/masks/roamer1-mask.png'),
-    roamer2: require('../../../../../assets/images/undersea_theme/roamer/masks/roamer2-mask.png'),
-    roamer3: require('../../../../../assets/images/undersea_theme/roamer/masks/roamer3-mask.png'),
+  koiMasks: {
+    koi1: require('../../../../../../assets/images/undersea_theme/koi/masks/koi1-mask.png'),
+    koi2: require('../../../../../../assets/images/undersea_theme/koi/masks/koi2-mask.png'),
+    koi3: require('../../../../../../assets/images/undersea_theme/koi/masks/koi3-mask.png'),
   },
-  wordSpriteBell: require('../../../../../assets/images/undersea_theme/wordSprite/wordSprite-bell.png'),
-  wordSpriteTentacles: require('../../../../../assets/images/undersea_theme/wordSprite/wordSprite-tentacles.png'),
-  bubble: require('../../../../../assets/images/undersea_theme/bubble/bubble.png'),
+  jellyfishBell: require('../../../../../../assets/images/undersea_theme/jellyfish/jellyfish-bell.png'),
+  jellyfishTentacles: require('../../../../../../assets/images/undersea_theme/jellyfish/jellyfish-tentacles.png'),
+  bubble: require('../../../../../../assets/images/undersea_theme/bubble/bubble.png'),
 } as const;
 
 export type StoneVariant = keyof typeof UNDERSEA_IMAGE_ASSETS.stones;
 export type SeaweedVariant = keyof typeof UNDERSEA_IMAGE_ASSETS.seaweed;
-export type RoamerImageKey = keyof typeof UNDERSEA_IMAGE_ASSETS.roamer;
+export type RoamerImageKey = keyof typeof UNDERSEA_IMAGE_ASSETS.koi;
 
 export type UnderseaThemeImages = {
   seafloor: SkImage;
@@ -74,8 +74,8 @@ type ImageLoadEntry = {
 export const UNDERSEA_PRIORITY_IMAGE_SOURCE = UNDERSEA_IMAGE_ASSETS.seafloor;
 
 export const UNDERSEA_BULK_IMAGE_ENTRIES: ImageLoadEntry[] = [
-  { key: 'wordSpriteBell', source: UNDERSEA_IMAGE_ASSETS.wordSpriteBell },
-  { key: 'wordSpriteTentacles', source: UNDERSEA_IMAGE_ASSETS.wordSpriteTentacles },
+  { key: 'wordSpriteBell', source: UNDERSEA_IMAGE_ASSETS.jellyfishBell },
+  { key: 'wordSpriteTentacles', source: UNDERSEA_IMAGE_ASSETS.jellyfishTentacles },
   { key: 'bubble', source: UNDERSEA_IMAGE_ASSETS.bubble },
 ];
 
@@ -108,25 +108,28 @@ export const UNDERSEA_SEAWEED_SOURCES: Array<[SeaweedVariant, number]> = [
   [6, UNDERSEA_IMAGE_ASSETS.seaweed[6]],
 ];
 
-export const UNDERSEA_ROAMER_SOURCES: Array<[RoamerImageKey, number]> = [
-  ['roamer1', UNDERSEA_IMAGE_ASSETS.roamer.roamer1],
-  ['roamer2', UNDERSEA_IMAGE_ASSETS.roamer.roamer2],
-  ['roamer3', UNDERSEA_IMAGE_ASSETS.roamer.roamer3],
+export const UNDERSEA_KOI_SOURCES: Array<[RoamerImageKey, number]> = [
+  ['koi1', UNDERSEA_IMAGE_ASSETS.koi.koi1],
+  ['koi2', UNDERSEA_IMAGE_ASSETS.koi.koi2],
+  ['koi3', UNDERSEA_IMAGE_ASSETS.koi.koi3],
 ];
 
-export const UNDERSEA_ROAMER_MASK_SOURCES: Array<[RoamerImageKey, number]> = [
-  ['roamer1', UNDERSEA_IMAGE_ASSETS.roamerMasks.roamer1],
-  ['roamer2', UNDERSEA_IMAGE_ASSETS.roamerMasks.roamer2],
-  ['roamer3', UNDERSEA_IMAGE_ASSETS.roamerMasks.roamer3],
+export const UNDERSEA_KOI_MASK_SOURCES: Array<[RoamerImageKey, number]> = [
+  ['koi1', UNDERSEA_IMAGE_ASSETS.koiMasks.koi1],
+  ['koi2', UNDERSEA_IMAGE_ASSETS.koiMasks.koi2],
+  ['koi3', UNDERSEA_IMAGE_ASSETS.koiMasks.koi3],
 ];
+
+export const UNDERSEA_ROAMER_SOURCES = UNDERSEA_KOI_SOURCES;
+export const UNDERSEA_ROAMER_MASK_SOURCES = UNDERSEA_KOI_MASK_SOURCES;
 
 export const UNDERSEA_IMAGE_COUNT =
   1 +
   UNDERSEA_BULK_IMAGE_ENTRIES.length +
   UNDERSEA_STONE_SOURCES.length +
   UNDERSEA_SEAWEED_SOURCES.length +
-  UNDERSEA_ROAMER_SOURCES.length +
-  UNDERSEA_ROAMER_MASK_SOURCES.length;
+  UNDERSEA_KOI_SOURCES.length +
+  UNDERSEA_KOI_MASK_SOURCES.length;
 
 /** Individual sound files loaded during preload (waterflow + 4 splashes + 6 SFX). */
 export const UNDERSEA_SOUND_COUNT = 11;

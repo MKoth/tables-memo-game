@@ -26,6 +26,6 @@ export type FinSideSpawn = {
   initialPhase: number;
 };
 
-export type RoamerImageKey = 'roamer1' | 'roamer2' | 'roamer3';
+export type RoamerImageKey = 'koi1' | 'koi2' | 'koi3';
 
 export type RoamerSharedSettings = typeof ROAMER_SETTINGS;
