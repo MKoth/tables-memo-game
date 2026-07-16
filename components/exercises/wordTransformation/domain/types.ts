@@ -26,7 +26,7 @@ export type DiffOp =
 export type WordOperationSequence = {
   rowIndex: number;
   colIndex: number;
-  /** Flat jellyfish cell index of the target body cell. */
+  /** Flat wordSprite cell index of the target body cell. */
   cellIndex: number;
   baseWord: string;
   targetWord: string;

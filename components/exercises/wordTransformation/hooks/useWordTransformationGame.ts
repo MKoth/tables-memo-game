@@ -64,7 +64,7 @@ function shuffleIndices(count: number): number[] {
 
 export type UseWordTransformationGameParams = {
   table: TableData;
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   /** Fired when a cell's transformation is finished, before advancing. */
   onSequenceSolved?: (sequence: WordOperationSequence) => void;
   onAllSolved?: () => void;
@@ -75,7 +75,7 @@ export type UseWordTransformationGameParams = {
 
 export function useWordTransformationGame({
   table,
-  koiRect,
+  roamerRect,
   onSequenceSolved,
   onAllSolved,
   playPop,
@@ -110,7 +110,7 @@ export function useWordTransformationGame({
     handleVariantPress: handleVariantPressUnguarded,
     loadSequence,
   } = useWordTransformationCoreBridge({
-    koiRect,
+    roamerRect,
     sequence,
     sequenceKey: orderPos,
     playPop,

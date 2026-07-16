@@ -7,7 +7,7 @@ import type {
 } from './types';
 
 /**
- * Flat jellyfish cell index for a body cell.
+ * Flat wordSprite cell index for a body cell.
  * Cell configs are built as: all column headers, then all row headers, then
  * body cells in row-major order (see createCellConfigs).
  */

@@ -22,7 +22,7 @@ import {
   type TranslationChoiceRoundPhase,
 } from '../domain';
 
-export type OptionJellyfishState = {
+export type OptionWordSpriteState = {
   form: string;
   isCorrect: boolean;
   index: number;
@@ -35,9 +35,9 @@ export type TranslationChoiceGame = {
   spanishLetters: LetterBubbleModel[];
   roundPos: number;
   optionSwimPaths: SwimPath[];
-  options: OptionJellyfishState[];
+  options: OptionWordSpriteState[];
   correctOptionIndex: number;
-  handleOptionTap: (option: OptionJellyfishState) => void;
+  handleOptionTap: (option: OptionWordSpriteState) => void;
 };
 
 export type UseTranslationChoiceGameParams = {
@@ -45,7 +45,7 @@ export type UseTranslationChoiceGameParams = {
   orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   jellyRect: ZoneRect;
   playSuccess?: () => void;
   playWrong?: () => void;
@@ -56,7 +56,7 @@ export function useTranslationChoiceGame({
   orientation,
   screenWidth,
   screenHeight,
-  koiRect,
+  roamerRect,
   jellyRect,
   playSuccess,
   playWrong,
@@ -72,9 +72,9 @@ export function useTranslationChoiceGame({
   const [englishCascadeOrder, setEnglishCascadeOrder] = useState<number[]>([]);
   const [spanishCascadeOrder, setSpanishCascadeOrder] = useState<number[]>([]);
   const roundRef = useRef<ReturnType<typeof createTranslationChoiceRoundController> | null>(null);
-  const koiRectRef = useRef(koiRect);
+  const roamerRectRef = useRef(roamerRect);
   const jellyRectRef = useRef(jellyRect);
-  koiRectRef.current = koiRect;
+  roamerRectRef.current = roamerRect;
   jellyRectRef.current = jellyRect;
   const playSuccessRef = useRef(playSuccess);
   playSuccessRef.current = playSuccess;
@@ -97,7 +97,7 @@ export function useTranslationChoiceGame({
       : roundOrder[roundSnapshot.roundPos] ?? -1;
   const currentRound = currentRoundIndex >= 0 ? rounds[currentRoundIndex] ?? null : null;
 
-  const options = useMemo<OptionJellyfishState[]>(() => {
+  const options = useMemo<OptionWordSpriteState[]>(() => {
     if (currentRound == null) return [];
     return currentRound.options.map((opt, index) => ({
       form: opt.form,
@@ -114,8 +114,8 @@ export function useTranslationChoiceGame({
     if (count === 0) {
       return { diameter: 0, rowY: 0, centers: [] };
     }
-    return computeLetterLayout(koiRect, count, 0.5);
-  }, [currentRound?.options.length, koiRect]);
+    return computeLetterLayout(roamerRect, count, 0.5);
+  }, [currentRound?.options.length, roamerRect]);
 
   const optionSwimPaths = useMemo<SwimPath[]>(() => {
     if (optionLayout.centers.length === 0) return [];
@@ -127,10 +127,10 @@ export function useTranslationChoiceGame({
       orientation,
       screenWidth,
       screenHeight,
-      jellyRect: koiRect,
+      jellyRect: roamerRect,
       slotCenters,
     });
-  }, [orientation, screenWidth, screenHeight, koiRect, optionLayout.centers, optionLayout.rowY]);
+  }, [orientation, screenWidth, screenHeight, roamerRect, optionLayout.centers, optionLayout.rowY]);
 
   const englishLetters = useMemo<LetterBubbleModel[]>(() => {
     if (currentRound == null) return [];
@@ -255,7 +255,7 @@ export function useTranslationChoiceGame({
   }, [roundSnapshot.phase, currentRound, syncRoundSnapshot]);
 
   const handleOptionTap = useCallback(
-    (option: OptionJellyfishState) => {
+    (option: OptionWordSpriteState) => {
       if (roundSnapshot.phase !== 'transform') return;
       if (option.isCorrect) {
         playSuccessRef.current?.();

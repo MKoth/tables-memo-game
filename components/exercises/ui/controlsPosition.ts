@@ -64,16 +64,16 @@ export function computeInstructionBarPosition(
   top: number;
   width: number;
 } {
-  const { koiRect } = layout;
+  const { roamerRect } = layout;
   const horizontalMargin = INSTRUCTION_BAR_HORIZONTAL_MARGIN + insets.left;
-  const width = Math.max(0, koiRect.w - horizontalMargin * 2);
+  const width = Math.max(0, roamerRect.w - horizontalMargin * 2);
   const top = Math.max(
-    koiRect.y + 12,
-    koiRect.y + koiRect.h - 88 - INSTRUCTION_BAR_BOTTOM_MARGIN - insets.bottom,
+    roamerRect.y + 12,
+    roamerRect.y + roamerRect.h - 88 - INSTRUCTION_BAR_BOTTOM_MARGIN - insets.bottom,
   );
 
   return {
-    left: koiRect.x + horizontalMargin,
+    left: roamerRect.x + horizontalMargin,
     top,
     width,
   };

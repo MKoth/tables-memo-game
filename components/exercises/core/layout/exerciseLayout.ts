@@ -1,10 +1,10 @@
 import type { SentencePromptDisplaySlot } from '../../sentenceTransformation/domain/types';
 import type { ZoneRect } from './computeExerciseLayout';
 import {
-  computeJellyfishFontScale,
+  computeWordSpriteFontScale,
   rollBodyTint,
   sr,
-} from '../../UnderseaTheme/jellyfish/jellyfishVisualTokens';
+} from '../../themes/undersea/carrier/wordSpriteVisualTokens';
 
 const MIN_DIAMETER = 34;
 const MAX_DIAMETER = 74;
@@ -14,11 +14,11 @@ const POOL_MIN_DIAMETER = 45;
 const POOL_MAX_COLUMNS = 6;
 const POOL_ROW_GAP_RATIO = 0.3;
 
-/** Vertical placement of the current-word bubble row inside the koi zone. */
+/** Vertical placement of the current-word bubble row inside the roamer zone. */
 export const TRANSFORMATION_WORD_ROW_Y_RATIO = 0.2;
-/** Vertical placement of the insert-variant bubble row inside the koi zone. */
+/** Vertical placement of the insert-variant bubble row inside the roamer zone. */
 export const TRANSFORMATION_VARIANT_ROW_Y_RATIO = 0.65;
-/** Vertical placement of pool letter bubbles inside the koi zone. */
+/** Vertical placement of pool letter bubbles inside the roamer zone. */
 export const POOL_ROW_Y_RATIO = 0.5;
 
 export type LetterLayout = {
@@ -28,29 +28,29 @@ export type LetterLayout = {
 };
 
 export function computeLetterLayout(
-  koiRect: ZoneRect,
+  roamerRect: ZoneRect,
   count: number,
   rowYRatio = TRANSFORMATION_WORD_ROW_Y_RATIO,
   opts?: { gapRatio?: number; minDiameter?: number },
 ): LetterLayout {
-  const rowY = koiRect.y + koiRect.h * rowYRatio;
+  const rowY = roamerRect.y + roamerRect.h * rowYRatio;
   if (count <= 0) {
     return { diameter: MIN_DIAMETER, rowY, centers: [] };
   }
 
   const gapRatio = opts?.gapRatio ?? GAP_RATIO;
   const minDiameter = opts?.minDiameter ?? MIN_DIAMETER;
-  const maxRowWidth = koiRect.w * 0.9;
+  const maxRowWidth = roamerRect.w * 0.9;
   const denom = count + (count - 1) * gapRatio;
   const widthLimited = maxRowWidth / denom;
-  const heightLimited = koiRect.h * 0.18;
+  const heightLimited = roamerRect.h * 0.18;
   const diameter = Math.max(
     minDiameter,
     Math.min(MAX_DIAMETER, widthLimited, heightLimited),
   );
   const gap = diameter * gapRatio;
   const total = count * diameter + (count - 1) * gap;
-  const startX = koiRect.x + koiRect.w * 0.5 - total * 0.5;
+  const startX = roamerRect.x + roamerRect.w * 0.5 - total * 0.5;
 
   const centers = Array.from(
     { length: count },
@@ -71,18 +71,18 @@ export type PoolLetterLayout = {
 };
 
 export function computePoolLetterLayout(
-  koiRect: ZoneRect,
+  roamerRect: ZoneRect,
   count: number,
 ): PoolLetterLayout {
   if (count <= 0) {
     return { diameter: POOL_MIN_DIAMETER, positions: [] };
   }
 
-  const maxRowWidth = koiRect.w * 0.9;
+  const maxRowWidth = roamerRect.w * 0.9;
   const maxColumns = Math.min(count, POOL_MAX_COLUMNS);
   const denom = maxColumns + (maxColumns - 1) * POOL_GAP_RATIO;
   const widthLimited = maxRowWidth / denom;
-  const heightLimited = (koiRect.h * 0.7) / Math.ceil(count / maxColumns);
+  const heightLimited = (roamerRect.h * 0.7) / Math.ceil(count / maxColumns);
   const diameter = Math.max(
     POOL_MIN_DIAMETER,
     Math.min(MAX_DIAMETER, widthLimited, heightLimited),
@@ -92,7 +92,7 @@ export function computePoolLetterLayout(
 
   const rows = Math.ceil(count / maxColumns);
   const totalBlockHeight = rows * rowHeight - diameter * POOL_ROW_GAP_RATIO;
-  const blockCenterY = koiRect.y + koiRect.h * POOL_ROW_Y_RATIO;
+  const blockCenterY = roamerRect.y + roamerRect.h * POOL_ROW_Y_RATIO;
 
   const positions: PoolLetterPosition[] = [];
   for (let i = 0; i < count; i++) {
@@ -100,7 +100,7 @@ export function computePoolLetterLayout(
     const col = i % maxColumns;
     const lettersInRow = Math.min(maxColumns, count - row * maxColumns);
     const rowWidth = lettersInRow * diameter + (lettersInRow - 1) * gap;
-    const rowStartX = koiRect.x + koiRect.w * 0.5 - rowWidth * 0.5;
+    const rowStartX = roamerRect.x + roamerRect.w * 0.5 - rowWidth * 0.5;
     const centerX = rowStartX + col * (diameter + gap) + diameter * 0.5;
     const centerY = blockCenterY - totalBlockHeight * 0.5 + row * rowHeight + diameter * 0.5;
     positions.push({ centerX, centerY });
@@ -148,7 +148,7 @@ export type SentenceSlotConfig = {
 export type SentenceRowLayoutInput = {
   slots: SentencePromptDisplaySlot[];
   jellyRect: ZoneRect;
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   conjugatedForm: string;
   roundPos: number;
 };
@@ -186,9 +186,9 @@ function estimateSlotWidth(
   return Math.max(bellSize, textWidth) + SLOT_GAP;
 }
 
-/** Lay out sentence row jellyfish horizontally with line wrapping, vertically centered. */
+/** Lay out sentence row wordSprite horizontally with line wrapping, vertically centered. */
 export function computeSentenceRowLayout(input: SentenceRowLayoutInput): SentenceRowLayout {
-  const { slots, jellyRect, koiRect, conjugatedForm, roundPos } = input;
+  const { slots, jellyRect, roamerRect, conjugatedForm, roundPos } = input;
   const zoneLeft = jellyRect.x;
   const zoneTop = jellyRect.y;
   const zoneWidth = jellyRect.w;
@@ -212,10 +212,10 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
     BODY_BELL_SIZE_MIN,
     BODY_BELL_SIZE_MAX,
   );
-  const fontScale = computeJellyfishFontScale(baseBellSize);
+  const fontScale = computeWordSpriteFontScale(baseBellSize);
 
   // Blank footprint diameter: pack the conjugated form at the letter-bubble size for that length
-  const letterLayout = computeLetterLayout(koiRect, conjugatedForm.length);
+  const letterLayout = computeLetterLayout(roamerRect, conjugatedForm.length);
   const gap = letterLayout.diameter * GAP_RATIO;
   const naturalWidth =
     conjugatedForm.length > 0
@@ -324,7 +324,7 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
 export function blankSlotCenter(
   slots: SentencePromptDisplaySlot[],
   jellyRect: ZoneRect,
-  koiRect: ZoneRect,
+  roamerRect: ZoneRect,
   conjugatedForm: string,
   roundPos: number,
 ): { x: number; y: number; bellSize: number; footprintDiameter: number } | null {
@@ -336,7 +336,7 @@ export function blankSlotCenter(
   const layout = computeSentenceRowLayout({
     slots,
     jellyRect,
-    koiRect,
+    roamerRect,
     conjugatedForm,
     roundPos,
   });
@@ -361,28 +361,28 @@ export type RoundResolutionFlightLayout = {
 export type RoundResolutionFlightInput = {
   slots: SentencePromptDisplaySlot[];
   jellyRect: ZoneRect;
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   conjugatedForm: string;
   roundPos: number;
 };
 
-/** Fly-from (koi letter row) and fly-to (blank slot) geometry for round resolve phase. */
+/** Fly-from (roamer letter row) and fly-to (blank slot) geometry for round resolve phase. */
 export function computeRoundResolutionFlight(
   input: RoundResolutionFlightInput,
 ): RoundResolutionFlightLayout | null {
-  const { slots, jellyRect, koiRect, conjugatedForm, roundPos } = input;
-  const blank = blankSlotCenter(slots, jellyRect, koiRect, conjugatedForm, roundPos);
+  const { slots, jellyRect, roamerRect, conjugatedForm, roundPos } = input;
+  const blank = blankSlotCenter(slots, jellyRect, roamerRect, conjugatedForm, roundPos);
   if (blank == null) {
     return null;
   }
 
-  const letterLayout = computeLetterLayout(koiRect, conjugatedForm.length);
+  const letterLayout = computeLetterLayout(roamerRect, conjugatedForm.length);
   const fromCenterX =
     letterLayout.centers.length > 0
       ? (letterLayout.centers[0]! +
           letterLayout.centers[letterLayout.centers.length - 1]!) *
         0.5
-      : koiRect.x + koiRect.w * 0.5;
+      : roamerRect.x + roamerRect.w * 0.5;
 
   return {
     fromCenterX,

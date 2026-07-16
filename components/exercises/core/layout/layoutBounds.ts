@@ -10,9 +10,9 @@ export type LayoutBounds = {
   zoneTop: number;
   /** Height of the layout zone in px. */
   zoneHeight: number;
-  /** Jellyfish/tentacle scale when packed tight (overlap). */
+  /** WordSprite/tentacle scale when packed tight (overlap). */
   scaleMin: number;
-  /** Jellyfish/tentacle scale when spread apart. */
+  /** WordSprite/tentacle scale when spread apart. */
   scaleMax: number;
   /** How strongly edges compress toward overlap (0 = uniform, 1 = max squeeze at edges). */
   edgeSqueeze: number;

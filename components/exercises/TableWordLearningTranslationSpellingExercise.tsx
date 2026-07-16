@@ -1,5 +1,5 @@
 import React from 'react';
-import { UnderseaThemeWordLearningTranslationSpellingExercise } from './UnderseaTheme';
+import { UnderseaThemeWordLearningTranslationSpellingExercise } from './themes/undersea';
 
 export function TableWordLearningTranslationSpellingExercise() {
   return <UnderseaThemeWordLearningTranslationSpellingExercise />;

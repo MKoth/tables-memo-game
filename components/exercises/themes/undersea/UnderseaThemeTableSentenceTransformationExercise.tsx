@@ -1,0 +1,182 @@
+import React, { useCallback, useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { spanishPresentTable2Plural } from '../../../../data/tableData';
+import { UnderseaThemeScenery } from './scenery';
+import {
+  ExerciseClockProvider,
+  ExerciseRuntimeProvider,
+  WORD_TRANSFORMATION_STORE_CONFIG,
+  useExerciseLayout,
+  useExerciseStore,
+} from '../../core';
+import { useUnderseaThemeAssetsContext } from './core/providers/UnderseaThemeAssetsProvider';
+import {
+  TRANSFORMATION_VARIANT_ROW_Y_RATIO,
+  TRANSFORMATION_WORD_ROW_Y_RATIO,
+} from '../../core/layout/exerciseLayout';
+import type { UnderseaThemeSoundController } from './core/assets/useUnderseaThemeSounds';
+import { DecorativeRoamerLayer } from './roamer/DecorativeRoamerLayer/DecorativeRoamerLayer';
+import { ExerciseShell } from '../../shared';
+import { TransformationInstructionBar, ExerciseCornerControls } from '../../ui';
+import { TransformationBubbleLayer } from './exercises/wordTransformation';
+import { WordSpriteSentenceRowLayer } from './exercises/sentenceTransformation/components/WordSpriteSentenceRowLayer/WordSpriteSentenceRowLayer';
+import { TransformationRoundResolutionBubble } from './exercises/sentenceTransformation/components/TransformationRoundResolutionBubble';
+import { useSentenceTransformationGame } from '../../sentenceTransformation/hooks/useSentenceTransformationGame';
+
+/** Behind sentence row and bubbles per PRD z-order. */
+const DECORATIVE_ROAMER_Z = 2;
+const SENTENCE_ROW_LAYER_Z = 5;
+/** Above decorative roamer so letter bubbles stay readable and tappable. */
+const BUBBLE_LAYER_Z = 15;
+
+type SentenceTransformationContentProps = {
+  sounds: UnderseaThemeSoundController;
+};
+
+function SentenceTransformationContent({ sounds }: SentenceTransformationContentProps) {
+  const table = spanishPresentTable2Plural;
+  const soundEnabled = useExerciseStore((state) => state.soundEnabled);
+
+  const { roamerRect, jellyRect, orientation, screenWidth, screenHeight } = useExerciseLayout();
+
+  useEffect(() => {
+    sounds.startWaterflow();
+    return () => {
+      sounds.stopWaterflow();
+    };
+  }, [sounds]);
+
+  useEffect(() => {
+    sounds.setMuted(!soundEnabled);
+  }, [sounds, soundEnabled]);
+
+  const handleTokenTap = useCallback(() => {
+    sounds.playPrimaryClick();
+  }, [sounds]);
+
+  const game = useSentenceTransformationGame({
+    table,
+    orientation,
+    screenWidth,
+    screenHeight,
+    roamerRect,
+    jellyRect,
+    playPop: sounds.playBubblePop,
+    playInflate: sounds.playBubbleInflate,
+    playWrong: sounds.playWrongClick,
+    playSuccess: sounds.playSuccessClick,
+  });
+
+  const instructionCenterY =
+    roamerRect.y +
+    roamerRect.h *
+      ((TRANSFORMATION_WORD_ROW_Y_RATIO + TRANSFORMATION_VARIANT_ROW_Y_RATIO) * 0.5);
+
+  return (
+    <View style={styles.container}>
+      <UnderseaThemeScenery />
+      <DecorativeRoamerLayer zIndex={DECORATIVE_ROAMER_Z} />
+      <View style={styles.sentenceRowLayer} pointerEvents="box-none">
+        <WordSpriteSentenceRowLayer
+          displaySlots={game.displaySlots}
+          conjugatedForm={game.conjugatedForm}
+          roundPos={game.roundPos}
+          roundPhase={game.roundPhase}
+          swimPaths={game.swimPaths}
+          blankSlotIndex={game.blankSlotIndex}
+          blankExiting={game.blankExiting}
+          poppingSlotIndex={game.poppingSlotIndex}
+          onTokenTap={handleTokenTap}
+          onRowEnterComplete={game.handleRowEnterComplete}
+          onRowExitComplete={game.handleRowExitComplete}
+        />
+      </View>
+      <View style={styles.bubbleLayer} pointerEvents="box-none">
+        <TransformationBubbleLayer
+          wordBubblesVisible={!game.isCompleted}
+          mergeWord={game.mergeWord}
+          onMergeComplete={game.handleMergeComplete}
+          betweenWordBubblesAndInsertFlight={
+            !game.isCompleted ? (
+              <TransformationRoundResolutionBubble
+                bubble={game.resolutionBubble}
+                roundPhase={game.roundPhase}
+                translation={game.bubbleTranslation}
+                onMaterializeComplete={game.handleMaterializeComplete}
+                onResolveComplete={game.handleResolveComplete}
+                onPopComplete={game.handlePopComplete}
+              />
+            ) : undefined
+          }
+          letters={game.letters}
+          lettersInteractive={
+            !game.transitioning &&
+            game.insertAnimation == null &&
+            game.bubbleEnter == null
+          }
+          insertAnimation={game.insertAnimation}
+          variantPickerVisible={
+            (game.mode === 'insert' || game.insertAnimation != null) &&
+            !game.transitioning &&
+            game.bubbleEnter == null
+          }
+          variantPickerInteractive={game.insertAnimation == null}
+          variantPickerItems={game.variantPickerItems}
+          wrongItemId={game.wrongItemId}
+          pickerHiddenItemIds={game.pickerHiddenItemIds}
+          poppedPickerItemIds={game.poppedPickerItemIds}
+          onLetterPress={game.handleLetterPress}
+          onVariantSelect={game.handleVariantPress}
+          playPop={sounds.playBubblePop}
+          playInflate={sounds.playBubbleInflate}
+        />
+      </View>
+      <TransformationInstructionBar
+        message={game.instruction}
+        centerY={instructionCenterY}
+      />
+      <ExerciseCornerControls helpVisible={false} />
+    </View>
+  );
+}
+
+function SentenceTransformationContentWithSounds() {
+  const { sounds } = useUnderseaThemeAssetsContext();
+  return (
+    <ExerciseRuntimeProvider>
+      <ExerciseClockProvider>
+        <SentenceTransformationContent sounds={sounds} />
+      </ExerciseClockProvider>
+    </ExerciseRuntimeProvider>
+  );
+}
+
+export function UnderseaThemeTableSentenceTransformationExercise() {
+  return (
+    <ExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
+      <SentenceTransformationContentWithSounds />
+    </ExerciseShell>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  sentenceRowLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: SENTENCE_ROW_LAYER_Z,
+  },
+  bubbleLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: BUBBLE_LAYER_Z,
+  },
+});

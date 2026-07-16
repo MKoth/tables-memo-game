@@ -3,18 +3,18 @@ export {
   type SampleMatchSessionOptions,
 } from './sampleMatchSession';
 export {
-  JELLYFISH_ARRIVAL_THRESHOLD,
-  JELLYFISH_SEPARATION_RADIUS,
-  JELLYFISH_SEPARATION_STEER,
-  JELLYFISH_SPEED,
-  JELLYFISH_SPEED_VARIANCE,
+  WORD_SPRITE_ARRIVAL_THRESHOLD,
+  WORD_SPRITE_SEPARATION_RADIUS,
+  WORD_SPRITE_SEPARATION_STEER,
+  WORD_SPRITE_SPEED,
+  WORD_SPRITE_SPEED_VARIANCE,
   pickRoamingTarget,
-  stepJellyfish,
-  type JellyfishState,
+  stepWordSprite,
+  type WordSpriteState,
   type KeepOutDisk,
   type RoamingTarget,
   type Zone,
-} from './jellyfishRoaming';
+} from './wordSpriteRoaming';
 export {
   createMatchSessionController,
   type MatchSessionController,

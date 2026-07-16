@@ -9,20 +9,20 @@ import {
 } from '../exerciseLayout';
 import type { ZoneRect } from '../computeExerciseLayout';
 
-const KOI_RECT: ZoneRect = { x: 100, y: 200, w: 400, h: 300 };
+const ROAMER_RECT: ZoneRect = { x: 100, y: 200, w: 400, h: 300 };
 const JELLY_RECT: ZoneRect = { x: 50, y: 80, w: 500, h: 220 };
 
 describe('computeLetterLayout', () => {
   it('returns empty centers and minimum diameter for zero letters', () => {
-    const layout = computeLetterLayout(KOI_RECT, 0);
+    const layout = computeLetterLayout(ROAMER_RECT, 0);
 
     expect(layout.centers).toEqual([]);
     expect(layout.diameter).toBe(34);
-    expect(layout.rowY).toBe(KOI_RECT.y + KOI_RECT.h * TRANSFORMATION_WORD_ROW_Y_RATIO);
+    expect(layout.rowY).toBe(ROAMER_RECT.y + ROAMER_RECT.h * TRANSFORMATION_WORD_ROW_Y_RATIO);
   });
 
-  it('places three letter centers evenly in the koi zone row', () => {
-    const layout = computeLetterLayout(KOI_RECT, 3);
+  it('places three letter centers evenly in the roamer zone row', () => {
+    const layout = computeLetterLayout(ROAMER_RECT, 3);
 
     expect(layout.diameter).toBe(54);
     expect(layout.rowY).toBe(260);
@@ -43,7 +43,7 @@ describe('computeLetterLayout', () => {
 
 describe('previewCenterForLetter', () => {
   it('maps positions before and after the insert index to target layout centers', () => {
-    const targetLayout = computeLetterLayout(KOI_RECT, 5);
+    const targetLayout = computeLetterLayout(ROAMER_RECT, 5);
     const preview = { insertIndex: 2, insertLength: 1, targetLetterCount: 5 };
 
     expect(previewCenterForLetter(0, preview, targetLayout)).toBe(targetLayout.centers[0]);
@@ -58,7 +58,7 @@ describe('computeSentenceRowLayout', () => {
     const layout = computeSentenceRowLayout({
       slots: [],
       jellyRect: JELLY_RECT,
-      koiRect: KOI_RECT,
+      roamerRect: ROAMER_RECT,
       conjugatedForm: '',
       roundPos: 0,
     });
@@ -82,7 +82,7 @@ describe('computeSentenceRowLayout', () => {
     const layout = computeSentenceRowLayout({
       slots,
       jellyRect: JELLY_RECT,
-      koiRect: KOI_RECT,
+      roamerRect: ROAMER_RECT,
       conjugatedForm: 'como',
       roundPos: 0,
     });
@@ -105,14 +105,14 @@ describe('computeSentenceRowLayout', () => {
     const layout1 = computeSentenceRowLayout({
       slots,
       jellyRect: JELLY_RECT,
-      koiRect: KOI_RECT,
+      roamerRect: ROAMER_RECT,
       conjugatedForm: 'target',
       roundPos: 0,
     });
     const layout2 = computeSentenceRowLayout({
       slots,
       jellyRect: JELLY_RECT,
-      koiRect: KOI_RECT,
+      roamerRect: ROAMER_RECT,
       conjugatedForm: 'target',
       roundPos: 0,
     });
@@ -126,7 +126,7 @@ describe('computeSentenceRowLayout', () => {
     const layout = computeSentenceRowLayout({
       slots,
       jellyRect: JELLY_RECT,
-      koiRect: KOI_RECT,
+      roamerRect: ROAMER_RECT,
       conjugatedForm: 'extraordinariamente',
       roundPos: 0,
     });
@@ -143,7 +143,7 @@ describe('computeSentenceRowLayout', () => {
     const layout = computeSentenceRowLayout({
       slots,
       jellyRect: JELLY_RECT,
-      koiRect: KOI_RECT,
+      roamerRect: ROAMER_RECT,
       conjugatedForm: 'target',
       roundPos: 0,
     });
@@ -167,7 +167,7 @@ describe('computeRoundResolutionFlight', () => {
       computeRoundResolutionFlight({
         slots,
         jellyRect: JELLY_RECT,
-        koiRect: KOI_RECT,
+        roamerRect: ROAMER_RECT,
         conjugatedForm: 'como',
         roundPos: 0,
       }),
@@ -176,14 +176,14 @@ describe('computeRoundResolutionFlight', () => {
 
   it('returns fly-from center averaged across letter row and fly-to blank slot geometry', () => {
     const conjugatedForm = 'como';
-    const letterLayout = computeLetterLayout(KOI_RECT, conjugatedForm.length);
-    const blank = blankSlotCenter(SLOTS_WITH_BLANK, JELLY_RECT, KOI_RECT, conjugatedForm, 0);
+    const letterLayout = computeLetterLayout(ROAMER_RECT, conjugatedForm.length);
+    const blank = blankSlotCenter(SLOTS_WITH_BLANK, JELLY_RECT, ROAMER_RECT, conjugatedForm, 0);
 
     expect(
       computeRoundResolutionFlight({
         slots: SLOTS_WITH_BLANK,
         jellyRect: JELLY_RECT,
-        koiRect: KOI_RECT,
+        roamerRect: ROAMER_RECT,
         conjugatedForm,
         roundPos: 0,
       }),
@@ -202,7 +202,7 @@ describe('blankSlotCenter', () => {
   it('returns null when there is no blank slot', () => {
     const slots: SentencePromptDisplaySlot[] = [{ kind: 'token', text: 'hola' }];
 
-    expect(blankSlotCenter(slots, JELLY_RECT, KOI_RECT, 'target', 0)).toBeNull();
+    expect(blankSlotCenter(slots, JELLY_RECT, ROAMER_RECT, 'target', 0)).toBeNull();
   });
 
   it('returns the same coordinates as sentence row layout for the blank index', () => {
@@ -214,12 +214,12 @@ describe('blankSlotCenter', () => {
     const layout = computeSentenceRowLayout({
       slots,
       jellyRect: JELLY_RECT,
-      koiRect: KOI_RECT,
+      roamerRect: ROAMER_RECT,
       conjugatedForm: 'como',
       roundPos: 0,
     });
     const blankIndex = 1;
-    const center = blankSlotCenter(slots, JELLY_RECT, KOI_RECT, 'como', 0);
+    const center = blankSlotCenter(slots, JELLY_RECT, ROAMER_RECT, 'como', 0);
 
     expect(center).toEqual({
       x: layout.xs[blankIndex],

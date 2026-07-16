@@ -31,7 +31,7 @@ export type ResolutionFlightState = {
   toSpawnY: number;
 };
 
-export type OptionJellyfishState = {
+export type OptionWordSpriteState = {
   form: string;
   isCorrect: boolean;
   index: number;
@@ -45,7 +45,7 @@ export type VariantSelectionGame = {
   roundPos: number;
   swimPaths: SwimPath[];
   optionSwimPaths: SwimPath[];
-  options: OptionJellyfishState[];
+  options: OptionWordSpriteState[];
   correctOptionIndex: number;
   blankSlotIndex: number;
   blankExiting: boolean;
@@ -57,7 +57,7 @@ export type VariantSelectionGame = {
   totalCount: number;
   handleRowEnterComplete: () => void;
   handleRowExitComplete: () => void;
-  handleOptionTap: (option: OptionJellyfishState) => void;
+  handleOptionTap: (option: OptionWordSpriteState) => void;
   handleResolveComplete: () => void;
   handleExitComplete: () => void;
 };
@@ -67,7 +67,7 @@ export type UseVariantSelectionGameParams = {
   orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   jellyRect: ZoneRect;
   playSuccess?: () => void;
   playWrong?: () => void;
@@ -78,7 +78,7 @@ export function useVariantSelectionGame({
   orientation,
   screenWidth,
   screenHeight,
-  koiRect,
+  roamerRect,
   jellyRect,
   playSuccess,
   playWrong,
@@ -93,9 +93,9 @@ export function useVariantSelectionGame({
   const [correctOptionIndex, setCorrectOptionIndex] = useState(-1);
   const [resolveFlight, setResolveFlight] = useState<ResolutionFlightState | null>(null);
   const roundRef = useRef<ReturnType<typeof createVariantSelectionRoundController> | null>(null);
-  const koiRectRef = useRef(koiRect);
+  const roamerRectRef = useRef(roamerRect);
   const jellyRectRef = useRef(jellyRect);
-  koiRectRef.current = koiRect;
+  roamerRectRef.current = roamerRect;
   jellyRectRef.current = jellyRect;
   const playSuccessRef = useRef(playSuccess);
   playSuccessRef.current = playSuccess;
@@ -132,11 +132,11 @@ export function useVariantSelectionGame({
       computeSentenceRowLayout({
         slots: displaySlots,
         jellyRect,
-        koiRect,
+        roamerRect,
         conjugatedForm: currentRound?.conjugatedForm ?? '',
         roundPos: roundSnapshot.roundPos,
       }),
-    [displaySlots, jellyRect, koiRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
+    [displaySlots, jellyRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
   );
 
   const optionLayout = useMemo(() => {
@@ -144,8 +144,8 @@ export function useVariantSelectionGame({
     if (count === 0) {
       return { diameter: 0, rowY: 0, centers: [] };
     }
-    return computeLetterLayout(koiRect, count, TRANSFORMATION_VARIANT_ROW_Y_RATIO);
-  }, [currentRound?.options.length, koiRect]);
+    return computeLetterLayout(roamerRect, count, TRANSFORMATION_VARIANT_ROW_Y_RATIO);
+  }, [currentRound?.options.length, roamerRect]);
 
   const swimPaths = useMemo<SwimPath[]>(() => {
     if (slotLayout.xs.length === 0) return [];
@@ -177,7 +177,7 @@ export function useVariantSelectionGame({
     });
   }, [orientation, screenWidth, screenHeight, jellyRect, optionLayout.centers, optionLayout.rowY]);
 
-  const options = useMemo<OptionJellyfishState[]>(() => {
+  const options = useMemo<OptionWordSpriteState[]>(() => {
     if (currentRound == null) return [];
     return currentRound.options.map((opt, index) => ({
       form: opt.form,
@@ -232,7 +232,7 @@ export function useVariantSelectionGame({
     const blankCenter = blankSlotCenter(
       displaySlots,
       jellyRectRef.current,
-      koiRectRef.current,
+      roamerRectRef.current,
       currentRound?.conjugatedForm ?? '',
       roundSnapshot.roundPos,
     );
@@ -241,7 +241,7 @@ export function useVariantSelectionGame({
     const correctOpt = optionsRef.current.find(o => o.isCorrect);
     if (correctOpt == null) return null;
     const correctIndex = correctOpt.index;
-    const fromX = optionLayout.centers[correctIndex] ?? koiRectRef.current.x + koiRectRef.current.w * 0.5;
+    const fromX = optionLayout.centers[correctIndex] ?? roamerRectRef.current.x + roamerRectRef.current.w * 0.5;
     const fromY = optionLayout.rowY;
 
     const blankSwimPath = swimPaths[blankSlotIndex];
@@ -270,7 +270,7 @@ export function useVariantSelectionGame({
   }, [syncRoundSnapshot]);
 
   const handleOptionTap = useCallback(
-    (option: OptionJellyfishState) => {
+    (option: OptionWordSpriteState) => {
       if (roundSnapshot.phase !== 'transform') return;
       if (option.isCorrect) {
         playSuccessRef.current?.();

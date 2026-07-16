@@ -1,12 +1,12 @@
 import React, { type ReactNode } from 'react';
-import { useUnderseaThemeAssets } from '../UnderseaTheme/core/assets/useUnderseaThemeAssets';
-import { UnderseaThemeAssetsProvider } from '../UnderseaTheme/core/providers/UnderseaThemeAssetsProvider';
+import { useUnderseaThemeAssets } from '../themes/undersea/core/assets/useUnderseaThemeAssets';
+import { UnderseaThemeAssetsProvider } from '../themes/undersea/core/providers/UnderseaThemeAssetsProvider';
 import { ExerciseLayoutProvider } from '../core/providers/ExerciseLayoutProvider';
 import {
   ExerciseStoreProvider,
   type ExerciseStoreConfig,
 } from '../core/store/createExerciseStore';
-import { UnderseaThemeLoadingScreen } from '../UnderseaTheme/ui/loading/UnderseaThemeLoadingScreen';
+import { UnderseaThemeLoadingScreen } from '../themes/undersea/ui/loading/UnderseaThemeLoadingScreen';
 
 export type ExerciseShellProps = {
   storeConfig: ExerciseStoreConfig;

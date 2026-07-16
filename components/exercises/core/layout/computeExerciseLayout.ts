@@ -30,9 +30,9 @@ export type ExerciseLayout = {
   orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   jellyRect: ZoneRect;
-  /** Bounds passed to jellyfish layout (zone in screen space). */
+  /** Bounds passed to wordSprite layout (zone in screen space). */
   jellyLayoutBounds: Omit<LayoutBounds, 'scaleMin' | 'scaleMax' | 'edgeSqueeze' | 'spreadBoost'>;
   labelRotationRad: number;
   controlsAnchor: ControlsAnchor;
@@ -40,7 +40,7 @@ export type ExerciseLayout = {
   layoutKey: string;
 };
 
-const KOI_ZONE_FRACTION = 0.5;
+const ROAMER_ZONE_FRACTION = 0.5;
 const JELLY_INSET_RATIO = LAYOUT_ZONE_TOP_RATIO;
 const JELLY_ZONE_FRACTION = LAYOUT_ZONE_HEIGHT_RATIO;
 
@@ -54,24 +54,24 @@ function rect(
 }
 
 function portraitLayout(width: number, height: number): {
-  koi: ZoneRect;
+  roamer: ZoneRect;
   jelly: ZoneRect;
 } {
-  const splitY = height * KOI_ZONE_FRACTION;
+  const splitY = height * ROAMER_ZONE_FRACTION;
   return {
     jelly: rect(0, height * JELLY_INSET_RATIO, width, height * JELLY_ZONE_FRACTION),
-    koi: rect(0, splitY, width, height - splitY),
+    roamer: rect(0, splitY, width, height - splitY),
   };
 }
 
 function landscapeLayout(width: number, height: number): {
-  koi: ZoneRect;
+  roamer: ZoneRect;
   jelly: ZoneRect;
 } {
-  const splitX = width * KOI_ZONE_FRACTION;
+  const splitX = width * ROAMER_ZONE_FRACTION;
   const inset = height * JELLY_INSET_RATIO;
   return {
-    koi: rect(0, 0, splitX, height),
+    roamer: rect(0, 0, splitX, height),
     jelly: rect(splitX, inset, width - splitX, height - inset),
   };
 }
@@ -104,20 +104,20 @@ export function computeExerciseLayout(
   screenHeight: number,
   orientation: ExerciseOrientation,
 ): ExerciseLayout {
-  let koiRect: ZoneRect;
+  let roamerRect: ZoneRect;
   let jellyRect: ZoneRect;
 
   switch (orientation) {
     case 'portrait': {
       const zones = portraitLayout(screenWidth, screenHeight);
-      koiRect = zones.koi;
+      roamerRect = zones.roamer;
       jellyRect = zones.jelly;
       break;
     }
     case 'landscapeLeft':
     case 'landscapeRight': {
       const zones = landscapeLayout(screenWidth, screenHeight);
-      koiRect = zones.koi;
+      roamerRect = zones.roamer;
       jellyRect = zones.jelly;
       break;
     }
@@ -137,7 +137,7 @@ export function computeExerciseLayout(
     orientation,
     screenWidth,
     screenHeight,
-    koiRect,
+    roamerRect,
     jellyRect,
     jellyLayoutBounds,
     labelRotationRad: 0,
@@ -148,14 +148,14 @@ export function computeExerciseLayout(
 
 /** Off-screen escape point beyond the screen edge on the roamer side away from word-sprite. */
 export function computeOffScreenEscapeTarget(
-  koiRect: ZoneRect,
+  roamerRect: ZoneRect,
   screenWidth: number,
   screenHeight: number,
   orientation: ExerciseOrientation,
 ): { x: number; y: number; exitEdge: EscapeExitEdge } {
   const margin = 120 * 1.5;
-  const cx = koiRect.x + koiRect.w * 0.5;
-  const cy = koiRect.y + koiRect.h * 0.5;
+  const cx = roamerRect.x + roamerRect.w * 0.5;
+  const cy = roamerRect.y + roamerRect.h * 0.5;
 
   switch (orientation) {
     case 'portrait':

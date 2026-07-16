@@ -67,7 +67,7 @@ export type TranslationSpellingGame = {
 export type UseTranslationSpellingGameParams = {
   wordList: WordList;
   orientation: ExerciseOrientation;
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   jellyRect: ZoneRect;
   playBubbleInflate?: () => void;
   playWrong?: () => void;
@@ -78,7 +78,7 @@ const RESOLVE_PAUSE_MS = 200;
 
 export function useTranslationSpellingGame({
   wordList,
-  koiRect,
+  roamerRect,
   jellyRect,
   playBubbleInflate,
   playWrong,
@@ -100,9 +100,9 @@ export function useTranslationSpellingGame({
   const [spanishPopped, setSpanishPopped] = useState(false);
   const [spanishPopOrder, setSpanishPopOrder] = useState<number[]>([]);
   const roundRef = useRef<ReturnType<typeof createTranslationSpellingRoundController> | null>(null);
-  const koiRectRef = useRef(koiRect);
+  const roamerRectRef = useRef(roamerRect);
   const jellyRectRef = useRef(jellyRect);
-  koiRectRef.current = koiRect;
+  roamerRectRef.current = roamerRect;
   jellyRectRef.current = jellyRect;
   const playBubbleInflateRef = useRef(playBubbleInflate);
   playBubbleInflateRef.current = playBubbleInflate;
@@ -130,8 +130,8 @@ export function useTranslationSpellingGame({
     if (count === 0) {
       return { diameter: 0, positions: [] as Array<{ centerX: number; centerY: number }> };
     }
-    return computePoolLetterLayout(koiRect, count);
-  }, [koiRect, poolLetters.length]);
+    return computePoolLetterLayout(roamerRect, count);
+  }, [roamerRect, poolLetters.length]);
 
   const spanishLayout = useMemo(() => {
     const word = currentRound?.spanish ?? '';

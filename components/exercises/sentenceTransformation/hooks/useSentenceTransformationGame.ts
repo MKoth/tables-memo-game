@@ -98,7 +98,7 @@ export type UseSentenceTransformationGameParams = {
   orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   jellyRect: ZoneRect;
   playPop?: () => void;
   playInflate?: () => void;
@@ -111,7 +111,7 @@ export function useSentenceTransformationGame({
   orientation,
   screenWidth,
   screenHeight,
-  koiRect,
+  roamerRect,
   jellyRect,
   playPop,
   playInflate,
@@ -136,9 +136,9 @@ export function useSentenceTransformationGame({
   );
 
   const roundRef = useRef<ReturnType<typeof createSentenceRoundController> | null>(null);
-  const koiRectRef = useRef(koiRect);
+  const roamerRectRef = useRef(roamerRect);
   const jellyRectRef = useRef(jellyRect);
-  koiRectRef.current = koiRect;
+  roamerRectRef.current = roamerRect;
   jellyRectRef.current = jellyRect;
 
   const playPopRef = useRef(playPop);
@@ -171,7 +171,7 @@ export function useSentenceTransformationGame({
     handleLetterPress: handleLetterPressUnguarded,
     handleVariantPress: handleVariantPressUnguarded,
   } = useWordTransformationCoreBridge({
-    koiRect,
+    roamerRect,
     sequence,
     sequenceKey: roundSnapshot.roundPos,
     playPop,
@@ -205,11 +205,11 @@ export function useSentenceTransformationGame({
       computeSentenceRowLayout({
         slots: displaySlots,
         jellyRect,
-        koiRect,
+        roamerRect,
         conjugatedForm: currentRound?.conjugatedForm ?? '',
         roundPos: roundSnapshot.roundPos,
       }),
-    [displaySlots, jellyRect, koiRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
+    [displaySlots, jellyRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
   );
 
   const swimPaths = useMemo<SwimPath[]>(() => {
@@ -259,7 +259,7 @@ export function useSentenceTransformationGame({
       const flight = computeRoundResolutionFlight({
         slots: roundForSnapshot?.displaySlots ?? [],
         jellyRect: jellyRectRef.current,
-        koiRect: koiRectRef.current,
+        roamerRect: roamerRectRef.current,
         conjugatedForm: solvedWord,
         roundPos: snapshot.roundPos,
       });

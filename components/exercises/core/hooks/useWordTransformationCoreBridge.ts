@@ -10,7 +10,7 @@ import {
 } from '../../wordTransformation/domain';
 
 export type UseWordTransformationCoreBridgeParams = {
-  koiRect: ZoneRect;
+  roamerRect: ZoneRect;
   sequence: WordOperationSequence | null;
   sequenceKey: string | number;
   playPop?: () => void;
@@ -28,7 +28,7 @@ export type UseWordTransformationCoreBridgeResult = {
 };
 
 export function useWordTransformationCoreBridge({
-  koiRect,
+  roamerRect,
   sequence,
   sequenceKey,
   playPop,
@@ -41,8 +41,8 @@ export function useWordTransformationCoreBridge({
   const [coreSnapshot, setCoreSnapshot] = useState<WordTransformationCoreSnapshot | null>(null);
 
   const coreRef = useRef<ReturnType<typeof createWordTransformationCore> | null>(null);
-  const koiRectRef = useRef(koiRect);
-  koiRectRef.current = koiRect;
+  const roamerRectRef = useRef(roamerRect);
+  roamerRectRef.current = roamerRect;
 
   const playPopRef = useRef(playPop);
   const playInflateRef = useRef(playInflate);
@@ -62,7 +62,7 @@ export function useWordTransformationCoreBridge({
   useEffect(() => {
     const core = createWordTransformationCore({
       getLetterLayout: (wordLength) =>
-        computeLetterLayout(koiRectRef.current, wordLength),
+        computeLetterLayout(roamerRectRef.current, wordLength),
       scheduleTimer: (fn, delayMs) => {
         const id = setTimeout(fn, delayMs);
         return () => clearTimeout(id);

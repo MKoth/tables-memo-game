@@ -1,5 +1,5 @@
 import React from 'react';
-import { UnderseaThemeTableSentenceTransformationExercise } from './UnderseaTheme';
+import { UnderseaThemeTableSentenceTransformationExercise } from './themes/undersea';
 
 export function TableSentenceTransformationExercise() {
   return <UnderseaThemeTableSentenceTransformationExercise />;
