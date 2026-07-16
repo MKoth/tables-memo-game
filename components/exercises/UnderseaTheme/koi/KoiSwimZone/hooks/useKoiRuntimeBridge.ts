@@ -25,7 +25,7 @@ export function useKoiRuntimeBridge({
   sim,
   eliminatedFishSv,
 }: UseKoiRuntimeBridgeParams) {
-  const { publishCaptureBridge, publishKoiBridge } = useExerciseRuntime();
+  const { publishCaptureBridge, publishRoamerBridge } = useExerciseRuntime();
   const bubbleOverlayRef = useRef(bubbleOverlay);
   bubbleOverlayRef.current = bubbleOverlay;
 
@@ -50,7 +50,7 @@ export function useKoiRuntimeBridge({
   ]);
 
   useLayoutEffect(() => {
-    publishKoiBridge({
+    publishRoamerBridge({
       fishRuntimePositions: sim.runtimeEntries.map(entry => ({
         x: entry.runtime.x,
         y: entry.runtime.y,
@@ -59,5 +59,5 @@ export function useKoiRuntimeBridge({
       hitRadius: sim.hitRadius,
       eliminatedFishSv,
     });
-  }, [eliminatedFishSv, publishKoiBridge, sim.hitRadius, sim.runtimeEntries]);
+  }, [eliminatedFishSv, publishRoamerBridge, sim.hitRadius, sim.runtimeEntries]);
 }

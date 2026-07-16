@@ -7,7 +7,7 @@ import { useKoiCaptureFlow } from './hooks/useKoiCaptureFlow';
 import type { KoiSwimZoneController, KoiSwimZoneProps } from './types';
 
 export type {
-  KoiCaptureBridge,
+  RoamerCaptureBridge,
   KoiSwimZoneBubbleTarget,
   KoiSwimZoneController,
   KoiSwimZoneProps,

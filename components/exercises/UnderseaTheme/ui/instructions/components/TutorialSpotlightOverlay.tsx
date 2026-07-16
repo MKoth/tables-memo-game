@@ -8,9 +8,9 @@ import {
 } from '@shopify/react-native-skia';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 import type {
-  JellyfishLayoutBridge,
-  KoiFishRuntimePosition,
-  KoiSimBridge,
+  RoamerRuntimePosition,
+  RoamerSimBridge,
+  WordSpriteLayoutBridge,
 } from '../../../../core/types/bridgeTypes';
 import {
   FISH_SPOTLIGHT_SCALE,
@@ -102,7 +102,7 @@ export function FishSpotlight({
   height,
   gradientRadius,
 }: {
-  pos: KoiFishRuntimePosition;
+  pos: RoamerRuntimePosition;
   hitRadius: number;
   width: number;
   height: number;
@@ -133,7 +133,7 @@ export function JellySpotlight({
   gradientRadius,
   showGuideLines = true,
 }: {
-  bridge: JellyfishLayoutBridge;
+  bridge: WordSpriteLayoutBridge;
   jellyIndex: number;
   width: number;
   height: number;
@@ -176,12 +176,12 @@ export function JellySpotlight({
 }
 
 export type TutorialSpotlightOverlayProps = {
-  step: 'fish' | 'jellyfish' | 'translate';
+  step: 'roamer' | 'wordSprite' | 'translate';
   width: number;
   height: number;
   gradientRadius: number;
-  koiBridge: KoiSimBridge | null;
-  jellyBridge: JellyfishLayoutBridge | null;
+  roamerBridge: RoamerSimBridge | null;
+  wordSpriteBridge: WordSpriteLayoutBridge | null;
   fishTargetIndex: number | null;
   jellyTargetIndex: number | null;
   headerTargetIndex: number | null;
@@ -192,33 +192,33 @@ export function TutorialSpotlightOverlay({
   width,
   height,
   gradientRadius,
-  koiBridge,
-  jellyBridge,
+  roamerBridge,
+  wordSpriteBridge,
   fishTargetIndex,
   jellyTargetIndex,
   headerTargetIndex,
 }: TutorialSpotlightOverlayProps) {
   const fishPos =
-    koiBridge != null && fishTargetIndex != null
-      ? koiBridge.fishRuntimePositions[fishTargetIndex] ?? null
+    roamerBridge != null && fishTargetIndex != null
+      ? roamerBridge.fishRuntimePositions[fishTargetIndex] ?? null
       : null;
 
   return (
     <>
-      {step === 'fish' && fishPos != null && koiBridge != null && (
+      {step === 'roamer' && fishPos != null && roamerBridge != null && (
         <FishSpotlight
           pos={fishPos}
-          hitRadius={koiBridge.hitRadius}
+          hitRadius={roamerBridge.hitRadius}
           width={width}
           height={height}
           gradientRadius={gradientRadius}
         />
       )}
-      {step === 'jellyfish' &&
-        jellyBridge != null &&
+      {step === 'wordSprite' &&
+        wordSpriteBridge != null &&
         jellyTargetIndex != null && (
           <JellySpotlight
-            bridge={jellyBridge}
+            bridge={wordSpriteBridge}
             jellyIndex={jellyTargetIndex}
             width={width}
             height={height}
@@ -226,10 +226,10 @@ export function TutorialSpotlightOverlay({
           />
         )}
       {step === 'translate' &&
-        jellyBridge != null &&
+        wordSpriteBridge != null &&
         headerTargetIndex != null && (
           <JellySpotlight
-            bridge={jellyBridge}
+            bridge={wordSpriteBridge}
             jellyIndex={headerTargetIndex}
             width={width}
             height={height}

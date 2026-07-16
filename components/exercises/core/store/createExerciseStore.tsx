@@ -8,12 +8,12 @@ export type ExerciseStoreConfig = {
 };
 
 export const TABLE_EXERCISE_STORE_CONFIG: ExerciseStoreConfig = {
-  tutorialStartStep: 'fish',
+  tutorialStartStep: 'roamer',
   getNextTutorialStep: (current) => {
-    if (current === 'fish') {
-      return 'jellyfish';
+    if (current === 'roamer') {
+      return 'wordSprite';
     }
-    if (current === 'jellyfish') {
+    if (current === 'wordSprite') {
       return 'translate';
     }
     return current;
@@ -22,12 +22,12 @@ export const TABLE_EXERCISE_STORE_CONFIG: ExerciseStoreConfig = {
 
 /** Placeholder until word-transformation tutorial steps are defined in phase 4. */
 export const WORD_TRANSFORMATION_STORE_CONFIG: ExerciseStoreConfig = {
-  tutorialStartStep: 'fish',
+  tutorialStartStep: 'roamer',
   getNextTutorialStep: (current) => current,
 };
 
 export const WORD_LEARNING_STORE_CONFIG: ExerciseStoreConfig = {
-  tutorialStartStep: 'fish',
+  tutorialStartStep: 'roamer',
   getNextTutorialStep: (current) => current,
 };
 

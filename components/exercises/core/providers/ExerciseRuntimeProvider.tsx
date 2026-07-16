@@ -7,20 +7,20 @@ import React, {
   useState,
 } from 'react';
 import type {
-  JellyfishLayoutBridge,
-  KoiCaptureBridge,
-  KoiSimBridge,
+  RoamerCaptureBridge,
+  RoamerSimBridge,
+  WordSpriteLayoutBridge,
 } from '../types/bridgeTypes';
 import { useExerciseStore } from '../store/createExerciseStore';
 
 type ExerciseRuntimeContextValue = {
-  captureBridge: KoiCaptureBridge | null;
-  koiBridge: KoiSimBridge | null;
-  jellyBridge: JellyfishLayoutBridge | null;
-  publishCaptureBridge: (bridge: KoiCaptureBridge | null) => void;
-  publishKoiBridge: (bridge: KoiSimBridge | null) => void;
-  publishJellyBridge: (bridge: JellyfishLayoutBridge | null) => void;
-  onJellyfishMatchSuccess: (targetX: number, targetY: number, hitIdx: number) => void;
+  captureBridge: RoamerCaptureBridge | null;
+  roamerBridge: RoamerSimBridge | null;
+  wordSpriteBridge: WordSpriteLayoutBridge | null;
+  publishCaptureBridge: (bridge: RoamerCaptureBridge | null) => void;
+  publishRoamerBridge: (bridge: RoamerSimBridge | null) => void;
+  publishWordSpriteBridge: (bridge: WordSpriteLayoutBridge | null) => void;
+  onWordSpriteMatchSuccess: (targetX: number, targetY: number, hitIdx: number) => void;
 };
 
 const ExerciseRuntimeContext =
@@ -31,13 +31,13 @@ export function ExerciseRuntimeProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [captureBridge, setCaptureBridge] = useState<KoiCaptureBridge | null>(null);
-  const [koiBridge, setKoiBridge] = useState<KoiSimBridge | null>(null);
-  const [jellyBridge, setJellyBridge] = useState<JellyfishLayoutBridge | null>(null);
-  const captureBridgeRef = useRef<KoiCaptureBridge | null>(null);
+  const [captureBridge, setCaptureBridge] = useState<RoamerCaptureBridge | null>(null);
+  const [roamerBridge, setRoamerBridge] = useState<RoamerSimBridge | null>(null);
+  const [wordSpriteBridge, setWordSpriteBridge] = useState<WordSpriteLayoutBridge | null>(null);
+  const captureBridgeRef = useRef<RoamerCaptureBridge | null>(null);
   const setHelpVisible = useExerciseStore((state) => state.setHelpVisible);
 
-  const publishCaptureBridge = useCallback((bridge: KoiCaptureBridge | null) => {
+  const publishCaptureBridge = useCallback((bridge: RoamerCaptureBridge | null) => {
     setCaptureBridge((prev) => {
       if (bridge == null) {
         captureBridgeRef.current = null;
@@ -55,15 +55,15 @@ export function ExerciseRuntimeProvider({
     });
   }, []);
 
-  const publishKoiBridge = useCallback((bridge: KoiSimBridge | null) => {
-    setKoiBridge(bridge);
+  const publishRoamerBridge = useCallback((bridge: RoamerSimBridge | null) => {
+    setRoamerBridge(bridge);
   }, []);
 
-  const publishJellyBridge = useCallback((bridge: JellyfishLayoutBridge | null) => {
-    setJellyBridge(bridge);
+  const publishWordSpriteBridge = useCallback((bridge: WordSpriteLayoutBridge | null) => {
+    setWordSpriteBridge(bridge);
   }, []);
 
-  const onJellyfishMatchSuccess = useCallback(
+  const onWordSpriteMatchSuccess = useCallback(
     (targetX: number, targetY: number, hitIdx: number) => {
       setHelpVisible(false);
       captureBridgeRef.current?.onMatchSuccess?.(targetX, targetY, hitIdx);
@@ -74,21 +74,21 @@ export function ExerciseRuntimeProvider({
   const value = useMemo(
     () => ({
       captureBridge,
-      koiBridge,
-      jellyBridge,
+      roamerBridge,
+      wordSpriteBridge,
       publishCaptureBridge,
-      publishKoiBridge,
-      publishJellyBridge,
-      onJellyfishMatchSuccess,
+      publishRoamerBridge,
+      publishWordSpriteBridge,
+      onWordSpriteMatchSuccess,
     }),
     [
       captureBridge,
-      jellyBridge,
-      koiBridge,
-      onJellyfishMatchSuccess,
+      wordSpriteBridge,
+      roamerBridge,
+      onWordSpriteMatchSuccess,
       publishCaptureBridge,
-      publishJellyBridge,
-      publishKoiBridge,
+      publishWordSpriteBridge,
+      publishRoamerBridge,
     ],
   );
 

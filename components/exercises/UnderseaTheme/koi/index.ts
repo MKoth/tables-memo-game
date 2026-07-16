@@ -1,4 +1,4 @@
-export { KoiSwimZone, type KoiCaptureBridge, type KoiSwimZoneBubbleTarget, type KoiSwimZoneController, type KoiSwimZoneProps } from './KoiSwimZone/KoiSwimZone';
+export { KoiSwimZone, type RoamerCaptureBridge, type KoiSwimZoneBubbleTarget, type KoiSwimZoneController, type KoiSwimZoneProps } from './KoiSwimZone/KoiSwimZone';
 export { DecorativeKoiLayer, DECORATIVE_KOI_COUNT, type DecorativeKoiLayerProps } from './DecorativeKoiLayer/DecorativeKoiLayer';
 export { KoiFishLayer, type KoiFishLayerProps } from './fish';
 export {

@@ -22,7 +22,7 @@ export function UnderseaThemeInstructions() {
   const step = useExerciseStore((state) => state.tutorialStep);
   const nextTutorialStep = useExerciseStore((state) => state.nextTutorialStep);
   const dismissTutorial = useExerciseStore((state) => state.dismissTutorial);
-  const { koiBridge, jellyBridge } = useExerciseRuntime();
+  const { roamerBridge, wordSpriteBridge } = useExerciseRuntime();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { controlsAnchor } = useExerciseLayout();
@@ -31,52 +31,52 @@ export function UnderseaThemeInstructions() {
   const [headerTargetIndex, setHeaderTargetIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    if (step !== 'fish') {
+    if (step !== 'roamer') {
       setFishTargetIndex(null);
       return;
     }
-    if (koiBridge != null) {
-      setFishTargetIndex(pickRandomFishIndex(koiBridge));
+    if (roamerBridge != null) {
+      setFishTargetIndex(pickRandomFishIndex(roamerBridge));
     }
-  }, [step, koiBridge]);
+  }, [step, roamerBridge]);
 
   useEffect(() => {
-    if (step !== 'jellyfish') {
+    if (step !== 'wordSprite') {
       setJellyTargetIndex(null);
       return;
     }
-    if (jellyBridge != null) {
-      setJellyTargetIndex(pickRandomJellyIndex(jellyBridge));
+    if (wordSpriteBridge != null) {
+      setJellyTargetIndex(pickRandomJellyIndex(wordSpriteBridge));
     }
-  }, [step, jellyBridge]);
+  }, [step, wordSpriteBridge]);
 
   useEffect(() => {
-    if (step === 'fish' && koiBridge != null && fishTargetIndex == null) {
-      setFishTargetIndex(pickRandomFishIndex(koiBridge));
+    if (step === 'roamer' && roamerBridge != null && fishTargetIndex == null) {
+      setFishTargetIndex(pickRandomFishIndex(roamerBridge));
     }
-  }, [step, koiBridge, fishTargetIndex]);
+  }, [step, roamerBridge, fishTargetIndex]);
 
   useEffect(() => {
-    if (step === 'jellyfish' && jellyBridge != null && jellyTargetIndex == null) {
-      setJellyTargetIndex(pickRandomJellyIndex(jellyBridge));
+    if (step === 'wordSprite' && wordSpriteBridge != null && jellyTargetIndex == null) {
+      setJellyTargetIndex(pickRandomJellyIndex(wordSpriteBridge));
     }
-  }, [step, jellyBridge, jellyTargetIndex]);
+  }, [step, wordSpriteBridge, jellyTargetIndex]);
 
   useEffect(() => {
     if (step !== 'translate') {
       setHeaderTargetIndex(null);
       return;
     }
-    if (jellyBridge != null) {
-      setHeaderTargetIndex(pickRandomHeaderJellyIndex(jellyBridge));
+    if (wordSpriteBridge != null) {
+      setHeaderTargetIndex(pickRandomHeaderJellyIndex(wordSpriteBridge));
     }
-  }, [step, jellyBridge]);
+  }, [step, wordSpriteBridge]);
 
   useEffect(() => {
-    if (step === 'translate' && jellyBridge != null && headerTargetIndex == null) {
-      setHeaderTargetIndex(pickRandomHeaderJellyIndex(jellyBridge));
+    if (step === 'translate' && wordSpriteBridge != null && headerTargetIndex == null) {
+      setHeaderTargetIndex(pickRandomHeaderJellyIndex(wordSpriteBridge));
     }
-  }, [step, jellyBridge, headerTargetIndex]);
+  }, [step, wordSpriteBridge, headerTargetIndex]);
 
   const gradientRadius = useMemo(
     () => Math.hypot(width, height) * 0.75,
@@ -86,14 +86,14 @@ export function UnderseaThemeInstructions() {
   const tooltipPosition = computeTooltipPosition(controlsAnchor, insets, HELP_MARGIN);
 
   const message =
-    step === 'fish'
+    step === 'roamer'
       ? 'Tap any fish to catch it in a bubble.'
-      : step === 'jellyfish'
+      : step === 'wordSprite'
         ? 'Select the matching jellyfish using the table rules.'
         : 'Tap any row or column header jellyfish to see its English translation.';
 
   const stepLabel =
-    step === 'fish' ? '1/3' : step === 'jellyfish' ? '2/3' : '3/3';
+    step === 'roamer' ? '1/3' : step === 'wordSprite' ? '2/3' : '3/3';
 
   const actionLabel = step === 'translate' ? 'Got it!' : 'Next';
   const onAction = step === 'translate' ? dismissTutorial : nextTutorialStep;
@@ -111,8 +111,8 @@ export function UnderseaThemeInstructions() {
             width={width}
             height={height}
             gradientRadius={gradientRadius}
-            koiBridge={koiBridge}
-            jellyBridge={jellyBridge}
+            roamerBridge={roamerBridge}
+            wordSpriteBridge={wordSpriteBridge}
             fishTargetIndex={fishTargetIndex}
             jellyTargetIndex={jellyTargetIndex}
             headerTargetIndex={headerTargetIndex}

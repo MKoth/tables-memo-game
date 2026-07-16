@@ -25,7 +25,7 @@ export function JellyfishTableLayer({
   controllerRef,
 }: JellyfishTableLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
-  const { captureBridge, onJellyfishMatchSuccess } = useExerciseRuntime();
+  const { captureBridge, onWordSpriteMatchSuccess } = useExerciseRuntime();
   const bellImage = images.jellyfishBell;
   const tentacleImage = images.jellyfishTentacles;
 
@@ -36,7 +36,7 @@ export function JellyfishTableLayer({
       tentacleImage={tentacleImage}
       capturedWord={captureBridge?.capturedWord ?? null}
       bubblePhase={captureBridge?.bubblePhase}
-      onMatchSuccess={onJellyfishMatchSuccess}
+      onMatchSuccess={onWordSpriteMatchSuccess}
       onJellyfishSound={onJellyfishSound}
       interactive={interactive}
       translationDisplayMs={translationDisplayMs}

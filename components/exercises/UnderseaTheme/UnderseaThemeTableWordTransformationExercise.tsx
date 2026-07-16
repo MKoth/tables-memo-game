@@ -40,13 +40,13 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
   const words = useMemo(() => getTableBodyWords(table), [table]);
   const soundEnabled = useExerciseStore((state) => state.soundEnabled);
 
-  const { jellyBridge } = useExerciseRuntime();
+  const { wordSpriteBridge } = useExerciseRuntime();
   const { jellyRect, koiRect } = useExerciseLayout();
 
   const koiControllerRef = useRef<KoiSwimZoneController | null>(null);
   const handleSequenceSolved = useKoiEscapeCoordinator({
     koiControllerRef,
-    jellyBridge,
+    jellyBridge: wordSpriteBridge,
     jellyRect,
   });
 

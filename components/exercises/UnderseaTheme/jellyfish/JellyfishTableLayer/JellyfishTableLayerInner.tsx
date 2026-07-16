@@ -51,7 +51,7 @@ export function JellyfishTableLayerInner({
   extraRevealedBodyIndices,
   controllerRef,
 }: JellyfishTableLayerInnerProps) {
-  const { publishJellyBridge } = useExerciseRuntime();
+  const { publishWordSpriteBridge } = useExerciseRuntime();
   const { height } = useWindowDimensions();
   const { jellyRect, labelRotationRad } = useExerciseLayout();
   const clock = useExerciseClockQuantized(JELLYFISH_CLOCK_FPS);
@@ -297,7 +297,7 @@ export function JellyfishTableLayerInner({
   ]);
 
   useLayoutEffect(() => {
-    publishJellyBridge({
+    publishWordSpriteBridge({
       layoutX,
       layoutY,
       layoutScale,
@@ -312,7 +312,7 @@ export function JellyfishTableLayerInner({
     layoutScale,
     layoutX,
     layoutY,
-    publishJellyBridge,
+    publishWordSpriteBridge,
   ]);
   const { motionLoopEngaged, activateMotionLoop } = useJellyfishMotionLoop({
     biasX,
