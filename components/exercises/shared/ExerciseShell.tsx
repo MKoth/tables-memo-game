@@ -1,12 +1,11 @@
 import React, { type ReactNode } from 'react';
-import { useUnderseaThemeAssets } from '../themes/undersea/core/assets/useUnderseaThemeAssets';
-import { UnderseaThemeAssetsProvider } from '../themes/undersea/core/providers/UnderseaThemeAssetsProvider';
 import { ExerciseLayoutProvider } from '../core/providers/ExerciseLayoutProvider';
 import {
   ExerciseStoreProvider,
   type ExerciseStoreConfig,
 } from '../core/store/createExerciseStore';
-import { UnderseaThemeLoadingScreen } from '../themes/undersea/ui/loading/UnderseaThemeLoadingScreen';
+import { useTheme } from '../themeContract';
+import { ExerciseLoadingScreen } from './ExerciseLoadingScreen';
 
 export type ExerciseShellProps = {
   storeConfig: ExerciseStoreConfig;
@@ -14,23 +13,25 @@ export type ExerciseShellProps = {
 };
 
 function ExerciseShellContent({ children }: { children: ReactNode }) {
-  const assets = useUnderseaThemeAssets();
+  const theme = useTheme();
+  const assets = theme.assets.useThemeAssets();
 
   if (assets.phase !== 'ready') {
     return (
-      <UnderseaThemeLoadingScreen
+      <ExerciseLoadingScreen
+        progress={assets.progress}
         seafloorImage={assets.seafloorImage}
         stoneImages={assets.stoneImages}
         seaweedImages={assets.seaweedImages}
-        progress={assets.progress}
       />
     );
   }
 
   return (
-    <UnderseaThemeAssetsProvider value={{ images: assets.images, sounds: assets.sounds }}>
+    <theme.assets.AssetsProvider
+      value={{ images: assets.images, sounds: assets.sounds }}>
       {children}
-    </UnderseaThemeAssetsProvider>
+    </theme.assets.AssetsProvider>
   );
 }
 
