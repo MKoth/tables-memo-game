@@ -3,7 +3,7 @@ import { FlowerGardenScenery } from './scenery/FlowerGardenScenery';
 import { FlowerGardenRoamerMotionZone } from './roamer/FlowerGardenRoamerMotionZone';
 import { FlowerGardenDecorativeRoamerLayer } from './roamer/FlowerGardenDecorativeRoamerLayer';
 import { FlowerGardenMatchRoamerLayer } from './exercises/wordLearning/translationMatch/components/FlowerGardenMatchRoamerLayer';
-import { FlowerGardenWordSpriteTableLayer } from './carrier/FlowerGardenWordSpriteTableLayer';
+import { FlowerGardenWordSpriteTableLayer } from './carrier/FlowerGardenWordSpriteTableLayer/FlowerGardenWordSpriteTableLayerOuter';
 import { FlowerGardenWordSpriteSentenceRowLayer } from './exercises/sentenceTransformation/components/FlowerGardenWordSpriteSentenceRowLayer';
 import { FlowerGardenOptionWordSpriteLayer } from './exercises/variantSelection/components/FlowerGardenOptionWordSpriteLayer';
 import { FlowerGardenMatchWordSpriteLayer } from './exercises/wordLearning/translationMatch/components/FlowerGardenMatchWordSpriteLayer';

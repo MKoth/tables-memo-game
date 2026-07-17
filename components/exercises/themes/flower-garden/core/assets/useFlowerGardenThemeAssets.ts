@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import type { SkImage } from '@shopify/react-native-skia';
 import type { ThemeAssets } from '../../../../themeContract';
+import { loadSkiaImage } from '../../../../core/assets/loadSkiaImage';
 import {
   FLOWER_GARDEN_IMAGE_ASSETS,
   FLOWER_GARDEN_PRELOAD_TOTAL,
+  ROSE_BUD_SOURCE,
   type FlowerGardenPetalKey,
   type FlowerGardenThemeImages,
 } from './flowerGardenThemeAssets';
@@ -46,9 +49,25 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        let roseBudImage: SkImage | null = null;
+        try {
+          roseBudImage = await loadSkiaImage(ROSE_BUD_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load rose bud SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
-          images: { roses: roses as FlowerGardenThemeImages['roses'] },
+          images: {
+            roses: roses as FlowerGardenThemeImages['roses'],
+            roseBudImage,
+          },
         });
       } catch (error) {
         if (__DEV__) {

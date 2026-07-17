@@ -1,3 +1,5 @@
+import type { SkImage } from '@shopify/react-native-skia';
+
 const FLOWER_GARDEN_IMAGE_ASSETS = {
   roses: {
     petal1: require('../../../../../../assets/images/flower_garden_theme/roses/pettel1.png'),
@@ -11,10 +13,13 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
   },
 } as const;
 
+export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
+
 export type FlowerGardenPetalKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.roses;
 
 export type FlowerGardenThemeImages = {
   roses: Record<FlowerGardenPetalKey, unknown>;
+  roseBudImage: SkImage | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT = Object.keys(

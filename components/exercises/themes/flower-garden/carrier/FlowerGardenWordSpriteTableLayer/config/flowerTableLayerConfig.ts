@@ -1,0 +1,14 @@
+export const TAP_HIT_RADIUS_PAD = 1.55;
+export const PAN_MIN_DISTANCE_PX = 10;
+export const TAP_MAX_DISTANCE_PX = 10;
+export const BIAS_DRAG_SENS = 0.0035;
+export const BIAS_FLING_SENS = 0.00035;
+export const MAX_FLING_MS = 900;
+export const MIN_FLING_MS = 80;
+export const FOCUS_ANIM_MIN_MS = 400;
+export const FOCUS_ANIM_MAX_MS = 900;
+export const FOCUS_ANIM_BIAS_SCALE = 900;
+export const LAYOUT_MIN_INTERVAL_MS = 1000 / 60;
+export const BIAS_SETTLE_EPS = 1e-4;
+export const DEFAULT_TRANSLATION_DISPLAY_MS = 1000;
+export const WORD_SPRITE_CLOCK_FPS = 15;
