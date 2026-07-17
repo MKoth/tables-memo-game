@@ -90,7 +90,7 @@ export function useRoamerCaptureFlow({
   } = shared;
 
   const onSpeedIncrease = useCallback(() => {
-    soundsRef.current?.playRandomSplash();
+    soundsRef.current?.playRandomBurst();
   }, []);
 
   const defaultTargetDiameter = Math.min(roamerRect.w, roamerRect.h) * BUBBLE_DIAMETER_RATIO;
@@ -174,7 +174,7 @@ export function useRoamerCaptureFlow({
 
   const startBurst = useCallback(
     (intent: BurstIntentValue = BurstIntent.Release) => {
-      soundsRef.current?.playBubblePop();
+      soundsRef.current?.playOrbPop();
       startBurstRaw(intent);
     },
     [startBurstRaw],
@@ -287,7 +287,7 @@ export function useRoamerCaptureFlow({
       }
 
       cancelTransitionRaf();
-      soundsRef.current?.playBubbleInflate();
+      soundsRef.current?.playOrbInflate();
       sim.armCapture(fishIndex, originX, originY);
       setPoolHiddenFishIndex(null);
       setEscapeOverlayActive(false);
@@ -339,7 +339,7 @@ export function useRoamerCaptureFlow({
     handleMatchSuccess,
     bubbleOverlay,
     sim,
-    eliminatedFishSv,
+    eliminatedRoamerSv: eliminatedFishSv,
   });
 
   const getFishIndexForWord = useCallback(

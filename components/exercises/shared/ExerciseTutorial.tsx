@@ -106,8 +106,8 @@ export function ExerciseTutorial() {
             gradientRadius={gradientRadius}
             roamerBridge={roamerBridge}
             wordSpriteBridge={wordSpriteBridge}
-            fishTargetIndex={roamerTargetIndex}
-            jellyTargetIndex={wordSpriteTargetIndex}
+            roamerTargetIndex={roamerTargetIndex}
+            spriteTargetIndex={wordSpriteTargetIndex}
             headerTargetIndex={headerTargetIndex}
           />
         </Canvas>

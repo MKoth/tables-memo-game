@@ -35,7 +35,7 @@ export function WordSpriteTableLayer({
       bellImage={bellImage}
       tentacleImage={tentacleImage}
       capturedWord={captureBridge?.capturedWord ?? null}
-      bubblePhase={captureBridge?.bubblePhase}
+      orbPhase={captureBridge?.orbPhase}
       onMatchSuccess={onWordSpriteMatchSuccess}
       onWordSpriteSound={onWordSpriteSound}
       interactive={interactive}

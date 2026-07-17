@@ -24,7 +24,7 @@ export {
   WRONG_FEEDBACK_MS,
   type InsertAnimationPhase,
   type InsertAnimationState,
-  type LetterBubbleModel,
+  type LetterOrbModel,
   type ScheduleTimer,
   type TransformationMode,
   type VariantPickerItem,

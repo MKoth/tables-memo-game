@@ -1,10 +1,7 @@
 import type { SentencePromptDisplaySlot } from '../../sentenceTransformation/domain/types';
 import type { ZoneRect } from './computeExerciseLayout';
-import {
-  computeWordSpriteFontScale,
-  rollBodyTint,
-  sr,
-} from '../../themes/undersea/carrier/wordSpriteVisualTokens';
+import { computeWordSpriteFontScale } from './computeWordSpriteFontScale';
+import { rollBodyTint, sr } from '../../themes/undersea/carrier/wordSpriteVisualTokens';
 
 const MIN_DIAMETER = 34;
 const MAX_DIAMETER = 74;
@@ -131,7 +128,7 @@ export type SentenceSlotConfig = {
   label: string;
   kind: 'token' | 'blank';
   translation: string;
-  bellSize: number;
+  bodySize: number;
   phase: number;
   pulseSpeed: number;
   tintMode: 0 | 1 | 2;
@@ -147,7 +144,7 @@ export type SentenceSlotConfig = {
 
 export type SentenceRowLayoutInput = {
   slots: SentencePromptDisplaySlot[];
-  jellyRect: ZoneRect;
+  spriteRect: ZoneRect;
   roamerRect: ZoneRect;
   conjugatedForm: string;
   roundPos: number;
@@ -174,25 +171,25 @@ function clamp(val: number, lo: number, hi: number): number {
 
 function estimateSlotWidth(
   label: string,
-  bellSize: number,
+  bodySize: number,
   isBlank: boolean,
   blankFootprintDiameter: number,
 ): number {
   if (isBlank) {
     return blankFootprintDiameter + SLOT_GAP;
   }
-  const charWidth = bellSize * 0.22;
-  const textWidth = Math.max(label.length * charWidth, bellSize * 0.45);
-  return Math.max(bellSize, textWidth) + SLOT_GAP;
+  const charWidth = bodySize * 0.22;
+  const textWidth = Math.max(label.length * charWidth, bodySize * 0.45);
+  return Math.max(bodySize, textWidth) + SLOT_GAP;
 }
 
 /** Lay out sentence row wordSprite horizontally with line wrapping, vertically centered. */
 export function computeSentenceRowLayout(input: SentenceRowLayoutInput): SentenceRowLayout {
-  const { slots, jellyRect, roamerRect, conjugatedForm, roundPos } = input;
-  const zoneLeft = jellyRect.x;
-  const zoneTop = jellyRect.y;
-  const zoneWidth = jellyRect.w;
-  const zoneHeight = jellyRect.h;
+  const { slots, spriteRect, roamerRect, conjugatedForm, roundPos } = input;
+  const zoneLeft = spriteRect.x;
+  const zoneTop = spriteRect.y;
+  const zoneWidth = spriteRect.w;
+  const zoneHeight = spriteRect.h;
   const slotCount = slots.length;
 
   if (slotCount === 0) {
@@ -243,7 +240,7 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
     const minScale = BODY_BELL_SIZE_MIN / baseBellSize;
     scales[index] = Math.max(scale, minScale);
 
-    const bellSize = isBlank ? blankFootprintDiameter * 0.7 : baseBellSize;
+    const bodySize = isBlank ? blankFootprintDiameter * 0.7 : baseBellSize;
 
     return {
       key: `slot-${index}`,
@@ -251,7 +248,7 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
       label,
       kind: slot.kind,
       translation: slot.kind === 'token' && slot.translation ? slot.translation : '',
-      bellSize,
+      bodySize,
       phase: sr(index, 3) * Math.PI * 2,
       pulseSpeed: 2.2 + sr(index, 7) * 2.0,
       ...tint,
@@ -263,7 +260,7 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
   const slotWidths = configs.map((config, index) =>
     estimateSlotWidth(
       config.label,
-      config.bellSize * (scales[index] ?? 1),
+      config.bodySize * (scales[index] ?? 1),
       config.kind === 'blank',
       blankFootprintDiameter,
     ),
@@ -275,17 +272,17 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
 
   for (let index = 0; index < configs.length; index++) {
     const width = slotWidths[index] ?? baseBellSize;
-    const bellSize = (configs[index]?.bellSize ?? baseBellSize) * (scales[index] ?? 1);
+    const bodySize = (configs[index]?.bodySize ?? baseBellSize) * (scales[index] ?? 1);
     const nextWidth =
       currentLine.indices.length === 0 ? width : currentLine.width + width;
 
     if (currentLine.indices.length > 0 && nextWidth > zoneWidth) {
       lines.push(currentLine);
-      currentLine = { indices: [index], width, maxBellSize: bellSize };
+      currentLine = { indices: [index], width, maxBellSize: bodySize };
     } else {
       currentLine.indices.push(index);
       currentLine.width = nextWidth;
-      currentLine.maxBellSize = Math.max(currentLine.maxBellSize, bellSize);
+      currentLine.maxBellSize = Math.max(currentLine.maxBellSize, bodySize);
     }
   }
   if (currentLine.indices.length > 0) {
@@ -295,7 +292,7 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
   // Use the largest bell size in the row (or baseline) for line height
   const rowMaxBellSize = Math.max(
     ...configs.map(
-      (c, i) => (c.kind === 'blank' ? blankFootprintDiameter : c.bellSize * (scales[i] ?? 1)),
+      (c, i) => (c.kind === 'blank' ? blankFootprintDiameter : c.bodySize * (scales[i] ?? 1)),
     ),
     baseBellSize,
   );
@@ -323,11 +320,11 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
 
 export function blankSlotCenter(
   slots: SentencePromptDisplaySlot[],
-  jellyRect: ZoneRect,
+  spriteRect: ZoneRect,
   roamerRect: ZoneRect,
   conjugatedForm: string,
   roundPos: number,
-): { x: number; y: number; bellSize: number; footprintDiameter: number } | null {
+): { x: number; y: number; bodySize: number; footprintDiameter: number } | null {
   const blankIndex = slots.findIndex((slot) => slot.kind === 'blank');
   if (blankIndex < 0) {
     return null;
@@ -335,16 +332,16 @@ export function blankSlotCenter(
 
   const layout = computeSentenceRowLayout({
     slots,
-    jellyRect,
+    spriteRect,
     roamerRect,
     conjugatedForm,
     roundPos,
   });
 
   return {
-    x: layout.xs[blankIndex] ?? jellyRect.x + jellyRect.w * 0.5,
-    y: layout.ys[blankIndex] ?? jellyRect.y + jellyRect.h * 0.5,
-    bellSize: layout.configs[blankIndex]?.bellSize ?? 40,
+    x: layout.xs[blankIndex] ?? spriteRect.x + spriteRect.w * 0.5,
+    y: layout.ys[blankIndex] ?? spriteRect.y + spriteRect.h * 0.5,
+    bodySize: layout.configs[blankIndex]?.bodySize ?? 40,
     footprintDiameter: layout.blankFootprintDiameter,
   };
 }
@@ -360,7 +357,7 @@ export type RoundResolutionFlightLayout = {
 
 export type RoundResolutionFlightInput = {
   slots: SentencePromptDisplaySlot[];
-  jellyRect: ZoneRect;
+  spriteRect: ZoneRect;
   roamerRect: ZoneRect;
   conjugatedForm: string;
   roundPos: number;
@@ -370,8 +367,8 @@ export type RoundResolutionFlightInput = {
 export function computeRoundResolutionFlight(
   input: RoundResolutionFlightInput,
 ): RoundResolutionFlightLayout | null {
-  const { slots, jellyRect, roamerRect, conjugatedForm, roundPos } = input;
-  const blank = blankSlotCenter(slots, jellyRect, roamerRect, conjugatedForm, roundPos);
+  const { slots, spriteRect, roamerRect, conjugatedForm, roundPos } = input;
+  const blank = blankSlotCenter(slots, spriteRect, roamerRect, conjugatedForm, roundPos);
   if (blank == null) {
     return null;
   }

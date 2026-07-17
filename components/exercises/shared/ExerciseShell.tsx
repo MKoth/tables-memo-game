@@ -20,9 +20,9 @@ function ExerciseShellContent({ children }: { children: ReactNode }) {
     return (
       <ExerciseLoadingScreen
         progress={assets.progress}
-        seafloorImage={assets.seafloorImage}
-        stoneImages={assets.stoneImages}
-        seaweedImages={assets.seaweedImages}
+        backgroundImage={assets.backgroundImage}
+        decorationImages={assets.decorationImages}
+        accentImages={assets.accentImages}
       />
     );
   }

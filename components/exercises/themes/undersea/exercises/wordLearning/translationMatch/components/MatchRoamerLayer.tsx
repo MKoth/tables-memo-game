@@ -188,7 +188,7 @@ export function MatchRoamerLayer({
 
   const startBurst = useCallback(
     (intent: (typeof BurstIntent)[keyof typeof BurstIntent] = BurstIntent.Release) => {
-      soundsRef.current?.playBubblePop();
+      soundsRef.current?.playOrbPop();
       startBurstRaw(intent);
     },
     [startBurstRaw],
@@ -330,14 +330,14 @@ export function MatchRoamerLayer({
   const handleFishSelect = useCallback(
     (word: string, fishIndex: number, originX: number, originY: number) => {
       if (sessionController != null) {
-        const captured = sessionController.captureFish(fishIndex, word);
+        const captured = sessionController.captureRoamer(fishIndex, word);
         if (!captured) {
           return;
         }
       }
 
       cancelTransitionRaf();
-      soundsRef.current?.playBubbleInflate();
+      soundsRef.current?.playOrbInflate();
       sim.armCapture(fishIndex, originX, originY);
       setPoolHiddenFishIndex(null);
       setSelection({ word, fishIndex, originX, originY });

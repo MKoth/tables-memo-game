@@ -2,7 +2,7 @@ export type MatchSessionPhase = 'idle' | 'select' | 'resolve';
 
 export type MatchSessionControllerSnapshot = {
   phase: MatchSessionPhase;
-  capturedFishIndex: number;
+  capturedRoamerIndex: number;
   capturedEnglish: string | null;
   matchedIndices: number[];
   allMatched: boolean;
@@ -16,7 +16,7 @@ export type MatchSessionControllerConfig = {
 
 export type MatchSessionController = {
   getSnapshot: () => MatchSessionControllerSnapshot;
-  captureFish: (fishIndex: number, english: string) => boolean;
+  captureRoamer: (fishIndex: number, english: string) => boolean;
   release: () => void;
   correctMatch: (pairIndex: number) => void;
   wrongMatch: () => void;
@@ -30,7 +30,7 @@ export function createMatchSessionController({
   onSessionComplete,
 }: MatchSessionControllerConfig): MatchSessionController {
   let phase: MatchSessionPhase = 'idle';
-  let capturedFishIndex = -1;
+  let capturedRoamerIndex = -1;
   let capturedEnglish: string | null = null;
   const matchedIndices: number[] = [];
   let sessionCompleteFired = false;
@@ -46,7 +46,7 @@ export function createMatchSessionController({
 
   const getSnapshot = (): MatchSessionControllerSnapshot => ({
     phase,
-    capturedFishIndex,
+    capturedRoamerIndex,
     capturedEnglish,
     matchedIndices: [...matchedIndices],
     allMatched: matchedIndices.length >= pairCount,
@@ -55,11 +55,11 @@ export function createMatchSessionController({
   return {
     getSnapshot,
 
-    captureFish(fishIndex: number, english: string): boolean {
+    captureRoamer(fishIndex: number, english: string): boolean {
       if (phase !== 'idle') {
         return false;
       }
-      capturedFishIndex = fishIndex;
+      capturedRoamerIndex = fishIndex;
       capturedEnglish = english;
       setPhase('select');
       return true;
@@ -69,7 +69,7 @@ export function createMatchSessionController({
       if (phase !== 'select') {
         return;
       }
-      capturedFishIndex = -1;
+      capturedRoamerIndex = -1;
       capturedEnglish = null;
       setPhase('idle');
     },
@@ -99,14 +99,14 @@ export function createMatchSessionController({
       if (phase !== 'resolve') {
         return;
       }
-      capturedFishIndex = -1;
+      capturedRoamerIndex = -1;
       capturedEnglish = null;
       setPhase('idle');
     },
 
     dispose() {
       phase = 'idle';
-      capturedFishIndex = -1;
+      capturedRoamerIndex = -1;
       capturedEnglish = null;
       matchedIndices.length = 0;
       sessionCompleteFired = false;

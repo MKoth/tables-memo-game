@@ -13,7 +13,7 @@ type UseRoamerRuntimeBridgeParams = {
     runtimeEntries: { runtime: { x: SharedValue<number>; y: SharedValue<number> } }[];
     hitRadius: number;
   };
-  eliminatedFishSv: SharedValue<number[]>;
+  eliminatedRoamerSv: SharedValue<number[]>;
 };
 
 export function useRoamerRuntimeBridge({
@@ -23,7 +23,7 @@ export function useRoamerRuntimeBridge({
   handleMatchSuccess,
   bubbleOverlay,
   sim,
-  eliminatedFishSv,
+  eliminatedRoamerSv,
 }: UseRoamerRuntimeBridgeParams) {
   const { publishCaptureBridge, publishRoamerBridge } = useExerciseRuntime();
   const bubbleOverlayRef = useRef(bubbleOverlay);
@@ -34,7 +34,7 @@ export function useRoamerRuntimeBridge({
       selection != null
         ? {
             capturedWord: selection.word,
-            bubblePhase: phase,
+            orbPhase: phase,
             onMatchSuccess: handleMatchSuccess,
             overlay: bubbleOverlayRef.current,
             escapeOverlayActive,
@@ -51,13 +51,13 @@ export function useRoamerRuntimeBridge({
 
   useLayoutEffect(() => {
     publishRoamerBridge({
-      fishRuntimePositions: sim.runtimeEntries.map(entry => ({
+      runtimePositions: sim.runtimeEntries.map(entry => ({
         x: entry.runtime.x,
         y: entry.runtime.y,
       })),
-      fishCount: sim.runtimeEntries.length,
+      roamerCount: sim.runtimeEntries.length,
       hitRadius: sim.hitRadius,
-      eliminatedFishSv,
+      eliminatedRoamerSv,
     });
-  }, [eliminatedFishSv, publishRoamerBridge, sim.hitRadius, sim.runtimeEntries]);
+  }, [eliminatedRoamerSv, publishRoamerBridge, sim.hitRadius, sim.runtimeEntries]);
 }

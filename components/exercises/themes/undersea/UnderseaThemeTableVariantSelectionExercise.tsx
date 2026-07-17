@@ -37,12 +37,12 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
   const table = spanishPresentTable2Plural;
   const soundEnabled = useExerciseStore(state => state.soundEnabled);
 
-  const { roamerRect, jellyRect, orientation, screenWidth, screenHeight } = useExerciseLayout();
+  const { roamerRect, spriteRect, orientation, screenWidth, screenHeight } = useExerciseLayout();
 
   useEffect(() => {
-    sounds.startWaterflow();
+    sounds.startAmbient();
     return () => {
-      sounds.stopWaterflow();
+      sounds.stopAmbient();
     };
   }, [sounds]);
 
@@ -60,7 +60,7 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
     screenWidth,
     screenHeight,
     roamerRect,
-    jellyRect,
+    spriteRect,
     playSuccess: sounds.playSuccessClick,
     playWrong: sounds.playWrongClick,
   });
@@ -80,7 +80,7 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
           conjugatedForm={game.conjugatedForm}
           roundPos={game.roundPos}
           roundPhase={game.roundPhase}
-          swimPaths={game.swimPaths}
+          motionPaths={game.motionPaths}
           blankSlotIndex={game.blankSlotIndex}
           blankExiting={game.blankExiting}
           blankExitDurationMs={ROUND_RESOLVE_FLY_DURATION_MS}
@@ -93,7 +93,7 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
       <View style={styles.optionLayer} pointerEvents="box-none">
         <OptionWordSpriteLayer
           options={game.options}
-          swimPaths={game.optionSwimPaths}
+          motionPaths={game.optionMotionPaths}
           roundPhase={game.roundPhase}
           roundPos={game.roundPos}
           correctOptionIndex={game.correctOptionIndex}

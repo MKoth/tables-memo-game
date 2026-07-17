@@ -9,7 +9,7 @@ import {
   computeRoundResolutionFlight,
   computeSentenceRowLayout,
 } from '../../core/layout/exerciseLayout';
-import type { RoundResolutionBubbleState } from '../domain/roundResolutionBubbleState';
+import type { RoundResolutionOrbState } from '../domain/roundResolutionOrbState';
 import type { VariantPickerItem } from '../../wordTransformation/domain';
 import {
   buildCascadeRevealOrder,
@@ -18,7 +18,7 @@ import {
 import {
   bodyCellIndex,
   type InsertAnimationState,
-  type LetterBubbleModel,
+  type LetterOrbModel,
   type TransformationMode,
   type VariantSourceLayout,
   type WordOperationSequence,
@@ -27,14 +27,14 @@ import {
   createSentenceRoundController,
   createSentenceTransformationExercise,
   findBlankSlotIndex,
-  planSwimPaths,
+  planMotionPaths,
   shuffleIndices,
   ROUND_RESOLVE_FLY_DURATION_MS,
   type SentencePromptDisplaySlot,
   type SentenceRoundControllerSnapshot,
   type SentenceRoundPhase,
   type SentenceTransformationRound,
-  type SwimPath,
+  type MotionPath,
 } from '../domain';
 
 export type SentenceBubbleEnterState = {
@@ -51,12 +51,12 @@ export type SentenceTransformationGame = {
   poppingSlotIndex: number | null;
   mergeWord: string | null;
   insertAnimation: InsertAnimationState | null;
-  resolutionBubble: RoundResolutionBubbleState | null;
+  resolutionOrb: RoundResolutionOrbState | null;
   bubbleEnter: SentenceBubbleEnterState | null;
   sequence: WordOperationSequence | null;
   operation: WordOperationSequence['operations'][number] | null;
   mode: TransformationMode | null;
-  letters: LetterBubbleModel[];
+  letters: LetterOrbModel[];
   variantPickerItems: VariantPickerItem[];
   pickerHiddenItemIds: ReadonlySet<string>;
   wrongItemId: string | null;
@@ -65,7 +65,7 @@ export type SentenceTransformationGame = {
   displaySlots: SentencePromptDisplaySlot[];
   conjugatedForm: string;
   roundPos: number;
-  swimPaths: SwimPath[];
+  motionPaths: MotionPath[];
   bubbleTranslation: string;
   solvedCount: number;
   totalCount: number;
@@ -99,7 +99,7 @@ export type UseSentenceTransformationGameParams = {
   screenWidth: number;
   screenHeight: number;
   roamerRect: ZoneRect;
-  jellyRect: ZoneRect;
+  spriteRect: ZoneRect;
   playPop?: () => void;
   playInflate?: () => void;
   playWrong?: () => void;
@@ -112,7 +112,7 @@ export function useSentenceTransformationGame({
   screenWidth,
   screenHeight,
   roamerRect,
-  jellyRect,
+  spriteRect,
   playPop,
   playInflate,
   playWrong,
@@ -131,15 +131,15 @@ export function useSentenceTransformationGame({
     solvedWord: null,
   }));
   const [bubbleEnter, setBubbleEnter] = useState<SentenceBubbleEnterState | null>(null);
-  const [resolutionBubble, setResolutionBubble] = useState<RoundResolutionBubbleState | null>(
+  const [resolutionOrb, setResolutionOrb] = useState<RoundResolutionOrbState | null>(
     null,
   );
 
   const roundRef = useRef<ReturnType<typeof createSentenceRoundController> | null>(null);
   const roamerRectRef = useRef(roamerRect);
-  const jellyRectRef = useRef(jellyRect);
+  const spriteRectRef = useRef(spriteRect);
   roamerRectRef.current = roamerRect;
-  jellyRectRef.current = jellyRect;
+  spriteRectRef.current = spriteRect;
 
   const playPopRef = useRef(playPop);
   playPopRef.current = playPop;
@@ -195,7 +195,7 @@ export function useSentenceTransformationGame({
   const configureEnterPhase = useCallback((baseWord: string) => {
     roundRef.current?.configureRound({ wordLength: baseWord.length });
     setBubbleEnter(null);
-    setResolutionBubble(null);
+    setResolutionOrb(null);
   }, []);
 
   const handleRoundPhaseChangeRef = useRef<() => void>(() => {});
@@ -204,15 +204,15 @@ export function useSentenceTransformationGame({
     () =>
       computeSentenceRowLayout({
         slots: displaySlots,
-        jellyRect,
+        spriteRect,
         roamerRect,
         conjugatedForm: currentRound?.conjugatedForm ?? '',
         roundPos: roundSnapshot.roundPos,
       }),
-    [displaySlots, jellyRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
+    [displaySlots, spriteRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
   );
 
-  const swimPaths = useMemo<SwimPath[]>(() => {
+  const motionPaths = useMemo<MotionPath[]>(() => {
     if (slotLayout.xs.length === 0) {
       return [];
     }
@@ -220,14 +220,14 @@ export function useSentenceTransformationGame({
       x,
       y: slotLayout.ys[i] ?? 0,
     }));
-    return planSwimPaths({
+    return planMotionPaths({
       orientation,
       screenWidth,
       screenHeight,
-      jellyRect,
+      spriteRect,
       slotCenters,
     });
-  }, [orientation, screenWidth, screenHeight, jellyRect, slotLayout.xs, slotLayout.ys]);
+  }, [orientation, screenWidth, screenHeight, spriteRect, slotLayout.xs, slotLayout.ys]);
 
   const handleRoundPhaseChange = useCallback(() => {
     const snapshot = roundRef.current?.getSnapshot();
@@ -258,14 +258,14 @@ export function useSentenceTransformationGame({
       const solvedWord = snapshot.solvedWord;
       const flight = computeRoundResolutionFlight({
         slots: roundForSnapshot?.displaySlots ?? [],
-        jellyRect: jellyRectRef.current,
+        spriteRect: spriteRectRef.current,
         roamerRect: roamerRectRef.current,
         conjugatedForm: solvedWord,
         roundPos: snapshot.roundPos,
       });
 
       if (flight != null) {
-        setResolutionBubble({
+        setResolutionOrb({
           word: solvedWord,
           ...flight,
           flyDurationMs: ROUND_RESOLVE_FLY_DURATION_MS,
@@ -369,8 +369,8 @@ export function useSentenceTransformationGame({
 
   const displayWord = sequence?.baseWord ?? coreSnapshot?.currentWord ?? '';
 
-  const letters = useMemo<LetterBubbleModel[]>(() => {
-    if (resolutionBubble != null) {
+  const letters = useMemo<LetterOrbModel[]>(() => {
+    if (resolutionOrb != null) {
       return [];
     }
 
@@ -403,7 +403,7 @@ export function useSentenceTransformationGame({
     coreSnapshot?.letters,
     displayWord,
     isCompleted,
-    resolutionBubble,
+    resolutionOrb,
     roundPhase,
     roundSnapshot.roundPos,
   ]);
@@ -450,7 +450,7 @@ export function useSentenceTransformationGame({
     poppingSlotIndex,
     mergeWord,
     insertAnimation: coreSnapshot?.insertAnimation ?? null,
-    resolutionBubble,
+    resolutionOrb,
     bubbleEnter,
     sequence,
     operation: coreSnapshot?.operation ?? null,
@@ -464,7 +464,7 @@ export function useSentenceTransformationGame({
     displaySlots,
     conjugatedForm: currentRound?.conjugatedForm ?? '',
     roundPos: roundSnapshot.roundPos,
-    swimPaths,
+    motionPaths,
     bubbleTranslation,
     solvedCount: roundSnapshot.roundPos,
     totalCount: roundOrder.length,

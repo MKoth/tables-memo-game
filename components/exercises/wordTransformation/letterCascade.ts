@@ -1,4 +1,4 @@
-import type { LetterBubbleModel } from './domain/coreTypes';
+import type { LetterOrbModel } from './domain/coreTypes';
 import {
   BUBBLE_BURST_DURATION_MS,
   WORD_LETTER_ENTER_DURATION_MS,
@@ -8,7 +8,7 @@ import {
 
 export type CascadePhase = 'enter' | 'exit';
 
-export type LetterCascadeState = Pick<LetterBubbleModel, 'popped' | 'wrong' | 'skipEnter'>;
+export type LetterCascadeState = Pick<LetterOrbModel, 'popped' | 'wrong' | 'skipEnter'>;
 
 export type MapLettersWithCascadeParams = {
   word: string;
@@ -40,7 +40,7 @@ export function mapLettersWithCascade({
   phase,
   order,
   getLetterState,
-}: MapLettersWithCascadeParams): LetterBubbleModel[] {
+}: MapLettersWithCascadeParams): LetterOrbModel[] {
   const isExit = phase === 'exit';
   const staggerMs = isExit ? WORD_LETTER_EXIT_STAGGER_MS : WORD_LETTER_ENTER_STAGGER_MS;
 

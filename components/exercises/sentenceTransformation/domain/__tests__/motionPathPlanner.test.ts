@@ -1,9 +1,9 @@
-import { planSwimPaths } from '../swimPathPlanner';
+import { planMotionPaths } from '../motionPathPlanner';
 import type { ExerciseOrientation } from '../../../core/layout/computeExerciseLayout';
 
 const SCREEN_WIDTH = 390;
 const SCREEN_HEIGHT = 844;
-const JELLY_RECT = { x: 0, y: 60, w: 390, h: 320 };
+const SPRITE_RECT = { x: 0, y: 60, w: 390, h: 320 };
 
 function portraitCenters(count: number): { x: number; y: number }[] {
   const centers: { x: number; y: number }[] = [];
@@ -38,16 +38,16 @@ function planForOrientation(
     orientation === 'portrait'
       ? portraitCenters(slotCount)
       : landscapeCenters(slotCount);
-  return planSwimPaths({
+  return planMotionPaths({
     orientation,
     screenWidth: SCREEN_WIDTH,
     screenHeight: SCREEN_HEIGHT,
-    jellyRect: JELLY_RECT,
+    spriteRect: SPRITE_RECT,
     slotCenters: centers,
   });
 }
 
-describe('planSwimPaths', () => {
+describe('planMotionPaths', () => {
   it('returns empty array for zero slots', () => {
     const paths = planForOrientation('portrait', 0);
     expect(paths).toEqual([]);
@@ -102,15 +102,15 @@ describe('planSwimPaths', () => {
       }
     });
 
-    it('distributes top-edge spawns across jellyRect width', () => {
+    it('distributes top-edge spawns across spriteRect width', () => {
       const manyTopPaths = planForOrientation('portrait', 9);
       const topPaths = manyTopPaths.filter((p) => p.spawnY < 0);
       expect(topPaths.length).toBeGreaterThanOrEqual(3);
       const spawnXs = topPaths.map((p) => p.spawnX);
       const minX = Math.min(...spawnXs);
       const maxX = Math.max(...spawnXs);
-      expect(minX).toBeGreaterThanOrEqual(JELLY_RECT.x);
-      expect(maxX).toBeLessThanOrEqual(JELLY_RECT.x + JELLY_RECT.w);
+      expect(minX).toBeGreaterThanOrEqual(SPRITE_RECT.x);
+      expect(maxX).toBeLessThanOrEqual(SPRITE_RECT.x + SPRITE_RECT.w);
     });
   });
 

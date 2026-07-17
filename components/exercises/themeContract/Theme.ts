@@ -16,10 +16,10 @@ import type {
   SentenceRoundPhase,
 } from '../sentenceTransformation/domain/sentenceRoundController';
 import type {
-  SwimPath,
-} from '../sentenceTransformation/domain/swimPathPlanner';
+  MotionPath,
+} from '../sentenceTransformation/domain/motionPathPlanner';
 import type {
-  LetterBubbleModel,
+  LetterOrbModel,
   InsertAnimationState,
   VariantPickerItem,
   VariantSourceLayout,
@@ -27,7 +27,7 @@ import type {
 import type {
   InsertPreviewLayout,
 } from '../core/layout/exerciseLayout';
-import type { RoundResolutionBubbleState } from '../sentenceTransformation/domain/roundResolutionBubbleState';
+import type { RoundResolutionOrbState } from '../sentenceTransformation/domain/roundResolutionOrbState';
 import type {
   MatchSessionController,
 } from '../wordLearning/translationMatch/domain/matchSessionController';
@@ -42,11 +42,11 @@ export type OptionWordSpriteState = {
 };
 
 export type ThemeSoundController = {
-  startWaterflow: () => void;
-  stopWaterflow: () => void;
-  playRandomSplash: () => void;
-  playBubbleInflate: () => void;
-  playBubblePop: () => void;
+  startAmbient: () => void;
+  stopAmbient: () => void;
+  playRandomBurst: () => void;
+  playOrbInflate: () => void;
+  playOrbPop: () => void;
   playSuccessClick: () => void;
   playWrongClick: () => void;
   playPrimaryClick: () => void;
@@ -57,9 +57,9 @@ export type ThemeSoundController = {
 
 export type ThemeAssetsLoading = {
   phase: 'loading';
-  seafloorImage: SkImage | null;
-  stoneImages: Record<string, SkImage> | null;
-  seaweedImages: Record<string, SkImage> | null;
+  backgroundImage: SkImage | null;
+  decorationImages: Record<string, SkImage> | null;
+  accentImages: Record<string, SkImage> | null;
   progress: number;
 };
 
@@ -80,9 +80,9 @@ export type ThemeAssetsProviderValue = {
 export type ThemeLoadingBackdropProps = {
   width: number;
   height: number;
-  seafloorImage: import('@shopify/react-native-skia').SkImage | null;
-  stoneImages: Record<string, import('@shopify/react-native-skia').SkImage> | null;
-  seaweedImages: Record<string, import('@shopify/react-native-skia').SkImage> | null;
+  backgroundImage: import('@shopify/react-native-skia').SkImage | null;
+  decorationImages: Record<string, import('@shopify/react-native-skia').SkImage> | null;
+  accentImages: Record<string, import('@shopify/react-native-skia').SkImage> | null;
 };
 
 export type ThemeTutorialStepCopy = {
@@ -99,8 +99,8 @@ export type ThemeTutorialOverrides = {
     gradientRadius: number;
     roamerBridge: RoamerSimBridge | null;
     wordSpriteBridge: WordSpriteLayoutBridge | null;
-    fishTargetIndex: number | null;
-    jellyTargetIndex: number | null;
+    roamerTargetIndex: number | null;
+    spriteTargetIndex: number | null;
     headerTargetIndex: number | null;
   }>;
   pickRoamerTarget: (bridge: RoamerSimBridge) => number | null;
@@ -113,8 +113,8 @@ export type ThemeStyleOverrides = {
   overlayDark: string;
   spotlightRingColor: string;
   guideLineColor: string;
-  fishSpotlightScale: number;
-  jellySpotlightScale: number;
+  roamerSpotlightScale: number;
+  spriteSpotlightScale: number;
 };
 
 export type ThemeLayoutConfig = {
@@ -127,20 +127,20 @@ export type ThemeLayoutConfig = {
 
 export type ThemeShaders = Record<string, unknown>;
 
-export type ThemeRoamerSwimZoneProps = {
+export type ThemeRoamerMotionZoneProps = {
   words: string[];
   interactive?: boolean;
   sounds?: ThemeSoundController;
   captureEnabled?: boolean;
-  bubbleCaptureEnabled?: boolean;
-  swimZoneZIndex?: number;
-  bubbleTarget?: { centerX: number; centerY: number; diameter?: number };
+  orbCaptureEnabled?: boolean;
+  motionZoneZIndex?: number;
+  orbTarget?: { centerX: number; centerY: number; diameter?: number };
   controllerRef?: RefObject<unknown>;
 };
 
 export type ThemeDecorativeRoamerLayerProps = {
   zIndex?: number;
-  fishCount?: number;
+  roamerCount?: number;
 };
 
 export type ThemeWordSpriteTableLayerProps = {
@@ -158,7 +158,7 @@ export type ThemeSentenceRowLayerProps = {
   conjugatedForm: string;
   roundPos: number;
   roundPhase: SentenceRoundPhase;
-  swimPaths: SwimPath[];
+  motionPaths: MotionPath[];
   blankSlotIndex: number;
   blankExiting: boolean;
   blankExitDurationMs?: number;
@@ -171,7 +171,7 @@ export type ThemeSentenceRowLayerProps = {
 
 export type ThemeOptionWordSpriteLayerProps = {
   options: OptionWordSpriteState[];
-  swimPaths: SwimPath[];
+  motionPaths: MotionPath[];
   roundPhase: string;
   roundPos: number;
   correctOptionIndex: number;
@@ -199,12 +199,12 @@ export type ThemeMatchRoamerLayerProps = {
   keepOutDiskSv?: SharedValue<KeepOutDisk | null>;
 };
 
-export type ThemeTransformationBubbleLayerProps = {
-  wordBubblesVisible?: boolean;
+export type ThemeTransformationOrbLayerProps = {
+  wordOrbsVisible?: boolean;
   mergeWord?: string | null;
   onMergeComplete?: () => void;
-  betweenWordBubblesAndInsertFlight?: ReactNode;
-  letters: LetterBubbleModel[];
+  betweenWordOrbsAndInsertFlight?: ReactNode;
+  letters: LetterOrbModel[];
   lettersInteractive: boolean;
   insertAnimation: InsertAnimationState | null;
   variantPickerVisible: boolean;
@@ -219,8 +219,8 @@ export type ThemeTransformationBubbleLayerProps = {
   playInflate?: () => void;
 };
 
-export type ThemeTransformationWordBubblesProps = {
-  letters: LetterBubbleModel[];
+export type ThemeTransformationWordOrbsProps = {
+  letters: LetterOrbModel[];
   interactive?: boolean;
   insertPreview?: InsertPreviewLayout;
   mergeWord?: string | null;
@@ -231,7 +231,7 @@ export type ThemeTransformationWordBubblesProps = {
   zoneRect?: ZoneRect;
 };
 
-export type ThemeLetterBubbleProps = {
+export type ThemeLetterOrbProps = {
   char: string;
   centerX: number;
   centerY: number;
@@ -258,8 +258,8 @@ export type ThemeLetterBubbleProps = {
   wobbleBoostT?: SharedValue<number>;
 };
 
-export type ThemeResolutionBubbleProps = {
-  bubble: RoundResolutionBubbleState | null;
+export type ThemeResolutionOrbProps = {
+  orb: RoundResolutionOrbState | null;
   roundPhase: SentenceRoundPhase;
   translation?: string;
   onMaterializeComplete?: () => void;
@@ -267,7 +267,7 @@ export type ThemeResolutionBubbleProps = {
   onPopComplete?: () => void;
 };
 
-export type ThemeMergeBubblesProps = {
+export type ThemeMergeOrbsProps = {
   word: string;
   durationMs?: number;
   onComplete?: () => void;
@@ -292,8 +292,8 @@ export type ThemeResolveFlightProps = {
 
 export type ThemeEscapeCoordinatorParams = {
   roamerControllerRef: RefObject<unknown>;
-  jellyBridge: WordSpriteLayoutBridge;
-  jellyRect: ZoneRect;
+  spriteBridge: WordSpriteLayoutBridge;
+  spriteRect: ZoneRect;
 };
 
 export type ThemeEscapeCoordinatorResult = (sequence: WordOperationSequence) => void;
@@ -310,7 +310,7 @@ export type Theme = {
   scenery: ComponentType;
 
   roamer: {
-    swimZone: ComponentType<ThemeRoamerSwimZoneProps>;
+    motionZone: ComponentType<ThemeRoamerMotionZoneProps>;
     decorative: ComponentType<ThemeDecorativeRoamerLayerProps>;
     matchLayer: ComponentType<ThemeMatchRoamerLayerProps>;
   };
@@ -323,15 +323,15 @@ export type Theme = {
   };
 
   wordTransformationVisual: {
-    bubbleLayer: ComponentType<ThemeTransformationBubbleLayerProps>;
-    wordBubbles: ComponentType<ThemeTransformationWordBubblesProps>;
-    letterBubble: ComponentType<ThemeLetterBubbleProps>;
+    orbLayer: ComponentType<ThemeTransformationOrbLayerProps>;
+    wordOrbs: ComponentType<ThemeTransformationWordOrbsProps>;
+    letterOrb: ComponentType<ThemeLetterOrbProps>;
   };
 
   roundResolution: {
-    resolutionBubble: ComponentType<ThemeResolutionBubbleProps>;
+    resolutionOrb: ComponentType<ThemeResolutionOrbProps>;
     resolveFlight: ComponentType<ThemeResolveFlightProps>;
-    mergeBubbles: ComponentType<ThemeMergeBubblesProps>;
+    mergeOrbs: ComponentType<ThemeMergeOrbsProps>;
   };
 
   matchExercise: {

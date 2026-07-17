@@ -10,7 +10,7 @@ import {
   type InsertPreviewLayout,
 } from '../../../../../core/layout/exerciseLayout';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
-import type { LetterBubbleModel } from '../../../../../wordTransformation/domain';
+import type { LetterOrbModel } from '../../../../../wordTransformation/domain';
 
 import { bubbleDeformUniformDefaults } from '../../../shaders/bubbleDeform.sksl';
 import { ROUND_MERGE_DURATION_MS } from '../../../../../sentenceTransformation/domain/roundResolutionTiming';
@@ -19,7 +19,7 @@ import { MetaballMergeLayer } from '../../sentenceTransformation/merge/MetaballM
 import { computeMergeTarget } from '../../sentenceTransformation/merge/mergeLayout';
 import { useMergeProgress } from '../../sentenceTransformation/merge/useMergeProgress';
 
-function statusFor(letter: LetterBubbleModel): LetterBubbleStatus {
+function statusFor(letter: LetterOrbModel): LetterBubbleStatus {
   if (letter.popped) {
     return 'popped';
   }
@@ -30,7 +30,7 @@ function statusFor(letter: LetterBubbleModel): LetterBubbleStatus {
 }
 
 export type TransformationWordBubblesProps = {
-  letters: LetterBubbleModel[];
+  letters: LetterOrbModel[];
   interactive?: boolean;
   insertPreview?: InsertPreviewLayout;
   mergeWord?: string | null;

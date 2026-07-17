@@ -13,7 +13,7 @@ import {
 } from './types';
 import type {
   InsertAnimationState,
-  LetterBubbleModel,
+  LetterOrbModel,
   ScheduleTimer,
   TransformationMode,
   VariantPickerPressItem,
@@ -26,7 +26,7 @@ import type {
 export type {
   InsertAnimationPhase,
   InsertAnimationState,
-  LetterBubbleModel,
+  LetterOrbModel,
   ScheduleTimer,
   TransformationMode,
   VariantPickerItem,
@@ -432,7 +432,7 @@ export function createWordTransformationCore(
     }, INSERT_RESERVE_MS + INSERT_FLY_MS + INSERT_LAND_HANDOFF_MS);
   };
 
-  const buildLetters = (): LetterBubbleModel[] =>
+  const buildLetters = (): LetterOrbModel[] =>
     currentWord.split('').map((char, position) => ({
       key: `${sequenceKey}:${position}`,
       char,

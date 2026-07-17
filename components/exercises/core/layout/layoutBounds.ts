@@ -1,5 +1,5 @@
 export type LayoutBounds = {
-  /** Width of the jelly layout zone (not necessarily full screen). */
+  /** Width of the sprite layout zone (not necessarily full screen). */
   width: number;
   height: number;
   nGridCols: number;

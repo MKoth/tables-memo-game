@@ -22,9 +22,9 @@ import {
 
 export type UnderseaThemeAssetsLoading = {
   phase: 'loading';
-  seafloorImage: SkImage | null;
-  stoneImages: UnderseaThemeImages['stones'] | null;
-  seaweedImages: UnderseaThemeImages['seaweed'] | null;
+  backgroundImage: SkImage | null;
+  decorationImages: UnderseaThemeImages['stones'] | null;
+  accentImages: UnderseaThemeImages['seaweed'] | null;
   progress: number;
 };
 
@@ -142,9 +142,9 @@ async function loadRemainingImages(onImageLoaded: () => void): Promise<Omit<Unde
 }
 
 export function useUnderseaThemeAssets(): UnderseaThemeAssets {
-  const [seafloorImage, setSeafloorImage] = useState<SkImage | null>(null);
-  const [stoneImages, setStoneImages] = useState<UnderseaThemeImages['stones'] | null>(null);
-  const [seaweedImages, setSeaweedImages] = useState<UnderseaThemeImages['seaweed'] | null>(null);
+  const [backgroundImage, setBackgroundImage] = useState<SkImage | null>(null);
+  const [decorationImages, setDecorationImages] = useState<UnderseaThemeImages['stones'] | null>(null);
+  const [accentImages, setAccentImages] = useState<UnderseaThemeImages['seaweed'] | null>(null);
   const [progress, setProgress] = useState(0);
   const [readyAssets, setReadyAssets] = useState<Omit<UnderseaThemeAssetsReady, 'phase' | 'progress'> | null>(
     null,
@@ -176,13 +176,13 @@ export function useUnderseaThemeAssets(): UnderseaThemeAssets {
             return;
           }
           if (partial.seafloor != null) {
-            setSeafloorImage(partial.seafloor);
+            setBackgroundImage(partial.seafloor);
           }
           if (partial.stones != null) {
-            setStoneImages(partial.stones);
+            setDecorationImages(partial.stones);
           }
           if (partial.seaweed != null) {
-            setSeaweedImages(partial.seaweed);
+            setAccentImages(partial.seaweed);
           }
         });
         if (cancelled) {
@@ -234,9 +234,9 @@ export function useUnderseaThemeAssets(): UnderseaThemeAssets {
       releaseUnderseaThemeSounds(loadedSoundsRef.current);
       loadedSoundsRef.current = null;
       loadedCountRef.current = 0;
-      setSeafloorImage(null);
-      setStoneImages(null);
-      setSeaweedImages(null);
+      setBackgroundImage(null);
+      setDecorationImages(null);
+      setAccentImages(null);
       setProgress(0);
       setReadyAssets(null);
     };
@@ -252,9 +252,9 @@ export function useUnderseaThemeAssets(): UnderseaThemeAssets {
 
   return {
     phase: 'loading',
-    seafloorImage,
-    stoneImages,
-    seaweedImages,
+    backgroundImage,
+    decorationImages,
+    accentImages,
     progress,
   };
 }

@@ -31,9 +31,9 @@ export type ExerciseLayout = {
   screenWidth: number;
   screenHeight: number;
   roamerRect: ZoneRect;
-  jellyRect: ZoneRect;
+  spriteRect: ZoneRect;
   /** Bounds passed to wordSprite layout (zone in screen space). */
-  jellyLayoutBounds: Omit<LayoutBounds, 'scaleMin' | 'scaleMax' | 'edgeSqueeze' | 'spreadBoost'>;
+  spriteLayoutBounds: Omit<LayoutBounds, 'scaleMin' | 'scaleMax' | 'edgeSqueeze' | 'spreadBoost'>;
   labelRotationRad: number;
   controlsAnchor: ControlsAnchor;
   /** Stable key for sim/layout invalidation on rotation. */
@@ -55,24 +55,24 @@ function rect(
 
 function portraitLayout(width: number, height: number): {
   roamer: ZoneRect;
-  jelly: ZoneRect;
+  sprite: ZoneRect;
 } {
   const splitY = height * ROAMER_ZONE_FRACTION;
   return {
-    jelly: rect(0, height * JELLY_INSET_RATIO, width, height * JELLY_ZONE_FRACTION),
+    sprite: rect(0, height * JELLY_INSET_RATIO, width, height * JELLY_ZONE_FRACTION),
     roamer: rect(0, splitY, width, height - splitY),
   };
 }
 
 function landscapeLayout(width: number, height: number): {
   roamer: ZoneRect;
-  jelly: ZoneRect;
+  sprite: ZoneRect;
 } {
   const splitX = width * ROAMER_ZONE_FRACTION;
   const inset = height * JELLY_INSET_RATIO;
   return {
     roamer: rect(0, 0, splitX, height),
-    jelly: rect(splitX, inset, width - splitX, height - inset),
+    sprite: rect(splitX, inset, width - splitX, height - inset),
   };
 }
 
@@ -105,32 +105,32 @@ export function computeExerciseLayout(
   orientation: ExerciseOrientation,
 ): ExerciseLayout {
   let roamerRect: ZoneRect;
-  let jellyRect: ZoneRect;
+  let spriteRect: ZoneRect;
 
   switch (orientation) {
     case 'portrait': {
       const zones = portraitLayout(screenWidth, screenHeight);
       roamerRect = zones.roamer;
-      jellyRect = zones.jelly;
+      spriteRect = zones.sprite;
       break;
     }
     case 'landscapeLeft':
     case 'landscapeRight': {
       const zones = landscapeLayout(screenWidth, screenHeight);
       roamerRect = zones.roamer;
-      jellyRect = zones.jelly;
+      spriteRect = zones.sprite;
       break;
     }
   }
 
-  const jellyLayoutBounds: ExerciseLayout['jellyLayoutBounds'] = {
-    width: jellyRect.w,
+  const spriteLayoutBounds: ExerciseLayout['spriteLayoutBounds'] = {
+    width: spriteRect.w,
     height: screenHeight,
     nGridCols: 0,
     nGridRows: 0,
-    zoneLeft: jellyRect.x,
-    zoneTop: jellyRect.y,
-    zoneHeight: jellyRect.h,
+    zoneLeft: spriteRect.x,
+    zoneTop: spriteRect.y,
+    zoneHeight: spriteRect.h,
   };
 
   return {
@@ -138,8 +138,8 @@ export function computeExerciseLayout(
     screenWidth,
     screenHeight,
     roamerRect,
-    jellyRect,
-    jellyLayoutBounds,
+    spriteRect,
+    spriteLayoutBounds,
     labelRotationRad: 0,
     controlsAnchor: computeControlsAnchor(orientation),
     layoutKey: `${orientation}:${Math.round(screenWidth)}x${Math.round(screenHeight)}`,

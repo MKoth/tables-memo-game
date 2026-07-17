@@ -13,7 +13,7 @@ import {
   computeCascadeCompleteDelayMs,
   mapLettersWithCascade,
 } from '../../../wordTransformation/letterCascade';
-import type { LetterBubbleModel } from '../../../wordTransformation/domain/coreTypes';
+import type { LetterOrbModel } from '../../../wordTransformation/domain/coreTypes';
 import { INSERT_FLY_MS } from '../../../wordTransformation/insertAnimationTiming';
 import {
   createTranslationSpellingExercise,
@@ -56,8 +56,8 @@ export type LetterFlightState = {
 export type TranslationSpellingGame = {
   isCompleted: boolean;
   roundPhase: TranslationSpellingRoundPhase;
-  englishLetters: LetterBubbleModel[];
-  spanishLetters: LetterBubbleModel[];
+  englishLetters: LetterOrbModel[];
+  spanishLetters: LetterOrbModel[];
   poolLetters: PoolLetterState[];
   activeFlight: LetterFlightState | null;
   roundPos: number;
@@ -68,8 +68,8 @@ export type UseTranslationSpellingGameParams = {
   wordList: WordList;
   orientation: ExerciseOrientation;
   roamerRect: ZoneRect;
-  jellyRect: ZoneRect;
-  playBubbleInflate?: () => void;
+  spriteRect: ZoneRect;
+  playOrbInflate?: () => void;
   playWrong?: () => void;
 };
 
@@ -79,8 +79,8 @@ const RESOLVE_PAUSE_MS = 200;
 export function useTranslationSpellingGame({
   wordList,
   roamerRect,
-  jellyRect,
-  playBubbleInflate,
+  spriteRect,
+  playOrbInflate,
   playWrong,
 }: UseTranslationSpellingGameParams): TranslationSpellingGame {
   const exercise = useMemo(() => createTranslationSpellingExercise(wordList), [wordList]);
@@ -101,11 +101,11 @@ export function useTranslationSpellingGame({
   const [spanishPopOrder, setSpanishPopOrder] = useState<number[]>([]);
   const roundRef = useRef<ReturnType<typeof createTranslationSpellingRoundController> | null>(null);
   const roamerRectRef = useRef(roamerRect);
-  const jellyRectRef = useRef(jellyRect);
+  const spriteRectRef = useRef(spriteRect);
   roamerRectRef.current = roamerRect;
-  jellyRectRef.current = jellyRect;
-  const playBubbleInflateRef = useRef(playBubbleInflate);
-  playBubbleInflateRef.current = playBubbleInflate;
+  spriteRectRef.current = spriteRect;
+  const playOrbInflateRef = useRef(playOrbInflate);
+  playOrbInflateRef.current = playOrbInflate;
   const playWrongRef = useRef(playWrong);
   playWrongRef.current = playWrong;
 
@@ -138,10 +138,10 @@ export function useTranslationSpellingGame({
     if (word.length === 0) {
       return { diameter: 0, rowY: 0, centers: [] };
     }
-    return computeLetterLayout(jellyRect, word.length, SPANISH_WORD_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
-  }, [jellyRect, currentRound?.spanish]);
+    return computeLetterLayout(spriteRect, word.length, SPANISH_WORD_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
+  }, [spriteRect, currentRound?.spanish]);
 
-  const englishLetters = useMemo<LetterBubbleModel[]>(() => {
+  const englishLetters = useMemo<LetterOrbModel[]>(() => {
     if (currentRound == null) return [];
     if (roundSnapshot.phase === 'advance') return [];
     const word = currentRound.english;
@@ -155,7 +155,7 @@ export function useTranslationSpellingGame({
     });
   }, [currentRound, roundSnapshot.phase, roundSnapshot.roundPos, englishCascadeOrder, englishPopped]);
 
-  const spanishLetters = useMemo<LetterBubbleModel[]>(() => {
+  const spanishLetters = useMemo<LetterOrbModel[]>(() => {
     if (currentRound == null) return [];
     const word = currentRound.spanish;
     const showSpanish = spanishLetterStates.length > 0;
@@ -339,7 +339,7 @@ export function useTranslationSpellingGame({
       const isCorrect = matchLetter(poolLetter.char, nextExpectedPosition, currentRound?.spanish ?? '');
 
       if (isCorrect) {
-        playBubbleInflateRef.current?.();
+        playOrbInflateRef.current?.();
         const fromPos = poolLayout.positions[poolIndex];
         const fromCenterX = fromPos?.centerX ?? 0;
         const fromCenterY = fromPos?.centerY ?? 0;

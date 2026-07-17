@@ -10,7 +10,7 @@ import {
   computeLetterLayout,
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
 } from '../../core/layout/exerciseLayout';
-import { planSwimPaths, type SwimPath } from '../../sentenceTransformation/domain/swimPathPlanner';
+import { planMotionPaths, type MotionPath } from '../../sentenceTransformation/domain/motionPathPlanner';
 import { findBlankSlotIndex } from '../../sentenceTransformation/domain/sentenceRowDisplay';
 import type { SentencePromptDisplaySlot } from '../../sentenceTransformation/domain/types';
 import {
@@ -43,8 +43,8 @@ export type VariantSelectionGame = {
   displaySlots: SentencePromptDisplaySlot[];
   conjugatedForm: string;
   roundPos: number;
-  swimPaths: SwimPath[];
-  optionSwimPaths: SwimPath[];
+  motionPaths: MotionPath[];
+  optionMotionPaths: MotionPath[];
   options: OptionWordSpriteState[];
   correctOptionIndex: number;
   blankSlotIndex: number;
@@ -68,7 +68,7 @@ export type UseVariantSelectionGameParams = {
   screenWidth: number;
   screenHeight: number;
   roamerRect: ZoneRect;
-  jellyRect: ZoneRect;
+  spriteRect: ZoneRect;
   playSuccess?: () => void;
   playWrong?: () => void;
 };
@@ -79,7 +79,7 @@ export function useVariantSelectionGame({
   screenWidth,
   screenHeight,
   roamerRect,
-  jellyRect,
+  spriteRect,
   playSuccess,
   playWrong,
 }: UseVariantSelectionGameParams): VariantSelectionGame {
@@ -94,9 +94,9 @@ export function useVariantSelectionGame({
   const [resolveFlight, setResolveFlight] = useState<ResolutionFlightState | null>(null);
   const roundRef = useRef<ReturnType<typeof createVariantSelectionRoundController> | null>(null);
   const roamerRectRef = useRef(roamerRect);
-  const jellyRectRef = useRef(jellyRect);
+  const spriteRectRef = useRef(spriteRect);
   roamerRectRef.current = roamerRect;
-  jellyRectRef.current = jellyRect;
+  spriteRectRef.current = spriteRect;
   const playSuccessRef = useRef(playSuccess);
   playSuccessRef.current = playSuccess;
   const playWrongRef = useRef(playWrong);
@@ -131,12 +131,12 @@ export function useVariantSelectionGame({
     () =>
       computeSentenceRowLayout({
         slots: displaySlots,
-        jellyRect,
+        spriteRect,
         roamerRect,
         conjugatedForm: currentRound?.conjugatedForm ?? '',
         roundPos: roundSnapshot.roundPos,
       }),
-    [displaySlots, jellyRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
+    [displaySlots, spriteRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
   );
 
   const optionLayout = useMemo(() => {
@@ -147,35 +147,35 @@ export function useVariantSelectionGame({
     return computeLetterLayout(roamerRect, count, TRANSFORMATION_VARIANT_ROW_Y_RATIO);
   }, [currentRound?.options.length, roamerRect]);
 
-  const swimPaths = useMemo<SwimPath[]>(() => {
+  const motionPaths = useMemo<MotionPath[]>(() => {
     if (slotLayout.xs.length === 0) return [];
     const slotCenters = slotLayout.xs.map((x, i) => ({
       x,
       y: slotLayout.ys[i] ?? 0,
     }));
-    return planSwimPaths({
+    return planMotionPaths({
       orientation,
       screenWidth,
       screenHeight,
-      jellyRect,
+      spriteRect,
       slotCenters,
     });
-  }, [orientation, screenWidth, screenHeight, jellyRect, slotLayout.xs, slotLayout.ys]);
+  }, [orientation, screenWidth, screenHeight, spriteRect, slotLayout.xs, slotLayout.ys]);
 
-  const optionSwimPaths = useMemo<SwimPath[]>(() => {
+  const optionMotionPaths = useMemo<MotionPath[]>(() => {
     if (optionLayout.centers.length === 0) return [];
     const slotCenters = optionLayout.centers.map(x => ({
       x,
       y: optionLayout.rowY,
     }));
-    return planSwimPaths({
+    return planMotionPaths({
       orientation,
       screenWidth,
       screenHeight,
-      jellyRect,
+      spriteRect,
       slotCenters,
     });
-  }, [orientation, screenWidth, screenHeight, jellyRect, optionLayout.centers, optionLayout.rowY]);
+  }, [orientation, screenWidth, screenHeight, spriteRect, optionLayout.centers, optionLayout.rowY]);
 
   const options = useMemo<OptionWordSpriteState[]>(() => {
     if (currentRound == null) return [];
@@ -231,7 +231,7 @@ export function useVariantSelectionGame({
     if (blankSlotIndex < 0) return null;
     const blankCenter = blankSlotCenter(
       displaySlots,
-      jellyRectRef.current,
+      spriteRectRef.current,
       roamerRectRef.current,
       currentRound?.conjugatedForm ?? '',
       roundSnapshot.roundPos,
@@ -244,9 +244,9 @@ export function useVariantSelectionGame({
     const fromX = optionLayout.centers[correctIndex] ?? roamerRectRef.current.x + roamerRectRef.current.w * 0.5;
     const fromY = optionLayout.rowY;
 
-    const blankSwimPath = swimPaths[blankSlotIndex];
-    const toSpawnX = blankSwimPath?.spawnX ?? -100;
-    const toSpawnY = blankSwimPath?.spawnY ?? -100;
+    const blankMotionPath = motionPaths[blankSlotIndex];
+    const toSpawnX = blankMotionPath?.spawnX ?? -100;
+    const toSpawnY = blankMotionPath?.spawnY ?? -100;
 
     return {
       form: correctOpt.form,
@@ -258,7 +258,7 @@ export function useVariantSelectionGame({
       toSpawnX,
       toSpawnY,
     };
-  }, [blankSlotIndex, displaySlots, currentRound, roundSnapshot.roundPos, optionLayout.centers, optionLayout.rowY, optionLayout.diameter, swimPaths]);
+  }, [blankSlotIndex, displaySlots, currentRound, roundSnapshot.roundPos, optionLayout.centers, optionLayout.rowY, optionLayout.diameter, motionPaths]);
 
   const handleRowEnterComplete = useCallback(() => {
     roundRef.current?.notifyRowEnterComplete();
@@ -345,8 +345,8 @@ export function useVariantSelectionGame({
     displaySlots,
     conjugatedForm: currentRound?.conjugatedForm ?? '',
     roundPos: roundSnapshot.roundPos,
-    swimPaths,
-    optionSwimPaths,
+    motionPaths,
+    optionMotionPaths,
     options,
     correctOptionIndex,
     blankSlotIndex,

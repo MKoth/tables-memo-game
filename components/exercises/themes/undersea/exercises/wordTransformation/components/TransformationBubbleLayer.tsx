@@ -1,6 +1,6 @@
 import React, { useMemo, type ReactNode } from 'react';
 import type { InsertPreviewLayout } from '../../../../../core/layout/exerciseLayout';
-import type { InsertAnimationState, LetterBubbleModel } from '../../../../../wordTransformation/domain';
+import type { InsertAnimationState, LetterOrbModel } from '../../../../../wordTransformation/domain';
 import { TransformationInsertFlight } from './TransformationInsertFlight';
 import {
   TransformationVariantPicker,
@@ -30,7 +30,7 @@ export type TransformationBubbleLayerProps = {
   onMergeComplete?: () => void;
   /** Rendered after word bubbles and before insert flight (e.g. sentence resolution). */
   betweenWordBubblesAndInsertFlight?: ReactNode;
-  letters: LetterBubbleModel[];
+  letters: LetterOrbModel[];
   lettersInteractive: boolean;
   insertAnimation: InsertAnimationState | null;
   variantPickerVisible: boolean;

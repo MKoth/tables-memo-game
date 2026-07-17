@@ -16,11 +16,11 @@ import {
 
 const TRANSLATION_WOBBLE_MS = 800;
 
-import type { RoundResolutionBubbleState } from '../../../../../sentenceTransformation/domain/roundResolutionBubbleState';
-export type { RoundResolutionBubbleState } from '../../../../../sentenceTransformation/domain/roundResolutionBubbleState';
+import type { RoundResolutionOrbState } from '../../../../../sentenceTransformation/domain/roundResolutionOrbState';
+export type { RoundResolutionOrbState } from '../../../../../sentenceTransformation/domain/roundResolutionOrbState';
 
 export type TransformationRoundResolutionBubbleProps = {
-  bubble: RoundResolutionBubbleState | null;
+  orb: RoundResolutionOrbState | null;
   roundPhase: SentenceRoundPhase;
   translation?: string;
   onMaterializeComplete?: () => void;
@@ -29,7 +29,7 @@ export type TransformationRoundResolutionBubbleProps = {
 };
 
 export function TransformationRoundResolutionBubble({
-  bubble,
+  orb,
   roundPhase,
   translation,
   onMaterializeComplete,
@@ -41,12 +41,12 @@ export function TransformationRoundResolutionBubble({
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const fontSize = useMemo(() => {
-    if (bubble == null) return 16;
+    if (orb == null) return 16;
     return Math.max(
       14,
-      (bubble.toDiameter * 0.5) / Math.max(1, bubble.word.length * 0.52),
+      (orb.toDiameter * 0.5) / Math.max(1, orb.word.length * 0.52),
     );
-  }, [bubble]);
+  }, [orb]);
   const font = useMemo(
     () => matchFont({ fontFamily, fontSize, fontWeight: '700' }),
     [fontFamily, fontSize],
@@ -70,10 +70,10 @@ export function TransformationRoundResolutionBubble({
   }, [translation]);
 
   useEffect(() => {
-    if (bubble != null && roundPhase === 'materialize') {
-      sounds.playBubbleInflate();
+    if (orb != null && roundPhase === 'materialize') {
+      sounds.playOrbInflate();
     }
-  }, [bubble, roundPhase, sounds]);
+  }, [orb, roundPhase, sounds]);
 
   const tapGesture = useTapGesture({
     maxDistance: TAP_MAX_DISTANCE_PX,
@@ -95,7 +95,7 @@ export function TransformationRoundResolutionBubble({
     },
   });
 
-  if (bubble == null) {
+  if (orb == null) {
     return null;
   }
 
@@ -110,13 +110,13 @@ export function TransformationRoundResolutionBubble({
     return null;
   }
 
-  const bubbleCenterX = isMaterializing ? bubble.fromCenterX : bubble.toCenterX;
-  const bubbleCenterY = isMaterializing ? bubble.fromCenterY : bubble.toCenterY;
-  const bubbleDiameter = isMaterializing ? bubble.fromDiameter : bubble.toDiameter;
+  const orbCenterX = isMaterializing ? orb.fromCenterX : orb.toCenterX;
+  const orbCenterY = isMaterializing ? orb.fromCenterY : orb.toCenterY;
+  const orbDiameter = isMaterializing ? orb.fromDiameter : orb.toDiameter;
   const moveDuration = isMaterializing
     ? ROUND_MATERIALIZE_DURATION_MS
     : isResolving
-      ? bubble.flyDurationMs
+      ? orb.flyDurationMs
       : 0;
   const moveComplete = isMaterializing
     ? onMaterializeComplete
@@ -124,21 +124,21 @@ export function TransformationRoundResolutionBubble({
       ? onResolveComplete
       : undefined;
 
-  const bubbleChar = showTranslation && translation ? translation : bubble.word;
+  const orbChar = showTranslation && translation ? translation : orb.word;
 
   return (
     <>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
         <LetterBubble
-          key={bubble.word}
-          char={bubbleChar}
-          centerX={bubbleCenterX}
-          centerY={bubbleCenterY}
-          diameter={bubbleDiameter}
-          initialCenterX={bubble.fromCenterX}
-          initialCenterY={bubble.fromCenterY}
+          key={orb.word}
+          char={orbChar}
+          centerX={orbCenterX}
+          centerY={orbCenterY}
+          diameter={orbDiameter}
+          initialCenterX={orb.fromCenterX}
+          initialCenterY={orb.fromCenterY}
           initialDiameter={
-            isMaterializing ? bubble.fromDiameter * 0.85 : bubble.fromDiameter
+            isMaterializing ? orb.fromDiameter * 0.85 : orb.fromDiameter
           }
           skipEnter
           labelFixed
@@ -148,7 +148,7 @@ export function TransformationRoundResolutionBubble({
           font={font}
           clock={clock}
           letterSpacing={Math.max(1, fontSize * 0.08)}
-          onEnterSound={sounds.playBubbleInflate}
+          onEnterSound={sounds.playOrbInflate}
           onMoveComplete={moveComplete}
           onPopComplete={onPopComplete}
           wobbleBoostT={isHolding ? wobbleBoostT : undefined}
@@ -159,10 +159,10 @@ export function TransformationRoundResolutionBubble({
           <View
             style={{
               position: 'absolute',
-              left: bubble.toCenterX - bubble.toDiameter * 0.55,
-              top: bubble.toCenterY - bubble.toDiameter * 0.55,
-              width: bubble.toDiameter * 1.1,
-              height: bubble.toDiameter * 1.1,
+              left: orb.toCenterX - orb.toDiameter * 0.55,
+              top: orb.toCenterY - orb.toDiameter * 0.55,
+              width: orb.toDiameter * 1.1,
+              height: orb.toDiameter * 1.1,
             }}
           />
         </GestureDetector>

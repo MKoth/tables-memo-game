@@ -37,12 +37,12 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
   const table = spanishPresentTable2Plural;
   const soundEnabled = useExerciseStore((state) => state.soundEnabled);
 
-  const { roamerRect, jellyRect, orientation, screenWidth, screenHeight } = useExerciseLayout();
+  const { roamerRect, spriteRect, orientation, screenWidth, screenHeight } = useExerciseLayout();
 
   useEffect(() => {
-    sounds.startWaterflow();
+    sounds.startAmbient();
     return () => {
-      sounds.stopWaterflow();
+      sounds.stopAmbient();
     };
   }, [sounds]);
 
@@ -60,9 +60,9 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
     screenWidth,
     screenHeight,
     roamerRect,
-    jellyRect,
-    playPop: sounds.playBubblePop,
-    playInflate: sounds.playBubbleInflate,
+    spriteRect,
+    playPop: sounds.playOrbPop,
+    playInflate: sounds.playOrbInflate,
     playWrong: sounds.playWrongClick,
     playSuccess: sounds.playSuccessClick,
   });
@@ -82,7 +82,7 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
           conjugatedForm={game.conjugatedForm}
           roundPos={game.roundPos}
           roundPhase={game.roundPhase}
-          swimPaths={game.swimPaths}
+          motionPaths={game.motionPaths}
           blankSlotIndex={game.blankSlotIndex}
           blankExiting={game.blankExiting}
           poppingSlotIndex={game.poppingSlotIndex}
@@ -99,7 +99,7 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
           betweenWordBubblesAndInsertFlight={
             !game.isCompleted ? (
               <TransformationRoundResolutionBubble
-                bubble={game.resolutionBubble}
+                orb={game.resolutionOrb}
                 roundPhase={game.roundPhase}
                 translation={game.bubbleTranslation}
                 onMaterializeComplete={game.handleMaterializeComplete}
@@ -127,8 +127,8 @@ function SentenceTransformationContent({ sounds }: SentenceTransformationContent
           poppedPickerItemIds={game.poppedPickerItemIds}
           onLetterPress={game.handleLetterPress}
           onVariantSelect={game.handleVariantPress}
-          playPop={sounds.playBubblePop}
-          playInflate={sounds.playBubbleInflate}
+          playPop={sounds.playOrbPop}
+          playInflate={sounds.playOrbInflate}
         />
       </View>
       <TransformationInstructionBar

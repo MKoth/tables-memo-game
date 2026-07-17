@@ -3,10 +3,10 @@ import type {
   WordSpriteLayoutBridge,
 } from '../../../../../core/types/bridgeTypes';
 
-export function pickRandomFishIndex(bridge: RoamerSimBridge): number | null {
-  const eliminated = bridge.eliminatedFishSv.value;
+export function pickRandomRoamerIndex(bridge: RoamerSimBridge): number | null {
+  const eliminated = bridge.eliminatedRoamerSv.value;
   const eligible: number[] = [];
-  for (let i = 0; i < bridge.fishCount; i++) {
+  for (let i = 0; i < bridge.roamerCount; i++) {
     let isEliminated = false;
     for (let e = 0; e < eliminated.length; e++) {
       if (eliminated[e] === i) {
@@ -24,7 +24,7 @@ export function pickRandomFishIndex(bridge: RoamerSimBridge): number | null {
   return eligible[Math.floor(Math.random() * eligible.length)]!;
 }
 
-export function pickRandomJellyIndex(bridge: WordSpriteLayoutBridge): number | null {
+export function pickRandomSpriteIndex(bridge: WordSpriteLayoutBridge): number | null {
   const { bodyCellIndices } = bridge;
   if (bodyCellIndices.length === 0) {
     return null;
@@ -32,7 +32,7 @@ export function pickRandomJellyIndex(bridge: WordSpriteLayoutBridge): number | n
   return bodyCellIndices[Math.floor(Math.random() * bodyCellIndices.length)]!;
 }
 
-export function pickRandomHeaderJellyIndex(bridge: WordSpriteLayoutBridge): number | null {
+export function pickRandomHeaderSpriteIndex(bridge: WordSpriteLayoutBridge): number | null {
   const { headerCellIndices } = bridge;
   if (headerCellIndices.length === 0) {
     return null;

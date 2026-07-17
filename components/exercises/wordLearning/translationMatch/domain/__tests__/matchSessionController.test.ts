@@ -16,34 +16,34 @@ describe('createMatchSessionController', () => {
     const { controller } = createTestController();
     expect(controller.getSnapshot()).toEqual({
       phase: 'idle',
-      capturedFishIndex: -1,
+      capturedRoamerIndex: -1,
       capturedEnglish: null,
       matchedIndices: [],
       allMatched: false,
     });
   });
 
-  it('transitions from idle to select on captureFish', () => {
+  it('transitions from idle to select on captureRoamer', () => {
     const { controller } = createTestController();
-    const result = controller.captureFish(2, 'hello');
+    const result = controller.captureRoamer(2, 'hello');
     expect(result).toBe(true);
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'select',
-      capturedFishIndex: 2,
+      capturedRoamerIndex: 2,
       capturedEnglish: 'hello',
     });
   });
 
-  it('ignores second captureFish while in select', () => {
+  it('ignores second captureRoamer while in select', () => {
     const { controller, onPhaseChange } = createTestController();
-    controller.captureFish(2, 'hello');
+    controller.captureRoamer(2, 'hello');
     onPhaseChange.mockClear();
 
-    const result = controller.captureFish(5, 'world');
+    const result = controller.captureRoamer(5, 'world');
     expect(result).toBe(false);
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'select',
-      capturedFishIndex: 2,
+      capturedRoamerIndex: 2,
       capturedEnglish: 'hello',
     });
     expect(onPhaseChange).not.toHaveBeenCalled();
@@ -51,11 +51,11 @@ describe('createMatchSessionController', () => {
 
   it('transitions from select to idle on release', () => {
     const { controller } = createTestController();
-    controller.captureFish(2, 'hello');
+    controller.captureRoamer(2, 'hello');
     controller.release();
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'idle',
-      capturedFishIndex: -1,
+      capturedRoamerIndex: -1,
       capturedEnglish: null,
     });
   });
@@ -69,21 +69,21 @@ describe('createMatchSessionController', () => {
 
   it('fires onPhaseChange on capture and release', () => {
     const { controller, onPhaseChange } = createTestController();
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     expect(onPhaseChange).toHaveBeenCalledTimes(1);
     controller.release();
     expect(onPhaseChange).toHaveBeenCalledTimes(2);
   });
 
-  it('captureFish while idle returns true', () => {
+  it('captureRoamer while idle returns true', () => {
     const { controller } = createTestController();
-    expect(controller.captureFish(0, 'cat')).toBe(true);
+    expect(controller.captureRoamer(0, 'cat')).toBe(true);
   });
 
-  it('captureFish while in select returns false', () => {
+  it('captureRoamer while in select returns false', () => {
     const { controller } = createTestController();
-    controller.captureFish(0, 'cat');
-    expect(controller.captureFish(1, 'dog')).toBe(false);
+    controller.captureRoamer(0, 'cat');
+    expect(controller.captureRoamer(1, 'dog')).toBe(false);
   });
 
   it('correctMatch while idle is ignored', () => {
@@ -97,12 +97,12 @@ describe('createMatchSessionController', () => {
 
   it('correctMatch transitions from select to resolve and marks matched', () => {
     const { controller } = createTestController(4);
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     controller.correctMatch(2);
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'resolve',
       matchedIndices: [2],
-      capturedFishIndex: 0,
+      capturedRoamerIndex: 0,
       capturedEnglish: 'cat',
       allMatched: false,
     });
@@ -110,7 +110,7 @@ describe('createMatchSessionController', () => {
 
   it('correctMatch does not duplicate an already matched index', () => {
     const { controller } = createTestController(4);
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     controller.correctMatch(2);
     controller.correctMatch(2);
     expect(controller.getSnapshot().matchedIndices).toEqual([2]);
@@ -124,29 +124,29 @@ describe('createMatchSessionController', () => {
 
   it('allMatched is true when all pairs are matched', () => {
     const { controller } = createTestController(2);
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     controller.correctMatch(0);
     expect(controller.getSnapshot().allMatched).toBe(false);
     controller.resolveComplete();
-    controller.captureFish(0, 'dog');
+    controller.captureRoamer(0, 'dog');
     controller.correctMatch(1);
     expect(controller.getSnapshot().allMatched).toBe(true);
   });
 
   it('fires onSessionComplete when all pairs are matched', () => {
     const { controller, onSessionComplete } = createTestController(2);
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     controller.correctMatch(0);
     expect(onSessionComplete).not.toHaveBeenCalled();
     controller.resolveComplete();
-    controller.captureFish(0, 'dog');
+    controller.captureRoamer(0, 'dog');
     controller.correctMatch(1);
     expect(onSessionComplete).toHaveBeenCalledTimes(1);
   });
 
   it('fires onSessionComplete exactly once', () => {
     const { controller, onSessionComplete } = createTestController(1);
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     controller.correctMatch(0);
     expect(onSessionComplete).toHaveBeenCalledTimes(1);
     controller.correctMatch(0);
@@ -155,12 +155,12 @@ describe('createMatchSessionController', () => {
 
   it('wrongMatch stays in select phase', () => {
     const { controller, onPhaseChange } = createTestController(4);
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     onPhaseChange.mockClear();
     controller.wrongMatch();
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'select',
-      capturedFishIndex: 0,
+      capturedRoamerIndex: 0,
       capturedEnglish: 'cat',
     });
     expect(onPhaseChange).not.toHaveBeenCalled();
@@ -174,12 +174,12 @@ describe('createMatchSessionController', () => {
 
   it('resolveComplete transitions from resolve to idle', () => {
     const { controller } = createTestController(4);
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     controller.correctMatch(2);
     controller.resolveComplete();
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'idle',
-      capturedFishIndex: -1,
+      capturedRoamerIndex: -1,
       capturedEnglish: null,
       matchedIndices: [2],
     });
@@ -193,23 +193,23 @@ describe('createMatchSessionController', () => {
     expect(controller.getSnapshot().phase).toBe('idle');
   });
 
-  it('captureFish works after resolveComplete (next capture)', () => {
+  it('captureRoamer works after resolveComplete (next capture)', () => {
     const { controller } = createTestController(4);
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     controller.correctMatch(2);
     controller.resolveComplete();
-    const result = controller.captureFish(1, 'dog');
+    const result = controller.captureRoamer(1, 'dog');
     expect(result).toBe(true);
     expect(controller.getSnapshot()).toMatchObject({
       phase: 'select',
-      capturedFishIndex: 1,
+      capturedRoamerIndex: 1,
       capturedEnglish: 'dog',
     });
   });
 
   it('fires onPhaseChange for correctMatch and resolveComplete', () => {
     const { controller, onPhaseChange } = createTestController();
-    controller.captureFish(0, 'cat');
+    controller.captureRoamer(0, 'cat');
     onPhaseChange.mockClear();
     controller.correctMatch(2);
     expect(onPhaseChange).toHaveBeenCalledTimes(1);
@@ -219,11 +219,11 @@ describe('createMatchSessionController', () => {
 
   it('dispose resets the controller', () => {
     const { controller } = createTestController();
-    controller.captureFish(2, 'hello');
+    controller.captureRoamer(2, 'hello');
     controller.dispose();
     expect(controller.getSnapshot()).toEqual({
       phase: 'idle',
-      capturedFishIndex: -1,
+      capturedRoamerIndex: -1,
       capturedEnglish: null,
       matchedIndices: [],
       allMatched: false,

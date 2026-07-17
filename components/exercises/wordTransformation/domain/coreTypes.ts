@@ -1,7 +1,7 @@
 import type { LetterLayout } from '../../core/layout/exerciseLayout';
 import type { Operation, WordOperationSequence } from './types';
 
-export type LetterBubbleModel = {
+export type LetterOrbModel = {
   key: string;
   char: string;
   position: number;
@@ -64,7 +64,7 @@ export type WordTransformationCoreSnapshot = {
   opIndex: number;
   operation: Operation | null;
   mode: TransformationMode | null;
-  letters: LetterBubbleModel[];
+  letters: LetterOrbModel[];
   variantPickerItems: VariantPickerPressItem[];
   pickerHiddenItemIds: ReadonlySet<string>;
   wrongItemId: string | null;

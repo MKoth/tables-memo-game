@@ -33,11 +33,11 @@ import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from '../../.
 import { rollBodyTint } from '../../../carrier/wordSpriteVisualTokens';
 import { triggerWordSpriteTintFlash } from '../../../carrier/WordSpriteTableLayer/worklets/wordSpriteTableWorklets';
 import type { OptionWordSpriteState } from '../../../../../variantSelection/hooks/useVariantSelectionGame';
-import type { SwimPath } from '../../../../../sentenceTransformation/domain/swimPathPlanner';
+import type { MotionPath } from '../../../../../sentenceTransformation/domain/motionPathPlanner';
 
 export type OptionWordSpriteLayerProps = {
   options: OptionWordSpriteState[];
-  swimPaths: SwimPath[];
+  motionPaths: MotionPath[];
   roundPhase: string;
   roundPos: number;
   correctOptionIndex: number;
@@ -201,7 +201,7 @@ function SingleOptionGesture({ centerX, centerY, size, onTap }: SingleOptionGest
 
 export function OptionWordSpriteLayer({
   options,
-  swimPaths,
+  motionPaths,
   roundPhase,
   roundPos,
   correctOptionIndex,
@@ -218,11 +218,11 @@ export function OptionWordSpriteLayer({
   }, [options.length, roamerRect]);
 
   const gestureCenters = useMemo(() => {
-    if (swimPaths.length > 0) {
-      return swimPaths.map(p => ({ x: p.slotCenterX, y: p.slotCenterY }));
+    if (motionPaths.length > 0) {
+      return motionPaths.map(p => ({ x: p.slotCenterX, y: p.slotCenterY }));
     }
     return optionLayout.centers.map(x => ({ x, y: optionLayout.rowY }));
-  }, [swimPaths, optionLayout.centers, optionLayout.rowY]);
+  }, [motionPaths, optionLayout.centers, optionLayout.rowY]);
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const bodyFont = useMemo(
@@ -331,7 +331,7 @@ export function OptionWordSpriteLayer({
   }, [hasAnswer, correctOptionIndex, options.length, optionExitProgress]);
 
   useEffect(() => {
-    const count = swimPaths.length;
+    const count = motionPaths.length;
     if (count === 0 || options.length === 0) {
       spawnXs.value = [];
       spawnYs.value = [];
@@ -345,13 +345,13 @@ export function OptionWordSpriteLayer({
       slotAnimScale.value = [];
       return;
     }
-    const enterAnglesList = swimPaths.map(p => p.enterAngle);
-    spawnXs.value = swimPaths.map(p => p.spawnX);
-    spawnYs.value = swimPaths.map(p => p.spawnY);
-    centerXs.value = swimPaths.map(p => p.slotCenterX);
-    centerYs.value = swimPaths.map(p => p.slotCenterY);
+    const enterAnglesList = motionPaths.map(p => p.enterAngle);
+    spawnXs.value = motionPaths.map(p => p.spawnX);
+    spawnYs.value = motionPaths.map(p => p.spawnY);
+    centerXs.value = motionPaths.map(p => p.slotCenterX);
+    centerYs.value = motionPaths.map(p => p.slotCenterY);
     enterAngles.value = enterAnglesList;
-    exitAngles.value = swimPaths.map(p => p.exitAngle);
+    exitAngles.value = motionPaths.map(p => p.exitAngle);
     layoutX.value = optionLayout.centers;
     const rowY = optionLayout.rowY;
     layoutY.value = optionLayout.centers.map(() => rowY);
@@ -376,7 +376,7 @@ export function OptionWordSpriteLayer({
         },
       );
     }
-  }, [swimPaths, roundPhase, optionLayout, options, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, baseLayoutScale, slotAnimScale, layoutX, layoutY, swimProgress]);
+  }, [motionPaths, roundPhase, optionLayout, options, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, baseLayoutScale, slotAnimScale, layoutX, layoutY, swimProgress]);
 
   useAnimatedReaction(
     () => ({

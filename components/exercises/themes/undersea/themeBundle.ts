@@ -17,16 +17,16 @@ import { useCombinedMatchGestures } from './exercises/wordLearning/translationMa
 import { useRoamerEscapeCoordinator } from './roamer/escape/useRoamerEscapeCoordinator';
 import { TutorialSpotlightOverlay } from './ui/instructions/components/TutorialSpotlightOverlay';
 import {
-  pickRandomFishIndex,
-  pickRandomJellyIndex,
-  pickRandomHeaderJellyIndex,
+  pickRandomRoamerIndex,
+  pickRandomSpriteIndex,
+  pickRandomHeaderSpriteIndex,
 } from './ui/instructions/helpers/tutorialTargets';
 import {
   OVERLAY_DARK,
   SPOTLIGHT_RING_COLOR,
   GUIDE_LINE_COLOR,
-  FISH_SPOTLIGHT_SCALE,
-  JELLY_SPOTLIGHT_SCALE,
+  ROAMER_SPOTLIGHT_SCALE,
+  SPRITE_SPOTLIGHT_SCALE,
 } from './ui/instructions/themeConstants';
 import { useUnderseaThemeAssets } from './core/assets/useUnderseaThemeAssets';
 import { UnderseaThemeAssetsProvider } from './core/providers/UnderseaThemeAssetsProvider';
@@ -36,7 +36,7 @@ export const underseaTheme: Theme = {
   scenery: UnderseaThemeScenery,
 
   roamer: {
-    swimZone: RoamerSwimZone as Theme['roamer']['swimZone'],
+    motionZone: RoamerSwimZone as Theme['roamer']['motionZone'],
     decorative: DecorativeRoamerLayer as Theme['roamer']['decorative'],
     matchLayer: MatchRoamerLayer as Theme['roamer']['matchLayer'],
   },
@@ -49,15 +49,15 @@ export const underseaTheme: Theme = {
   },
 
   wordTransformationVisual: {
-    bubbleLayer: TransformationBubbleLayer as Theme['wordTransformationVisual']['bubbleLayer'],
-    wordBubbles: TransformationWordBubbles as Theme['wordTransformationVisual']['wordBubbles'],
-    letterBubble: LetterBubble as Theme['wordTransformationVisual']['letterBubble'],
+    orbLayer: TransformationBubbleLayer as Theme['wordTransformationVisual']['orbLayer'],
+    wordOrbs: TransformationWordBubbles as Theme['wordTransformationVisual']['wordOrbs'],
+    letterOrb: LetterBubble as Theme['wordTransformationVisual']['letterOrb'],
   },
 
   roundResolution: {
-    resolutionBubble: TransformationRoundResolutionBubble as Theme['roundResolution']['resolutionBubble'],
+    resolutionOrb: TransformationRoundResolutionBubble as Theme['roundResolution']['resolutionOrb'],
     resolveFlight: VariantSelectionResolveFlight as Theme['roundResolution']['resolveFlight'],
-    mergeBubbles: TransformationMergeBubbles as Theme['roundResolution']['mergeBubbles'],
+    mergeOrbs: TransformationMergeBubbles as Theme['roundResolution']['mergeOrbs'],
   },
 
   matchExercise: {
@@ -70,9 +70,9 @@ export const underseaTheme: Theme = {
 
   tutorial: {
     SpotlightOverlay: TutorialSpotlightOverlay as Theme['tutorial']['SpotlightOverlay'],
-    pickRoamerTarget: pickRandomFishIndex,
-    pickWordSpriteTarget: pickRandomJellyIndex,
-    pickHeaderTarget: pickRandomHeaderJellyIndex,
+    pickRoamerTarget: pickRandomRoamerIndex,
+    pickWordSpriteTarget: pickRandomSpriteIndex,
+    pickHeaderTarget: pickRandomHeaderSpriteIndex,
     copy: {
       roamer: {
         message: 'Tap any fish to catch it in a bubble.',
@@ -115,7 +115,7 @@ export const underseaTheme: Theme = {
     overlayDark: OVERLAY_DARK,
     spotlightRingColor: SPOTLIGHT_RING_COLOR,
     guideLineColor: GUIDE_LINE_COLOR,
-    fishSpotlightScale: FISH_SPOTLIGHT_SCALE,
-    jellySpotlightScale: JELLY_SPOTLIGHT_SCALE,
+    roamerSpotlightScale: ROAMER_SPOTLIGHT_SCALE,
+    spriteSpotlightScale: SPRITE_SPOTLIGHT_SCALE,
   },
 };

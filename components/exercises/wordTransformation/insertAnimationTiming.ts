@@ -21,5 +21,5 @@ export const VARIANT_POP_STAGGER_MS = POP_CASCADE_STAGGER_MS;
 export const WORD_LETTER_EXIT_STAGGER_MS = POP_CASCADE_STAGGER_MS;
 /** Next word: delay between each letter inflate (enter). */
 export const WORD_LETTER_ENTER_STAGGER_MS = 300;
-/** LetterBubble enter animation length — consumed by LetterBubble. */
+/** LetterOrb enter animation length — consumed by LetterOrb. */
 export const WORD_LETTER_ENTER_DURATION_MS = 320;

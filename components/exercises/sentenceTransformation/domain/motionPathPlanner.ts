@@ -1,7 +1,7 @@
 import type { ExerciseOrientation } from '../../core/layout/computeExerciseLayout';
 import type { ZoneRect } from '../../core/layout/computeExerciseLayout';
 
-export type SwimPath = {
+export type MotionPath = {
   spawnX: number;
   spawnY: number;
   slotCenterX: number;
@@ -10,11 +10,11 @@ export type SwimPath = {
   exitAngle: number;
 };
 
-export type SwimPathPlannerInput = {
+export type MotionPathPlannerInput = {
   orientation: ExerciseOrientation;
   screenWidth: number;
   screenHeight: number;
-  jellyRect: ZoneRect;
+  spriteRect: ZoneRect;
   slotCenters: { x: number; y: number }[];
 };
 
@@ -34,7 +34,7 @@ function allowedEdges(orientation: ExerciseOrientation): ('top' | 'left' | 'righ
 function computeSpawnPoint(
   edge: 'top' | 'left' | 'right' | 'bottom',
   fraction: number,
-  jellyRect: ZoneRect,
+  spriteRect: ZoneRect,
   screenWidth: number,
   screenHeight: number,
 ): { x: number; y: number } {
@@ -44,29 +44,29 @@ function computeSpawnPoint(
   switch (edge) {
     case 'top':
       return {
-        x: jellyRect.x + t * jellyRect.w,
+        x: spriteRect.x + t * spriteRect.w,
         y: -SPAWN_MARGIN,
       };
     case 'left':
       return {
         x: -SPAWN_MARGIN,
-        y: jellyRect.y + t * jellyRect.h,
+        y: spriteRect.y + t * spriteRect.h,
       };
     case 'right':
       return {
         x: screenWidth + SPAWN_MARGIN,
-        y: jellyRect.y + t * jellyRect.h,
+        y: spriteRect.y + t * spriteRect.h,
       };
     case 'bottom':
       return {
-        x: jellyRect.x + t * jellyRect.w,
+        x: spriteRect.x + t * spriteRect.w,
         y: screenHeight + SPAWN_MARGIN,
       };
   }
 }
 
-export function planSwimPaths(input: SwimPathPlannerInput): SwimPath[] {
-  const { orientation, screenWidth, screenHeight, jellyRect, slotCenters } = input;
+export function planMotionPaths(input: MotionPathPlannerInput): MotionPath[] {
+  const { orientation, screenWidth, screenHeight, spriteRect, slotCenters } = input;
   const slotCount = slotCenters.length;
 
   if (slotCount === 0) {
@@ -84,7 +84,7 @@ export function planSwimPaths(input: SwimPathPlannerInput): SwimPath[] {
 
   const nextIndex: Record<string, number> = { top: 0, left: 0, right: 0, bottom: 0 };
 
-  const paths: SwimPath[] = [];
+  const paths: MotionPath[] = [];
 
   for (let i = 0; i < slotCount; i++) {
     const edge = edges[i % edgeCount];
@@ -94,7 +94,7 @@ export function planSwimPaths(input: SwimPathPlannerInput): SwimPath[] {
     const totalForEdge = counts[edge];
     const fraction = totalForEdge <= 1 ? 0.5 : idx / (totalForEdge - 1);
 
-    const spawn = computeSpawnPoint(edge, fraction, jellyRect, screenWidth, screenHeight);
+    const spawn = computeSpawnPoint(edge, fraction, spriteRect, screenWidth, screenHeight);
     const center = slotCenters[i]!;
 
     const dx = center.x - spawn.x;

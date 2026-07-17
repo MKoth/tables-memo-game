@@ -41,19 +41,19 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
   const soundEnabled = useExerciseStore((state) => state.soundEnabled);
 
   const { wordSpriteBridge } = useExerciseRuntime();
-  const { jellyRect, roamerRect } = useExerciseLayout();
+  const { spriteRect, roamerRect } = useExerciseLayout();
 
   const roamerControllerRef = useRef<RoamerSwimZoneController | null>(null);
   const handleSequenceSolved = useRoamerEscapeCoordinator({
     roamerControllerRef,
-    jellyBridge: wordSpriteBridge,
-    jellyRect,
+    spriteBridge: wordSpriteBridge,
+    spriteRect,
   });
 
   useEffect(() => {
-    sounds.startWaterflow();
+    sounds.startAmbient();
     return () => {
-      sounds.stopWaterflow();
+      sounds.stopAmbient();
     };
   }, [sounds]);
 
@@ -80,8 +80,8 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
     table,
     roamerRect,
     onSequenceSolved: handleSequenceSolved,
-    playPop: sounds.playBubblePop,
-    playInflate: sounds.playBubbleInflate,
+    playPop: sounds.playOrbPop,
+    playInflate: sounds.playOrbInflate,
     playWrong: sounds.playWrongClick,
   });
 
@@ -133,8 +133,8 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
           poppedPickerItemIds={game.poppedPickerItemIds}
           onLetterPress={game.handleLetterPress}
           onVariantSelect={game.handleVariantPress}
-          playPop={sounds.playBubblePop}
-          playInflate={sounds.playBubbleInflate}
+          playPop={sounds.playOrbPop}
+          playInflate={sounds.playOrbInflate}
         />
       </View>
       <TransformationInstructionBar

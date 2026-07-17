@@ -27,9 +27,9 @@ export {
   findBlankSlotIndex,
 } from './sentenceRowDisplay';
 export {
-  planSwimPaths,
-  type SwimPath,
-} from './swimPathPlanner';
+  planMotionPaths,
+  type MotionPath,
+} from './motionPathPlanner';
 export { shuffleIndices } from './shuffleIndices';
 export {
   type CreateSentenceTransformationExerciseOptions,

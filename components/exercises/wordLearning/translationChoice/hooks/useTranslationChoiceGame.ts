@@ -8,13 +8,13 @@ import {
   computeLetterLayout,
   TRANSFORMATION_WORD_ROW_Y_RATIO,
 } from '../../../core/layout/exerciseLayout';
-import { planSwimPaths, type SwimPath } from '../../../sentenceTransformation/domain/swimPathPlanner';
+import { planMotionPaths, type MotionPath } from '../../../sentenceTransformation/domain/motionPathPlanner';
 import {
   buildCascadeRevealOrder,
   computeCascadeCompleteDelayMs,
   mapLettersWithCascade,
 } from '../../../wordTransformation/letterCascade';
-import type { LetterBubbleModel } from '../../../wordTransformation/domain/coreTypes';
+import type { LetterOrbModel } from '../../../wordTransformation/domain/coreTypes';
 import {
   createTranslationChoiceExercise,
   createTranslationChoiceRoundController,
@@ -31,10 +31,10 @@ export type OptionWordSpriteState = {
 export type TranslationChoiceGame = {
   isCompleted: boolean;
   roundPhase: TranslationChoiceRoundPhase;
-  englishLetters: LetterBubbleModel[];
-  spanishLetters: LetterBubbleModel[];
+  englishLetters: LetterOrbModel[];
+  spanishLetters: LetterOrbModel[];
   roundPos: number;
-  optionSwimPaths: SwimPath[];
+  optionMotionPaths: MotionPath[];
   options: OptionWordSpriteState[];
   correctOptionIndex: number;
   handleOptionTap: (option: OptionWordSpriteState) => void;
@@ -46,7 +46,7 @@ export type UseTranslationChoiceGameParams = {
   screenWidth: number;
   screenHeight: number;
   roamerRect: ZoneRect;
-  jellyRect: ZoneRect;
+  spriteRect: ZoneRect;
   playSuccess?: () => void;
   playWrong?: () => void;
 };
@@ -57,7 +57,7 @@ export function useTranslationChoiceGame({
   screenWidth,
   screenHeight,
   roamerRect,
-  jellyRect,
+  spriteRect,
   playSuccess,
   playWrong,
 }: UseTranslationChoiceGameParams): TranslationChoiceGame {
@@ -73,9 +73,9 @@ export function useTranslationChoiceGame({
   const [spanishCascadeOrder, setSpanishCascadeOrder] = useState<number[]>([]);
   const roundRef = useRef<ReturnType<typeof createTranslationChoiceRoundController> | null>(null);
   const roamerRectRef = useRef(roamerRect);
-  const jellyRectRef = useRef(jellyRect);
+  const spriteRectRef = useRef(spriteRect);
   roamerRectRef.current = roamerRect;
-  jellyRectRef.current = jellyRect;
+  spriteRectRef.current = spriteRect;
   const playSuccessRef = useRef(playSuccess);
   playSuccessRef.current = playSuccess;
   const playWrongRef = useRef(playWrong);
@@ -117,22 +117,22 @@ export function useTranslationChoiceGame({
     return computeLetterLayout(roamerRect, count, 0.5);
   }, [currentRound?.options.length, roamerRect]);
 
-  const optionSwimPaths = useMemo<SwimPath[]>(() => {
+  const optionMotionPaths = useMemo<MotionPath[]>(() => {
     if (optionLayout.centers.length === 0) return [];
     const slotCenters = optionLayout.centers.map(x => ({
       x,
       y: optionLayout.rowY,
     }));
-    return planSwimPaths({
+    return planMotionPaths({
       orientation,
       screenWidth,
       screenHeight,
-      jellyRect: roamerRect,
+      spriteRect: roamerRect,
       slotCenters,
     });
   }, [orientation, screenWidth, screenHeight, roamerRect, optionLayout.centers, optionLayout.rowY]);
 
-  const englishLetters = useMemo<LetterBubbleModel[]>(() => {
+  const englishLetters = useMemo<LetterOrbModel[]>(() => {
     if (currentRound == null) return [];
     const word = currentRound.english;
     const showEnglish =
@@ -149,7 +149,7 @@ export function useTranslationChoiceGame({
     });
   }, [currentRound, roundSnapshot.phase, roundSnapshot.roundPos, englishCascadeOrder]);
 
-  const spanishLetters = useMemo<LetterBubbleModel[]>(() => {
+  const spanishLetters = useMemo<LetterOrbModel[]>(() => {
     if (currentRound == null) return [];
     const showSpanish =
       roundSnapshot.phase === 'reveal' ||
@@ -275,7 +275,7 @@ export function useTranslationChoiceGame({
     englishLetters,
     spanishLetters,
     roundPos: roundSnapshot.roundPos,
-    optionSwimPaths,
+    optionMotionPaths,
     options,
     correctOptionIndex,
     handleOptionTap,

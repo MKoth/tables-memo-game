@@ -1,4 +1,4 @@
-export type RoundResolutionBubbleState = {
+export type RoundResolutionOrbState = {
   word: string;
   fromCenterX: number;
   fromCenterY: number;

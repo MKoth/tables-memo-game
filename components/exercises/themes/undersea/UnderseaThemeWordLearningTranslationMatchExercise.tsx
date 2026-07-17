@@ -98,7 +98,7 @@ function TranslationMatchContent({
       capturedEnglishSv.value = '';
       matchedIndicesSv.value = snapshot.matchedIndices;
       sounds.playSuccessClick();
-      sounds.playBubblePop();
+      sounds.playOrbPop();
       triggerEscapeRef.current?.();
 
       const timer = setTimeout(() => {
@@ -147,9 +147,9 @@ function TranslationMatchContent({
   });
 
   useEffect(() => {
-    sounds.startWaterflow();
+    sounds.startAmbient();
     return () => {
-      sounds.stopWaterflow();
+      sounds.stopAmbient();
     };
   }, [sounds]);
 

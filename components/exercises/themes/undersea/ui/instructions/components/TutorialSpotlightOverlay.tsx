@@ -13,9 +13,9 @@ import type {
   WordSpriteLayoutBridge,
 } from '../../../../../core/types/bridgeTypes';
 import {
-  FISH_SPOTLIGHT_SCALE,
+  ROAMER_SPOTLIGHT_SCALE,
   GUIDE_LINE_COLOR,
-  JELLY_SPOTLIGHT_SCALE,
+  SPRITE_SPOTLIGHT_SCALE,
   OVERLAY_DARK,
   SPOTLIGHT_RING_COLOR,
 } from '../themeConstants';
@@ -112,7 +112,7 @@ export function FishSpotlight({
     x: pos.x.value,
     y: pos.y.value,
   }));
-  const holeRadius = useDerivedValue(() => hitRadius * FISH_SPOTLIGHT_SCALE);
+  const holeRadius = useDerivedValue(() => hitRadius * ROAMER_SPOTLIGHT_SCALE);
 
   return (
     <SpotlightDim
@@ -147,8 +147,8 @@ export function JellySpotlight({
 
   const holeRadius = useDerivedValue(() => {
     const scale = bridge.layoutScale.value[jellyIndex] ?? 1;
-    const bellSize = bridge.bellSizes[jellyIndex] ?? 55;
-    return (bellSize * scale * JELLY_SPOTLIGHT_SCALE) / 2;
+    const bellSize = bridge.bodySizes[jellyIndex] ?? 55;
+    return (bellSize * scale * SPRITE_SPOTLIGHT_SCALE) / 2;
   });
 
   const guideLineX = useDerivedValue(() => center.value.x);
@@ -182,8 +182,8 @@ export type TutorialSpotlightOverlayProps = {
   gradientRadius: number;
   roamerBridge: RoamerSimBridge | null;
   wordSpriteBridge: WordSpriteLayoutBridge | null;
-  fishTargetIndex: number | null;
-  jellyTargetIndex: number | null;
+  roamerTargetIndex: number | null;
+  spriteTargetIndex: number | null;
   headerTargetIndex: number | null;
 };
 
@@ -194,13 +194,13 @@ export function TutorialSpotlightOverlay({
   gradientRadius,
   roamerBridge,
   wordSpriteBridge,
-  fishTargetIndex,
-  jellyTargetIndex,
+  roamerTargetIndex,
+  spriteTargetIndex,
   headerTargetIndex,
 }: TutorialSpotlightOverlayProps) {
   const fishPos =
-    roamerBridge != null && fishTargetIndex != null
-      ? roamerBridge.fishRuntimePositions[fishTargetIndex] ?? null
+    roamerBridge != null && roamerTargetIndex != null
+      ? roamerBridge.runtimePositions[roamerTargetIndex] ?? null
       : null;
 
   return (
@@ -216,10 +216,10 @@ export function TutorialSpotlightOverlay({
       )}
       {step === 'wordSprite' &&
         wordSpriteBridge != null &&
-        jellyTargetIndex != null && (
+        spriteTargetIndex != null && (
           <JellySpotlight
             bridge={wordSpriteBridge}
-            jellyIndex={jellyTargetIndex}
+            jellyIndex={spriteTargetIndex}
             width={width}
             height={height}
             gradientRadius={gradientRadius}

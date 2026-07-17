@@ -11,15 +11,15 @@ import type { UnderseaThemeImages } from '../../core/assets/underseaThemeAssets'
 const FALLBACK_COLOR = '#061828';
 
 function SceneryBackdrop({
-  seafloorImage,
-  stoneImages,
-  seaweedImages,
+  backgroundImage,
+  decorationImages,
+  accentImages,
   width,
   height,
 }: {
-  seafloorImage: SkImage;
-  stoneImages: UnderseaThemeImages['stones'] | null;
-  seaweedImages: UnderseaThemeImages['seaweed'] | null;
+  backgroundImage: SkImage;
+  decorationImages: UnderseaThemeImages['stones'] | null;
+  accentImages: UnderseaThemeImages['seaweed'] | null;
   width: number;
   height: number;
 }) {
@@ -27,9 +27,9 @@ function SceneryBackdrop({
 
   return (
     <UnderseaThemeSceneryBackground
-      seafloorImage={seafloorImage}
-      stoneImages={stoneImages}
-      seaweedImages={seaweedImages}
+      seafloorImage={backgroundImage}
+      stoneImages={decorationImages}
+      seaweedImages={accentImages}
       width={width}
       height={height}
       clock={clock}
@@ -41,26 +41,26 @@ function SceneryBackdrop({
 type LoadingBackdropProps = {
   width: number;
   height: number;
-  seafloorImage: SkImage | null;
-  stoneImages: Record<string, SkImage> | null;
-  seaweedImages: Record<string, SkImage> | null;
+  backgroundImage: SkImage | null;
+  decorationImages: Record<string, SkImage> | null;
+  accentImages: Record<string, SkImage> | null;
 };
 
 export function LoadingBackdrop({
   width,
   height,
-  seafloorImage,
-  stoneImages,
-  seaweedImages,
+  backgroundImage,
+  decorationImages,
+  accentImages,
 }: LoadingBackdropProps) {
   return (
     <View style={styles.container}>
-      {seafloorImage != null ? (
+      {backgroundImage != null ? (
         <ExerciseClockProvider>
           <SceneryBackdrop
-            seafloorImage={seafloorImage}
-            stoneImages={stoneImages as UnderseaThemeImages['stones'] | null}
-            seaweedImages={seaweedImages as UnderseaThemeImages['seaweed'] | null}
+            backgroundImage={backgroundImage}
+            decorationImages={decorationImages as UnderseaThemeImages['stones'] | null}
+            accentImages={accentImages as UnderseaThemeImages['seaweed'] | null}
             width={width}
             height={height}
           />

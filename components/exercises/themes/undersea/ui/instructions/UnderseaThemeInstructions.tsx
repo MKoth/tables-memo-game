@@ -13,9 +13,9 @@ import {
 } from '../../../../ui';
 import { TutorialSpotlightOverlay } from './components/TutorialSpotlightOverlay';
 import {
-  pickRandomFishIndex,
-  pickRandomHeaderJellyIndex,
-  pickRandomJellyIndex,
+  pickRandomRoamerIndex,
+  pickRandomHeaderSpriteIndex,
+  pickRandomSpriteIndex,
 } from './helpers/tutorialTargets';
 
 export function UnderseaThemeInstructions() {
@@ -26,41 +26,41 @@ export function UnderseaThemeInstructions() {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { controlsAnchor } = useExerciseLayout();
-  const [fishTargetIndex, setFishTargetIndex] = useState<number | null>(null);
-  const [jellyTargetIndex, setJellyTargetIndex] = useState<number | null>(null);
+  const [roamerTargetIndex, setRoamerTargetIndex] = useState<number | null>(null);
+  const [spriteTargetIndex, setSpriteTargetIndex] = useState<number | null>(null);
   const [headerTargetIndex, setHeaderTargetIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (step !== 'roamer') {
-      setFishTargetIndex(null);
+      setRoamerTargetIndex(null);
       return;
     }
     if (roamerBridge != null) {
-      setFishTargetIndex(pickRandomFishIndex(roamerBridge));
+      setRoamerTargetIndex(pickRandomRoamerIndex(roamerBridge));
     }
   }, [step, roamerBridge]);
 
   useEffect(() => {
     if (step !== 'wordSprite') {
-      setJellyTargetIndex(null);
+      setSpriteTargetIndex(null);
       return;
     }
     if (wordSpriteBridge != null) {
-      setJellyTargetIndex(pickRandomJellyIndex(wordSpriteBridge));
+      setSpriteTargetIndex(pickRandomSpriteIndex(wordSpriteBridge));
     }
   }, [step, wordSpriteBridge]);
 
   useEffect(() => {
-    if (step === 'roamer' && roamerBridge != null && fishTargetIndex == null) {
-      setFishTargetIndex(pickRandomFishIndex(roamerBridge));
+    if (step === 'roamer' && roamerBridge != null && roamerTargetIndex == null) {
+      setRoamerTargetIndex(pickRandomRoamerIndex(roamerBridge));
     }
-  }, [step, roamerBridge, fishTargetIndex]);
+  }, [step, roamerBridge, roamerTargetIndex]);
 
   useEffect(() => {
-    if (step === 'wordSprite' && wordSpriteBridge != null && jellyTargetIndex == null) {
-      setJellyTargetIndex(pickRandomJellyIndex(wordSpriteBridge));
+    if (step === 'wordSprite' && wordSpriteBridge != null && spriteTargetIndex == null) {
+      setSpriteTargetIndex(pickRandomSpriteIndex(wordSpriteBridge));
     }
-  }, [step, wordSpriteBridge, jellyTargetIndex]);
+  }, [step, wordSpriteBridge, spriteTargetIndex]);
 
   useEffect(() => {
     if (step !== 'translate') {
@@ -68,13 +68,13 @@ export function UnderseaThemeInstructions() {
       return;
     }
     if (wordSpriteBridge != null) {
-      setHeaderTargetIndex(pickRandomHeaderJellyIndex(wordSpriteBridge));
+      setHeaderTargetIndex(pickRandomHeaderSpriteIndex(wordSpriteBridge));
     }
   }, [step, wordSpriteBridge]);
 
   useEffect(() => {
     if (step === 'translate' && wordSpriteBridge != null && headerTargetIndex == null) {
-      setHeaderTargetIndex(pickRandomHeaderJellyIndex(wordSpriteBridge));
+      setHeaderTargetIndex(pickRandomHeaderSpriteIndex(wordSpriteBridge));
     }
   }, [step, wordSpriteBridge, headerTargetIndex]);
 
@@ -113,8 +113,8 @@ export function UnderseaThemeInstructions() {
             gradientRadius={gradientRadius}
             roamerBridge={roamerBridge}
             wordSpriteBridge={wordSpriteBridge}
-            fishTargetIndex={fishTargetIndex}
-            jellyTargetIndex={jellyTargetIndex}
+            roamerTargetIndex={roamerTargetIndex}
+            spriteTargetIndex={spriteTargetIndex}
             headerTargetIndex={headerTargetIndex}
           />
         </Canvas>

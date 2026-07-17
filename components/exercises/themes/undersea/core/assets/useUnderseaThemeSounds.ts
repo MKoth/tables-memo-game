@@ -23,11 +23,11 @@ export type LoadedUnderseaThemeSounds = {
 };
 
 export type UnderseaThemeSoundController = {
-  startWaterflow: () => void;
-  stopWaterflow: () => void;
-  playRandomSplash: () => void;
-  playBubbleInflate: () => void;
-  playBubblePop: () => void;
+  startAmbient: () => void;
+  stopAmbient: () => void;
+  playRandomBurst: () => void;
+  playOrbInflate: () => void;
+  playOrbPop: () => void;
   playSuccessClick: () => void;
   playWrongClick: () => void;
   playPrimaryClick: () => void;
@@ -166,7 +166,7 @@ export function createUnderseaThemeSoundController(
   state: SoundControllerState,
 ): UnderseaThemeSoundController {
   return {
-    startWaterflow: () => {
+    startAmbient: () => {
       if (state.muted || !loaded.waterflow.isLoaded()) {
         return;
       }
@@ -174,24 +174,24 @@ export function createUnderseaThemeSoundController(
       state.waterflowPlaying = true;
       loaded.waterflow.play();
     },
-    stopWaterflow: () => {
+    stopAmbient: () => {
       state.waterflowPlaying = false;
       loaded.waterflow.stop();
     },
-    playRandomSplash: () => {
+    playRandomBurst: () => {
       if (state.muted || loaded.splash.length === 0) {
         return;
       }
       const index = Math.floor(Math.random() * loaded.splash.length);
       playOneShot(loaded.splash[index] ?? null);
     },
-    playBubbleInflate: () => {
+    playOrbInflate: () => {
       if (state.muted) {
         return;
       }
       playOneShot(loaded.bubbleInflate);
     },
-    playBubblePop: () => {
+    playOrbPop: () => {
       if (state.muted) {
         return;
       }

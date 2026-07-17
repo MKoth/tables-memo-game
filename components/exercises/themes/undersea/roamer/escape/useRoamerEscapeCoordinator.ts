@@ -9,20 +9,20 @@ import {
 
 export type UseRoamerEscapeCoordinatorParams = {
   roamerControllerRef: RefObject<RoamerSwimZoneController | null>;
-  jellyBridge: WordSpriteEscapeLayout;
-  jellyRect: ZoneRect;
+  spriteBridge: WordSpriteEscapeLayout;
+  spriteRect: ZoneRect;
 };
 
 export function useRoamerEscapeCoordinator({
   roamerControllerRef,
-  jellyBridge,
-  jellyRect,
+  spriteBridge,
+  spriteRect,
 }: UseRoamerEscapeCoordinatorParams): (sequence: WordOperationSequence) => void {
-  const jellyBridgeRef = useRef(jellyBridge);
-  jellyBridgeRef.current = jellyBridge;
+  const jellyBridgeRef = useRef(spriteBridge);
+  jellyBridgeRef.current = spriteBridge;
 
-  const jellyRectRef = useRef(jellyRect);
-  jellyRectRef.current = jellyRect;
+  const jellyRectRef = useRef(spriteRect);
+  jellyRectRef.current = spriteRect;
 
   const coordinator = useMemo(
     () =>

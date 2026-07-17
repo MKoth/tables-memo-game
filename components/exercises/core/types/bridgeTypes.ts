@@ -7,10 +7,10 @@ export type RoamerRuntimePosition = {
 };
 
 export type RoamerSimBridge = {
-  fishRuntimePositions: ReadonlyArray<RoamerRuntimePosition>;
-  fishCount: number;
+  runtimePositions: ReadonlyArray<RoamerRuntimePosition>;
+  roamerCount: number;
   hitRadius: number;
-  eliminatedFishSv: SharedValue<number[]>;
+  eliminatedRoamerSv: SharedValue<number[]>;
 };
 
 export type WordSpriteLayoutBridge = {
@@ -19,12 +19,12 @@ export type WordSpriteLayoutBridge = {
   layoutScale: SharedValue<number[]>;
   bodyCellIndices: number[];
   headerCellIndices: number[];
-  bellSizes: number[];
+  bodySizes: number[];
 };
 
 export type RoamerCaptureBridge = {
   capturedWord: string | null;
-  bubblePhase: SharedValue<number>;
+  orbPhase: SharedValue<number>;
   onMatchSuccess: (targetX: number, targetY: number, hitIdx: number) => void;
   overlay: ReactNode | null;
   escapeOverlayActive: boolean;

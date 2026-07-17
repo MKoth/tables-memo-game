@@ -42,9 +42,9 @@ function UnderseaThemeExerciseContent({ sounds }: UnderseaThemeExerciseContentPr
   }, [sounds]);
 
   useEffect(() => {
-    sounds.startWaterflow();
+    sounds.startAmbient();
     return () => {
-      sounds.stopWaterflow();
+      sounds.stopAmbient();
     };
   }, [sounds]);
 

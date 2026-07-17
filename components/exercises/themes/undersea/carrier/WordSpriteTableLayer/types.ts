@@ -25,7 +25,7 @@ export type WordSpriteTableLayerInnerProps = {
   bellImage: import('@shopify/react-native-skia').SkImage;
   tentacleImage: import('@shopify/react-native-skia').SkImage;
   capturedWord: string | null;
-  bubblePhase?: import('react-native-reanimated').SharedValue<number>;
+  orbPhase?: import('react-native-reanimated').SharedValue<number>;
   onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;
   onWordSpriteSound?: (kind: WordSpriteSoundKind) => void;
   interactive: boolean;

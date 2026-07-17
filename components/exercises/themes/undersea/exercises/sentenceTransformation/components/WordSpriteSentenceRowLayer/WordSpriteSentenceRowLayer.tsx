@@ -33,7 +33,7 @@ import {
   type SentenceRoundPhase,
 } from '../../../../../../sentenceTransformation/domain';
 import type { SentencePromptDisplaySlot } from '../../../../../../sentenceTransformation/domain/types';
-import type { SwimPath } from '../../../../../../sentenceTransformation/domain/swimPathPlanner';
+import type { MotionPath } from '../../../../../../sentenceTransformation/domain/motionPathPlanner';
 import {
   computeSentenceRowLayout,
   type SentenceSlotConfig,
@@ -46,7 +46,7 @@ export type WordSpriteSentenceRowLayerProps = {
   conjugatedForm: string;
   roundPos: number;
   roundPhase: SentenceRoundPhase;
-  swimPaths: SwimPath[];
+  motionPaths: MotionPath[];
   blankSlotIndex: number;
   blankExiting: boolean;
   blankExitDurationMs?: number;
@@ -65,7 +65,7 @@ function toCellConfig(slot: SentenceSlotConfig): CellConfig {
     gridRow: 0,
     isHeader: false,
     label: slot.label,
-    bellSize: slot.bellSize,
+    bellSize: slot.bodySize,
     phase: slot.phase,
     pulseSpeed: slot.pulseSpeed,
     labelFillColor: slot.labelFillColor,
@@ -196,7 +196,7 @@ export function WordSpriteSentenceRowLayer({
   conjugatedForm,
   roundPos,
   roundPhase,
-  swimPaths,
+  motionPaths,
   blankSlotIndex,
   blankExiting,
   blankExitDurationMs = ROUND_ROW_EXIT_DURATION_MS,
@@ -207,19 +207,19 @@ export function WordSpriteSentenceRowLayer({
   onRowExitComplete,
 }: WordSpriteSentenceRowLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
-  const { jellyRect, roamerRect, labelRotationRad } = useExerciseLayout();
+  const { spriteRect, roamerRect, labelRotationRad } = useExerciseLayout();
   const clock = useExerciseClockQuantized(WORD_SPRITE_CLOCK_FPS);
 
   const layout = useMemo(
     () =>
       computeSentenceRowLayout({
         slots: displaySlots,
-        jellyRect,
+        spriteRect,
         roamerRect,
         conjugatedForm,
         roundPos,
       }),
-    [displaySlots, jellyRect, roamerRect, conjugatedForm, roundPos],
+    [displaySlots, spriteRect, roamerRect, conjugatedForm, roundPos],
   );
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
@@ -240,9 +240,9 @@ export function WordSpriteSentenceRowLayer({
   const baseLayoutScale = useSharedValue<number[]>(layout.scales);
   const layoutScale = useSharedValue<number[]>(layout.scales);
   const slotAnimScale = useSharedValue<number[]>(layout.scales);
-  const zoneLeftSv = useSharedValue(jellyRect.x);
-  const zoneTopSv = useSharedValue(jellyRect.y);
-  const bellSizesSv = useSharedValue(layout.configs.map((config) => config.bellSize));
+  const zoneLeftSv = useSharedValue(spriteRect.x);
+  const zoneTopSv = useSharedValue(spriteRect.y);
+  const bellSizesSv = useSharedValue(layout.configs.map((config) => config.bodySize));
   const tintFlashPreset = useSharedValue<number[]>([]);
   const tintFlashUntil = useSharedValue<number[]>([]);
   const retainedLabelRotation = useSharedValue(0);
@@ -279,16 +279,16 @@ export function WordSpriteSentenceRowLayer({
   }, []);
 
   useEffect(() => {
-    zoneLeftSv.value = jellyRect.x;
-    zoneTopSv.value = jellyRect.y;
-    bellSizesSv.value = layout.configs.map((config) => config.bellSize);
+    zoneLeftSv.value = spriteRect.x;
+    zoneTopSv.value = spriteRect.y;
+    bellSizesSv.value = layout.configs.map((config) => config.bodySize);
     tintFlashPreset.value = layout.configs.map(() => -1);
     tintFlashUntil.value = layout.configs.map(() => 0);
     blankSlotIndexSv.value = blankSlotIndex;
-  }, [jellyRect.x, jellyRect.y, layout, bellSizesSv, tintFlashPreset, tintFlashUntil, zoneLeftSv, zoneTopSv, blankSlotIndex, blankSlotIndexSv]);
+  }, [spriteRect.x, spriteRect.y, layout, bellSizesSv, tintFlashPreset, tintFlashUntil, zoneLeftSv, zoneTopSv, blankSlotIndex, blankSlotIndexSv]);
 
   useEffect(() => {
-    const count = swimPaths.length;
+    const count = motionPaths.length;
     if (count === 0) {
       spawnXs.value = [];
       spawnYs.value = [];
@@ -302,13 +302,13 @@ export function WordSpriteSentenceRowLayer({
       slotAnimScale.value = [];
       return;
     }
-    const enterAnglesList = swimPaths.map((p) => p.enterAngle);
-    spawnXs.value = swimPaths.map((p) => p.spawnX);
-    spawnYs.value = swimPaths.map((p) => p.spawnY);
-    centerXs.value = swimPaths.map((p) => p.slotCenterX);
-    centerYs.value = swimPaths.map((p) => p.slotCenterY);
+    const enterAnglesList = motionPaths.map((p) => p.enterAngle);
+    spawnXs.value = motionPaths.map((p) => p.spawnX);
+    spawnYs.value = motionPaths.map((p) => p.spawnY);
+    centerXs.value = motionPaths.map((p) => p.slotCenterX);
+    centerYs.value = motionPaths.map((p) => p.slotCenterY);
     enterAngles.value = enterAnglesList;
-    exitAngles.value = swimPaths.map((p) => p.exitAngle);
+    exitAngles.value = motionPaths.map((p) => p.exitAngle);
     layoutX.value = layout.xs;
     layoutY.value = layout.ys;
     baseLayoutScale.value = layout.scales;
@@ -334,7 +334,7 @@ export function WordSpriteSentenceRowLayer({
         },
       );
     }
-  }, [swimPaths, roundPhase, layout, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, baseLayoutScale, slotAnimScale, fireRowEnterComplete]);
+  }, [motionPaths, roundPhase, layout, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, baseLayoutScale, slotAnimScale, fireRowEnterComplete]);
 
   useAnimatedReaction(
     () => ({
@@ -586,10 +586,10 @@ export function WordSpriteSentenceRowLayer({
           style={[
             styles.gestureCapture,
             {
-              left: jellyRect.x,
-              top: jellyRect.y,
-              width: jellyRect.w,
-              height: jellyRect.h,
+              left: spriteRect.x,
+              top: spriteRect.y,
+              width: spriteRect.w,
+              height: spriteRect.h,
             },
           ]}
         />

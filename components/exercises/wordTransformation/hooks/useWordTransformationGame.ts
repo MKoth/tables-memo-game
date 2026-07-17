@@ -11,7 +11,7 @@ import {
 import {
   createWordTransformationExercise,
   type InsertAnimationState,
-  type LetterBubbleModel,
+  type LetterOrbModel,
   type TransformationMode,
   type VariantSourceLayout,
   type WordOperationSequence,
@@ -39,7 +39,7 @@ export type WordTransformationGame = {
   sequence: WordOperationSequence | null;
   operation: WordOperationSequence['operations'][number] | null;
   mode: TransformationMode | null;
-  letters: LetterBubbleModel[];
+  letters: LetterOrbModel[];
   variantPickerItems: VariantPickerItem[];
   pickerHiddenItemIds: ReadonlySet<string>;
   wrongItemId: string | null;
@@ -244,7 +244,7 @@ export function useWordTransformationGame({
   const displayWord =
     wordTransition != null ? coreSnapshot?.currentWord ?? sequence?.baseWord ?? '' : coreSnapshot?.currentWord ?? '';
 
-  const letters = useMemo<LetterBubbleModel[]>(() => {
+  const letters = useMemo<LetterOrbModel[]>(() => {
     if (wordTransition != null) {
       const order =
         wordTransition.phase === 'exit'

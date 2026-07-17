@@ -36,12 +36,12 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
   const wordList = animalsWordList;
   const soundEnabled = useExerciseStore(state => state.soundEnabled);
 
-  const { roamerRect, jellyRect, orientation } = useExerciseLayout();
+  const { roamerRect, spriteRect, orientation } = useExerciseLayout();
 
   useEffect(() => {
-    sounds.startWaterflow();
+    sounds.startAmbient();
     return () => {
-      sounds.stopWaterflow();
+      sounds.stopAmbient();
     };
   }, [sounds]);
 
@@ -53,8 +53,8 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
     wordList,
     orientation,
     roamerRect,
-    jellyRect,
-    playBubbleInflate: sounds.playBubbleInflate,
+    spriteRect,
+    playOrbInflate: sounds.playOrbInflate,
     playWrong: sounds.playWrongClick,
   });
 
@@ -64,14 +64,14 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
   const englishLayout = useMemo(() => {
     const count = game.englishLetters.length;
     if (count === 0) return { diameter: 0, rowY: 0, centers: [] };
-    return computeLetterLayout(jellyRect, count, TRANSFORMATION_WORD_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
-  }, [jellyRect, game.englishLetters.length]);
+    return computeLetterLayout(spriteRect, count, TRANSFORMATION_WORD_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
+  }, [spriteRect, game.englishLetters.length]);
 
   const spanishLayout = useMemo(() => {
     const count = game.spanishLetters.length;
     if (count === 0) return { diameter: 0, rowY: 0, centers: [] };
-    return computeLetterLayout(jellyRect, count, SPANISH_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
-  }, [jellyRect, game.spanishLetters.length]);
+    return computeLetterLayout(spriteRect, count, SPANISH_ROW_Y_RATIO, { gapRatio: 0.12, minDiameter: 26 });
+  }, [spriteRect, game.spanishLetters.length]);
 
   const poolLayout = useMemo(() => {
     const count = game.poolLetters.length;
@@ -114,8 +114,8 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
                 image={images.bubble}
                 font={wordFont}
                 clock={clock}
-                onPopSound={letter.popDelayMs != null ? sounds.playBubblePop : undefined}
-                onEnterSound={letter.enterDelayMs != null ? sounds.playBubbleInflate : undefined}
+                onPopSound={letter.popDelayMs != null ? sounds.playOrbPop : undefined}
+                onEnterSound={letter.enterDelayMs != null ? sounds.playOrbInflate : undefined}
               />
             );
           })}
@@ -142,8 +142,8 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
                 image={images.bubble}
                 font={wordFont}
                 clock={clock}
-                onPopSound={letter.popDelayMs != null ? sounds.playBubblePop : undefined}
-                onEnterSound={letter.enterDelayMs != null ? sounds.playBubbleInflate : undefined}
+                onPopSound={letter.popDelayMs != null ? sounds.playOrbPop : undefined}
+                onEnterSound={letter.enterDelayMs != null ? sounds.playOrbInflate : undefined}
               />
             );
           })}
@@ -168,8 +168,8 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
                 image={images.bubble}
                 font={poolFont}
                 clock={clock}
-                onPopSound={letter.popping ? sounds.playBubblePop : undefined}
-                onEnterSound={letter.enterDelayMs != null ? sounds.playBubbleInflate : undefined}
+                onPopSound={letter.popping ? sounds.playOrbPop : undefined}
+                onEnterSound={letter.enterDelayMs != null ? sounds.playOrbInflate : undefined}
               />
             );
           })}

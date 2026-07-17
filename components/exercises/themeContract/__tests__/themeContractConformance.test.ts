@@ -119,8 +119,8 @@ describe('Theme contract conformance', () => {
     expect(typeof underseaTheme.scenery).toBe('function');
   });
 
-  it('undersea roamer has swimZone, decorative, and matchLayer', () => {
-    expect(underseaTheme.roamer.swimZone).toBeDefined();
+  it('undersea roamer has motionZone, decorative, and matchLayer', () => {
+    expect(underseaTheme.roamer.motionZone).toBeDefined();
     expect(underseaTheme.roamer.decorative).toBeDefined();
     expect(underseaTheme.roamer.matchLayer).toBeDefined();
   });
@@ -132,16 +132,16 @@ describe('Theme contract conformance', () => {
     expect(typeof underseaTheme.wordSprite.match).toBe('function');
   });
 
-  it('undersea wordTransformationVisual has bubbleLayer, wordBubbles, and letterBubble', () => {
-    expect(underseaTheme.wordTransformationVisual.bubbleLayer).toBeDefined();
-    expect(underseaTheme.wordTransformationVisual.wordBubbles).toBeDefined();
-    expect(underseaTheme.wordTransformationVisual.letterBubble).toBeDefined();
+  it('undersea wordTransformationVisual has orbLayer, wordOrbs, and letterOrb', () => {
+    expect(underseaTheme.wordTransformationVisual.orbLayer).toBeDefined();
+    expect(underseaTheme.wordTransformationVisual.wordOrbs).toBeDefined();
+    expect(underseaTheme.wordTransformationVisual.letterOrb).toBeDefined();
   });
 
-  it('undersea roundResolution has resolutionBubble, resolveFlight, and mergeBubbles', () => {
-    expect(typeof underseaTheme.roundResolution.resolutionBubble).toBe('function');
+  it('undersea roundResolution has resolutionOrb, resolveFlight, and mergeOrbs', () => {
+    expect(typeof underseaTheme.roundResolution.resolutionOrb).toBe('function');
     expect(typeof underseaTheme.roundResolution.resolveFlight).toBe('function');
-    expect(typeof underseaTheme.roundResolution.mergeBubbles).toBe('function');
+    expect(typeof underseaTheme.roundResolution.mergeOrbs).toBe('function');
   });
 
   it('undersea matchExercise has useCombinedGestures', () => {

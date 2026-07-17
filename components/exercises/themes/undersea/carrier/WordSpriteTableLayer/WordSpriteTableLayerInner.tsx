@@ -38,7 +38,7 @@ export function WordSpriteTableLayerInner({
   bellImage,
   tentacleImage,
   capturedWord,
-  bubblePhase,
+  orbPhase,
   onMatchSuccess,
   onWordSpriteSound,
   interactive,
@@ -49,7 +49,7 @@ export function WordSpriteTableLayerInner({
 }: WordSpriteTableLayerInnerProps) {
   const { publishWordSpriteBridge } = useExerciseRuntime();
   const { height } = useWindowDimensions();
-  const { jellyRect, labelRotationRad } = useExerciseLayout();
+  const { spriteRect, labelRotationRad } = useExerciseLayout();
   const clock = useExerciseClockQuantized(WORD_SPRITE_CLOCK_FPS);
 
   const nGridCols = table.colHeaders.length + 1;
@@ -58,12 +58,12 @@ export function WordSpriteTableLayerInner({
   const sizing = useMemo(
     () =>
       computeWordSpriteSizing({
-        zoneWidth: jellyRect.w,
-        zoneHeight: jellyRect.h,
+        zoneWidth: spriteRect.w,
+        zoneHeight: spriteRect.h,
         nGridCols,
         nGridRows,
       }),
-    [jellyRect.w, jellyRect.h, nGridCols, nGridRows],
+    [spriteRect.w, spriteRect.h, nGridCols, nGridRows],
   );
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
@@ -112,7 +112,7 @@ export function WordSpriteTableLayerInner({
   const cellLabelsSv = useSharedValue<string[]>([]);
   const capturedWordSv = useSharedValue('');
   const fallbackBubblePhase = useSharedValue<number>(BubblePhase.None);
-  const effectiveBubblePhase = bubblePhase ?? fallbackBubblePhase;
+  const effectiveBubblePhase = orbPhase ?? fallbackBubblePhase;
   const onMatchSuccessRef = useRef(onMatchSuccess);
   const onWordSpriteSoundRef = useRef(onWordSpriteSound);
 
@@ -209,19 +209,19 @@ export function WordSpriteTableLayerInner({
 
   const layoutBounds: LayoutBounds = useMemo(
     () => ({
-      width: jellyRect.w,
+      width: spriteRect.w,
       height,
       nGridCols,
       nGridRows,
-      zoneLeft: jellyRect.x,
-      zoneTop: jellyRect.y,
-      zoneHeight: jellyRect.h,
+      zoneLeft: spriteRect.x,
+      zoneTop: spriteRect.y,
+      zoneHeight: spriteRect.h,
       scaleMin: sizing.scaleMin,
       scaleMax: sizing.scaleMax,
       edgeSqueeze: sizing.edgeSqueeze,
       spreadBoost: sizing.spreadBoost,
     }),
-    [height, jellyRect, nGridCols, nGridRows, sizing],
+    [height, spriteRect, nGridCols, nGridRows, sizing],
   );
 
   // ── Layout state ────────────────────────────────────────────────────────
@@ -299,7 +299,7 @@ export function WordSpriteTableLayerInner({
       layoutScale,
       bodyCellIndices,
       headerCellIndices,
-      bellSizes: cellConfigs.map(c => c.bellSize),
+      bodySizes: cellConfigs.map(c => c.bellSize),
     });
   }, [
     bodyCellIndices,
@@ -454,10 +454,10 @@ export function WordSpriteTableLayerInner({
           style={[
             styles.gestureCapture,
             {
-              left: jellyRect.x,
-              top: jellyRect.y,
-              width: jellyRect.w,
-              height: jellyRect.h,
+              left: spriteRect.x,
+              top: spriteRect.y,
+              width: spriteRect.w,
+              height: spriteRect.h,
             },
           ]}
         />

@@ -19,12 +19,12 @@ const LABEL_BOTTOM_OFFSET = 88;
 
 type ExerciseLoadingScreenProps = {
   progress: number;
-  seafloorImage: SkImage | null;
-  stoneImages: Record<string, SkImage> | null;
-  seaweedImages: Record<string, SkImage> | null;
+  backgroundImage: SkImage | null;
+  decorationImages: Record<string, SkImage> | null;
+  accentImages: Record<string, SkImage> | null;
 };
 
-export function ExerciseLoadingScreen({ progress, seafloorImage, stoneImages, seaweedImages }: ExerciseLoadingScreenProps) {
+export function ExerciseLoadingScreen({ progress, backgroundImage, decorationImages, accentImages }: ExerciseLoadingScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { roamerRect, screenHeight, orientation } = useExerciseLayout();
@@ -73,9 +73,9 @@ export function ExerciseLoadingScreen({ progress, seafloorImage, stoneImages, se
       <theme.loading.backdrop
         width={windowWidth}
         height={windowHeight}
-        seafloorImage={seafloorImage}
-        stoneImages={stoneImages}
-        seaweedImages={seaweedImages}
+        backgroundImage={backgroundImage}
+        decorationImages={decorationImages}
+        accentImages={accentImages}
       />
 
       <View
