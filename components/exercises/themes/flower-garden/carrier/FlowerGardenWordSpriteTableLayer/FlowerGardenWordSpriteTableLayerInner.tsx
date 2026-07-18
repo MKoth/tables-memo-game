@@ -5,12 +5,15 @@ import { useSharedValue } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { useExerciseLayout } from '../../../../core';
 import { useExerciseRuntime } from '../../../../core';
+import { useExerciseClockQuantized } from '../../../../core';
+import { WORD_SPRITE_CLOCK_FPS } from './config/flowerTableLayerConfig';
 import { CellRoseBud } from './components/CellRoseBud';
 import {
   buildFlowerLayoutParticles,
   createFlowerCellConfigs,
   sortFlowerDrawOrder,
 } from './helpers/flowerCellConfigBuilders';
+import { computeFlowerCellScaleRanges } from './helpers/computeFlowerCellScaleRanges';
 import { useFlowerTableGestures } from './gestures/useFlowerTableGestures';
 import { useWordSpriteMotionLoop } from '../../../undersea/carrier/WordSpriteTableLayer/motion/useWordSpriteMotionLoop';
 import {
@@ -33,6 +36,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
   const { publishWordSpriteBridge } = useExerciseRuntime();
   const { height } = useWindowDimensions();
   const { spriteRect } = useExerciseLayout();
+  const clock = useExerciseClockQuantized(WORD_SPRITE_CLOCK_FPS);
 
   const nGridCols = table.colHeaders.length + 1;
   const nGridRows = table.rowHeaders.length + 1;
@@ -49,6 +53,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
   );
 
   const cellConfigs = useMemo(() => createFlowerCellConfigs(table, sizing), [table, sizing]);
+
   const bodyCellIndices = useMemo(
     () => cellConfigs.filter(c => !c.isHeader).map(c => c.index),
     [cellConfigs],
@@ -87,6 +92,8 @@ export function FlowerGardenWordSpriteTableLayerInner({
   const layoutX = useSharedValue<number[]>([]);
   const layoutY = useSharedValue<number[]>([]);
   const layoutScale = useSharedValue<number[]>([]);
+  const layoutScaleMin = useSharedValue<number[]>([]);
+  const layoutScaleMax = useSharedValue<number[]>([]);
   const layoutBoundsSv = useSharedValue<LayoutBounds>(layoutBounds);
   const layoutParticlesSv = useSharedValue<LayoutParticle[]>(layoutParticles);
   const cellBellSizesSv = useSharedValue<number[]>([]);
@@ -108,6 +115,9 @@ export function FlowerGardenWordSpriteTableLayerInner({
     layoutX.value = layout.xs;
     layoutY.value = layout.ys;
     layoutScale.value = layout.scales;
+    const ranges = computeFlowerCellScaleRanges(layoutParticles, layoutBounds);
+    layoutScaleMin.value = ranges.minScales;
+    layoutScaleMax.value = ranges.maxScales;
     appliedBiasX.value = 0;
     appliedBiasY.value = 0;
     prevBiasX.value = 0;
@@ -125,6 +135,8 @@ export function FlowerGardenWordSpriteTableLayerInner({
     layoutX,
     layoutY,
     layoutScale,
+    layoutScaleMin,
+    layoutScaleMax,
     appliedBiasX,
     appliedBiasY,
     prevBiasX,
@@ -206,6 +218,9 @@ export function FlowerGardenWordSpriteTableLayerInner({
             layoutX={layoutX}
             layoutY={layoutY}
             layoutScale={layoutScale}
+            layoutScaleMin={layoutScaleMin}
+            layoutScaleMax={layoutScaleMax}
+            clock={clock}
             roseBudImage={roseBudImage}
             roseCenterImage={roseCenterImage}
             petalImages={petalImages}

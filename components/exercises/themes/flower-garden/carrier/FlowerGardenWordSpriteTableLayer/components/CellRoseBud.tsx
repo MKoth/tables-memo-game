@@ -25,15 +25,21 @@ const SPRITE_SAMPLING = {
 } as const;
 
 const PADDED_PETALS_COUNT = padRingArray(roseBudUniformDefaults.petalsCount);
-const PADDED_RING_RADIUS = padRingArray(roseBudUniformDefaults.ringRadius);
-const PADDED_RING_BORDER = padRingArray(roseBudUniformDefaults.ringBorder);
-const PADDED_PETAL_WIDTH = padRingArray(roseBudUniformDefaults.petalWidth);
+const PADDED_RING_RADIUS_MIN = padRingArray(roseBudUniformDefaults.ringRadius.min);
+const PADDED_RING_RADIUS_MAX = padRingArray(roseBudUniformDefaults.ringRadius.max);
+const PADDED_RING_BORDER_MIN = padRingArray(roseBudUniformDefaults.ringBorder.min);
+const PADDED_RING_BORDER_MAX = padRingArray(roseBudUniformDefaults.ringBorder.max);
+const PADDED_PETAL_WIDTH_MIN = padRingArray(roseBudUniformDefaults.petalWidth.min);
+const PADDED_PETAL_WIDTH_MAX = padRingArray(roseBudUniformDefaults.petalWidth.max);
 
 export type CellRoseBudProps = {
   config: FlowerCellConfig;
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
+  layoutScaleMin: SharedValue<number[]>;
+  layoutScaleMax: SharedValue<number[]>;
+  clock: SharedValue<number>;
   roseBudImage: SkImage;
   roseCenterImage: SkImage;
   petalImages: readonly SkImage[];
@@ -44,6 +50,9 @@ export function CellRoseBud({
   layoutX,
   layoutY,
   layoutScale,
+  layoutScaleMin,
+  layoutScaleMax,
+  clock,
   roseBudImage,
   roseCenterImage,
   petalImages,
@@ -56,21 +65,35 @@ export function CellRoseBud({
     const cy = layoutY.value[idx] ?? 0;
     const size = config.bellSize * scale;
     const halfSize = size / 2;
+    const cellMin = layoutScaleMin.value[idx] ?? 0;
+    const cellMax = layoutScaleMax.value[idx] ?? 0;
+    const cellRange = cellMax - cellMin;
+    const rawCoef = cellRange > 1e-6 ? (scale - cellMin) / cellRange : 0;
+    const coefficient = rawCoef < 0 ? 0 : rawCoef > 1 ? 1 : rawCoef;
 
     return {
       roseX: cx - halfSize,
       roseY: cy - halfSize,
       roseW: size,
       roseH: size,
-      budInner: roseBudUniformDefaults.budInner,
-      budOuter: roseBudUniformDefaults.budOuter,
-      roseCenterDiameter: roseBudUniformDefaults.roseCenterDiameter,
-      roseCenterBulge: roseBudUniformDefaults.roseCenterBulge,
+      budInnerMin: roseBudUniformDefaults.budInner.min,
+      budInnerMax: roseBudUniformDefaults.budInner.max,
+      budOuterMin: roseBudUniformDefaults.budOuter.min,
+      budOuterMax: roseBudUniformDefaults.budOuter.max,
+      roseCenterDiameterMin: roseBudUniformDefaults.roseCenterDiameter.min,
+      roseCenterDiameterMax: roseBudUniformDefaults.roseCenterDiameter.max,
+      roseCenterBulgeMin: roseBudUniformDefaults.roseCenterBulge.min,
+      roseCenterBulgeMax: roseBudUniformDefaults.roseCenterBulge.max,
       ringsCount: roseBudUniformDefaults.ringsCount,
       petalsCount: PADDED_PETALS_COUNT,
-      ringRadius: PADDED_RING_RADIUS,
-      ringBorder: PADDED_RING_BORDER,
-      petalWidth: PADDED_PETAL_WIDTH,
+      ringRadiusMin: PADDED_RING_RADIUS_MIN,
+      ringRadiusMax: PADDED_RING_RADIUS_MAX,
+      ringBorderMin: PADDED_RING_BORDER_MIN,
+      ringBorderMax: PADDED_RING_BORDER_MAX,
+      petalWidthMin: PADDED_PETAL_WIDTH_MIN,
+      petalWidthMax: PADDED_PETAL_WIDTH_MAX,
+      coefficient,
+      iTime: clock.value / 1000,
     };
   });
 

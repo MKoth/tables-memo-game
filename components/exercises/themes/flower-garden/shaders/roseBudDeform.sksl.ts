@@ -6,15 +6,24 @@ uniform float roseX;
 uniform float roseY;
 uniform float roseW;
 uniform float roseH;
-uniform float budInner;
-uniform float budOuter;
-uniform float roseCenterDiameter;
-uniform float roseCenterBulge;
+uniform float budInnerMin;
+uniform float budInnerMax;
+uniform float budOuterMin;
+uniform float budOuterMax;
+uniform float roseCenterDiameterMin;
+uniform float roseCenterDiameterMax;
+uniform float roseCenterBulgeMin;
+uniform float roseCenterBulgeMax;
 uniform float ringsCount;
 uniform float petalsCount[${MAX_RINGS}];
-uniform float ringRadius[${MAX_RINGS}];
-uniform float ringBorder[${MAX_RINGS}];
-uniform float petalWidth[${MAX_RINGS}];
+uniform float ringRadiusMin[${MAX_RINGS}];
+uniform float ringRadiusMax[${MAX_RINGS}];
+uniform float ringBorderMin[${MAX_RINGS}];
+uniform float ringBorderMax[${MAX_RINGS}];
+uniform float petalWidthMin[${MAX_RINGS}];
+uniform float petalWidthMax[${MAX_RINGS}];
+uniform float coefficient;
+uniform float iTime;
 uniform shader budTexture;
 uniform shader roseCenterTexture;
 uniform shader petalTexture1;
@@ -34,6 +43,23 @@ half4 samplePetal(int variant, float2 coord) {
 }
 
 half4 main(float2 fragCoord) {
+  float budInner    = mix(budInnerMin, budInnerMax, coefficient);
+  float budOuter    = mix(budOuterMin, budOuterMax, coefficient);
+  float centerDiam  = mix(roseCenterDiameterMin, roseCenterDiameterMax, coefficient);
+  float centerBulge = mix(roseCenterBulgeMin, roseCenterBulgeMax, coefficient);
+  int   rings       = int(ringsCount);
+
+  float ringRadiusL[${MAX_RINGS}];
+  float ringBorderL[${MAX_RINGS}];
+  float petalWidthL[${MAX_RINGS}];
+  int   petalsCountL[${MAX_RINGS}];
+  for (int i = 0; i < ${MAX_RINGS}; i++) {
+    ringRadiusL[i]  = mix(ringRadiusMin[i],  ringRadiusMax[i],  coefficient);
+    ringBorderL[i]  = mix(ringBorderMin[i],  ringBorderMax[i],  coefficient);
+    petalWidthL[i]  = mix(petalWidthMin[i],  petalWidthMax[i],  coefficient);
+    petalsCountL[i] = int(petalsCount[i]);
+  }
+
   float2 center = float2(roseX, roseY) + float2(roseW, roseH) * 0.5;
   float halfSize = min(roseW, roseH) * 0.5;
 
@@ -58,18 +84,16 @@ half4 main(float2 fragCoord) {
     color = budColor * fadeIn * fadeOut;
   }
 
-  int rings = int(ringsCount);
-
   for (int ring = 0; ring < ${MAX_RINGS}; ring++) {
     if (ring >= rings) break;
 
-    float ringInner = ringRadius[ring] - ringBorder[ring];
-    float ringOuter = ringRadius[ring] + ringBorder[ring];
+    float ringInner = ringRadiusL[ring] - ringBorderL[ring];
+    float ringOuter = ringRadiusL[ring] + ringBorderL[ring];
     if (r < ringInner || r > ringOuter) continue;
 
-    int count = int(petalsCount[ring]);
+    int count = petalsCountL[ring];
     float slotAngle = 6.2831853 / float(count);
-    float halfSpan  = petalWidth[ring] * 3.14159265;
+    float halfSpan  = petalWidthL[ring] * 3.14159265;
 
     for (int i = 0; i < ${MAX_PETALS}; i++) {
       if (i >= count) break;
@@ -85,7 +109,7 @@ half4 main(float2 fragCoord) {
       if (abs(angularDist) > halfSpan) continue;
 
       float u = 0.5 + angularDist / (2.0 * halfSpan);
-      float v = 1.0 - (r - ringInner) / (2.0 * ringBorder[ring]);
+      float v = 1.0 - (r - ringInner) / (2.0 * ringBorderL[ring]);
 
       float2 texCoord = float2(roseX + u * roseW, roseY + v * roseH);
       half4 petalColor = samplePetal(variant, texCoord);
@@ -96,9 +120,9 @@ half4 main(float2 fragCoord) {
     }
   }
 
-  if (roseCenterDiameter > 0.0) {
-    float centerRadius = roseCenterDiameter * 0.5;
-    float bulge = max(roseCenterBulge, 0.0);
+  if (centerDiam > 0.0) {
+    float centerRadius = centerDiam * 0.5;
+    float bulge = max(centerBulge, 0.0);
     float edgeWidth = mix(0.08, 0.01, clamp(bulge, 0.0, 1.0));
     if (r < centerRadius) {
       float rNorm = r / centerRadius;
@@ -120,13 +144,13 @@ half4 main(float2 fragCoord) {
 `;
 
 export const roseBudUniformDefaults = {
-  budInner: 0.0,
-  budOuter: 1.0,
-  roseCenterDiameter: 1.0,
-  roseCenterBulge: 0.0,
+  budInner: { min: 0.0, max: 0.0 },
+  budOuter: { min: 1.0, max: 1.0 },
+  roseCenterDiameter: { min: 1.0, max: 1.0 },
+  roseCenterBulge: { min: 0.0, max: 1.0 },
   ringsCount: 2,
   petalsCount: [9, 7],
-  ringRadius: [0.48, 0.39],
-  ringBorder: [0.10, 0.07],
-  petalWidth: [0.17, 0.22],
+  ringRadius: { min: [0.48, 0.39], max: [0.48, 0.39] },
+  ringBorder: { min: [0.10, 0.07], max: [0.10, 0.07] },
+  petalWidth: { min: [0.17, 0.22], max: [0.17, 0.22] },
 } as const;
