@@ -14,6 +14,7 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
 } as const;
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
+export const ROSE_CENTER_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.center;
 export const PETAL1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.petal1;
 export const PETAL2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.petal2;
 export const PETAL3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.petal3;
@@ -35,6 +36,7 @@ export type FlowerGardenPetalKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.roses
 export type FlowerGardenThemeImages = {
   roses: Record<FlowerGardenPetalKey, unknown>;
   roseBudImage: SkImage | null;
+  roseCenterImage: SkImage | null;
   petalImages: SkImage[] | null;
 };
 

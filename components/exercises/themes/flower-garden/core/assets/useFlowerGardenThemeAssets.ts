@@ -7,6 +7,7 @@ import {
   FLOWER_GARDEN_PRELOAD_TOTAL,
   PETAL_SOURCES,
   ROSE_BUD_SOURCE,
+  ROSE_CENTER_SOURCE,
   type FlowerGardenPetalKey,
   type FlowerGardenThemeImages,
 } from './flowerGardenThemeAssets';
@@ -63,6 +64,19 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        let roseCenterImage: SkImage | null = null;
+        try {
+          roseCenterImage = await loadSkiaImage(ROSE_CENTER_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load rose center SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         const petalLoadResults = await Promise.allSettled(
           PETAL_SOURCES.map(async (source) => {
             const img = await loadSkiaImage(source);
@@ -90,6 +104,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           images: {
             roses: roses as FlowerGardenThemeImages['roses'],
             roseBudImage,
+            roseCenterImage,
             petalImages: petalImages.length === PETAL_SOURCES.length ? petalImages : null,
           },
         });

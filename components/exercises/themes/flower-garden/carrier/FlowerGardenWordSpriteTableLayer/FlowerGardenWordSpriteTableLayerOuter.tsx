@@ -11,9 +11,15 @@ export function FlowerGardenWordSpriteTableLayer({
 }: FlowerWordSpriteTableLayerProps) {
   const { images } = useFlowerGardenAssetsContext();
   const roseBudImage = images.roseBudImage;
+  const roseCenterImage = images.roseCenterImage;
   const petalImages = images.petalImages;
 
-  if (roseBudImage == null || petalImages == null || petalImages.length !== 6) {
+  if (
+    roseBudImage == null ||
+    roseCenterImage == null ||
+    petalImages == null ||
+    petalImages.length !== 6
+  ) {
     return null;
   }
 
@@ -21,6 +27,7 @@ export function FlowerGardenWordSpriteTableLayer({
     <FlowerGardenWordSpriteTableLayerInner
       table={table}
       roseBudImage={roseBudImage}
+      roseCenterImage={roseCenterImage}
       petalImages={petalImages}
       interactive={interactive}
       highlightedCellIndex={highlightedCellIndex}

@@ -24,6 +24,7 @@ import type { FlowerWordSpriteTableLayerInnerProps } from './types';
 export function FlowerGardenWordSpriteTableLayerInner({
   table,
   roseBudImage,
+  roseCenterImage,
   petalImages,
   interactive,
   highlightedCellIndex: _highlightedCellIndex,
@@ -206,6 +207,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
             layoutY={layoutY}
             layoutScale={layoutScale}
             roseBudImage={roseBudImage}
+            roseCenterImage={roseCenterImage}
             petalImages={petalImages}
           />
         ))}

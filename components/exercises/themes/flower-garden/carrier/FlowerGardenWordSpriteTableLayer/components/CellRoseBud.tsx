@@ -2,8 +2,12 @@ import React from 'react';
 import { FilterMode, ImageShader, MipmapMode, Rect, Shader, Skia, type SkImage, type SkRuntimeEffect } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import { ROSE_BUD_SKSL, roseBudUniformDefaults } from '../../../shaders/roseBudDeform.sksl';
+import { MAX_RINGS, ROSE_BUD_SKSL, roseBudUniformDefaults } from '../../../shaders/roseBudDeform.sksl';
 import type { FlowerCellConfig } from '../types';
+
+function padRingArray(arr: readonly number[]): number[] {
+  return [...arr, ...Array(Math.max(0, MAX_RINGS - arr.length)).fill(0)];
+}
 
 function compileRoseBudEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(ROSE_BUD_SKSL);
@@ -20,12 +24,18 @@ const SPRITE_SAMPLING = {
   mipmap: MipmapMode.Linear,
 } as const;
 
+const PADDED_PETALS_COUNT = padRingArray(roseBudUniformDefaults.petalsCount);
+const PADDED_RING_RADIUS = padRingArray(roseBudUniformDefaults.ringRadius);
+const PADDED_RING_BORDER = padRingArray(roseBudUniformDefaults.ringBorder);
+const PADDED_PETAL_WIDTH = padRingArray(roseBudUniformDefaults.petalWidth);
+
 export type CellRoseBudProps = {
   config: FlowerCellConfig;
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
   roseBudImage: SkImage;
+  roseCenterImage: SkImage;
   petalImages: readonly SkImage[];
 };
 
@@ -35,6 +45,7 @@ export function CellRoseBud({
   layoutY,
   layoutScale,
   roseBudImage,
+  roseCenterImage,
   petalImages,
 }: CellRoseBudProps) {
   const idx = config.index;
@@ -51,7 +62,15 @@ export function CellRoseBud({
       roseY: cy - halfSize,
       roseW: size,
       roseH: size,
-      ...roseBudUniformDefaults,
+      budInner: roseBudUniformDefaults.budInner,
+      budOuter: roseBudUniformDefaults.budOuter,
+      roseCenterDiameter: roseBudUniformDefaults.roseCenterDiameter,
+      roseCenterBulge: roseBudUniformDefaults.roseCenterBulge,
+      ringsCount: roseBudUniformDefaults.ringsCount,
+      petalsCount: PADDED_PETALS_COUNT,
+      ringRadius: PADDED_RING_RADIUS,
+      ringBorder: PADDED_RING_BORDER,
+      petalWidth: PADDED_PETAL_WIDTH,
     };
   });
 
@@ -64,6 +83,17 @@ export function CellRoseBud({
       <Shader source={roseBudEffect} uniforms={uniforms}>
         <ImageShader
           image={roseBudImage}
+          x={rectX}
+          y={rectY}
+          width={rectSize}
+          height={rectSize}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+          sampling={SPRITE_SAMPLING}
+        />
+        <ImageShader
+          image={roseCenterImage}
           x={rectX}
           y={rectY}
           width={rectSize}
