@@ -27,6 +27,7 @@ export type FlowerCellConfig = {
 export type FlowerWordSpriteTableLayerInnerProps = {
   table: TableData;
   roseBudImage: import('@shopify/react-native-skia').SkImage;
+  petalImages: readonly import('@shopify/react-native-skia').SkImage[];
   interactive: boolean;
   highlightedCellIndex: number;
   controllerRef?: RefObject<FlowerWordSpriteTableLayerController | null>;

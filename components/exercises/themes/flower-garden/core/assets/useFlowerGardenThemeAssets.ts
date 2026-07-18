@@ -5,6 +5,7 @@ import { loadSkiaImage } from '../../../../core/assets/loadSkiaImage';
 import {
   FLOWER_GARDEN_IMAGE_ASSETS,
   FLOWER_GARDEN_PRELOAD_TOTAL,
+  PETAL_SOURCES,
   ROSE_BUD_SOURCE,
   type FlowerGardenPetalKey,
   type FlowerGardenThemeImages,
@@ -62,11 +63,34 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        const petalLoadResults = await Promise.allSettled(
+          PETAL_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode petal image');
+            }
+            return img;
+          }),
+        );
+        const petalImages: SkImage[] = [];
+        for (const result of petalLoadResults) {
+          if (result.status === 'fulfilled') {
+            petalImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a petal image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
             roses: roses as FlowerGardenThemeImages['roses'],
             roseBudImage,
+            petalImages: petalImages.length === PETAL_SOURCES.length ? petalImages : null,
           },
         });
       } catch (error) {

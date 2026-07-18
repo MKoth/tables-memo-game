@@ -2,7 +2,7 @@ import React from 'react';
 import { FilterMode, ImageShader, MipmapMode, Rect, Shader, Skia, type SkImage, type SkRuntimeEffect } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import { ROSE_BUD_SKSL } from '../../../shaders/roseBudDeform.sksl';
+import { ROSE_BUD_SKSL, roseBudUniformDefaults } from '../../../shaders/roseBudDeform.sksl';
 import type { FlowerCellConfig } from '../types';
 
 function compileRoseBudEffect(): SkRuntimeEffect {
@@ -26,6 +26,7 @@ export type CellRoseBudProps = {
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
   roseBudImage: SkImage;
+  petalImages: readonly SkImage[];
 };
 
 export function CellRoseBud({
@@ -34,6 +35,7 @@ export function CellRoseBud({
   layoutY,
   layoutScale,
   roseBudImage,
+  petalImages,
 }: CellRoseBudProps) {
   const idx = config.index;
 
@@ -49,6 +51,7 @@ export function CellRoseBud({
       roseY: cy - halfSize,
       roseW: size,
       roseH: size,
+      ...roseBudUniformDefaults,
     };
   });
 
@@ -61,6 +64,72 @@ export function CellRoseBud({
       <Shader source={roseBudEffect} uniforms={uniforms}>
         <ImageShader
           image={roseBudImage}
+          x={rectX}
+          y={rectY}
+          width={rectSize}
+          height={rectSize}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+          sampling={SPRITE_SAMPLING}
+        />
+        <ImageShader
+          image={petalImages[0]}
+          x={rectX}
+          y={rectY}
+          width={rectSize}
+          height={rectSize}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+          sampling={SPRITE_SAMPLING}
+        />
+        <ImageShader
+          image={petalImages[1]}
+          x={rectX}
+          y={rectY}
+          width={rectSize}
+          height={rectSize}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+          sampling={SPRITE_SAMPLING}
+        />
+        <ImageShader
+          image={petalImages[2]}
+          x={rectX}
+          y={rectY}
+          width={rectSize}
+          height={rectSize}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+          sampling={SPRITE_SAMPLING}
+        />
+        <ImageShader
+          image={petalImages[3]}
+          x={rectX}
+          y={rectY}
+          width={rectSize}
+          height={rectSize}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+          sampling={SPRITE_SAMPLING}
+        />
+        <ImageShader
+          image={petalImages[4]}
+          x={rectX}
+          y={rectY}
+          width={rectSize}
+          height={rectSize}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+          sampling={SPRITE_SAMPLING}
+        />
+        <ImageShader
+          image={petalImages[5]}
           x={rectX}
           y={rectY}
           width={rectSize}
