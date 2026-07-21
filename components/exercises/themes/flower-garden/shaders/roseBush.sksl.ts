@@ -57,45 +57,30 @@ half4 sampleLeaf(int variant, float2 coord) {
   else                   { return leafTexture4.eval(coord); }
 }
 
-half4 sampleStemLeaves(float2 fragCoord, int stemIdx, float2 p0, float2 p1, float2 p2,
-                       float signFilter) {
-  int leafN = int(stemLeafCount[stemIdx]);
-  half4 result = half4(0.0);
-  for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
-    if (j >= leafN) break;
-    int idx = stemIdx * ${MAX_LEAVES_PER_STEM} + j;
-    if (leafSide[idx] * signFilter <= 0.0) continue;
+half4 blendLeaf(half4 base, float lT, float lSide, float lTilt, int lVariant, float lSize,
+                float2 fragCoord, float2 p0, float2 p1, float2 p2) {
+  float2 attachment = bezierPoint(lT, p0, p1, p2);
+  float2 normal = bezierNormal(lT, p0, p1, p2);
+  float nLen = length(normal);
+  if (nLen < 1e-6) return base;
+  float2 nN = normal / nLen;
+  float2 upR = lSide * nN;
+  float2 rightR0 = float2(-upR.y, upR.x);
 
-    float t = leafT[idx];
-    float tilt = leafTilt[idx];
-    int variant = int(leafVariant[idx]);
-    float lSize = leafSize[idx];
+  float c = cos(lTilt);
+  float s = sin(lTilt);
+  float2 upRot = float2(c * upR.x - s * upR.y, s * upR.x + c * upR.y);
+  float2 rightRot = float2(c * rightR0.x - s * rightR0.y, s * rightR0.x + c * rightR0.y);
 
-    float2 attachment = bezierPoint(t, p0, p1, p2);
-    float2 normal = bezierNormal(t, p0, p1, p2);
-    float nLen = length(normal);
-    if (nLen < 1e-6) continue;
-    float2 nN = normal / nLen;
-    float2 upR = float(leafSide[idx]) * nN;
-    float2 rightR0 = float2(-upR.y, upR.x);
+  float2 offset = fragCoord - attachment;
+  float2 rotated = float2(dot(offset, rightRot), dot(offset, upRot));
+  float2 leafUV = float2(rotated.x / lSize + 0.5, rotated.y / lSize);
+  if (leafUV.x < 0.0 || leafUV.x > 1.0 ||
+      leafUV.y < 0.0 || leafUV.y > 1.0) return base;
 
-    float c = cos(tilt);
-    float s = sin(tilt);
-    float2 upRot = float2(c * upR.x - s * upR.y, s * upR.x + c * upR.y);
-    float2 rightRot = float2(c * rightR0.x - s * rightR0.y, s * rightR0.x + c * rightR0.y);
-
-    float2 offset = fragCoord - attachment;
-    float2 rotated = float2(dot(offset, rightRot), dot(offset, upRot));
-    float2 leafUV = float2(rotated.x / lSize + 0.5, rotated.y / lSize);
-    if (leafUV.x < 0.0 || leafUV.x > 1.0 ||
-        leafUV.y < 0.0 || leafUV.y > 1.0) continue;
-
-    half4 leafColor = sampleLeaf(variant, leafUV * COVERING);
-    if (leafColor.a > 0.01) {
-      result = leafColor * leafColor.a + result * (1.0 - leafColor.a);
-    }
-  }
-  return result;
+  half4 leafColor = sampleLeaf(lVariant, leafUV * COVERING);
+  if (leafColor.a < 0.01) return base;
+  return leafColor * leafColor.a + base * (1.0 - leafColor.a);
 }
 
 half4 main(float2 fragCoord) {
@@ -107,8 +92,15 @@ half4 main(float2 fragCoord) {
     float2 p0 = float2(stemBaseX[i], stemBaseY[i]);
     float2 p1 = float2(stemControlX[i], stemControlY[i]);
     float2 p2 = float2(stemTopX[i], stemTopY[i]);
-    half4 inner = sampleStemLeaves(fragCoord, i, p0, p1, p2, -1.0);
-    color = inner + color * (1.0 - inner.a);
+    int leafN = int(stemLeafCount[i]);
+    for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
+      if (j >= leafN) break;
+      int idx = i * ${MAX_LEAVES_PER_STEM} + j;
+      if (leafSide[idx] >= 0.0) continue;
+      color = blendLeaf(color, leafT[idx], leafSide[idx], leafTilt[idx],
+                        int(leafVariant[idx]), leafSize[idx],
+                        fragCoord, p0, p1, p2);
+    }
   }
 
   for (int i = 0; i < ${MAX_STEMS_PER_BUSH}; i++) {
@@ -186,8 +178,15 @@ half4 main(float2 fragCoord) {
     float2 p0 = float2(stemBaseX[i], stemBaseY[i]);
     float2 p1 = float2(stemControlX[i], stemControlY[i]);
     float2 p2 = float2(stemTopX[i], stemTopY[i]);
-    half4 outer = sampleStemLeaves(fragCoord, i, p0, p1, p2, 1.0);
-    color = outer + color * (1.0 - outer.a);
+    int leafN = int(stemLeafCount[i]);
+    for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
+      if (j >= leafN) break;
+      int idx = i * ${MAX_LEAVES_PER_STEM} + j;
+      if (leafSide[idx] <= 0.0) continue;
+      color = blendLeaf(color, leafT[idx], leafSide[idx], leafTilt[idx],
+                        int(leafVariant[idx]), leafSize[idx],
+                        fragCoord, p0, p1, p2);
+    }
   }
 
   return color;
