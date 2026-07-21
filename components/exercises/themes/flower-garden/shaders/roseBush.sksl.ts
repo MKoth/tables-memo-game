@@ -74,7 +74,7 @@ half4 blendLeaf(half4 base, float lT, float lSide, float lTilt, int lVariant, fl
 
   float2 offset = fragCoord - attachment;
   float2 rotated = float2(dot(offset, rightRot), dot(offset, upRot));
-  float2 leafUV = float2(rotated.x / lSize + 0.5, rotated.y / lSize);
+  float2 leafUV = float2(rotated.x / lSize + 0.5, 1.0 - rotated.y / lSize);
   if (leafUV.x < 0.0 || leafUV.x > 1.0 ||
       leafUV.y < 0.0 || leafUV.y > 1.0) return base;
 
@@ -151,7 +151,7 @@ half4 main(float2 fragCoord) {
       float2 normAtBest = float2(-tanN.y, tanN.x);
       float perpOffset = dot(fragCoord - ptFinal, normAtBest);
       float u = clamp((perpOffset + width * 0.5) / width, 0.0, 1.0);
-      float2 stemUV = float2(u, bestT);
+      float2 stemUV = float2(u, 1.0 - bestT);
       half4 stemColor = stemTexture.eval(stemUV * COVERING);
       if (stemColor.a > 0.01) {
         color = stemColor * stemColor.a + color * (1.0 - stemColor.a);
