@@ -8,17 +8,17 @@ import {
   Skia,
   type SkImage,
   type SkRuntimeEffect,
-  type Uniforms,
 } from '@shopify/react-native-skia';
+import type { SharedValue } from 'react-native-reanimated';
+import { useDerivedValue } from 'react-native-reanimated';
 import type { BushConfig } from './types';
 import {
-  MAX_LEAVES_PER_STEM,
-  MAX_STEMS_PER_BUSH,
-} from './types';
+  pickBushMotionUniforms,
+  type LayoutSnapshot,
+} from './pickBushMotionUniforms';
 import {
   COVERING_SIZE,
   ROSE_BUSH_SKSL,
-  roseBushUniformDefaults,
 } from '../../shaders/roseBush.sksl';
 
 function compileRoseBushEffect(): SkRuntimeEffect {
@@ -31,78 +31,96 @@ function compileRoseBushEffect(): SkRuntimeEffect {
 
 const roseBushEffect = compileRoseBushEffect();
 
-const LEAF_SLOTS = MAX_STEMS_PER_BUSH * MAX_LEAVES_PER_STEM;
+type BushShaderBushRectProps = {
+  bush: BushConfig;
+  bodyCellIndices: readonly number[];
+  layoutX: SharedValue<number[]>;
+  layoutY: SharedValue<number[]>;
+  layoutScale: SharedValue<number[]>;
+  roseBellSizes: readonly number[];
+  stemImage: SkImage;
+  calyxImage: SkImage;
+  leafImages: readonly SkImage[];
+  width: number;
+  height: number;
+};
 
-function padArray(arr: readonly number[], target: number, fill = 0): number[] {
-  return [
-    ...arr,
-    ...Array(Math.max(0, target - arr.length)).fill(fill),
-  ];
-}
+function BushShaderBushRect({
+  bush,
+  bodyCellIndices,
+  layoutX,
+  layoutY,
+  layoutScale,
+  roseBellSizes,
+  stemImage,
+  calyxImage,
+  leafImages,
+  width,
+  height,
+}: BushShaderBushRectProps) {
+  const readyLeafImages = useMemo(
+    () => (leafImages.length >= 4 ? leafImages.slice(0, 4) : null),
+    [leafImages],
+  );
 
-function pickBushUniforms(
-  bush: BushConfig,
-  roseBellSizes: readonly number[],
-): Uniforms {
-  const stemBaseX: number[] = [];
-  const stemBaseY: number[] = [];
-  const stemTopX: number[] = [];
-  const stemTopY: number[] = [];
-  const stemControlX: number[] = [];
-  const stemControlY: number[] = [];
-  const stemBaseWidth: number[] = [];
-  const stemTopWidth: number[] = [];
-  const stemCalyxSize: number[] = [];
-  const stemLeafCount: number[] = [];
-  const leafT: number[] = [];
-  const leafSide: number[] = [];
-  const leafTilt: number[] = [];
-  const leafVariant: number[] = [];
-  const leafSize: number[] = [];
+  const uniforms = useDerivedValue(() => {
+    const snapshot: LayoutSnapshot = {
+      x: layoutX.value,
+      y: layoutY.value,
+      scale: layoutScale.value,
+    };
+    return pickBushMotionUniforms(bush, bodyCellIndices, snapshot, roseBellSizes);
+  });
 
-  for (const stem of bush.stems) {
-    stemBaseX.push(stem.baseX);
-    stemBaseY.push(stem.baseY);
-    stemTopX.push(stem.topX);
-    stemTopY.push(stem.topY);
-    stemControlX.push(stem.controlX);
-    stemControlY.push(stem.controlY);
-    stemBaseWidth.push(stem.baseWidth);
-    stemTopWidth.push(stem.topWidth);
-    const bellSize = roseBellSizes[stem.roseIndex] ?? 0;
-    stemCalyxSize.push(bellSize * roseBushUniformDefaults.calyxSizeFraction);
-    stemLeafCount.push(stem.leaves.length);
-    for (const leaf of stem.leaves) {
-      leafT.push(leaf.t);
-      leafSide.push(leaf.side);
-      leafTilt.push(leaf.tilt);
-      leafVariant.push(leaf.variant);
-      leafSize.push(leaf.size);
-    }
-  }
+  if (readyLeafImages == null) return null;
 
-  return {
-    stemCount: bush.stems.length,
-    stemBaseX: padArray(stemBaseX, MAX_STEMS_PER_BUSH),
-    stemBaseY: padArray(stemBaseY, MAX_STEMS_PER_BUSH),
-    stemTopX: padArray(stemTopX, MAX_STEMS_PER_BUSH),
-    stemTopY: padArray(stemTopY, MAX_STEMS_PER_BUSH),
-    stemControlX: padArray(stemControlX, MAX_STEMS_PER_BUSH),
-    stemControlY: padArray(stemControlY, MAX_STEMS_PER_BUSH),
-    stemBaseWidth: padArray(stemBaseWidth, MAX_STEMS_PER_BUSH),
-    stemTopWidth: padArray(stemTopWidth, MAX_STEMS_PER_BUSH),
-    stemCalyxSize: padArray(stemCalyxSize, MAX_STEMS_PER_BUSH),
-    stemLeafCount: padArray(stemLeafCount, MAX_STEMS_PER_BUSH),
-    leafT: padArray(leafT, LEAF_SLOTS),
-    leafSide: padArray(leafSide, LEAF_SLOTS),
-    leafTilt: padArray(leafTilt, LEAF_SLOTS),
-    leafVariant: padArray(leafVariant, LEAF_SLOTS),
-    leafSize: padArray(leafSize, LEAF_SLOTS),
-  };
+  return (
+    <Rect x={0} y={0} width={width} height={height}>
+      <Shader source={roseBushEffect} uniforms={uniforms}>
+        <ImageShader
+          image={stemImage}
+          x={0}
+          y={0}
+          width={COVERING_SIZE}
+          height={COVERING_SIZE}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
+        <ImageShader
+          image={calyxImage}
+          x={0}
+          y={0}
+          width={COVERING_SIZE}
+          height={COVERING_SIZE}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
+        {readyLeafImages.map((img, i) => (
+          <ImageShader
+            key={`leaf-${i}`}
+            image={img}
+            x={0}
+            y={0}
+            width={COVERING_SIZE}
+            height={COVERING_SIZE}
+            fit="fill"
+            tx="clamp"
+            ty="clamp"
+          />
+        ))}
+      </Shader>
+    </Rect>
+  );
 }
 
 export type BushShaderLayerProps = {
   bushConfigs: readonly BushConfig[];
+  bodyCellIndices: readonly number[];
+  layoutX: SharedValue<number[]> | null;
+  layoutY: SharedValue<number[]> | null;
+  layoutScale: SharedValue<number[]> | null;
   roseBellSizes: readonly number[];
   stemImage: SkImage;
   calyxImage: SkImage;
@@ -111,6 +129,10 @@ export type BushShaderLayerProps = {
 
 function BushShaderLayerImpl({
   bushConfigs,
+  bodyCellIndices,
+  layoutX,
+  layoutY,
+  layoutScale,
   roseBellSizes,
   stemImage,
   calyxImage,
@@ -118,70 +140,35 @@ function BushShaderLayerImpl({
 }: BushShaderLayerProps) {
   const { width, height } = useWindowDimensions();
 
-  const readyLeafImages = useMemo(
-    () => (leafImages.length >= 4 ? leafImages.slice(0, 4) : null),
-    [leafImages],
-  );
-
-  const uniformsList = useMemo(
-    () => bushConfigs.map(bush => pickBushUniforms(bush, roseBellSizes)),
-    [bushConfigs, roseBellSizes],
-  );
-
   if (width === 0 || height === 0) return null;
-  if (readyLeafImages == null) return null;
   if (bushConfigs.length === 0) return null;
+  if (
+    layoutX == null ||
+    layoutY == null ||
+    layoutScale == null ||
+    bodyCellIndices.length === 0
+  ) {
+    return null;
+  }
 
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
-      {bushConfigs.map((bush, index) => {
-        const uniforms = uniformsList[index];
-        if (uniforms == null) return null;
-        return (
-          <Rect
-            key={bush.bushId}
-            x={0}
-            y={0}
-            width={width}
-            height={height}>
-            <Shader source={roseBushEffect} uniforms={uniforms}>
-              <ImageShader
-                image={stemImage}
-                x={0}
-                y={0}
-                width={COVERING_SIZE}
-                height={COVERING_SIZE}
-                fit="fill"
-                tx="clamp"
-                ty="clamp"
-              />
-              <ImageShader
-                image={calyxImage}
-                x={0}
-                y={0}
-                width={COVERING_SIZE}
-                height={COVERING_SIZE}
-                fit="fill"
-                tx="clamp"
-                ty="clamp"
-              />
-              {readyLeafImages.map((img, i) => (
-                <ImageShader
-                  key={`leaf-${i}`}
-                  image={img}
-                  x={0}
-                  y={0}
-                  width={COVERING_SIZE}
-                  height={COVERING_SIZE}
-                  fit="fill"
-                  tx="clamp"
-                  ty="clamp"
-                />
-              ))}
-            </Shader>
-          </Rect>
-        );
-      })}
+      {bushConfigs.map(bush => (
+        <BushShaderBushRect
+          key={bush.bushId}
+          bush={bush}
+          bodyCellIndices={bodyCellIndices}
+          layoutX={layoutX}
+          layoutY={layoutY}
+          layoutScale={layoutScale}
+          roseBellSizes={roseBellSizes}
+          stemImage={stemImage}
+          calyxImage={calyxImage}
+          leafImages={leafImages}
+          width={width}
+          height={height}
+        />
+      ))}
     </Canvas>
   );
 }

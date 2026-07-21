@@ -40,9 +40,17 @@ function FlowerGardenSceneryContent() {
     return null;
   }
 
+  if (wordSpriteBridge == null) {
+    return null;
+  }
+
   return (
     <BushShaderLayer
       bushConfigs={bushConfigs}
+      bodyCellIndices={wordSpriteBridge.bodyCellIndices}
+      layoutX={wordSpriteBridge.layoutX}
+      layoutY={wordSpriteBridge.layoutY}
+      layoutScale={wordSpriteBridge.layoutScale}
       roseBellSizes={roseBellSizes}
       stemImage={stemImage}
       calyxImage={calyxImage}

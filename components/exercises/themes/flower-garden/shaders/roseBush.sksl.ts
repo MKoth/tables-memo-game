@@ -13,14 +13,17 @@ export const ROSE_BUSH_SKSL = `
 uniform float stemCount;
 uniform float stemBaseX[${MAX_STEMS_PER_BUSH}];
 uniform float stemBaseY[${MAX_STEMS_PER_BUSH}];
-uniform float stemTopX[${MAX_STEMS_PER_BUSH}];
-uniform float stemTopY[${MAX_STEMS_PER_BUSH}];
 uniform float stemControlX[${MAX_STEMS_PER_BUSH}];
 uniform float stemControlY[${MAX_STEMS_PER_BUSH}];
 uniform float stemBaseWidth[${MAX_STEMS_PER_BUSH}];
 uniform float stemTopWidth[${MAX_STEMS_PER_BUSH}];
 uniform float stemCalyxSize[${MAX_STEMS_PER_BUSH}];
 uniform float stemLeafCount[${MAX_STEMS_PER_BUSH}];
+uniform float restX[${MAX_STEMS_PER_BUSH}];
+uniform float restY[${MAX_STEMS_PER_BUSH}];
+uniform float layoutX[${MAX_STEMS_PER_BUSH}];
+uniform float layoutY[${MAX_STEMS_PER_BUSH}];
+uniform float layoutScale[${MAX_STEMS_PER_BUSH}];
 uniform float leafT[${LEAF_SLOTS}];
 uniform float leafSide[${LEAF_SLOTS}];
 uniform float leafTilt[${LEAF_SLOTS}];
@@ -91,7 +94,7 @@ half4 main(float2 fragCoord) {
     if (i >= stemN) break;
     float2 p0 = float2(stemBaseX[i], stemBaseY[i]);
     float2 p1 = float2(stemControlX[i], stemControlY[i]);
-    float2 p2 = float2(stemTopX[i], stemTopY[i]);
+    float2 p2 = float2(layoutX[i], layoutY[i]);
     int leafN = int(stemLeafCount[i]);
     for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
       if (j >= leafN) break;
@@ -110,7 +113,7 @@ half4 main(float2 fragCoord) {
 
     float2 p0 = float2(stemBaseX[i], stemBaseY[i]);
     float2 p1 = float2(stemControlX[i], stemControlY[i]);
-    float2 p2 = float2(stemTopX[i], stemTopY[i]);
+    float2 p2 = float2(layoutX[i], layoutY[i]);
     float baseW = stemBaseWidth[i];
     float topW = stemTopWidth[i];
 
@@ -162,8 +165,8 @@ half4 main(float2 fragCoord) {
   for (int i = 0; i < ${MAX_STEMS_PER_BUSH}; i++) {
     if (i >= stemN) break;
 
-    float calyxSize = stemCalyxSize[i];
-    float2 calyxCenter = float2(stemTopX[i], stemTopY[i]);
+    float calyxSize = stemCalyxSize[i] * layoutScale[i];
+    float2 calyxCenter = float2(layoutX[i], layoutY[i]);
     float2 calyxTopLeft = calyxCenter - calyxSize * 0.5;
     float2 calyxUV = (fragCoord - calyxTopLeft) / calyxSize;
     if (calyxUV.x >= 0.0 && calyxUV.x <= 1.0 &&
@@ -179,7 +182,7 @@ half4 main(float2 fragCoord) {
     if (i >= stemN) break;
     float2 p0 = float2(stemBaseX[i], stemBaseY[i]);
     float2 p1 = float2(stemControlX[i], stemControlY[i]);
-    float2 p2 = float2(stemTopX[i], stemTopY[i]);
+    float2 p2 = float2(layoutX[i], layoutY[i]);
     int leafN = int(stemLeafCount[i]);
     for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
       if (j >= leafN) break;

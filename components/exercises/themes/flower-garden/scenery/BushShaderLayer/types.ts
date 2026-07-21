@@ -32,20 +32,23 @@ export const MAX_STEMS_PER_BUSH = 5;
 export const MAX_LEAVES_PER_STEM = 9;
 
 export type BushUniforms = {
-  roseIndex: number[];
   stemBaseX: number[];
   stemBaseY: number[];
-  stemTopX: number[];
-  stemTopY: number[];
   stemControlX: number[];
   stemControlY: number[];
   stemBaseWidth: number[];
   stemTopWidth: number[];
+  stemCalyxSize: number[];
+  stemLeafCount: number[];
+  restX: number[];
+  restY: number[];
+  layoutX: number[];
+  layoutY: number[];
+  layoutScale: number[];
   leafT: number[];
   leafSide: number[];
   leafTilt: number[];
   leafVariant: number[];
   leafSize: number[];
-  leafCount: number;
   stemCount: number;
 };
