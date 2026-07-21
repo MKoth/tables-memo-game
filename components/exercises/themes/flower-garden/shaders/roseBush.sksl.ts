@@ -95,10 +95,12 @@ half4 main(float2 fragCoord) {
     int leafN = int(stemLeafCount[i]);
     for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
       if (j >= leafN) break;
-      int idx = i * ${MAX_LEAVES_PER_STEM} + j;
-      if (leafSide[idx] >= 0.0) continue;
-      color = blendLeaf(color, leafT[idx], leafSide[idx], leafTilt[idx],
-                        int(leafVariant[idx]), leafSize[idx],
+      if (leafSide[i * ${MAX_LEAVES_PER_STEM} + j] >= 0.0) continue;
+      color = blendLeaf(color, leafT[i * ${MAX_LEAVES_PER_STEM} + j],
+                        leafSide[i * ${MAX_LEAVES_PER_STEM} + j],
+                        leafTilt[i * ${MAX_LEAVES_PER_STEM} + j],
+                        int(leafVariant[i * ${MAX_LEAVES_PER_STEM} + j]),
+                        leafSize[i * ${MAX_LEAVES_PER_STEM} + j],
                         fragCoord, p0, p1, p2);
     }
   }
@@ -181,10 +183,12 @@ half4 main(float2 fragCoord) {
     int leafN = int(stemLeafCount[i]);
     for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
       if (j >= leafN) break;
-      int idx = i * ${MAX_LEAVES_PER_STEM} + j;
-      if (leafSide[idx] <= 0.0) continue;
-      color = blendLeaf(color, leafT[idx], leafSide[idx], leafTilt[idx],
-                        int(leafVariant[idx]), leafSize[idx],
+      if (leafSide[i * ${MAX_LEAVES_PER_STEM} + j] <= 0.0) continue;
+      color = blendLeaf(color, leafT[i * ${MAX_LEAVES_PER_STEM} + j],
+                        leafSide[i * ${MAX_LEAVES_PER_STEM} + j],
+                        leafTilt[i * ${MAX_LEAVES_PER_STEM} + j],
+                        int(leafVariant[i * ${MAX_LEAVES_PER_STEM} + j]),
+                        leafSize[i * ${MAX_LEAVES_PER_STEM} + j],
                         fragCoord, p0, p1, p2);
     }
   }
