@@ -12,12 +12,10 @@ function FlowerGardenSceneryContent() {
   const { wordSpriteBridge } = useExerciseRuntime();
   const bushConfigs = useBushConfigs(table);
 
-  const roseBellSizes = useMemo<number[]>(() => {
-    if (table == null) return [];
-    const bodyStart = table.colHeaders.length + table.rowHeaders.length;
-    const allSizes = wordSpriteBridge?.bodySizes ?? [];
-    return allSizes.slice(bodyStart);
-  }, [table, wordSpriteBridge?.bodySizes]);
+  const roseBellSizes = useMemo<number[]>(
+    () => wordSpriteBridge?.bodySizes ?? [],
+    [wordSpriteBridge?.bodySizes],
+  );
 
   const stemImage = images.stemImage;
   const calyxImage = images.calyxImage;
@@ -47,7 +45,6 @@ function FlowerGardenSceneryContent() {
   return (
     <BushShaderLayer
       bushConfigs={bushConfigs}
-      bodyCellIndices={wordSpriteBridge.bodyCellIndices}
       layoutX={wordSpriteBridge.layoutX}
       layoutY={wordSpriteBridge.layoutY}
       layoutScale={wordSpriteBridge.layoutScale}

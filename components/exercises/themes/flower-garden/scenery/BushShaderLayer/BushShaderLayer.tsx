@@ -33,7 +33,6 @@ const roseBushEffect = compileRoseBushEffect();
 
 type BushShaderBushRectProps = {
   bush: BushConfig;
-  bodyCellIndices: readonly number[];
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
@@ -47,7 +46,6 @@ type BushShaderBushRectProps = {
 
 function BushShaderBushRect({
   bush,
-  bodyCellIndices,
   layoutX,
   layoutY,
   layoutScale,
@@ -69,7 +67,7 @@ function BushShaderBushRect({
       y: layoutY.value,
       scale: layoutScale.value,
     };
-    return pickBushMotionUniforms(bush, bodyCellIndices, snapshot, roseBellSizes);
+    return pickBushMotionUniforms(bush, snapshot, roseBellSizes);
   });
 
   if (readyLeafImages == null) return null;
@@ -117,7 +115,6 @@ function BushShaderBushRect({
 
 export type BushShaderLayerProps = {
   bushConfigs: readonly BushConfig[];
-  bodyCellIndices: readonly number[];
   layoutX: SharedValue<number[]> | null;
   layoutY: SharedValue<number[]> | null;
   layoutScale: SharedValue<number[]> | null;
@@ -129,7 +126,6 @@ export type BushShaderLayerProps = {
 
 function BushShaderLayerImpl({
   bushConfigs,
-  bodyCellIndices,
   layoutX,
   layoutY,
   layoutScale,
@@ -145,8 +141,7 @@ function BushShaderLayerImpl({
   if (
     layoutX == null ||
     layoutY == null ||
-    layoutScale == null ||
-    bodyCellIndices.length === 0
+    layoutScale == null
   ) {
     return null;
   }
@@ -157,7 +152,6 @@ function BushShaderLayerImpl({
         <BushShaderBushRect
           key={bush.bushId}
           bush={bush}
-          bodyCellIndices={bodyCellIndices}
           layoutX={layoutX}
           layoutY={layoutY}
           layoutScale={layoutScale}

@@ -24,7 +24,6 @@ function padArray(arr: readonly number[], target: number, fill = 0): number[] {
 
 export function pickBushMotionUniforms(
   bush: BushConfig,
-  bodyCellIndices: readonly number[],
   layout: LayoutSnapshot,
   roseBellSizes: readonly number[],
 ): BushUniforms {
@@ -49,11 +48,11 @@ export function pickBushMotionUniforms(
   const leafSize: number[] = [];
 
   for (const stem of bush.stems) {
-    const bridgeIdx = bodyCellIndices[stem.roseIndex] ?? stem.roseIndex;
-    const liveX = layout.x[bridgeIdx] ?? 0;
-    const liveY = layout.y[bridgeIdx] ?? 0;
-    const liveScale = layout.scale[bridgeIdx] ?? 1;
-    const bellSize = roseBellSizes[stem.roseIndex] ?? 0;
+    const cellIndex = stem.roseIndex;
+    const liveX = layout.x[cellIndex] ?? 0;
+    const liveY = layout.y[cellIndex] ?? 0;
+    const liveScale = layout.scale[cellIndex] ?? 1;
+    const bellSize = roseBellSizes[cellIndex] ?? 0;
     const calyxBaseSize = bellSize * roseBushUniformDefaults.calyxSizeFraction;
 
     stemBaseX.push(stem.baseX);

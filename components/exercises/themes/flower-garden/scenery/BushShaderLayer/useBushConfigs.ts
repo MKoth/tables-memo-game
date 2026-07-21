@@ -35,7 +35,10 @@ export function useBushConfigs(
 
   return useMemo(() => {
     if (table == null || tableId == null) return [];
-    const nRoses = table.body.length * (table.body[0]?.length ?? 0);
+    const nRoses =
+      table.colHeaders.length +
+      table.rowHeaders.length +
+      table.body.reduce((acc, row) => acc + row.length, 0);
     const roseGridPositions = computeRoseRestPositions(table, spriteRect, screenHeight);
     const groundBand = computeGroundBand(spriteRect, screenHeight);
     const input: GenerateBushConfigsInput = {

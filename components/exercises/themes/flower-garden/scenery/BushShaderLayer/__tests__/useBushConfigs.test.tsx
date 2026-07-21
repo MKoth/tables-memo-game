@@ -105,7 +105,7 @@ describe('useBushConfigs', () => {
     expect(lastResult).toEqual([]);
   });
 
-  it('returns a bush config array with one stem per body cell', () => {
+  it('returns a bush config array with one stem per cell (headers and body)', () => {
     const table = makeTable('t1');
     ReactTestRenderer.act(() => {
       ReactTestRenderer.create(<HookHost table={table} />);
@@ -113,7 +113,7 @@ describe('useBushConfigs', () => {
     if (lastError) throw lastError;
     const result = lastResult as Array<{ stems: Array<{ roseIndex: number }> }>;
     const allRoses = result.flatMap(b => b.stems.map(s => s.roseIndex)).sort();
-    expect(allRoses).toEqual([0, 1, 2, 3]);
+    expect(allRoses).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
   });
 
   it('produces identical output across re-renders for the same table id', () => {
