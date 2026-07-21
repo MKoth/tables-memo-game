@@ -30,6 +30,32 @@ _Avoid_: UnderseaThemeShell, exercise wrapper
 The generic infrastructure shared by all exercises, living under `exercises/core/`: the clock provider, the zustand store factory and provider, the layout engine (zone splitting by orientation), the runtime and layout providers, the bridge types, the asset interface (load phase, ready gate, progress), and the hooks that connect mechanics to visuals. The exercise core never names a theme entity.
 _Avoid_: UnderseaThemeCore
 
+### Flower-garden theme terms
+
+**Bush**:
+An invisible organisational unit in the flower-garden theme that groups a small cluster of rose stems (3–5 per bush) around a single bush base point on the ground. A bush is never rendered itself — it exists only as a grouping for stem-base placement. Bush count and rose-to-bush assignment are decided once at exercise-session initialisation from a seeded RNG so the same table always renders the same bushes.
+_Avoid_: rose cluster, stem group, plant
+
+**Bush base**:
+The point on the ground from which a bush's stems originate. The bush base is uniformly random inside the Scenery's `groundBand` (a fixed band below the rose-grid zone). All stems in a bush share this base plus a small random disk offset (≈30–60 px) so the stems fan out from a common root area rather than a single point.
+_Avoid_: bush origin, bush anchor
+
+**Calyx**:
+The green sepal cup at the base of a rose, realised as the `rose_base.png` image. The calyx sits behind the rose (rose drawn on top) and moves with the rose as it shifts. The rose stem connects to the bottom of the calyx. The calyx's visible rose-center disc is hidden by the rose itself, so it reads as a green star peeking out around the bloom.
+_Avoid_: rose base, sepal cup, base image
+
+**Rose stem**:
+A curved tapered band drawn between a fixed bush-base point on the ground and the bottom of the calyx. Narrow at the ground, wider at the calyx (linear taper). The shape is a quadratic bezier; the control point sits on the outer side of the base→top line, away from the bush center, so stems fan outward. The control point is constant per stem; only the top end tracks the rose. The stem is rendered by sampling the `stem.png` texture along the curve.
+_Avoid_: stalk, branch, vine
+
+**Rose leaf**:
+A leaf image (`leaf1.png`–`leaf4.png`) attached to a rose stem with its stem-end at the stem surface and its tip pointing outward, perpendicular to the stem tangent. Each leaf has a pre-computed `side`: `outer` (in front of the stem band, visible) or `inner` (behind the stem band, occluded by it). Leaves are distributed along the stem from low to high; their movement follows the rose with a parallax weight tied to their position along the stem (low = barely moves, high = moves with the rose).
+_Avoid_: petal (reserved for the rose head), foliage
+
+**Leaf side**:
+Whether a rose leaf sits on the outer or inner arc of its stem's quadratic bezier curve, determined once at stem initialisation by the sign of the dot product of the leaf's outward direction and the stem's normal at the leaf's `t` parameter. Outer leaves draw in front of the stem band; inner leaves draw behind. Since the stem geometry is constant, this per-leaf pre-computation is equivalent to a per-pixel test in the shader.
+_Avoid_: leaf front/behind, leaf z
+
 ### Domain terms
 
 **Table**:
