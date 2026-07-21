@@ -1,5 +1,5 @@
 export const MAX_PETALS = 16;
-export const MAX_RINGS = 3;
+export const MAX_RINGS = 4;
 
 export const ROSE_BUD_SKSL = `
 uniform float roseX;
@@ -144,13 +144,13 @@ half4 main(float2 fragCoord) {
 `;
 
 export const roseBudUniformDefaults = {
-  budInner: { min: 0.0, max: 0.0 },
-  budOuter: { min: 1.0, max: 1.0 },
+  budInner: { min: 0.0, max: 0.5 },
+  budOuter: { min: 1.0, max: 0.5 },
   roseCenterDiameter: { min: 1.0, max: 1.0 },
-  roseCenterBulge: { min: 0.0, max: 1.0 },
-  ringsCount: 2,
-  petalsCount: [9, 7],
-  ringRadius: { min: [0.48, 0.39], max: [0.48, 0.39] },
-  ringBorder: { min: [0.10, 0.07], max: [0.10, 0.07] },
-  petalWidth: { min: [0.17, 0.22], max: [0.17, 0.22] },
+  roseCenterBulge: { min: 0.0, max: 1.8 },
+  ringsCount: 4,
+  petalsCount: [7 ,8 ,10, 11],
+  ringRadius: { min: [0.5 ,0.5 ,0.5, 0.5], max: [0.72, 0.68 ,0.57, 0.45] },
+  ringBorder: { min: [0.09, 0.07 ,0.04, 0.02], max: [0.19, 0.12 ,0.11, 0.13] },
+  petalWidth: { min: [0.17, 0.13 ,0.11, 0.12], max: [0.17, 0.13 ,0.11, 0.12] },
 } as const;
