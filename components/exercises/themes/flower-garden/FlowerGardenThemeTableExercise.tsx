@@ -5,8 +5,11 @@ import { ExerciseClockProvider, ExerciseRuntimeProvider, TABLE_EXERCISE_STORE_CO
 import { FlowerGardenWordSpriteTableLayer } from './carrier/FlowerGardenWordSpriteTableLayer/FlowerGardenWordSpriteTableLayerOuter';
 import { ExerciseShell } from '../../shared';
 import { ExerciseCornerControls } from '../../ui';
+import { FlowerGardenScenery } from './scenery/FlowerGardenScenery';
+import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
 
 const WORD_SPRITE_LAYER_Z = 5;
+const SCENERY_Z = 1;
 
 function FlowerGardenExerciseContent() {
   const table = spanishPresentTable2Plural;
@@ -16,15 +19,20 @@ function FlowerGardenExerciseContent() {
   return (
     <ExerciseRuntimeProvider>
       <ExerciseClockProvider>
-        <View style={styles.container}>
-          <View style={styles.wordSpriteLayer} pointerEvents="box-none">
-            <FlowerGardenWordSpriteTableLayer
-              table={table}
-              interactive={!tutorialActive}
-            />
+        <FlowerGardenTableProvider value={{ table }}>
+          <View style={styles.container}>
+            <View style={styles.sceneryLayer} pointerEvents="none">
+              <FlowerGardenScenery />
+            </View>
+            <View style={styles.wordSpriteLayer} pointerEvents="box-none">
+              <FlowerGardenWordSpriteTableLayer
+                table={table}
+                interactive={!tutorialActive}
+              />
+            </View>
+            <ExerciseCornerControls />
           </View>
-          <ExerciseCornerControls />
-        </View>
+        </FlowerGardenTableProvider>
       </ExerciseClockProvider>
     </ExerciseRuntimeProvider>
   );
@@ -42,6 +50,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#2d5a27',
+  },
+  sceneryLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: SCENERY_Z,
   },
   wordSpriteLayer: {
     position: 'absolute',
