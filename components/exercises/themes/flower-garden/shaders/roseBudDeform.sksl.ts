@@ -20,6 +20,8 @@ uniform float roseCenterRotationMin;
 uniform float roseCenterRotationMax;
 uniform float brightnessMin;
 uniform float brightnessMax;
+uniform float3 tintA;
+uniform float tintStrength;
 uniform float ringsCount;
 uniform float petalsCount[${MAX_RINGS}];
 uniform float ringRadiusMin[${MAX_RINGS}];
@@ -94,7 +96,6 @@ half4 main(float2 fragCoord) {
   float2 delta = fragCoord - center;
   float r = length(delta) / halfSize;
   float theta = atan(delta.y, delta.x);
-  float edgeFade = 1.0 - smoothstep(0.86, 1.0, r);
 
   half4 color;
   if (r < budInner || r > budOuter) {
@@ -148,8 +149,14 @@ half4 main(float2 fragCoord) {
       float u = 0.5 + angularDist / (2.0 * halfSpan);
       float v = 1.0 - (r - petalInner) / (2.0 * petalBorder);
 
+      float uFade = smoothstep(0.0, 0.06, u) * (1.0 - smoothstep(0.94, 1.0, u));
+      float vFade = smoothstep(0.0, 0.06, v) * (1.0 - smoothstep(0.94, 1.0, v));
+      float edgeFade = uFade * vFade;
+
       float2 texCoord = float2(roseX + u * roseW, roseY + v * roseH);
       half4 petalColor = samplePetal(variant, texCoord);
+      petalColor.rgb *= brightnessL + 0.1;
+      petalColor.a *= edgeFade;
 
       if (petalColor.a < 0.01) continue;
 
@@ -181,7 +188,8 @@ half4 main(float2 fragCoord) {
   }
 
   color.rgb *= brightnessL;
-  color *= edgeFade;
+  half lum = max(max(color.r, color.g), color.b);
+  color.rgb = mix(color.rgb, half3(tintA) * lum, half(tintStrength));
   return color;
 }
 `;
@@ -193,7 +201,9 @@ export const roseBudUniformDefaults = {
   roseCenterBulge: { min: 0.0, max: 1.8 },
   budRotation: { min: 0, max: 1.8 },
   roseCenterRotation: { min: 0, max: 0.7 },
-  brightness: { min: 1.1, max: 1.5 },
+  brightness: { min: 1.1, max: 1.3 },
+  tintA: [1, 1, 1],
+  tintStrength: 1,
   ringsCount: 4,
   petalsCount: [7 ,8 ,10, 11],
   ringRadius: { min: [0.5 ,0.5 ,0.5, 0.4], max: [0.72, 0.68 ,0.57, 0.43] },
