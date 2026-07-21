@@ -3,11 +3,15 @@ import type { SkImage } from '@shopify/react-native-skia';
 import type { ThemeAssets } from '../../../../themeContract';
 import { loadSkiaImage } from '../../../../core/assets/loadSkiaImage';
 import {
+  CALYX_SOURCE,
   FLOWER_GARDEN_IMAGE_ASSETS,
   FLOWER_GARDEN_PRELOAD_TOTAL,
+  LEAF_SOURCES,
   PETAL_SOURCES,
   ROSE_BUD_SOURCE,
   ROSE_CENTER_SOURCE,
+  STEM_SOURCE,
+  type FlowerGardenBushKey,
   type FlowerGardenPetalKey,
   type FlowerGardenThemeImages,
 } from './flowerGardenThemeAssets';
@@ -32,19 +36,37 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
       try {
         setProgress(0);
 
-        const entries = Object.entries(
+        const roseEntries = Object.entries(
           FLOWER_GARDEN_IMAGE_ASSETS.roses,
         ) as Array<[FlowerGardenPetalKey, number]>;
 
+        const bushEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.bush,
+        ) as Array<[FlowerGardenBushKey, number]>;
+
         const roses: Partial<Record<FlowerGardenPetalKey, unknown>> = {};
 
-        for (let i = 0; i < entries.length; i++) {
-          const [key, source] = entries[i];
-          roses[key] = source;
-
+        let tracked = 0;
+        const trackSource = () => {
+          tracked++;
           if (!cancelled) {
-            setProgress(Math.min(100, Math.round(((i + 1) / FLOWER_GARDEN_PRELOAD_TOTAL) * 100)));
+            setProgress(
+              Math.min(
+                100,
+                Math.round((tracked / FLOWER_GARDEN_PRELOAD_TOTAL) * 100),
+              ),
+            );
           }
+        };
+
+        for (let i = 0; i < roseEntries.length; i++) {
+          const [key, source] = roseEntries[i]!;
+          roses[key] = source;
+          trackSource();
+        }
+        for (let i = 0; i < bushEntries.length; i++) {
+          bushEntries[i]!;
+          trackSource();
         }
 
         if (cancelled) {
@@ -99,6 +121,54 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        let stemImage: SkImage | null = null;
+        try {
+          stemImage = await loadSkiaImage(STEM_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load stem SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        let calyxImage: SkImage | null = null;
+        try {
+          calyxImage = await loadSkiaImage(CALYX_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load calyx SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const leafLoadResults = await Promise.allSettled(
+          LEAF_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode leaf image');
+            }
+            return img;
+          }),
+        );
+        const leafImages: SkImage[] = [];
+        for (const result of leafLoadResults) {
+          if (result.status === 'fulfilled') {
+            leafImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a leaf image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -106,6 +176,9 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             roseBudImage,
             roseCenterImage,
             petalImages: petalImages.length === PETAL_SOURCES.length ? petalImages : null,
+            calyxImage,
+            stemImage,
+            leafImages: leafImages.length === LEAF_SOURCES.length ? leafImages : null,
           },
         });
       } catch (error) {
