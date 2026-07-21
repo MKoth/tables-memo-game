@@ -46,6 +46,8 @@ uniform shader petalTexture4;
 uniform shader petalTexture5;
 uniform shader petalTexture6;
 
+const float petalBottomDarkness = 0.7;
+
 half4 samplePetal(int variant, float2 coord) {
   if (variant == 0)      { return petalTexture1.eval(coord); }
   else if (variant == 1) { return petalTexture2.eval(coord); }
@@ -155,7 +157,7 @@ half4 main(float2 fragCoord) {
 
       float2 texCoord = float2(roseX + u * roseW, roseY + v * roseH);
       half4 petalColor = samplePetal(variant, texCoord);
-      petalColor.rgb *= brightnessL + 0.1;
+      petalColor.rgb *= brightnessL + 0.1 - petalBottomDarkness * v;
       petalColor.a *= edgeFade;
 
       if (petalColor.a < 0.01) continue;
