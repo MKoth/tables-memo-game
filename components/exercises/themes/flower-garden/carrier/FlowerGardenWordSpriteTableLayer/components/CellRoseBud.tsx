@@ -31,6 +31,10 @@ const PADDED_RING_BORDER_MIN = padRingArray(roseBudUniformDefaults.ringBorder.mi
 const PADDED_RING_BORDER_MAX = padRingArray(roseBudUniformDefaults.ringBorder.max);
 const PADDED_PETAL_WIDTH_MIN = padRingArray(roseBudUniformDefaults.petalWidth.min);
 const PADDED_PETAL_WIDTH_MAX = padRingArray(roseBudUniformDefaults.petalWidth.max);
+const PADDED_RING_ROTATION_MIN = padRingArray(roseBudUniformDefaults.ringRotation.min);
+const PADDED_RING_ROTATION_MAX = padRingArray(roseBudUniformDefaults.ringRotation.max);
+const PADDED_RING_BORDER_DEVIATION = padRingArray(roseBudUniformDefaults.ringBorderDeviation);
+const PADDED_PETAL_WIDTH_DEVIATION = padRingArray(roseBudUniformDefaults.petalWidthDeviation);
 
 export type CellRoseBudProps = {
   config: FlowerCellConfig;
@@ -84,6 +88,12 @@ export function CellRoseBud({
       roseCenterDiameterMax: roseBudUniformDefaults.roseCenterDiameter.max,
       roseCenterBulgeMin: roseBudUniformDefaults.roseCenterBulge.min,
       roseCenterBulgeMax: roseBudUniformDefaults.roseCenterBulge.max,
+      budRotationMin: roseBudUniformDefaults.budRotation.min,
+      budRotationMax: roseBudUniformDefaults.budRotation.max,
+      roseCenterRotationMin: roseBudUniformDefaults.roseCenterRotation.min,
+      roseCenterRotationMax: roseBudUniformDefaults.roseCenterRotation.max,
+      brightnessMin: roseBudUniformDefaults.brightness.min,
+      brightnessMax: roseBudUniformDefaults.brightness.max,
       ringsCount: roseBudUniformDefaults.ringsCount,
       petalsCount: PADDED_PETALS_COUNT,
       ringRadiusMin: PADDED_RING_RADIUS_MIN,
@@ -92,6 +102,11 @@ export function CellRoseBud({
       ringBorderMax: PADDED_RING_BORDER_MAX,
       petalWidthMin: PADDED_PETAL_WIDTH_MIN,
       petalWidthMax: PADDED_PETAL_WIDTH_MAX,
+      ringRotationMin: PADDED_RING_ROTATION_MIN,
+      ringRotationMax: PADDED_RING_ROTATION_MAX,
+      ringBorderDeviation: PADDED_RING_BORDER_DEVIATION,
+      petalWidthDeviation: PADDED_PETAL_WIDTH_DEVIATION,
+      roseSeed: idx,
       coefficient,
       iTime: clock.value / 1000,
     };
