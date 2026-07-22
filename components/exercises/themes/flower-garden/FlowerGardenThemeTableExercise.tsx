@@ -49,7 +49,6 @@ export function FlowerGardenThemeTableExercise() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2d5a27',
   },
   sceneryLayer: {
     position: 'absolute',

@@ -4,6 +4,7 @@ import type { ThemeAssets } from '../../../../themeContract';
 import { loadSkiaImage } from '../../../../core/assets/loadSkiaImage';
 import {
   CALYX_SOURCE,
+  EARTH_SOURCE,
   FLOWER_GARDEN_IMAGE_ASSETS,
   FLOWER_GARDEN_PRELOAD_TOTAL,
   LEAF_SOURCES,
@@ -169,6 +170,19 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        let earthImage: SkImage | null = null;
+        try {
+          earthImage = await loadSkiaImage(EARTH_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load earth SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -179,6 +193,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             calyxImage,
             stemImage,
             leafImages: leafImages.length === LEAF_SOURCES.length ? leafImages : null,
+            earthImage,
           },
         });
       } catch (error) {

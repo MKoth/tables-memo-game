@@ -1,13 +1,15 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useExerciseRuntime } from '../../../core';
 import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAssetsProvider';
 import { useFlowerGardenTableContext } from './flowerGardenTableContext';
 import { useBushConfigs } from './BushShaderLayer/useBushConfigs';
 import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
+import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
 
 function FlowerGardenSceneryContent() {
+  const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
   const { table } = useFlowerGardenTableContext();
   const { wordSpriteBridge } = useExerciseRuntime();
@@ -45,6 +47,13 @@ function FlowerGardenSceneryContent() {
 
   return (
     <>
+      {images.earthImage != null && (
+        <FlowerGardenEarthCanvas
+          image={images.earthImage}
+          width={width}
+          height={height}
+        />
+      )}
       <SceneryShadowLayer
         bushConfigs={bushConfigs}
         layoutX={wordSpriteBridge.layoutX}

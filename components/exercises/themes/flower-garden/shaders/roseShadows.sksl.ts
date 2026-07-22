@@ -43,7 +43,7 @@ half4 main(float2 fragCoord) {
 export const roseShadowDefaults = {
   lightOffset: [3, 5] as const,
   shadowColor: [0, 0, 0] as const,
-  shadowOpacity: 0.32,
+  shadowOpacity: 0.55,
   shadowSoftness: 0.55,
   shadowSquash: 1.0,
   roseRadiusFraction: 0.6,

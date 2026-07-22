@@ -19,6 +19,9 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     leaf3: require('../../../../../../assets/images/flower_garden_theme/roses/leaf3.png'),
     leaf4: require('../../../../../../assets/images/flower_garden_theme/roses/leaf4.png'),
   },
+  soil: {
+    earth: require('../../../../../../assets/images/flower_garden_theme/soil/earth.png'),
+  },
 } as const;
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
@@ -53,8 +56,11 @@ export const LEAF_SOURCES = [
   LEAF4_SOURCE,
 ] as const;
 
+export const EARTH_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.earth;
+
 export type FlowerGardenPetalKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.roses;
 export type FlowerGardenBushKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bush;
+export type FlowerGardenSoilKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.soil;
 
 export type FlowerGardenThemeImages = {
   roses: Record<FlowerGardenPetalKey, unknown>;
@@ -64,11 +70,13 @@ export type FlowerGardenThemeImages = {
   calyxImage: SkImage | null;
   stemImage: SkImage | null;
   leafImages: SkImage[] | null;
+  earthImage: SkImage | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roses).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bush).length;
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bush).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.soil).length;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;
 
