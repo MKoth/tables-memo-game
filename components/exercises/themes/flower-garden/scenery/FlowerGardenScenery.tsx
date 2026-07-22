@@ -5,6 +5,7 @@ import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAsse
 import { useFlowerGardenTableContext } from './flowerGardenTableContext';
 import { useBushConfigs } from './BushShaderLayer/useBushConfigs';
 import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
+import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 
 function FlowerGardenSceneryContent() {
   const { images } = useFlowerGardenAssetsContext();
@@ -43,16 +44,24 @@ function FlowerGardenSceneryContent() {
   }
 
   return (
-    <BushShaderLayer
-      bushConfigs={bushConfigs}
-      layoutX={wordSpriteBridge.layoutX}
-      layoutY={wordSpriteBridge.layoutY}
-      layoutScale={wordSpriteBridge.layoutScale}
-      roseBellSizes={roseBellSizes}
-      stemImage={stemImage}
-      calyxImage={calyxImage}
-      leafImages={leafImages}
-    />
+    <>
+      <SceneryShadowLayer
+        bushConfigs={bushConfigs}
+        layoutX={wordSpriteBridge.layoutX}
+        layoutY={wordSpriteBridge.layoutY}
+        bodySizes={roseBellSizes}
+      />
+      <BushShaderLayer
+        bushConfigs={bushConfigs}
+        layoutX={wordSpriteBridge.layoutX}
+        layoutY={wordSpriteBridge.layoutY}
+        layoutScale={wordSpriteBridge.layoutScale}
+        roseBellSizes={roseBellSizes}
+        stemImage={stemImage}
+        calyxImage={calyxImage}
+        leafImages={leafImages}
+      />
+    </>
   );
 }
 
