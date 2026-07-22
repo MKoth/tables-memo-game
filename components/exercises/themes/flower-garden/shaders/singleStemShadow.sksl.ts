@@ -1,4 +1,6 @@
-export const MAX_STEM_SHADOW_LEAVES = 9;
+import { MAX_LEAVES_PER_STEM } from '../scenery/BushShaderLayer/types';
+
+export const MAX_STEM_SHADOW_LEAVES = MAX_LEAVES_PER_STEM;
 
 export const SINGLE_STEM_SHADOW_SKSL = `
 uniform float2 lightOffset;

@@ -1,4 +1,5 @@
 import { createRng } from '../helpers/seededRandom';
+import { MAX_LEAVES_PER_STEM, MIN_LEAVES_PER_STEM } from '../types';
 import {
   generateBushConfigs,
   type GenerateBushConfigsInput,
@@ -40,7 +41,8 @@ function buildInput(
     stemBaseSpreadRadius: overrides.stemBaseSpreadRadius ?? 22,
     stemBaseWidth: overrides.stemBaseWidth ?? 3,
     stemTopWidth: overrides.stemTopWidth ?? 18,
-    leavesPerStemRange: overrides.leavesPerStemRange ?? [5, 9],
+    leavesPerStemRange: overrides.leavesPerStemRange ?? [MIN_LEAVES_PER_STEM, MAX_LEAVES_PER_STEM],
+    frontLeafBias: overrides.frontLeafBias ?? 0,
     rng: overrides.rng ?? createRng(0xc0ffee),
   };
 }
@@ -190,10 +192,31 @@ describe('generateBushConfigs', () => {
 
   it('respects leavesPerStemRange when picking leaf counts', () => {
     const configs = generateBushConfigs(
-      buildInput({ nRoses: 19, leavesPerStemRange: [6, 6] }),
+      buildInput({ nRoses: 19, leavesPerStemRange: [5, 5] }),
     );
     const leaves = collectAllLeaves(configs);
-    expect(leaves.length).toBe(19 * 6);
+    expect(leaves.length).toBe(19 * 5);
+  });
+
+  it('frontLeafBias=1 forces all leaves to side=1', () => {
+    const configs = generateBushConfigs(
+      buildInput({ nRoses: 19, frontLeafBias: 1 }),
+    );
+    const leaves = collectAllLeaves(configs);
+    expect(leaves.length).toBeGreaterThan(0);
+    for (const leaf of leaves) {
+      expect(leaf.side).toBe(1);
+    }
+  });
+
+  it('frontLeafBias=0 preserves geometric side assignment', () => {
+    const configs = generateBushConfigs(
+      buildInput({ nRoses: 19, frontLeafBias: 0 }),
+    );
+    const leaves = collectAllLeaves(configs);
+    expect(leaves.length).toBeGreaterThan(0);
+    const hasBoth = leaves.some(l => l.side === -1) && leaves.some(l => l.side === 1);
+    expect(hasBoth).toBe(true);
   });
 
   it('assigns one distinct tint to each bush and that tint to every stem in the bush', () => {

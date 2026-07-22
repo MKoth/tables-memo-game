@@ -1,6 +1,6 @@
 import type { ZoneRect } from '../../../../core';
 
-export const GROUND_BAND_HEIGHT_RATIO = 0.18;
+export const GROUND_BAND_HEIGHT_RATIO = 0.08;
 
 export function computeGroundBand(
   spriteRect: ZoneRect,

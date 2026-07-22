@@ -32,7 +32,8 @@ export type BushConfig = {
 };
 
 export const MAX_STEMS_PER_BUSH = 5;
-export const MAX_LEAVES_PER_STEM = 9;
+export const MIN_LEAVES_PER_STEM = 3;
+export const MAX_LEAVES_PER_STEM = 7;
 
 export type BushUniforms = {
   stemBaseX: number[];

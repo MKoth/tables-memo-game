@@ -17,10 +17,15 @@ export type LayoutSnapshot = {
 
 function padArray(arr: readonly number[], target: number, fill = 0): number[] {
   'worklet';
-  return [
-    ...arr,
-    ...Array(Math.max(0, target - arr.length)).fill(fill),
-  ];
+  const len = Math.min(arr.length, target);
+  const out: number[] = [];
+  for (let i = 0; i < len; i++) {
+    out.push(arr[i]!);
+  }
+  for (let i = len; i < target; i++) {
+    out.push(fill);
+  }
+  return out;
 }
 
 export type BushStaticUniforms = Omit<

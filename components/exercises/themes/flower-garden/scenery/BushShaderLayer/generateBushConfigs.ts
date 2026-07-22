@@ -21,6 +21,7 @@ export type GenerateBushConfigsInput = {
   stemBaseWidth: number;
   stemTopWidth: number;
   leavesPerStemRange: readonly [number, number];
+  frontLeafBias: number;
   rng: Rng;
 };
 
@@ -74,9 +75,11 @@ function buildLeaf(
   control: Point2D,
   top: Point2D,
   bushBase: Point2D,
+  frontLeafBias: number,
 ): LeafConfig {
   const t = randomInRange(rng, LEAF_T_MIN, LEAF_T_MAX);
-  const side: LeafSide = leafSide(t, base, control, top, bushBase);
+  let side: LeafSide = leafSide(t, base, control, top, bushBase);
+  if (rng() < frontLeafBias) side = 1;
   const tilt = randomInRange(rng, -LEAF_TILT_RANGE, LEAF_TILT_RANGE);
   const variant = randomIntInRange(rng, 0, 3) as 0 | 1 | 2 | 3;
   const size = DEFAULT_LEAF_SIZE * (1.2 + t);
@@ -92,6 +95,7 @@ function buildStem(
   stemBaseWidth: number,
   stemTopWidth: number,
   leavesPerStem: number,
+  frontLeafBias: number,
 ): StemConfig {
   const base = pointInDisk(rng, bushBase, stemBaseSpreadRadius);
   const top = roseRest;
@@ -115,7 +119,7 @@ function buildStem(
 
   const leaves: LeafConfig[] = [];
   for (let i = 0; i < leavesPerStem; i++) {
-    leaves.push(buildLeaf(rng, base, control, top, bushBase));
+    leaves.push(buildLeaf(rng, base, control, top, bushBase, frontLeafBias));
   }
 
   return {
@@ -192,6 +196,7 @@ export function generateBushConfigs(
     stemBaseWidth,
     stemTopWidth,
     leavesPerStemRange,
+    frontLeafBias,
     rng,
   } = input;
 
@@ -237,6 +242,7 @@ export function generateBushConfigs(
           stemBaseWidth,
           stemTopWidth,
           leavesPerStem,
+          frontLeafBias,
         ),
       );
     }
