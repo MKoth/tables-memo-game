@@ -1,3 +1,5 @@
+import type { RoseTintRgb } from '../../carrier/FlowerGardenWordSpriteTableLayer/presets/roseTintPresets';
+
 export type LeafSide = -1 | 1;
 
 export type LeafConfig = {
@@ -25,6 +27,7 @@ export type BushConfig = {
   bushId: number;
   baseX: number;
   baseY: number;
+  tint: RoseTintRgb;
   stems: StemConfig[];
 };
 

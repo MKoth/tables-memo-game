@@ -3,7 +3,7 @@ import { FilterMode, ImageShader, MipmapMode, Rect, Shader, Skia, type SkImage, 
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { MAX_RINGS, ROSE_BUD_SKSL, roseBudUniformDefaults } from '../../../shaders/roseBudDeform.sksl';
-import { pickRoseTintVariant } from '../presets/roseTintPresets';
+import type { RoseTintRgb } from '../presets/roseTintPresets';
 import type { FlowerCellConfig } from '../types';
 
 function padRingArray(arr: readonly number[]): number[] {
@@ -39,6 +39,7 @@ const PADDED_PETAL_WIDTH_DEVIATION = padRingArray(roseBudUniformDefaults.petalWi
 
 export type CellRoseBudProps = {
   config: FlowerCellConfig;
+  tint: RoseTintRgb;
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
@@ -52,6 +53,7 @@ export type CellRoseBudProps = {
 
 export function CellRoseBud({
   config,
+  tint,
   layoutX,
   layoutY,
   layoutScale,
@@ -63,7 +65,7 @@ export function CellRoseBud({
   petalImages,
 }: CellRoseBudProps) {
   const idx = config.index;
-  const tintVariant = pickRoseTintVariant(idx);
+  const tintVariant = tint;
 
   const uniforms = useDerivedValue(() => {
     const scale = layoutScale.value[idx] ?? 1;

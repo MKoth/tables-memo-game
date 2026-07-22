@@ -6,6 +6,7 @@ import type {
   LeafSide,
   StemConfig,
 } from './types';
+import { pickBushTints } from '../../carrier/FlowerGardenWordSpriteTableLayer/presets/roseTintPresets';
 import type { ZoneRect } from '../../../../core';
 
 export type { ZoneRect };
@@ -28,6 +29,7 @@ const LEAF_T_MAX = 0.95;
 const LEAF_TILT_RANGE = Math.PI / 9;
 const STEM_ARC_FRACTION = 0.4;
 const DEFAULT_LEAF_SIZE = 24;
+const ROSE_TINT_FALLBACK: [number, number, number] = [0.95, 0.18, 0.22];
 
 function randomIntInRange(rng: Rng, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
@@ -243,9 +245,15 @@ export function generateBushConfigs(
       bushId: bushes.length,
       baseX: bushBase.x,
       baseY: bushBase.y,
+      tint: ROSE_TINT_FALLBACK,
       stems,
     });
   }
+
+  const tints = pickBushTints(rng, bushes.length);
+  bushes.forEach((bush, i) => {
+    bush.tint = tints[i] ?? ROSE_TINT_FALLBACK;
+  });
 
   validateBushConfigs(bushes, input);
   return bushes;

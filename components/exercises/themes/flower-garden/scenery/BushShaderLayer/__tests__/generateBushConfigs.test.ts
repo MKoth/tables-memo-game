@@ -195,6 +195,16 @@ describe('generateBushConfigs', () => {
     const leaves = collectAllLeaves(configs);
     expect(leaves.length).toBe(19 * 6);
   });
+
+  it('assigns one distinct tint to each bush and that tint to every stem in the bush', () => {
+    const configs = generateBushConfigs(buildInput({ nRoses: 19 }));
+    const tints = configs.map(b => b.tint);
+    expect(new Set(tints).size).toBe(configs.length);
+    for (const bush of configs) {
+      expect(bush.stems.length).toBeGreaterThan(0);
+      expect(bush.tint).toBe(tints[bush.bushId]);
+    }
+  });
 });
 
 describe('validateBushConfigs (exported validation)', () => {
@@ -206,6 +216,7 @@ describe('validateBushConfigs (exported validation)', () => {
         bushId: 0,
         baseX: GROUND_BAND.x,
         baseY: GROUND_BAND.y,
+        tint: [0.95, 0.18, 0.22],
         stems: [
           {
             roseIndex: 0,
@@ -233,6 +244,7 @@ describe('validateBushConfigs (exported validation)', () => {
         bushId: 0,
         baseX: GROUND_BAND.x,
         baseY: GROUND_BAND.y,
+        tint: [0.95, 0.18, 0.22],
         stems: [
           {
             roseIndex: 0,

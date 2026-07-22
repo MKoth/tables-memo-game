@@ -22,6 +22,8 @@ import {
   type LayoutBounds,
   type LayoutParticle,
 } from '../../../undersea/carrier/WordSpriteTableLayer/layout/computeWordSpriteLayout';
+import { useBushConfigs } from '../../scenery/BushShaderLayer/useBushConfigs';
+import { ROSE_TINT_PRESETS, type RoseTintRgb } from './presets/roseTintPresets';
 import type { FlowerWordSpriteTableLayerInnerProps } from './types';
 
 export function FlowerGardenWordSpriteTableLayerInner({
@@ -64,6 +66,17 @@ export function FlowerGardenWordSpriteTableLayerInner({
   );
   const drawOrder = useMemo(() => sortFlowerDrawOrder(cellConfigs), [cellConfigs]);
   const layoutParticles = useMemo(() => buildFlowerLayoutParticles(cellConfigs), [cellConfigs]);
+
+  const bushConfigs = useBushConfigs(table);
+  const cellTints = useMemo<RoseTintRgb[]>(() => {
+    const tints: RoseTintRgb[] = new Array(cellConfigs.length);
+    for (const bush of bushConfigs) {
+      for (const stem of bush.stems) {
+        tints[stem.roseIndex] = bush.tint;
+      }
+    }
+    return tints;
+  }, [bushConfigs, cellConfigs.length]);
 
   const layoutBounds: LayoutBounds = useMemo(
     () => ({
@@ -215,6 +228,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
           <CellRoseBud
             key={config.key}
             config={config}
+            tint={cellTints[config.index] ?? ROSE_TINT_PRESETS.red}
             layoutX={layoutX}
             layoutY={layoutY}
             layoutScale={layoutScale}

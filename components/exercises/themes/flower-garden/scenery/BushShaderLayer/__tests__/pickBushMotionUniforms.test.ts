@@ -9,7 +9,7 @@ function makeLeaf(t: number, side: 1 | -1, variant: 0 | 1 | 2 | 3 = 0): LeafConf
 }
 
 function makeBush(stems: BushConfig['stems']): BushConfig {
-  return { bushId: 0, baseX: 50, baseY: 620, stems };
+  return { bushId: 0, baseX: 50, baseY: 620, tint: [1, 0, 0], stems };
 }
 
 describe('pickBushMotionUniforms', () => {
