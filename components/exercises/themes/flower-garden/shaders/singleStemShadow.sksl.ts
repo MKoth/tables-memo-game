@@ -1,3 +1,5 @@
+export const MAX_STEM_SHADOW_LEAVES = 9;
+
 export const SINGLE_STEM_SHADOW_SKSL = `
 uniform float2 lightOffset;
 uniform float3 shadowColor;
@@ -5,14 +7,46 @@ uniform float shadowOpacity;
 uniform float shadowSoftness;
 uniform float stemShadowTopSkew;
 uniform float stemShadowTopBlur;
+uniform float leafShadowOpacity;
+uniform float leafShadowRadiusFraction;
+uniform float leafShadowSoftness;
 uniform float resolutionScale;
 uniform float2 stemBase;
 uniform float2 stemTop;
+uniform float2 stemControl;
 uniform float stemBaseWidth;
 uniform float stemTopWidth;
+uniform float leafCount;
+uniform float leafT[${MAX_STEM_SHADOW_LEAVES}];
+uniform float leafSize[${MAX_STEM_SHADOW_LEAVES}];
+
+float2 bezierPoint(float t, float2 p0, float2 p1, float2 p2) {
+  float u = 1.0 - t;
+  return u * u * p0 + 2.0 * u * t * p1 + t * t * p2;
+}
 
 half4 main(float2 fragCoord) {
   float2 fc = fragCoord / resolutionScale;
+  half4 color = half4(0.0);
+
+  for (int i = 0; i < ${MAX_STEM_SHADOW_LEAVES}; i++) {
+    if (float(i) >= leafCount) break;
+    float2 topB = stemTop + lightOffset;
+    float2 effectiveTop = mix(topB, stemBase, stemShadowTopSkew);
+    float2 effectiveControl = mix(stemControl, stemBase, stemShadowTopSkew);
+    float2 attachment = bezierPoint(leafT[i], stemBase, effectiveControl, effectiveTop);
+    float r = max(leafSize[i] * leafShadowRadiusFraction, 0.5);
+    float soft = clamp(leafShadowSoftness, 0.0, 0.99);
+    float inner = r * (1.0 - soft);
+    float2 d = fc - attachment;
+    float dist = length(d);
+    if (dist > r) continue;
+    float t = 1.0 - smoothstep(inner, r, dist);
+    float alpha = t * leafShadowOpacity;
+    if (alpha < 0.004) continue;
+    color = half4(shadowColor * alpha, alpha) + color * (1.0 - alpha);
+  }
+
   float2 a = stemBase;
   float2 b = stemTop + lightOffset;
   float2 effectiveTop = mix(b, a, stemShadowTopSkew);
@@ -21,25 +55,24 @@ half4 main(float2 fragCoord) {
   float maxW = max(baW, toW);
   float2 ba = effectiveTop - a;
   float baLenSq = dot(ba, ba);
-  if (baLenSq < 1e-6) {
-    return half4(0.0);
+  if (baLenSq >= 1e-6) {
+    float2 pa = fc - a;
+    float h = clamp(dot(pa, ba) / baLenSq, 0.0, 1.0);
+    float2 closest = ba * h;
+    float dist = length(pa - closest);
+    float w = mix(baW, toW, h);
+    float soft = mix(shadowSoftness, shadowSoftness + stemShadowTopBlur, h);
+    float widx = 1.0 - soft;
+    if (dist <= w) {
+      float stemT = 1.0 - smoothstep(w * widx, w, dist);
+      float stemAlpha = stemT * shadowOpacity;
+      if (stemAlpha >= 0.004) {
+        color = half4(shadowColor * stemAlpha, stemAlpha) + color * (1.0 - stemAlpha);
+      }
+    }
   }
-  float2 pa = fc - a;
-  float h = clamp(dot(pa, ba) / baLenSq, 0.0, 1.0);
-  float2 closest = ba * h;
-  float dist = length(pa - closest);
-  float w = mix(baW, toW, h);
-  float soft = mix(shadowSoftness, shadowSoftness + stemShadowTopBlur, h);
-  float widx = 1.0 - soft;
-  if (dist > w) {
-    return half4(0.0);
-  }
-  float t = 1.0 - smoothstep(w * widx, w, dist);
-  float alpha = t * shadowOpacity;
-  if (alpha < 0.004) {
-    return half4(0.0);
-  }
-  return half4(shadowColor * alpha, alpha);
+
+  return color;
 }
 `;
 
@@ -51,5 +84,8 @@ export const singleStemShadowDefaults = {
   stemShadowWidthScale: 0.7,
   stemShadowTopSkew: 0.2,
   stemShadowTopBlur: 0.3,
+  leafShadowOpacity: 0.18,
+  leafShadowRadiusFraction: 0.45,
+  leafShadowSoftness: 0.6,
   resolutionScale: 0.5,
 } as const;

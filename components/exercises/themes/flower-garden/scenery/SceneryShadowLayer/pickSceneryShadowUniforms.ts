@@ -1,7 +1,9 @@
-import type { BushConfig } from '../BushShaderLayer/types';
+import { MAX_LEAVES_PER_STEM, type BushConfig } from '../BushShaderLayer/types';
 import { singleStemShadowDefaults } from '../../shaders/singleStemShadow.sksl';
 import { roseShadowDefaults } from '../../shaders/roseShadows.sksl';
 import type { SceneryShadowStyle } from './types';
+
+export const MAX_SHADOW_LEAVES_PER_STEM = MAX_LEAVES_PER_STEM;
 
 function padArray(arr: readonly number[], target: number, fill = 0): number[] {
   return [...arr, ...Array(Math.max(0, target - arr.length)).fill(fill)];
@@ -49,14 +51,22 @@ export function resolveSceneryShadowStyle(
   };
 }
 
+export type StemShadowLeaf = {
+  t: number;
+  size: number;
+};
+
 export type StemShadowSlot = {
   baseX: number;
   baseY: number;
   topX: number;
   topY: number;
+  controlX: number;
+  controlY: number;
   baseWidth: number;
   topWidth: number;
   roseIndex: number;
+  leaves: ReadonlyArray<StemShadowLeaf>;
 };
 
 export function pickStemList(
@@ -72,9 +82,12 @@ export function pickStemList(
         baseY: stem.baseY,
         topX: stem.topX,
         topY: stem.topY,
+        controlX: stem.controlX,
+        controlY: stem.controlY,
         baseWidth: stem.baseWidth * s.stemShadowWidthScale,
         topWidth: stem.topWidth * s.stemShadowWidthScale,
         roseIndex: stem.roseIndex,
+        leaves: stem.leaves.map(l => ({ t: l.t, size: l.size })),
       });
     }
   }

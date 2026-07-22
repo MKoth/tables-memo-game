@@ -100,9 +100,12 @@ describe('pickStemList', () => {
       baseY: 600,
       topX: 80,
       topY: 300,
+      controlX: (100 + 80) / 2,
+      controlY: (600 + 300) / 2,
       baseWidth: 3 * scale,
       topWidth: 18 * scale,
       roseIndex: 5,
+      leaves: [],
     });
     expect(slots[1]?.roseIndex).toBe(7);
     expect(slots[2]?.roseIndex).toBe(9);
@@ -137,6 +140,60 @@ describe('pickStemList', () => {
     expect(slots[0]?.baseY).toBe(612);
     expect(slots[1]?.baseX).toBe(112);
     expect(slots[1]?.baseY).toBe(590);
+  });
+
+  it('passes the stem control point through to the slot', () => {
+    const bushes = [
+      makeBush(0, 0, 0, [
+        { baseX: 100, baseY: 600, topX: 80, topY: 300, baseWidth: 3, topWidth: 18, roseIndex: 0 },
+      ]),
+    ];
+    const slots = pickStemList(bushes, undefined);
+    expect(slots[0]?.controlX).toBe(90);
+    expect(slots[0]?.controlY).toBe(450);
+  });
+
+  it('emits an empty leaves array when a stem has no leaves', () => {
+    const bushes = [
+      makeBush(0, 0, 0, [
+        { baseX: 0, baseY: 0, topX: 0, topY: 0, baseWidth: 3, topWidth: 18, roseIndex: 0 },
+      ]),
+    ];
+    const slots = pickStemList(bushes, undefined);
+    expect(slots[0]?.leaves).toEqual([]);
+  });
+
+  it('passes each stem\'s leaves through as { t, size }', () => {
+    const bush: BushConfig = {
+      bushId: 0,
+      baseX: 0,
+      baseY: 0,
+      tint: [1, 0, 0],
+      stems: [
+        {
+          roseIndex: 0,
+          baseX: 100,
+          baseY: 600,
+          topX: 80,
+          topY: 300,
+          controlX: 90,
+          controlY: 450,
+          baseWidth: 3,
+          topWidth: 18,
+          leaves: [
+            { t: 0.2, side: -1, tilt: 0.1, variant: 0, size: 25 },
+            { t: 0.55, side: 1, tilt: -0.05, variant: 2, size: 30 },
+            { t: 0.8, side: -1, tilt: 0.2, variant: 1, size: 20 },
+          ],
+        },
+      ],
+    };
+    const slots = pickStemList([bush], undefined);
+    expect(slots[0]?.leaves).toEqual([
+      { t: 0.2, size: 25 },
+      { t: 0.55, size: 30 },
+      { t: 0.8, size: 20 },
+    ]);
   });
 });
 
