@@ -19,6 +19,7 @@ import {
 import { bezierPoint } from './helpers/bezierMath';
 import {
   COVERING_SIZE,
+  MAX_PARALLAX_DELTA,
   ROSE_BUSH_SKSL,
 } from '../../shaders/roseBush.sksl';
 
@@ -33,7 +34,6 @@ function compileRoseBushEffect(): SkRuntimeEffect {
 const roseBushEffect = compileRoseBushEffect();
 
 const BUSH_RECT_MARGIN = 40;
-const LEAF_REACH = 84;
 
 function padLayoutArray(arr: readonly number[]): number[] {
   'worklet';
@@ -61,10 +61,12 @@ function computeBushRect(
     maxY = Math.max(maxY, base.y, control.y, top.y);
     for (const leaf of stem.leaves) {
       const attachment = bezierPoint(leaf.t, base, control, top);
-      minX = Math.min(minX, attachment.x - LEAF_REACH);
-      maxX = Math.max(maxX, attachment.x + LEAF_REACH);
-      minY = Math.min(minY, attachment.y - LEAF_REACH);
-      maxY = Math.max(maxY, attachment.y + LEAF_REACH);
+      const leafHalfSize =
+        leaf.size * 1.5 + leaf.t * leaf.t * MAX_PARALLAX_DELTA;
+      minX = Math.min(minX, attachment.x - leafHalfSize);
+      maxX = Math.max(maxX, attachment.x + leafHalfSize);
+      minY = Math.min(minY, attachment.y - leafHalfSize);
+      maxY = Math.max(maxY, attachment.y + leafHalfSize);
     }
   }
   return {

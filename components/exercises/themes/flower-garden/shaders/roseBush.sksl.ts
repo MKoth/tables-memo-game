@@ -212,5 +212,5 @@ half4 main(float2 fragCoord) {
 `;
 
 export const roseBushUniformDefaults = {
-  calyxSizeFraction: 0.55,
+  calyxSizeFraction: 1.2,
 } as const;

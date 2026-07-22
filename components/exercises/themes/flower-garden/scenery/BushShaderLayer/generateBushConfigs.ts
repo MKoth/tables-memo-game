@@ -77,7 +77,8 @@ function buildLeaf(
   const side: LeafSide = leafSide(t, base, control, top, bushBase);
   const tilt = randomInRange(rng, -LEAF_TILT_RANGE, LEAF_TILT_RANGE);
   const variant = randomIntInRange(rng, 0, 3) as 0 | 1 | 2 | 3;
-  return { t, side, tilt, variant, size: DEFAULT_LEAF_SIZE };
+  const size = DEFAULT_LEAF_SIZE * (1.2 + t);
+  return { t, side, tilt, variant, size };
 }
 
 function buildStem(
