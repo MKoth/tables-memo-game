@@ -29,16 +29,18 @@ half4 main(float2 fragCoord) {
   float2 fc = fragCoord / resolutionScale;
   half4 color = half4(0.0);
 
+  float2 topB = stemTop + lightOffset;
+  float2 effectiveTop = mix(topB, stemBase, stemShadowTopSkew);
+  float2 effectiveControl = mix(stemControl, stemBase, stemShadowTopSkew);
+
   for (int i = 0; i < ${MAX_STEM_SHADOW_LEAVES}; i++) {
     if (float(i) >= leafCount) break;
-    float2 topB = stemTop + lightOffset;
-    float2 effectiveTop = mix(topB, stemBase, stemShadowTopSkew);
-    float2 effectiveControl = mix(stemControl, stemBase, stemShadowTopSkew);
     float2 attachment = bezierPoint(leafT[i], stemBase, effectiveControl, effectiveTop);
     float r = max(leafSize[i] * leafShadowRadiusFraction, 0.5);
+    float2 d = fc - attachment;
+    if (dot(d, d) > r * r) continue;
     float soft = clamp(leafShadowSoftness, 0.0, 0.99);
     float inner = r * (1.0 - soft);
-    float2 d = fc - attachment;
     float dist = length(d);
     if (dist > r) continue;
     float t = 1.0 - smoothstep(inner, r, dist);
@@ -47,23 +49,20 @@ half4 main(float2 fragCoord) {
     color = half4(shadowColor * alpha, alpha) + color * (1.0 - alpha);
   }
 
-  float2 a = stemBase;
-  float2 b = stemTop + lightOffset;
-  float2 effectiveTop = mix(b, a, stemShadowTopSkew);
   float baW = stemBaseWidth;
   float toW = stemTopWidth;
-  float maxW = max(baW, toW);
-  float2 ba = effectiveTop - a;
+  float2 ba = effectiveTop - stemBase;
   float baLenSq = dot(ba, ba);
   if (baLenSq >= 1e-6) {
-    float2 pa = fc - a;
+    float2 pa = fc - stemBase;
     float h = clamp(dot(pa, ba) / baLenSq, 0.0, 1.0);
     float2 closest = ba * h;
-    float dist = length(pa - closest);
+    float2 pd = pa - closest;
     float w = mix(baW, toW, h);
-    float soft = mix(shadowSoftness, shadowSoftness + stemShadowTopBlur, h);
-    float widx = 1.0 - soft;
-    if (dist <= w) {
+    if (dot(pd, pd) <= w * w) {
+      float soft = mix(shadowSoftness, shadowSoftness + stemShadowTopBlur, h);
+      float widx = 1.0 - soft;
+      float dist = length(pd);
       float stemT = 1.0 - smoothstep(w * widx, w, dist);
       float stemAlpha = stemT * shadowOpacity;
       if (stemAlpha >= 0.004) {

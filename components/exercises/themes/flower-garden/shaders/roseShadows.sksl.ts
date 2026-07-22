@@ -24,7 +24,9 @@ half4 main(float2 fragCoord) {
     float r = roseShadowRadius[i];
     float2 d = fc - c;
     if (abs(d.x) > r || abs(d.y) > r) continue;
-    float dist = length(float2(d.x, d.y / shadowSquash));
+    float2 ds = float2(d.x, d.y / shadowSquash);
+    if (dot(ds, ds) > r * r) continue;
+    float dist = length(ds);
     if (dist > r) continue;
     float t = 1.0 - smoothstep(r * inner, r, dist);
     if (t > total) total = t;
