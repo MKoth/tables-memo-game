@@ -7,6 +7,7 @@ import { useBushConfigs } from './BushShaderLayer/useBushConfigs';
 import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
+import { GrassLayer } from './GrassLayer/GrassLayer';
 
 function FlowerGardenSceneryContent() {
   const { width, height } = useWindowDimensions();
@@ -54,6 +55,7 @@ function FlowerGardenSceneryContent() {
           height={height}
         />
       )}
+      <GrassLayer />
       <SceneryShadowLayer
         bushConfigs={bushConfigs}
         layoutX={wordSpriteBridge.layoutX}
