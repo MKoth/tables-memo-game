@@ -184,6 +184,27 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        setProgress(100);
+        setReadyAssets({
+          images: {
+            roses: roses as FlowerGardenThemeImages['roses'],
+            roseBudImage,
+            roseCenterImage,
+            petalImages: petalImages.length === PETAL_SOURCES.length ? petalImages : null,
+            calyxImage,
+            stemImage,
+            leafImages: leafImages.length === LEAF_SOURCES.length ? leafImages : null,
+            earthImage,
+            grassImages: null,
+            grassAtlasImage: null,
+            grassSpriteRects: null,
+          },
+        });
+
+        if (cancelled) {
+          return;
+        }
+
         const grassLoadResults = await Promise.allSettled(
           GRASS_SOURCES.map(async source => {
             const img = await loadSkiaImage(source);
@@ -202,58 +223,50 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           }
         }
 
-        if (cancelled) {
+        if (cancelled || grassImages.length < GRASS_SOURCES.length) {
           return;
         }
 
         let grassAtlasImage: SkImage | null = null;
         const grassSpriteRects: { x: number; y: number; width: number; height: number }[] = [];
-        if (grassImages.length === GRASS_SOURCES.length) {
-          try {
-            let maxW = 0;
-            let maxH = 0;
-            for (const img of grassImages) {
-              maxW = Math.max(maxW, img.width());
-              maxH = Math.max(maxH, img.height());
-            }
-            if (maxW > 0 && maxH > 0) {
-              const surface = Skia.Surface.Make(maxW * grassImages.length, maxH);
-              if (surface != null) {
-                const canvas = surface.getCanvas();
-                for (let i = 0; i < grassImages.length; i++) {
-                  canvas.drawImage(grassImages[i]!, i * maxW, 0);
-                  grassSpriteRects.push({ x: i * maxW, y: 0, width: maxW, height: maxH });
-                }
-                grassAtlasImage = surface.makeImageSnapshot();
+        try {
+          let maxW = 0;
+          let maxH = 0;
+          for (const img of grassImages) {
+            maxW = Math.max(maxW, img.width());
+            maxH = Math.max(maxH, img.height());
+          }
+          if (maxW > 0 && maxH > 0) {
+            const surface = Skia.Surface.Make(maxW * grassImages.length, maxH);
+            if (surface != null) {
+              const canvas = surface.getCanvas();
+              for (let i = 0; i < grassImages.length; i++) {
+                canvas.drawImage(grassImages[i]!, i * maxW, 0);
+                grassSpriteRects.push({ x: i * maxW, y: 0, width: maxW, height: maxH });
               }
+              grassAtlasImage = surface.makeImageSnapshot();
             }
-          } catch {
-            if (__DEV__) {
-              console.warn('[useFlowerGardenThemeAssets] Failed to pack grass atlas');
-            }
+          }
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to pack grass atlas');
           }
         }
 
-        if (cancelled) {
-          return;
+        if (!cancelled && grassAtlasImage != null) {
+          setReadyAssets(prev => {
+            if (prev == null) return prev;
+            return {
+              ...prev,
+              images: {
+                ...prev.images,
+                grassImages: grassImages,
+                grassAtlasImage: grassAtlasImage,
+                grassSpriteRects: grassSpriteRects,
+              },
+            };
+          });
         }
-
-        setProgress(100);
-        setReadyAssets({
-          images: {
-            roses: roses as FlowerGardenThemeImages['roses'],
-            roseBudImage,
-            roseCenterImage,
-            petalImages: petalImages.length === PETAL_SOURCES.length ? petalImages : null,
-            calyxImage,
-            stemImage,
-            leafImages: leafImages.length === LEAF_SOURCES.length ? leafImages : null,
-            earthImage,
-            grassImages: grassImages.length === GRASS_SOURCES.length ? grassImages : null,
-            grassAtlasImage,
-            grassSpriteRects: grassSpriteRects.length === GRASS_SOURCES.length ? grassSpriteRects : null,
-          },
-        });
       } catch (error) {
         if (__DEV__) {
           console.warn('[useFlowerGardenThemeAssets] Failed to preload assets:', error);
