@@ -9,6 +9,8 @@ const LEAF_SLOTS = MAX_STEMS_PER_BUSH * MAX_LEAVES_PER_STEM;
 
 export const COVERING_SIZE = 200;
 
+export const MAX_PARALLAX_DELTA = 60;
+
 export const ROSE_BUSH_SKSL = `
 uniform float stemCount;
 uniform float stemBaseX[${MAX_STEMS_PER_BUSH}];
@@ -29,6 +31,8 @@ uniform float leafSide[${LEAF_SLOTS}];
 uniform float leafTilt[${LEAF_SLOTS}];
 uniform float leafVariant[${LEAF_SLOTS}];
 uniform float leafSize[${LEAF_SLOTS}];
+uniform float leafRestX[${LEAF_SLOTS}];
+uniform float leafRestY[${LEAF_SLOTS}];
 uniform shader stemTexture;
 uniform shader calyxTexture;
 uniform shader leafTexture1;
@@ -37,7 +41,8 @@ uniform shader leafTexture3;
 uniform shader leafTexture4;
 
 const float COVERING = ${COVERING_SIZE}.0;
-const int BEZIER_SAMPLES = 24;
+const float MAX_PARALLAX = ${MAX_PARALLAX_DELTA}.0;
+const int BEZIER_SAMPLES = 12;
 
 float2 bezierPoint(float t, float2 p0, float2 p1, float2 p2) {
   float u = 1.0 - t;
@@ -48,11 +53,6 @@ float2 bezierTangent(float t, float2 p0, float2 p1, float2 p2) {
   return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1);
 }
 
-float2 bezierNormal(float t, float2 p0, float2 p1, float2 p2) {
-  float2 tan = bezierTangent(t, p0, p1, p2);
-  return float2(-tan.y, tan.x);
-}
-
 half4 sampleLeaf(int variant, float2 coord) {
   if (variant == 0)      { return leafTexture1.eval(coord); }
   else if (variant == 1) { return leafTexture2.eval(coord); }
@@ -61,12 +61,17 @@ half4 sampleLeaf(int variant, float2 coord) {
 }
 
 half4 blendLeaf(half4 base, float lT, float lSide, float lTilt, int lVariant, float lSize,
-                float2 fragCoord, float2 p0, float2 p1, float2 p2) {
+                float2 leafRest, float2 fragCoord, float2 p0, float2 p1, float2 p2) {
+  float halfSize = lSize * 1.5 + lT * lT * MAX_PARALLAX;
+  if (abs(fragCoord.x - leafRest.x) > halfSize) return base;
+  if (abs(fragCoord.y - leafRest.y) > halfSize) return base;
+
   float2 attachment = bezierPoint(lT, p0, p1, p2);
-  float2 normal = bezierNormal(lT, p0, p1, p2);
-  float nLen = length(normal);
-  if (nLen < 1e-6) return base;
-  float2 nN = normal / nLen;
+  float2 tan = bezierTangent(lT, p0, p1, p2);
+  float tanLenSq = dot(tan, tan);
+  if (tanLenSq < 1e-12) return base;
+  float2 tanN = tan * inversesqrt(tanLenSq);
+  float2 nN = float2(-tanN.y, tanN.x);
   float2 upR = lSide * nN;
   float2 rightR0 = float2(-upR.y, upR.x);
 
@@ -99,11 +104,13 @@ half4 main(float2 fragCoord) {
     for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
       if (j >= leafN) break;
       if (leafSide[i * ${MAX_LEAVES_PER_STEM} + j] >= 0.0) continue;
-      color = blendLeaf(color, leafT[i * ${MAX_LEAVES_PER_STEM} + j],
+      color = blendLeaf(color,
+                        leafT[i * ${MAX_LEAVES_PER_STEM} + j],
                         leafSide[i * ${MAX_LEAVES_PER_STEM} + j],
                         leafTilt[i * ${MAX_LEAVES_PER_STEM} + j],
                         int(leafVariant[i * ${MAX_LEAVES_PER_STEM} + j]),
                         leafSize[i * ${MAX_LEAVES_PER_STEM} + j],
+                        float2(leafRestX[i * ${MAX_LEAVES_PER_STEM} + j], leafRestY[i * ${MAX_LEAVES_PER_STEM} + j]),
                         fragCoord, p0, p1, p2);
     }
   }
@@ -126,33 +133,35 @@ half4 main(float2 fragCoord) {
       continue;
     }
 
-    float minDist = 1e10;
+    float minDistSq = 1e20;
     float bestT = 0.0;
     for (int s = 0; s <= BEZIER_SAMPLES; s++) {
       float t = float(s) / float(BEZIER_SAMPLES);
       float2 pt = bezierPoint(t, p0, p1, p2);
-      float d = length(fragCoord - pt);
-      if (d < minDist) { minDist = d; bestT = t; }
+      float2 diff = fragCoord - pt;
+      float dSq = dot(diff, diff);
+      if (dSq < minDistSq) { minDistSq = dSq; bestT = t; }
     }
-    for (int r = 0; r < 4; r++) {
+    for (int r = 0; r < 2; r++) {
       float2 pt = bezierPoint(bestT, p0, p1, p2);
       float2 tan = bezierTangent(bestT, p0, p1, p2);
-      float tanLen = length(tan);
-      if (tanLen < 1e-6) break;
+      float tanLenSq = dot(tan, tan);
+      if (tanLenSq < 1e-12) break;
       float2 toFrag = fragCoord - pt;
-      float tOffset = dot(toFrag, tan) / (tanLen * tanLen);
+      float tOffset = dot(toFrag, tan) / tanLenSq;
       bestT = clamp(bestT + tOffset, 0.0, 1.0);
     }
     float2 ptFinal = bezierPoint(bestT, p0, p1, p2);
-    float dist = length(fragCoord - ptFinal);
+    float2 diffFinal = fragCoord - ptFinal;
+    float distSq = dot(diffFinal, diffFinal);
 
     float width = mix(baseW, topW, bestT);
-    if (dist < width) {
+    if (distSq < width * width) {
       float2 tanAtBest = bezierTangent(bestT, p0, p1, p2);
-      float tanLen = length(tanAtBest);
-      float2 tanN = tanAtBest / max(tanLen, 1e-6);
+      float tanLenSqBest = dot(tanAtBest, tanAtBest);
+      float2 tanN = tanAtBest * inversesqrt(max(tanLenSqBest, 1e-12));
       float2 normAtBest = float2(-tanN.y, tanN.x);
-      float perpOffset = dot(fragCoord - ptFinal, normAtBest);
+      float perpOffset = dot(diffFinal, normAtBest);
       float u = clamp((perpOffset + width * 0.5) / width, 0.0, 1.0);
       float2 stemUV = float2(u, 1.0 - bestT);
       half4 stemColor = stemTexture.eval(stemUV * COVERING);
@@ -187,11 +196,13 @@ half4 main(float2 fragCoord) {
     for (int j = 0; j < ${MAX_LEAVES_PER_STEM}; j++) {
       if (j >= leafN) break;
       if (leafSide[i * ${MAX_LEAVES_PER_STEM} + j] <= 0.0) continue;
-      color = blendLeaf(color, leafT[i * ${MAX_LEAVES_PER_STEM} + j],
+      color = blendLeaf(color,
+                        leafT[i * ${MAX_LEAVES_PER_STEM} + j],
                         leafSide[i * ${MAX_LEAVES_PER_STEM} + j],
                         leafTilt[i * ${MAX_LEAVES_PER_STEM} + j],
                         int(leafVariant[i * ${MAX_LEAVES_PER_STEM} + j]),
                         leafSize[i * ${MAX_LEAVES_PER_STEM} + j],
+                        float2(leafRestX[i * ${MAX_LEAVES_PER_STEM} + j], leafRestY[i * ${MAX_LEAVES_PER_STEM} + j]),
                         fragCoord, p0, p1, p2);
     }
   }

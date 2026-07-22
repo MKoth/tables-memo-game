@@ -2,6 +2,7 @@ import type { BushConfig, LeafConfig } from '../types';
 import { MAX_STEMS_PER_BUSH, MAX_LEAVES_PER_STEM } from '../types';
 import { roseBushUniformDefaults } from '../../../shaders/roseBush.sksl';
 import { pickBushMotionUniforms } from '../pickBushMotionUniforms';
+import { bezierPoint } from '../helpers/bezierMath';
 
 function makeLeaf(t: number, side: 1 | -1, variant: 0 | 1 | 2 | 3 = 0): LeafConfig {
   return { t, side, tilt: 0, variant, size: 24 };
@@ -452,5 +453,62 @@ describe('pickBushMotionUniforms', () => {
     const result = pickBushMotionUniforms(bush, layout, roseBellSizes);
 
     expect(result.stemLeafCount.slice(0, 2)).toEqual([3, 2]);
+  });
+
+  it('packs the per-leaf rest attachment into leafRestX/Y for the bbox prefilter', () => {
+    const bush = makeBush([
+      {
+        roseIndex: 7,
+        baseX: 55,
+        baseY: 625,
+        topX: 100,
+        topY: 300,
+        controlX: 60,
+        controlY: 460,
+        baseWidth: 3,
+        topWidth: 18,
+        leaves: [makeLeaf(0.25, 1), makeLeaf(0.75, -1)],
+      },
+      {
+        roseIndex: 12,
+        baseX: 45,
+        baseY: 615,
+        topX: 220,
+        topY: 320,
+        controlX: 240,
+        controlY: 470,
+        baseWidth: 3,
+        topWidth: 18,
+        leaves: [makeLeaf(0.5, 1, 2)],
+      },
+    ]);
+    const layout = {
+      x: [0, 0, 0, 0, 0, 0, 0, 999, 0, 0, 0, 0, 999],
+      y: [0, 0, 0, 0, 0, 0, 0, 999, 0, 0, 0, 0, 999],
+      scale: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    };
+    const roseBellSizes: number[] = [];
+
+    const result = pickBushMotionUniforms(bush, layout, roseBellSizes);
+
+    const base0 = { x: 55, y: 625 };
+    const control0 = { x: 60, y: 460 };
+    const top0 = { x: 100, y: 300 };
+    const base1 = { x: 45, y: 615 };
+    const control1 = { x: 240, y: 470 };
+    const top1 = { x: 220, y: 320 };
+    const expected = [
+      bezierPoint(0.25, base0, control0, top0),
+      bezierPoint(0.75, base0, control0, top0),
+      bezierPoint(0.5, base1, control1, top1),
+    ];
+    const leafRestX = result.leafRestX.slice(0, 3);
+    const leafRestY = result.leafRestY.slice(0, 3);
+    expect(leafRestX[0]).toBeCloseTo(expected[0]!.x);
+    expect(leafRestY[0]).toBeCloseTo(expected[0]!.y);
+    expect(leafRestX[1]).toBeCloseTo(expected[1]!.x);
+    expect(leafRestY[1]).toBeCloseTo(expected[1]!.y);
+    expect(leafRestX[2]).toBeCloseTo(expected[2]!.x);
+    expect(leafRestY[2]).toBeCloseTo(expected[2]!.y);
   });
 });

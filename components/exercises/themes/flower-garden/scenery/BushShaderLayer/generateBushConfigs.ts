@@ -196,8 +196,8 @@ export function generateBushConfigs(
     return [];
   }
 
-  const minBushes = Math.max(1, Math.ceil(nRoses / 5));
-  const maxBushes = Math.max(1, Math.ceil(nRoses / 3));
+  const minBushes = Math.max(1, Math.ceil(nRoses / 6));
+  const maxBushes = Math.max(1, Math.ceil(nRoses / 4));
   const bushCount = minBushes + Math.floor(rng() * (maxBushes - minBushes + 1));
 
   const shuffled = shuffle(roseIndices, rng);

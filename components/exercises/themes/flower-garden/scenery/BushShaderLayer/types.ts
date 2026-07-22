@@ -50,5 +50,7 @@ export type BushUniforms = {
   leafTilt: number[];
   leafVariant: number[];
   leafSize: number[];
+  leafRestX: number[];
+  leafRestY: number[];
   stemCount: number;
 };

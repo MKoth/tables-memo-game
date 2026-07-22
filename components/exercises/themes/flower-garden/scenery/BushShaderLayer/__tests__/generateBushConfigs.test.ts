@@ -54,10 +54,10 @@ function collectAllLeaves(configs: ReturnType<typeof generateBushConfigs>) {
 }
 
 describe('generateBushConfigs', () => {
-  it('places bush count in [ceil(nRoses/5), ceil(nRoses/3)] for nRoses=19', () => {
+  it('places bush count in [ceil(nRoses/6), ceil(nRoses/4)] for nRoses=19', () => {
     const configs = generateBushConfigs(buildInput({ nRoses: 19 }));
-    const min = Math.ceil(19 / 5);
-    const max = Math.ceil(19 / 3);
+    const min = Math.ceil(19 / 6);
+    const max = Math.ceil(19 / 4);
     expect(configs.length).toBeGreaterThanOrEqual(min);
     expect(configs.length).toBeLessThanOrEqual(max);
   });
@@ -103,8 +103,8 @@ describe('generateBushConfigs', () => {
 
   it('produces a valid config for nRoses=27', () => {
     const configs = generateBushConfigs(buildInput({ nRoses: 27 }));
-    const min = Math.ceil(27 / 5);
-    const max = Math.ceil(27 / 3);
+    const min = Math.ceil(27 / 6);
+    const max = Math.ceil(27 / 4);
     expect(configs.length).toBeGreaterThanOrEqual(min);
     expect(configs.length).toBeLessThanOrEqual(max);
     const stems = collectAllStems(configs);
@@ -181,8 +181,8 @@ describe('generateBushConfigs', () => {
     const a = generateBushConfigs(buildInput({ rng: createRng(7) }));
     const b = generateBushConfigs(buildInput({ rng: createRng(8) }));
     expect(JSON.stringify(a)).not.toBe(JSON.stringify(b));
-    const min = Math.ceil(19 / 5);
-    const max = Math.ceil(19 / 3);
+    const min = Math.ceil(19 / 6);
+    const max = Math.ceil(19 / 4);
     expect(b.length).toBeGreaterThanOrEqual(min);
     expect(b.length).toBeLessThanOrEqual(max);
     expect(collectAllStems(b).length).toBe(19);

@@ -5,6 +5,7 @@ import {
   type BushUniforms,
 } from './types';
 import { roseBushUniformDefaults } from '../../shaders/roseBush.sksl';
+import { bezierPoint } from './helpers/bezierMath';
 
 const LEAF_SLOTS = MAX_STEMS_PER_BUSH * MAX_LEAVES_PER_STEM;
 
@@ -22,12 +23,15 @@ function padArray(arr: readonly number[], target: number, fill = 0): number[] {
   ];
 }
 
-export function pickBushMotionUniforms(
+export type BushStaticUniforms = Omit<
+  BushUniforms,
+  'layoutX' | 'layoutY' | 'layoutScale'
+>;
+
+export function pickBushStaticUniforms(
   bush: BushConfig,
-  layout: LayoutSnapshot,
   roseBellSizes: readonly number[],
-): BushUniforms {
-  'worklet';
+): BushStaticUniforms {
   const stemBaseX: number[] = [];
   const stemBaseY: number[] = [];
   const stemControlX: number[] = [];
@@ -38,21 +42,19 @@ export function pickBushMotionUniforms(
   const stemLeafCount: number[] = [];
   const restX: number[] = [];
   const restY: number[] = [];
-  const layoutX: number[] = [];
-  const layoutY: number[] = [];
-  const layoutScale: number[] = [];
   const leafT: number[] = [];
   const leafSide: number[] = [];
   const leafTilt: number[] = [];
   const leafVariant: number[] = [];
   const leafSize: number[] = [];
+  const leafRestX: number[] = [];
+  const leafRestY: number[] = [];
 
   for (const stem of bush.stems) {
-    const cellIndex = stem.roseIndex;
-    const liveX = layout.x[cellIndex] ?? 0;
-    const liveY = layout.y[cellIndex] ?? 0;
-    const liveScale = layout.scale[cellIndex] ?? 1;
-    const bellSize = roseBellSizes[cellIndex] ?? 0;
+    const base = { x: stem.baseX, y: stem.baseY };
+    const control = { x: stem.controlX, y: stem.controlY };
+    const top = { x: stem.topX, y: stem.topY };
+    const bellSize = roseBellSizes[stem.roseIndex] ?? 0;
     const calyxBaseSize = bellSize * roseBushUniformDefaults.calyxSizeFraction;
 
     stemBaseX.push(stem.baseX);
@@ -65,16 +67,16 @@ export function pickBushMotionUniforms(
     stemLeafCount.push(stem.leaves.length);
     restX.push(stem.topX);
     restY.push(stem.topY);
-    layoutX.push(liveX);
-    layoutY.push(liveY);
-    layoutScale.push(liveScale);
 
     for (const leaf of stem.leaves) {
+      const attachment = bezierPoint(leaf.t, base, control, top);
       leafT.push(leaf.t);
       leafSide.push(leaf.side);
       leafTilt.push(leaf.tilt);
       leafVariant.push(leaf.variant);
       leafSize.push(leaf.size);
+      leafRestX.push(attachment.x);
+      leafRestY.push(attachment.y);
     }
   }
 
@@ -90,13 +92,37 @@ export function pickBushMotionUniforms(
     stemLeafCount: padArray(stemLeafCount, MAX_STEMS_PER_BUSH),
     restX: padArray(restX, MAX_STEMS_PER_BUSH),
     restY: padArray(restY, MAX_STEMS_PER_BUSH),
-    layoutX: padArray(layoutX, MAX_STEMS_PER_BUSH),
-    layoutY: padArray(layoutY, MAX_STEMS_PER_BUSH),
-    layoutScale: padArray(layoutScale, MAX_STEMS_PER_BUSH),
     leafT: padArray(leafT, LEAF_SLOTS),
     leafSide: padArray(leafSide, LEAF_SLOTS),
     leafTilt: padArray(leafTilt, LEAF_SLOTS),
     leafVariant: padArray(leafVariant, LEAF_SLOTS),
     leafSize: padArray(leafSize, LEAF_SLOTS),
+    leafRestX: padArray(leafRestX, LEAF_SLOTS),
+    leafRestY: padArray(leafRestY, LEAF_SLOTS),
+  };
+}
+
+export function pickBushMotionUniforms(
+  bush: BushConfig,
+  layout: LayoutSnapshot,
+  roseBellSizes: readonly number[],
+): BushUniforms {
+  const staticPart = pickBushStaticUniforms(bush, roseBellSizes);
+  const layoutX: number[] = [];
+  const layoutY: number[] = [];
+  const layoutScale: number[] = [];
+
+  for (const stem of bush.stems) {
+    const cellIndex = stem.roseIndex;
+    layoutX.push(layout.x[cellIndex] ?? 0);
+    layoutY.push(layout.y[cellIndex] ?? 0);
+    layoutScale.push(layout.scale[cellIndex] ?? 1);
+  }
+
+  return {
+    ...staticPart,
+    layoutX: padArray(layoutX, MAX_STEMS_PER_BUSH),
+    layoutY: padArray(layoutY, MAX_STEMS_PER_BUSH),
+    layoutScale: padArray(layoutScale, MAX_STEMS_PER_BUSH),
   };
 }

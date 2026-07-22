@@ -12,10 +12,11 @@ import {
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import type { BushConfig } from './types';
+import { MAX_STEMS_PER_BUSH } from './types';
 import {
-  pickBushMotionUniforms,
-  type LayoutSnapshot,
+  pickBushStaticUniforms,
 } from './pickBushMotionUniforms';
+import { bezierPoint } from './helpers/bezierMath';
 import {
   COVERING_SIZE,
   ROSE_BUSH_SKSL,
@@ -31,6 +32,49 @@ function compileRoseBushEffect(): SkRuntimeEffect {
 
 const roseBushEffect = compileRoseBushEffect();
 
+const BUSH_RECT_MARGIN = 40;
+const LEAF_REACH = 84;
+
+function padLayoutArray(arr: readonly number[]): number[] {
+  'worklet';
+  return [
+    ...arr,
+    ...Array(Math.max(0, MAX_STEMS_PER_BUSH - arr.length)).fill(0),
+  ];
+}
+
+function computeBushRect(
+  bush: BushConfig,
+  margin: number,
+): { x: number; y: number; w: number; h: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const stem of bush.stems) {
+    const base = { x: stem.baseX, y: stem.baseY };
+    const control = { x: stem.controlX, y: stem.controlY };
+    const top = { x: stem.topX, y: stem.topY };
+    minX = Math.min(minX, base.x, control.x, top.x);
+    maxX = Math.max(maxX, base.x, control.x, top.x);
+    minY = Math.min(minY, base.y, control.y, top.y);
+    maxY = Math.max(maxY, base.y, control.y, top.y);
+    for (const leaf of stem.leaves) {
+      const attachment = bezierPoint(leaf.t, base, control, top);
+      minX = Math.min(minX, attachment.x - LEAF_REACH);
+      maxX = Math.max(maxX, attachment.x + LEAF_REACH);
+      minY = Math.min(minY, attachment.y - LEAF_REACH);
+      maxY = Math.max(maxY, attachment.y + LEAF_REACH);
+    }
+  }
+  return {
+    x: minX - margin,
+    y: minY - margin,
+    w: maxX - minX + 2 * margin,
+    h: maxY - minY + 2 * margin,
+  };
+}
+
 type BushShaderBushRectProps = {
   bush: BushConfig;
   layoutX: SharedValue<number[]>;
@@ -40,8 +84,6 @@ type BushShaderBushRectProps = {
   stemImage: SkImage;
   calyxImage: SkImage;
   leafImages: readonly SkImage[];
-  width: number;
-  height: number;
 };
 
 function BushShaderBushRect({
@@ -53,27 +95,45 @@ function BushShaderBushRect({
   stemImage,
   calyxImage,
   leafImages,
-  width,
-  height,
 }: BushShaderBushRectProps) {
   const readyLeafImages = useMemo(
     () => (leafImages.length >= 4 ? leafImages.slice(0, 4) : null),
     [leafImages],
   );
 
-  const uniforms = useDerivedValue(() => {
-    const snapshot: LayoutSnapshot = {
-      x: layoutX.value,
-      y: layoutY.value,
-      scale: layoutScale.value,
+  const { staticUniforms, bushRect } = useMemo(() => {
+    return {
+      staticUniforms: pickBushStaticUniforms(bush, roseBellSizes),
+      bushRect: computeBushRect(bush, BUSH_RECT_MARGIN),
     };
-    return pickBushMotionUniforms(bush, snapshot, roseBellSizes);
+  }, [bush, roseBellSizes]);
+
+  const uniforms = useDerivedValue(() => {
+    const x = layoutX.value;
+    const y = layoutY.value;
+    const s = layoutScale.value;
+    const xArr: number[] = [];
+    const yArr: number[] = [];
+    const sArr: number[] = [];
+    for (let i = 0; i < bush.stems.length; i++) {
+      const stem = bush.stems[i]!;
+      const cellIndex = stem.roseIndex;
+      xArr.push(x[cellIndex] ?? 0);
+      yArr.push(y[cellIndex] ?? 0);
+      sArr.push(s[cellIndex] ?? 1);
+    }
+    return {
+      ...staticUniforms,
+      layoutX: padLayoutArray(xArr),
+      layoutY: padLayoutArray(yArr),
+      layoutScale: padLayoutArray(sArr),
+    };
   });
 
   if (readyLeafImages == null) return null;
 
   return (
-    <Rect x={0} y={0} width={width} height={height}>
+    <Rect x={bushRect.x} y={bushRect.y} width={bushRect.w} height={bushRect.h}>
       <Shader source={roseBushEffect} uniforms={uniforms}>
         <ImageShader
           image={stemImage}
@@ -159,8 +219,6 @@ function BushShaderLayerImpl({
           stemImage={stemImage}
           calyxImage={calyxImage}
           leafImages={leafImages}
-          width={width}
-          height={height}
         />
       ))}
     </Canvas>
