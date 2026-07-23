@@ -38,5 +38,3 @@ export const DEFAULT_GRASS_CONFIG_PARAMS: GrassConfigParams = {
 };
 
 export const MAX_GRASS_ELEMENTS = 300;
-
-export type SpriteRect = { x: number; y: number; width: number; height: number };

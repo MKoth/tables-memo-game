@@ -8,7 +8,6 @@ import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
 import { GrassLayer } from './GrassLayer/GrassLayer';
-import { GrassShadowLayer } from './GrassLayer/GrassShadowLayer';
 
 function FlowerGardenSceneryContent() {
   const { width, height } = useWindowDimensions();
@@ -56,7 +55,6 @@ function FlowerGardenSceneryContent() {
           height={height}
         />
       )}
-      <GrassShadowLayer />
       <GrassLayer />
       <SceneryShadowLayer
         bushConfigs={bushConfigs}
