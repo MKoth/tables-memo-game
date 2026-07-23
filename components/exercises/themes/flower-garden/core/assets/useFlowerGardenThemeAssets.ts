@@ -4,6 +4,9 @@ import type { ThemeAssets } from '../../../../themeContract';
 import { loadSkiaImage } from '../../../../core/assets/loadSkiaImage';
 import {
   CALYX_SOURCE,
+  DANDELION_FLOWER_SOURCES,
+  DANDELION_LEAF_SOURCES,
+  DANDELION_STEM_SOURCES,
   EARTH_SOURCE,
   GRASS_TILABLE_SOURCE,
   FLOWER_GARDEN_IMAGE_ASSETS,
@@ -14,6 +17,7 @@ import {
   ROSE_CENTER_SOURCE,
   STEM_SOURCE,
   type FlowerGardenBushKey,
+  type FlowerGardenDandelionKey,
   type FlowerGardenPetalKey,
   type FlowerGardenThemeImages,
 } from './flowerGardenThemeAssets';
@@ -46,6 +50,10 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           FLOWER_GARDEN_IMAGE_ASSETS.bush,
         ) as Array<[FlowerGardenBushKey, number]>;
 
+        const dandelionEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.dandelion,
+        ) as Array<[FlowerGardenDandelionKey, number]>;
+
         const roses: Partial<Record<FlowerGardenPetalKey, unknown>> = {};
 
         let tracked = 0;
@@ -68,6 +76,10 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         }
         for (let i = 0; i < bushEntries.length; i++) {
           bushEntries[i]!;
+          trackSource();
+        }
+        for (let i = 0; i < dandelionEntries.length; i++) {
+          dandelionEntries[i]!;
           trackSource();
         }
 
@@ -197,6 +209,72 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        const dandelionStemLoadResults = await Promise.allSettled(
+          DANDELION_STEM_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode dandelion stem image');
+            }
+            return img;
+          }),
+        );
+        const dandelionStemImages: SkImage[] = [];
+        for (const result of dandelionStemLoadResults) {
+          if (result.status === 'fulfilled') {
+            dandelionStemImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a dandelion stem image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const dandelionLeafLoadResults = await Promise.allSettled(
+          DANDELION_LEAF_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode dandelion leaf image');
+            }
+            return img;
+          }),
+        );
+        const dandelionLeafImages: SkImage[] = [];
+        for (const result of dandelionLeafLoadResults) {
+          if (result.status === 'fulfilled') {
+            dandelionLeafImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a dandelion leaf image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const dandelionFlowerLoadResults = await Promise.allSettled(
+          DANDELION_FLOWER_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode dandelion flower image');
+            }
+            return img;
+          }),
+        );
+        const dandelionFlowerImages: SkImage[] = [];
+        for (const result of dandelionFlowerLoadResults) {
+          if (result.status === 'fulfilled') {
+            dandelionFlowerImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a dandelion flower image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -209,6 +287,9 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             leafImages: leafImages.length === LEAF_SOURCES.length ? leafImages : null,
             earthImage,
             grassImage,
+            dandelionStemImages: dandelionStemImages.length === DANDELION_STEM_SOURCES.length ? dandelionStemImages : null,
+            dandelionLeafImages: dandelionLeafImages.length === DANDELION_LEAF_SOURCES.length ? dandelionLeafImages : null,
+            dandelionFlowerImages: dandelionFlowerImages.length === DANDELION_FLOWER_SOURCES.length ? dandelionFlowerImages : null,
           },
         });
       } catch (error) {

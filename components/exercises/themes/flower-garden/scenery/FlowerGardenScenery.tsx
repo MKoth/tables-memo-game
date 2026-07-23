@@ -8,6 +8,8 @@ import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
 import { FlowerGardenGrassCanvas } from './FlowerGardenGrassCanvas';
+import { DandelionShaderLayer } from './DandelionShaderLayer/DandelionShaderLayer';
+import { useDandelionConfigs } from './DandelionShaderLayer/useDandelionConfigs';
 import type { GrassHoleMaskConfig } from '../shaders/grassHoleMask.sksl';
 
 const grassHoleMaskConfig: GrassHoleMaskConfig = {
@@ -27,6 +29,7 @@ function FlowerGardenSceneryContent() {
   const { table } = useFlowerGardenTableContext();
   const { wordSpriteBridge } = useExerciseRuntime();
   const bushConfigs = useBushConfigs(table);
+  const dandelionConfigs = useDandelionConfigs();
 
   const roseBellSizes = useMemo<number[]>(
     () => wordSpriteBridge?.bodySizes ?? [],
@@ -37,26 +40,26 @@ function FlowerGardenSceneryContent() {
   const calyxImage = images.calyxImage;
   const leafImages = images.leafImages;
 
-  if (
-    stemImage == null ||
-    calyxImage == null ||
-    leafImages == null ||
-    leafImages.length < 4
-  ) {
-    return null;
-  }
+  const bushReady =
+    stemImage != null &&
+    calyxImage != null &&
+    leafImages != null &&
+    leafImages.length >= 4 &&
+    bushConfigs.length > 0 &&
+    roseBellSizes.length > 0 &&
+    wordSpriteBridge != null;
 
-  if (bushConfigs.length === 0) {
-    return null;
-  }
+  const dandelionStemImages = images.dandelionStemImages;
+  const dandelionLeafImages = images.dandelionLeafImages;
+  const dandelionFlowerImages = images.dandelionFlowerImages;
 
-  if (roseBellSizes.length === 0) {
-    return null;
-  }
-
-  if (wordSpriteBridge == null) {
-    return null;
-  }
+  const dandelionReady =
+    dandelionStemImages != null &&
+    dandelionStemImages.length >= 4 &&
+    dandelionLeafImages != null &&
+    dandelionLeafImages.length >= 4 &&
+    dandelionFlowerImages != null &&
+    dandelionFlowerImages.length >= 4;
 
   return (
     <>
@@ -76,22 +79,34 @@ function FlowerGardenSceneryContent() {
           maskConfig={grassHoleMaskConfig}
         />
       )}
-      <SceneryShadowLayer
-        bushConfigs={bushConfigs}
-        layoutX={wordSpriteBridge.layoutX}
-        layoutY={wordSpriteBridge.layoutY}
-        bodySizes={roseBellSizes}
-      />
-      <BushShaderLayer
-        bushConfigs={bushConfigs}
-        layoutX={wordSpriteBridge.layoutX}
-        layoutY={wordSpriteBridge.layoutY}
-        layoutScale={wordSpriteBridge.layoutScale}
-        roseBellSizes={roseBellSizes}
-        stemImage={stemImage}
-        calyxImage={calyxImage}
-        leafImages={leafImages}
-      />
+      {bushReady && (
+        <>
+          <SceneryShadowLayer
+            bushConfigs={bushConfigs}
+            layoutX={wordSpriteBridge.layoutX}
+            layoutY={wordSpriteBridge.layoutY}
+            bodySizes={roseBellSizes}
+          />
+          <BushShaderLayer
+            bushConfigs={bushConfigs}
+            layoutX={wordSpriteBridge.layoutX}
+            layoutY={wordSpriteBridge.layoutY}
+            layoutScale={wordSpriteBridge.layoutScale}
+            roseBellSizes={roseBellSizes}
+            stemImage={stemImage}
+            calyxImage={calyxImage}
+            leafImages={leafImages}
+          />
+        </>
+      )}
+      {dandelionReady && dandelionConfigs.length > 0 && (
+        <DandelionShaderLayer
+          configs={dandelionConfigs}
+          stemImages={dandelionStemImages}
+          leafImages={dandelionLeafImages}
+          flowerImages={dandelionFlowerImages}
+        />
+      )}
     </>
   );
 }
