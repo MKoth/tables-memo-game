@@ -7,6 +7,19 @@ import { useBushConfigs } from './BushShaderLayer/useBushConfigs';
 import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
+import { FlowerGardenGrassCanvas } from './FlowerGardenGrassCanvas';
+import type { GrassHoleMaskConfig } from '../shaders/grassHoleMask.sksl';
+
+const grassHoleMaskConfig: GrassHoleMaskConfig = {
+  centerX: 0.5,
+  centerY: 0.42,
+  minDiameter: 480,
+  maxDiameter: 380,
+  waveAmplitude: 0.1,
+  waveLength: 0.8,
+  noiseAmount: 0.15,
+  noiseScale: 0.2,
+};
 
 function FlowerGardenSceneryContent() {
   const { width, height } = useWindowDimensions();
@@ -55,11 +68,12 @@ function FlowerGardenSceneryContent() {
         />
       )}
       {images.grassImage != null && (
-        <FlowerGardenEarthCanvas
+        <FlowerGardenGrassCanvas
           image={images.grassImage}
           width={width}
           height={height}
           scale={1.2}
+          maskConfig={grassHoleMaskConfig}
         />
       )}
       <SceneryShadowLayer
