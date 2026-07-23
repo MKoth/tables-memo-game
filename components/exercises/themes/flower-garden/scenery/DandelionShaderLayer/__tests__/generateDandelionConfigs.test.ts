@@ -32,6 +32,10 @@ function buildInput(
     maxLeafWidth: overrides.maxLeafWidth ?? 45,
     stemBaseWidth: overrides.stemBaseWidth ?? 10,
     stemTopWidth: overrides.stemTopWidth ?? 40,
+    clusterShadowOffsetX: overrides.clusterShadowOffsetX ?? 0,
+    clusterShadowOffsetY: overrides.clusterShadowOffsetY ?? 0,
+    flowerTopShadowOffsetX: overrides.flowerTopShadowOffsetX ?? 0,
+    flowerTopShadowOffsetY: overrides.flowerTopShadowOffsetY ?? 0,
   };
 }
 

@@ -9,7 +9,7 @@ import type { DandelionConfig } from './types';
 
 const DANDELION_SEED = 'dandelion-scenery-v1';
 
-export const DEFAULT_DANDELION_COUNT = 5;
+export const DEFAULT_DANDELION_COUNT = 7;
 export const DEFAULT_MIN_LEAVES = 5;
 export const DEFAULT_MAX_LEAVES = 7;
 export const DEFAULT_MIN_DISTANCE = 150;
@@ -25,6 +25,10 @@ export const DEFAULT_STEM_TOP_WIDTH = 12;
 export const DEFAULT_OFFSET_X = 0;
 export const DEFAULT_OFFSET_Y = 0;
 export const DEFAULT_OFFSET_SCALE = 1;
+export const DEFAULT_CLUSTER_SHADOW_OFFSET_X = 0;
+export const DEFAULT_CLUSTER_SHADOW_OFFSET_Y = -10;
+export const DEFAULT_FLOWER_TOP_SHADOW_OFFSET_X = 0;
+export const DEFAULT_FLOWER_TOP_SHADOW_OFFSET_Y = -30;
 
 export type UseDandelionConfigsOptions = {
   count?: number;
@@ -43,6 +47,10 @@ export type UseDandelionConfigsOptions = {
   offsetX?: number;
   offsetY?: number;
   offsetScale?: number;
+  clusterShadowOffsetX?: number;
+  clusterShadowOffsetY?: number;
+  flowerTopShadowOffsetX?: number;
+  flowerTopShadowOffsetY?: number;
 };
 
 export function useDandelionConfigs(
@@ -66,6 +74,10 @@ export function useDandelionConfigs(
   const offsetX = options.offsetX ?? DEFAULT_OFFSET_X;
   const offsetY = options.offsetY ?? DEFAULT_OFFSET_Y;
   const offsetScale = options.offsetScale ?? DEFAULT_OFFSET_SCALE;
+  const clusterShadowOffsetX = options.clusterShadowOffsetX ?? DEFAULT_CLUSTER_SHADOW_OFFSET_X;
+  const clusterShadowOffsetY = options.clusterShadowOffsetY ?? DEFAULT_CLUSTER_SHADOW_OFFSET_Y;
+  const flowerTopShadowOffsetX = options.flowerTopShadowOffsetX ?? DEFAULT_FLOWER_TOP_SHADOW_OFFSET_X;
+  const flowerTopShadowOffsetY = options.flowerTopShadowOffsetY ?? DEFAULT_FLOWER_TOP_SHADOW_OFFSET_Y;
 
   return useMemo(() => {
     if (width === 0 || height === 0) return [];
@@ -90,6 +102,10 @@ export function useDandelionConfigs(
       offsetX,
       offsetY,
       offsetScale,
+      clusterShadowOffsetX,
+      clusterShadowOffsetY,
+      flowerTopShadowOffsetX,
+      flowerTopShadowOffsetY,
     };
 
     return generateDandelionConfigs(input);
@@ -112,5 +128,9 @@ export function useDandelionConfigs(
     offsetX,
     offsetY,
     offsetScale,
+    clusterShadowOffsetX,
+    clusterShadowOffsetY,
+    flowerTopShadowOffsetX,
+    flowerTopShadowOffsetY,
   ]);
 }

@@ -44,17 +44,23 @@ function computeDandelionRect(
   config: DandelionConfig,
   margin: number,
 ): { x: number; y: number; w: number; h: number } {
+  const sg = 1.05;
   const lx = config.headerX;
   const ly = config.headerY;
   const fx = config.headerX + config.offsetX;
   const fy = config.headerY + config.offsetY;
   const leafR = config.leafLengths.length > 0 ? Math.max(...config.leafLengths) : 0;
   const flowerR = config.flowerSize * config.offsetScale * 0.5;
+  const slx = config.headerX + config.clusterShadowOffsetX;
+  const sly = config.headerY + config.clusterShadowOffsetY;
+  const sfx = config.headerX + config.offsetX + config.flowerTopShadowOffsetX;
+  const sfy = config.headerY + config.offsetY + config.flowerTopShadowOffsetY;
+  const sflowerR = config.flowerSize * config.offsetScale * sg * 0.5;
 
-  const minX = Math.min(lx - leafR, fx - flowerR) - margin;
-  const maxX = Math.max(lx + leafR, fx + flowerR) + margin;
-  const minY = Math.min(ly - leafR, fy - flowerR) - margin;
-  const maxY = Math.max(ly + leafR, fy + flowerR) + margin;
+  const minX = Math.min(lx - leafR, fx - flowerR, slx - leafR, sfx - sflowerR) - margin;
+  const maxX = Math.max(lx + leafR, fx + flowerR, slx + leafR, sfx + sflowerR) + margin;
+  const minY = Math.min(ly - leafR, fy - flowerR, sly - leafR, sfy - sflowerR) - margin;
+  const maxY = Math.max(ly + leafR, fy + flowerR, sly + leafR, sfy + sflowerR) + margin;
 
   return {
     x: minX,
@@ -95,6 +101,10 @@ function pickDandelionUniforms(
     perLeafWidth: padArray(leafWidthArray, MAX_LEAVES_PER_DANDELION * MAX_DANDELIONS),
     flowerSize: padArray([config.flowerSize], MAX_DANDELIONS),
     ringRotation: padArray([config.ringRotation], MAX_DANDELIONS),
+    clusterShadowOffsetX: padArray([config.clusterShadowOffsetX], MAX_DANDELIONS),
+    clusterShadowOffsetY: padArray([config.clusterShadowOffsetY], MAX_DANDELIONS),
+    flowerTopShadowOffsetX: padArray([config.flowerTopShadowOffsetX], MAX_DANDELIONS),
+    flowerTopShadowOffsetY: padArray([config.flowerTopShadowOffsetY], MAX_DANDELIONS),
   };
 }
 

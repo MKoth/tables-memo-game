@@ -23,6 +23,10 @@ export type GenerateDandelionConfigsInput = {
   offsetX: number;
   offsetY: number;
   offsetScale: number;
+  clusterShadowOffsetX: number;
+  clusterShadowOffsetY: number;
+  flowerTopShadowOffsetX: number;
+  flowerTopShadowOffsetY: number;
 };
 
 const LEAF_VARIANT_COUNT = 4;
@@ -101,6 +105,10 @@ export function generateDandelionConfigs(
     offsetX,
     offsetY,
     offsetScale,
+    clusterShadowOffsetX,
+    clusterShadowOffsetY,
+    flowerTopShadowOffsetX,
+    flowerTopShadowOffsetY,
   } = input;
 
   if (count <= 0) return [];
@@ -196,6 +204,10 @@ export function generateDandelionConfigs(
       leafWidths,
       flowerSize: randomFloatInRange(rng, minFlowerSize, maxFlowerSize),
       ringRotation: rng() * 6.2831853,
+      clusterShadowOffsetX,
+      clusterShadowOffsetY,
+      flowerTopShadowOffsetX,
+      flowerTopShadowOffsetY,
     });
   }
 

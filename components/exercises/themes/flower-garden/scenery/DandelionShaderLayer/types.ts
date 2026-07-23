@@ -21,6 +21,10 @@ export type DandelionConfig = {
   leafWidths: number[];
   flowerSize: number;
   ringRotation: number;
+  clusterShadowOffsetX: number;
+  clusterShadowOffsetY: number;
+  flowerTopShadowOffsetX: number;
+  flowerTopShadowOffsetY: number;
 };
 
 export type DandelionUniforms = {
@@ -42,6 +46,10 @@ export type DandelionUniforms = {
   perLeafWidth: number[];
   flowerSize: number[];
   ringRotation: number[];
+  clusterShadowOffsetX: number[];
+  clusterShadowOffsetY: number[];
+  flowerTopShadowOffsetX: number[];
+  flowerTopShadowOffsetY: number[];
 };
 
 export { MAX_DANDELIONS, MAX_LEAVES_PER_DANDELION };
