@@ -36,6 +36,8 @@ const PADDED_RING_ROTATION_MIN = padRingArray(roseBudUniformDefaults.ringRotatio
 const PADDED_RING_ROTATION_MAX = padRingArray(roseBudUniformDefaults.ringRotation.max);
 const PADDED_RING_BORDER_DEVIATION = padRingArray(roseBudUniformDefaults.ringBorderDeviation);
 const PADDED_PETAL_WIDTH_DEVIATION = padRingArray(roseBudUniformDefaults.petalWidthDeviation);
+const PADDED_RING_OPACITY_MIN = padRingArray(roseBudUniformDefaults.ringOpacity.min);
+const PADDED_RING_OPACITY_MAX = padRingArray(roseBudUniformDefaults.ringOpacity.max);
 
 export type CellRoseBudProps = {
   config: FlowerCellConfig;
@@ -96,6 +98,8 @@ export function CellRoseBud({
       budRotationMax: roseBudUniformDefaults.budRotation.max,
       roseCenterRotationMin: roseBudUniformDefaults.roseCenterRotation.min,
       roseCenterRotationMax: roseBudUniformDefaults.roseCenterRotation.max,
+      roseCenterOpacityMin: roseBudUniformDefaults.roseCenterOpacity.min,
+      roseCenterOpacityMax: roseBudUniformDefaults.roseCenterOpacity.max,
       brightnessMin: roseBudUniformDefaults.brightness.min,
       brightnessMax: roseBudUniformDefaults.brightness.max,
       tintA: tintVariant,
@@ -112,6 +116,8 @@ export function CellRoseBud({
       ringRotationMax: PADDED_RING_ROTATION_MAX,
       ringBorderDeviation: PADDED_RING_BORDER_DEVIATION,
       petalWidthDeviation: PADDED_PETAL_WIDTH_DEVIATION,
+      ringOpacityMin: PADDED_RING_OPACITY_MIN,
+      ringOpacityMax: PADDED_RING_OPACITY_MAX,
       roseSeed: idx,
       coefficient,
       iTime: clock.value / 1000,
