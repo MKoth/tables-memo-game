@@ -12,9 +12,9 @@ import type { GrassHoleMaskConfig } from '../shaders/grassHoleMask.sksl';
 
 const grassHoleMaskConfig: GrassHoleMaskConfig = {
   centerX: 0.5,
-  centerY: 0.42,
-  minDiameter: 480,
-  maxDiameter: 380,
+  centerY: 0.41,
+  minDiameter: 400,
+  maxDiameter: 370,
   waveAmplitude: 0.1,
   waveLength: 0.8,
   noiseAmount: 0.15,

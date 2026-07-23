@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import {
   Canvas,
+  ColorMatrix,
   Fill,
   Group,
   ImageShader,
@@ -31,6 +32,7 @@ type FlowerGardenGrassCanvasProps = {
   width: number;
   height: number;
   scale?: number;
+  brightness?: number;
   maskConfig: GrassHoleMaskConfig;
 };
 
@@ -39,8 +41,19 @@ export function FlowerGardenGrassCanvas({
   width,
   height,
   scale = 1,
+  brightness = 1.5,
   maskConfig,
 }: FlowerGardenGrassCanvasProps) {
+  const brightnessMatrix = useMemo(
+    () => [
+      brightness, 0, 0, 0, 0,
+      0, brightness, 0, 0, 0,
+      0, 0, brightness, 0, 0,
+      0, 0, 0, 1, 0,
+    ],
+    [brightness],
+  );
+
   const uniforms = useMemo(() => {
     const cx = (maskConfig.centerX ?? 0.5) * width;
     const cy = (maskConfig.centerY ?? 0.35) * height;
@@ -70,17 +83,20 @@ export function FlowerGardenGrassCanvas({
 
   return (
     <Canvas style={[styles.canvas, { width, height }]}>
-      <Fill>
-        <ImageShader
-          image={image}
-          tx="repeat"
-          ty="repeat"
-          fit="none"
-          width={width}
-          height={height}
-          transform={imageTransform}
-        />
-      </Fill>
+      <Group>
+        <ColorMatrix matrix={brightnessMatrix} />
+        <Fill>
+          <ImageShader
+            image={image}
+            tx="repeat"
+            ty="repeat"
+            fit="none"
+            width={width}
+            height={height}
+            transform={imageTransform}
+          />
+        </Fill>
+      </Group>
       <Group blendMode="dstOut">
         <Rect x={0} y={0} width={width} height={height}>
           <Shader source={grassHoleMaskEffect} uniforms={uniforms} />
