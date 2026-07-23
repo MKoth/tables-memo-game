@@ -21,18 +21,6 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
   },
   soil: {
     earth: require('../../../../../../assets/images/flower_garden_theme/soil/earth.png'),
-    grass: {
-      grass1: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass1.png'),
-      grass2: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass2.png'),
-      grass3: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass3.png'),
-      grass4: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass4.png'),
-      grass5: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass5.png'),
-      grass6: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass6.png'),
-      grass7: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass7.png'),
-      grass8: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass8.png'),
-      grass9: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass9.png'),
-      grass10: require('../../../../../../assets/images/flower_garden_theme/soil/grass/grass10.png'),
-    },
   },
 } as const;
 
@@ -70,32 +58,6 @@ export const LEAF_SOURCES = [
 
 export const EARTH_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.earth;
 
-const GRASS_ASSETS = FLOWER_GARDEN_IMAGE_ASSETS.soil.grass;
-
-export const GRASS1_SOURCE = GRASS_ASSETS.grass1;
-export const GRASS2_SOURCE = GRASS_ASSETS.grass2;
-export const GRASS3_SOURCE = GRASS_ASSETS.grass3;
-export const GRASS4_SOURCE = GRASS_ASSETS.grass4;
-export const GRASS5_SOURCE = GRASS_ASSETS.grass5;
-export const GRASS6_SOURCE = GRASS_ASSETS.grass6;
-export const GRASS7_SOURCE = GRASS_ASSETS.grass7;
-export const GRASS8_SOURCE = GRASS_ASSETS.grass8;
-export const GRASS9_SOURCE = GRASS_ASSETS.grass9;
-export const GRASS10_SOURCE = GRASS_ASSETS.grass10;
-
-export const GRASS_SOURCES = [
-  GRASS1_SOURCE,
-  GRASS2_SOURCE,
-  GRASS3_SOURCE,
-  GRASS4_SOURCE,
-  GRASS5_SOURCE,
-  GRASS6_SOURCE,
-  GRASS7_SOURCE,
-  GRASS8_SOURCE,
-  GRASS9_SOURCE,
-  GRASS10_SOURCE,
-] as const;
-
 export type FlowerGardenPetalKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.roses;
 export type FlowerGardenBushKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bush;
 export type FlowerGardenSoilKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.soil;
@@ -109,18 +71,12 @@ export type FlowerGardenThemeImages = {
   stemImage: SkImage | null;
   leafImages: SkImage[] | null;
   earthImage: SkImage | null;
-  grassImages: SkImage[] | null;
-  grassAtlasImage: SkImage | null;
-  grassSpriteRects: { x: number; y: number; width: number; height: number }[] | null;
 };
 
-const N_ROSES = Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roses).length;
-const N_BUSH = Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bush).length;
-const N_EARTH = 1;
-const N_GRASS = Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.soil.grass).length;
-
-export const FLOWER_GARDEN_IMAGE_COUNT = N_ROSES + N_BUSH + N_EARTH + N_GRASS;
-
+export const FLOWER_GARDEN_IMAGE_COUNT =
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roses).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bush).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.soil).length;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;
 

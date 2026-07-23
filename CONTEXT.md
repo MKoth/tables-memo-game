@@ -56,18 +56,6 @@ _Avoid_: petal (reserved for the rose head), foliage
 Whether a rose leaf sits on the outer or inner arc of its stem's quadratic bezier curve, determined once at stem initialisation by the sign of the dot product of the leaf's outward direction and the stem's normal at the leaf's `t` parameter. Outer leaves draw in front of the stem band; inner leaves draw behind. Since the stem geometry is constant, this per-leaf pre-computation is equivalent to a per-pixel test in the shader.
 _Avoid_: leaf front/behind, leaf z
 
-**Grass cluster**:
-An organisational unit in the flower-garden theme that groups 3–7 grass elements (configurable min/max) sharing a common origin point on the screen. Clusters are placed across the full screen via uniform random positioning (no constraints) at session initialisation using `Math.random()` — non-deterministic, different every session. Each cluster has a bias angle derived from its horizontal screen position: left = lean left, center = no bias, right = lean right. This bias is added additively to each element's individual radial incline angle. A cluster is not rendered itself — only its elements are.
-_Avoid_: grass group, grass patch, foliage cluster
-
-**Grass element**:
-A single grass blade rendered from one of 10 PNG variants (`grass1.png`–`grass10.png`) via a Skia ImageAtlas, with a perspective skew (narrow at the base, wide at the top) controlled by a configurable skew intensity (0–1). Each element has an incline angle (its radial direction from the cluster origin, evenly spaced 360°/N around the circle) plus the cluster's position-based bias. Elements within a cluster share the same origin point and fan outward. Each element's size is independently randomised within a configurable min–max range. Grass images are assigned to elements via round-robin cycling across all clusters.
-_Avoid_: grass blade, grass sprite, grass PNG
-
-**Grass shadow layer**:
-A dedicated rendering layer between the grass layer (above soil) and the SceneryShadowLayer (stem/rose shadows). Each grass element casts a shadow rendered from the same atlas texture via a SkSL shader that extracts the image's alpha channel, applies a blur, darkens, and offsets it. The shadow angle is the element's incline angle (including cluster bias) plus an amplification term proportional to the cluster's horizontal offset from the screen's vertical centre. Shadow length is a configurable ratio of the element size. Shadow opacity is configurable. Even at the screen's horizontal centre, the shadow retains the element's own incline direction — a purely vertical shadow never occurs.
-_Avoid_: grass cast shadow, grass drop shadow
-
 ### Domain terms
 
 **Table**:
