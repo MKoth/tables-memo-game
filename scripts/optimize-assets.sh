@@ -26,6 +26,7 @@ set -euo pipefail
 ASSETS_DIR="$(cd "$(dirname "$0")/../assets" && pwd)"
 THEME_IMAGES_DIR="$ASSETS_DIR/images/undersea_theme"
 ROSES_DIR="$ASSETS_DIR/images/flower_garden_theme/roses"
+SOIL_DIR="$ASSETS_DIR/images/flower_garden_theme/soil"
 
 if command -v magick &>/dev/null; then
   IM="magick"
@@ -132,6 +133,10 @@ for i in 1 2 3 4; do
 done
 echo "--- Stem (64x768, was 110x1434) ---"
 process_rose "$ROSES_DIR/stem.png" "64x768"
+
+echo ""
+echo "=== Soil (grass-tilable: 300x300 palette-optimised tile, was 1254x1254) ==="
+process_rose "$SOIL_DIR/grass-tilable.png" "300x300"
 
 echo ""
 echo "All done. Clear Metro cache to pick up new assets:"

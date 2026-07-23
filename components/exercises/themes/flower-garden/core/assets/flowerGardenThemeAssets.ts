@@ -21,6 +21,7 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
   },
   soil: {
     earth: require('../../../../../../assets/images/flower_garden_theme/soil/earth.png'),
+    grassTilable: require('../../../../../../assets/images/flower_garden_theme/soil/grass-tilable.png'),
   },
 } as const;
 
@@ -57,6 +58,7 @@ export const LEAF_SOURCES = [
 ] as const;
 
 export const EARTH_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.earth;
+export const GRASS_TILABLE_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.grassTilable;
 
 export type FlowerGardenPetalKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.roses;
 export type FlowerGardenBushKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bush;
@@ -71,6 +73,7 @@ export type FlowerGardenThemeImages = {
   stemImage: SkImage | null;
   leafImages: SkImage[] | null;
   earthImage: SkImage | null;
+  grassImage: SkImage | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT =

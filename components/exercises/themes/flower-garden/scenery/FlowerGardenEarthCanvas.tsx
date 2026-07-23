@@ -6,12 +6,14 @@ type FlowerGardenEarthCanvasProps = {
   image: SkImage;
   width: number;
   height: number;
+  scale?: number;
 };
 
 export function FlowerGardenEarthCanvas({
   image,
   width,
   height,
+  scale = 1,
 }: FlowerGardenEarthCanvasProps) {
   if (width === 0 || height === 0) {
     return null;
@@ -27,6 +29,7 @@ export function FlowerGardenEarthCanvas({
           fit="none"
           width={width}
           height={height}
+          transform={[{ scaleX: 1 / scale }, { scaleY: 1 / scale }]}
         />
       </Fill>
     </Canvas>

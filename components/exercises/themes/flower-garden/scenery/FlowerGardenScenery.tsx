@@ -54,6 +54,14 @@ function FlowerGardenSceneryContent() {
           height={height}
         />
       )}
+      {images.grassImage != null && (
+        <FlowerGardenEarthCanvas
+          image={images.grassImage}
+          width={width}
+          height={height}
+          scale={1.2}
+        />
+      )}
       <SceneryShadowLayer
         bushConfigs={bushConfigs}
         layoutX={wordSpriteBridge.layoutX}
