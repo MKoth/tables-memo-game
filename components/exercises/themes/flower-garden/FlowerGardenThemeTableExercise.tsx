@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { spanishPresentTable2Plural } from '../../../../data/tableData';
+import { getTableBodyWords, spanishPresentTable2Plural } from '../../../../data/tableData';
 import { ExerciseClockProvider, ExerciseRuntimeProvider, TABLE_EXERCISE_STORE_CONFIG, useExerciseStore } from '../../core';
 import { FlowerGardenWordSpriteTableLayer } from './carrier/FlowerGardenWordSpriteTableLayer/FlowerGardenWordSpriteTableLayerOuter';
+import { FlowerGardenRoamerMotionZone } from './roamer/FlowerGardenRoamerMotionZone';
 import { ExerciseShell } from '../../shared';
 import { ExerciseCornerControls } from '../../ui';
 import { FlowerGardenScenery } from './scenery/FlowerGardenScenery';
@@ -10,9 +11,11 @@ import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
 
 const WORD_SPRITE_LAYER_Z = 5;
 const SCENERY_Z = 1;
+const ROAMER_Z = 2;
 
 function FlowerGardenExerciseContent() {
   const table = spanishPresentTable2Plural;
+  const words = useMemo(() => getTableBodyWords(table), [table]);
   const tutorialStep = useExerciseStore((state) => state.tutorialStep);
   const tutorialActive = tutorialStep !== 'idle';
 
@@ -23,6 +26,12 @@ function FlowerGardenExerciseContent() {
           <View style={styles.container}>
             <View style={styles.sceneryLayer} pointerEvents="none">
               <FlowerGardenScenery />
+            </View>
+            <View style={styles.roamerLayer} pointerEvents="box-none">
+              <FlowerGardenRoamerMotionZone
+                words={words}
+                interactive={!tutorialActive}
+              />
             </View>
             <View style={styles.wordSpriteLayer} pointerEvents="box-none">
               <FlowerGardenWordSpriteTableLayer
@@ -57,6 +66,14 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     zIndex: SCENERY_Z,
+  },
+  roamerLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: ROAMER_Z,
   },
   wordSpriteLayer: {
     position: 'absolute',
