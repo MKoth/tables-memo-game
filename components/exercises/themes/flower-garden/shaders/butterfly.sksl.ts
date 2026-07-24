@@ -3,10 +3,7 @@ import {
   ROAMER_BUTTERFLY_BODY_THICKNESS,
   ROAMER_BUTTERFLY_BODY_SCALE,
   ROAMER_BUTTERFLY_WING_STRETCH_GAIN,
-  ROAMER_BUTTERFLY_WING_THIN_GAIN,
   ROAMER_BUTTERFLY_WING_LENGTH_RATIO,
-  ROAMER_BUTTERFLY_WING_WIDTH_RATIO,
-  ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN,
 } from '../roamer/butterfly/config/butterflySettings';
 
 export const BUTTERFLY_SKSL = `
@@ -24,6 +21,8 @@ uniform float wingLeftImageW;
 uniform float wingLeftImageH;
 uniform float wingRightImageW;
 uniform float wingRightImageH;
+uniform float wingLeftAspect;
+uniform float wingRightAspect;
 uniform float legVisibility;
 uniform float renderMode;
 uniform float3 bodyTint;
@@ -33,9 +32,7 @@ uniform shader leftWingTexture;
 uniform shader rightWingTexture;
 
 const float WING_STRETCH_GAIN = ${ROAMER_BUTTERFLY_WING_STRETCH_GAIN};
-const float WING_THIN_GAIN = ${ROAMER_BUTTERFLY_WING_THIN_GAIN};
 const float WING_LENGTH_RATIO = ${ROAMER_BUTTERFLY_WING_LENGTH_RATIO};
-const float WING_WIDTH_RATIO = ${ROAMER_BUTTERFLY_WING_WIDTH_RATIO};
 
 const float LEG_REGION_COUNT = 6.0;
 
@@ -51,20 +48,22 @@ half4 sampleBody(vec2 localPos, float halfW, float halfH) {
 half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
   float bodyEdge = halfW;
   float effLen = halfW * WING_LENGTH_RATIO * (1.0 + flap * WING_STRETCH_GAIN);
-  float effW = halfH * WING_WIDTH_RATIO * (1.0 - flap * WING_THIN_GAIN);
+  float effHalfH = effLen / (wingLeftAspect * 2.0);
 
   float leftEdge = -(bodyEdge + effLen);
   float rightEdge = -bodyEdge;
-  float topEdge = -effW * halfH;
-  float bottomEdge = effW * halfH;
 
-  if (localPos.x < leftEdge || localPos.x > rightEdge ||
-      localPos.y < topEdge || localPos.y > bottomEdge) {
+  if (localPos.x < leftEdge || localPos.x > rightEdge) {
     return half4(0.0);
   }
 
   float u = (localPos.x - leftEdge) / (rightEdge - leftEdge);
-  float v = (localPos.y - topEdge) / (bottomEdge - topEdge);
+  float v = localPos.y / (effHalfH * 2.0) + 0.5;
+
+  if (v < 0.0 || v > 1.0) {
+    return half4(0.0);
+  }
+
   vec2 texCoord = vec2(u * wingLeftImageW, v * wingLeftImageH);
   return leftWingTexture.eval(texCoord);
 }
@@ -72,20 +71,22 @@ half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
 half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float flap) {
   float bodyEdge = halfW;
   float effLen = halfW * WING_LENGTH_RATIO * (1.0 + flap * WING_STRETCH_GAIN);
-  float effW = halfH * WING_WIDTH_RATIO * (1.0 - flap * WING_THIN_GAIN);
+  float effHalfH = effLen / (wingRightAspect * 2.0);
 
   float leftEdge = bodyEdge;
   float rightEdge = bodyEdge + effLen;
-  float topEdge = -effW * halfH;
-  float bottomEdge = effW * halfH;
 
-  if (localPos.x < leftEdge || localPos.x > rightEdge ||
-      localPos.y < topEdge || localPos.y > bottomEdge) {
+  if (localPos.x < leftEdge || localPos.x > rightEdge) {
     return half4(0.0);
   }
 
   float u = (localPos.x - leftEdge) / (rightEdge - leftEdge);
-  float v = (localPos.y - topEdge) / (bottomEdge - topEdge);
+  float v = localPos.y / (effHalfH * 2.0) + 0.5;
+
+  if (v < 0.0 || v > 1.0) {
+    return half4(0.0);
+  }
+
   vec2 texCoord = vec2(u * wingRightImageW, v * wingRightImageH);
   return rightWingTexture.eval(texCoord);
 }
@@ -151,6 +152,8 @@ export const butterflyUniformDefaults = {
   wingLeftImageH: 1,
   wingRightImageW: 1,
   wingRightImageH: 1,
+  wingLeftAspect: 1,
+  wingRightAspect: 1,
   legVisibility: 0,
   renderMode: 0,
   bodyTint: [1, 1, 1] as const,

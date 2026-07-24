@@ -15,9 +15,7 @@ import {
   ROAMER_BUTTERFLY_BODY_LENGTH,
   ROAMER_BUTTERFLY_BODY_THICKNESS,
   ROAMER_BUTTERFLY_WING_STRETCH_GAIN,
-  ROAMER_BUTTERFLY_WING_THIN_GAIN,
   ROAMER_BUTTERFLY_WING_LENGTH_RATIO,
-  ROAMER_BUTTERFLY_WING_WIDTH_RATIO,
   ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN,
 } from './config/butterflySettings';
 
@@ -66,20 +64,22 @@ export function RoamerButterflyInstance({
   const leftWingImageH = leftWingImage.height();
   const rightWingImageW = rightWingImage.width();
   const rightWingImageH = rightWingImage.height();
+  const leftWingAspect = leftWingImageW / leftWingImageH;
+  const rightWingAspect = rightWingImageW / rightWingImageH;
 
   const halfW = bodyDisplayW / 2;
   const halfH = bodyDisplayH / 2;
 
   const leftWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * (1 + wingLeftFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
-  const leftWingEffW = halfH * ROAMER_BUTTERFLY_WING_WIDTH_RATIO * (1 - wingLeftFlap * ROAMER_BUTTERFLY_WING_THIN_GAIN);
   const rightWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * (1 + wingRightFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
-  const rightWingEffW = halfH * ROAMER_BUTTERFLY_WING_WIDTH_RATIO * (1 - wingRightFlap * ROAMER_BUTTERFLY_WING_THIN_GAIN);
+  const leftWingHalfH = leftWingEffLen / (leftWingAspect * 2);
+  const rightWingHalfH = rightWingEffLen / (rightWingAspect * 2);
 
   const cosA = Math.abs(Math.cos(bodyAngle));
   const sinA = Math.abs(Math.sin(bodyAngle));
 
   const wingSpanX = Math.max(leftWingEffLen, rightWingEffLen);
-  const wingSpanY = Math.max(leftWingEffW, rightWingEffW);
+  const wingSpanY = Math.max(leftWingHalfH, rightWingHalfH);
 
   const rectHalfW = (halfW + wingSpanX) * cosA + (halfH + wingSpanY) * sinA;
   const rectHalfH = (halfW + wingSpanX) * sinA + (halfH + wingSpanY) * cosA;
@@ -105,6 +105,8 @@ export function RoamerButterflyInstance({
     wingLeftImageH: leftWingImageH,
     wingRightImageW: rightWingImageW,
     wingRightImageH: rightWingImageH,
+    wingLeftAspect: leftWingAspect,
+    wingRightAspect: rightWingAspect,
     legVisibility,
     renderMode,
     bodyTint: butterflyUniformDefaults.bodyTint,
@@ -114,6 +116,7 @@ export function RoamerButterflyInstance({
     bodyImageW, bodyImageH,
     wingLeftFlap, wingRightFlap,
     leftWingImageW, leftWingImageH, rightWingImageW, rightWingImageH,
+    leftWingAspect, rightWingAspect,
     legVisibility, renderMode,
   ]);
 
