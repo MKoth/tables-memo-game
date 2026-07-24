@@ -4,6 +4,9 @@ import type { ThemeAssets } from '../../../../themeContract';
 import { loadSkiaImage } from '../../../../core/assets/loadSkiaImage';
 import {
   CALYX_SOURCE,
+  CHAMOMILE_FLOWER_SOURCES,
+  CHAMOMILE_LEAF_SOURCES,
+  CHAMOMILE_STEM_SOURCES,
   DANDELION_FLOWER_SOURCES,
   DANDELION_LEAF_SOURCES,
   DANDELION_STEM_SOURCES,
@@ -13,13 +16,22 @@ import {
   FLOWER_GARDEN_PRELOAD_TOTAL,
   LEAF_SOURCES,
   PETAL_SOURCES,
+  POPPY_FLOWER_SOURCES,
+  POPPY_LEAF_SOURCES,
+  POPPY_STEM_SOURCES,
   ROSE_BUD_SOURCE,
   ROSE_CENTER_SOURCE,
   STEM_SOURCE,
+  WILD_VIOLET_FLOWER_SOURCES,
+  WILD_VIOLET_LEAF_SOURCES,
+  WILD_VIOLET_STEM_SOURCES,
   type FlowerGardenBushKey,
+  type FlowerGardenChamomileKey,
   type FlowerGardenDandelionKey,
   type FlowerGardenPetalKey,
+  type FlowerGardenPoppyKey,
   type FlowerGardenThemeImages,
+  type FlowerGardenWildVioletKey,
 } from './flowerGardenThemeAssets';
 import {
   createFlowerGardenSoundController,
@@ -54,6 +66,18 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           FLOWER_GARDEN_IMAGE_ASSETS.dandelion,
         ) as Array<[FlowerGardenDandelionKey, number]>;
 
+        const chamomileEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.chamomile,
+        ) as Array<[FlowerGardenChamomileKey, number]>;
+
+        const poppyEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.poppy,
+        ) as Array<[FlowerGardenPoppyKey, number]>;
+
+        const wildVioletEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.wild_violet,
+        ) as Array<[FlowerGardenWildVioletKey, number]>;
+
         const roses: Partial<Record<FlowerGardenPetalKey, unknown>> = {};
 
         let tracked = 0;
@@ -80,6 +104,18 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         }
         for (let i = 0; i < dandelionEntries.length; i++) {
           dandelionEntries[i]!;
+          trackSource();
+        }
+        for (let i = 0; i < chamomileEntries.length; i++) {
+          chamomileEntries[i]!;
+          trackSource();
+        }
+        for (let i = 0; i < poppyEntries.length; i++) {
+          poppyEntries[i]!;
+          trackSource();
+        }
+        for (let i = 0; i < wildVioletEntries.length; i++) {
+          wildVioletEntries[i]!;
           trackSource();
         }
 
@@ -275,6 +311,204 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        const chamomileStemLoadResults = await Promise.allSettled(
+          CHAMOMILE_STEM_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode chamomile stem image');
+            }
+            return img;
+          }),
+        );
+        const chamomileStemImages: SkImage[] = [];
+        for (const result of chamomileStemLoadResults) {
+          if (result.status === 'fulfilled') {
+            chamomileStemImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a chamomile stem image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const chamomileLeafLoadResults = await Promise.allSettled(
+          CHAMOMILE_LEAF_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode chamomile leaf image');
+            }
+            return img;
+          }),
+        );
+        const chamomileLeafImages: SkImage[] = [];
+        for (const result of chamomileLeafLoadResults) {
+          if (result.status === 'fulfilled') {
+            chamomileLeafImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a chamomile leaf image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const chamomileFlowerLoadResults = await Promise.allSettled(
+          CHAMOMILE_FLOWER_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode chamomile flower image');
+            }
+            return img;
+          }),
+        );
+        const chamomileFlowerImages: SkImage[] = [];
+        for (const result of chamomileFlowerLoadResults) {
+          if (result.status === 'fulfilled') {
+            chamomileFlowerImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a chamomile flower image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const poppyStemLoadResults = await Promise.allSettled(
+          POPPY_STEM_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode poppy stem image');
+            }
+            return img;
+          }),
+        );
+        const poppyStemImages: SkImage[] = [];
+        for (const result of poppyStemLoadResults) {
+          if (result.status === 'fulfilled') {
+            poppyStemImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a poppy stem image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const poppyLeafLoadResults = await Promise.allSettled(
+          POPPY_LEAF_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode poppy leaf image');
+            }
+            return img;
+          }),
+        );
+        const poppyLeafImages: SkImage[] = [];
+        for (const result of poppyLeafLoadResults) {
+          if (result.status === 'fulfilled') {
+            poppyLeafImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a poppy leaf image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const poppyFlowerLoadResults = await Promise.allSettled(
+          POPPY_FLOWER_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode poppy flower image');
+            }
+            return img;
+          }),
+        );
+        const poppyFlowerImages: SkImage[] = [];
+        for (const result of poppyFlowerLoadResults) {
+          if (result.status === 'fulfilled') {
+            poppyFlowerImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a poppy flower image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const wildVioletStemLoadResults = await Promise.allSettled(
+          WILD_VIOLET_STEM_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode wild_violet stem image');
+            }
+            return img;
+          }),
+        );
+        const wildVioletStemImages: SkImage[] = [];
+        for (const result of wildVioletStemLoadResults) {
+          if (result.status === 'fulfilled') {
+            wildVioletStemImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a wild_violet stem image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const wildVioletLeafLoadResults = await Promise.allSettled(
+          WILD_VIOLET_LEAF_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode wild_violet leaf image');
+            }
+            return img;
+          }),
+        );
+        const wildVioletLeafImages: SkImage[] = [];
+        for (const result of wildVioletLeafLoadResults) {
+          if (result.status === 'fulfilled') {
+            wildVioletLeafImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a wild_violet leaf image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const wildVioletFlowerLoadResults = await Promise.allSettled(
+          WILD_VIOLET_FLOWER_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode wild_violet flower image');
+            }
+            return img;
+          }),
+        );
+        const wildVioletFlowerImages: SkImage[] = [];
+        for (const result of wildVioletFlowerLoadResults) {
+          if (result.status === 'fulfilled') {
+            wildVioletFlowerImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a wild_violet flower image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -290,6 +524,15 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             dandelionStemImages: dandelionStemImages.length === DANDELION_STEM_SOURCES.length ? dandelionStemImages : null,
             dandelionLeafImages: dandelionLeafImages.length === DANDELION_LEAF_SOURCES.length ? dandelionLeafImages : null,
             dandelionFlowerImages: dandelionFlowerImages.length === DANDELION_FLOWER_SOURCES.length ? dandelionFlowerImages : null,
+            chamomileStemImages: chamomileStemImages.length === CHAMOMILE_STEM_SOURCES.length ? chamomileStemImages : null,
+            chamomileLeafImages: chamomileLeafImages.length === CHAMOMILE_LEAF_SOURCES.length ? chamomileLeafImages : null,
+            chamomileFlowerImages: chamomileFlowerImages.length === CHAMOMILE_FLOWER_SOURCES.length ? chamomileFlowerImages : null,
+            poppyStemImages: poppyStemImages.length === POPPY_STEM_SOURCES.length ? poppyStemImages : null,
+            poppyLeafImages: poppyLeafImages.length === POPPY_LEAF_SOURCES.length ? poppyLeafImages : null,
+            poppyFlowerImages: poppyFlowerImages.length === POPPY_FLOWER_SOURCES.length ? poppyFlowerImages : null,
+            wildVioletStemImages: wildVioletStemImages.length === WILD_VIOLET_STEM_SOURCES.length ? wildVioletStemImages : null,
+            wildVioletLeafImages: wildVioletLeafImages.length === WILD_VIOLET_LEAF_SOURCES.length ? wildVioletLeafImages : null,
+            wildVioletFlowerImages: wildVioletFlowerImages.length === WILD_VIOLET_FLOWER_SOURCES.length ? wildVioletFlowerImages : null,
           },
         });
       } catch (error) {

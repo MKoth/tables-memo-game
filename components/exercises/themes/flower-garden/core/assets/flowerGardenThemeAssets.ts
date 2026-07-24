@@ -37,6 +37,48 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     flower3: require('../../../../../../assets/images/flower_garden_theme/dandelion/dandelion_flower3.png'),
     flower4: require('../../../../../../assets/images/flower_garden_theme/dandelion/dandelion_flower4.png'),
   },
+  chamomile: {
+    stem1: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_stem1.png'),
+    stem2: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_stem2.png'),
+    stem3: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_stem3.png'),
+    stem4: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_stem4.png'),
+    leaf1: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_leaf1.png'),
+    leaf2: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_leaf2.png'),
+    leaf3: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_leaf3.png'),
+    leaf4: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_leaf4.png'),
+    flower1: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_flower1.png'),
+    flower2: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_flower2.png'),
+    flower3: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_flower3.png'),
+    flower4: require('../../../../../../assets/images/flower_garden_theme/chamomile/chamomile_flower4.png'),
+  },
+  poppy: {
+    stem1: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_stem1.png'),
+    stem2: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_stem2.png'),
+    stem3: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_stem3.png'),
+    stem4: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_stem4.png'),
+    leaf1: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_leaf1.png'),
+    leaf2: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_leaf2.png'),
+    leaf3: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_leaf3.png'),
+    leaf4: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_leaf4.png'),
+    flower1: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_flower1.png'),
+    flower2: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_flower2.png'),
+    flower3: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_flower3.png'),
+    flower4: require('../../../../../../assets/images/flower_garden_theme/poppy/poppy_flower4.png'),
+  },
+  wild_violet: {
+    stem1: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_stem1.png'),
+    stem2: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_stem2.png'),
+    stem3: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_stem3.png'),
+    stem4: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_stem4.png'),
+    leaf1: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_leaf1.png'),
+    leaf2: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_leaf2.png'),
+    leaf3: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_leaf3.png'),
+    leaf4: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_leaf4.png'),
+    flower1: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_flower1.png'),
+    flower2: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_flower2.png'),
+    flower3: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_flower3.png'),
+    flower4: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_flower4.png'),
+  },
 } as const;
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
@@ -108,10 +150,115 @@ export const DANDELION_LEAF_SOURCES = [
   DANDELION_LEAF4_SOURCE,
 ] as const;
 
+export const CHAMOMILE_STEM1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.stem1;
+export const CHAMOMILE_STEM2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.stem2;
+export const CHAMOMILE_STEM3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.stem3;
+export const CHAMOMILE_STEM4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.stem4;
+export const CHAMOMILE_LEAF1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.leaf1;
+export const CHAMOMILE_LEAF2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.leaf2;
+export const CHAMOMILE_LEAF3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.leaf3;
+export const CHAMOMILE_LEAF4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.leaf4;
+export const CHAMOMILE_FLOWER1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.flower1;
+export const CHAMOMILE_FLOWER2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.flower2;
+export const CHAMOMILE_FLOWER3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.flower3;
+export const CHAMOMILE_FLOWER4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.chamomile.flower4;
+
+export const CHAMOMILE_STEM_SOURCES = [
+  CHAMOMILE_STEM1_SOURCE,
+  CHAMOMILE_STEM2_SOURCE,
+  CHAMOMILE_STEM3_SOURCE,
+  CHAMOMILE_STEM4_SOURCE,
+] as const;
+
+export const CHAMOMILE_FLOWER_SOURCES = [
+  CHAMOMILE_FLOWER1_SOURCE,
+  CHAMOMILE_FLOWER2_SOURCE,
+  CHAMOMILE_FLOWER3_SOURCE,
+  CHAMOMILE_FLOWER4_SOURCE,
+] as const;
+
+export const CHAMOMILE_LEAF_SOURCES = [
+  CHAMOMILE_LEAF1_SOURCE,
+  CHAMOMILE_LEAF2_SOURCE,
+  CHAMOMILE_LEAF3_SOURCE,
+  CHAMOMILE_LEAF4_SOURCE,
+] as const;
+
+export const POPPY_STEM1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.stem1;
+export const POPPY_STEM2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.stem2;
+export const POPPY_STEM3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.stem3;
+export const POPPY_STEM4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.stem4;
+export const POPPY_LEAF1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.leaf1;
+export const POPPY_LEAF2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.leaf2;
+export const POPPY_LEAF3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.leaf3;
+export const POPPY_LEAF4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.leaf4;
+export const POPPY_FLOWER1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.flower1;
+export const POPPY_FLOWER2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.flower2;
+export const POPPY_FLOWER3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.flower3;
+export const POPPY_FLOWER4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.poppy.flower4;
+
+export const POPPY_STEM_SOURCES = [
+  POPPY_STEM1_SOURCE,
+  POPPY_STEM2_SOURCE,
+  POPPY_STEM3_SOURCE,
+  POPPY_STEM4_SOURCE,
+] as const;
+
+export const POPPY_FLOWER_SOURCES = [
+  POPPY_FLOWER1_SOURCE,
+  POPPY_FLOWER2_SOURCE,
+  POPPY_FLOWER3_SOURCE,
+  POPPY_FLOWER4_SOURCE,
+] as const;
+
+export const POPPY_LEAF_SOURCES = [
+  POPPY_LEAF1_SOURCE,
+  POPPY_LEAF2_SOURCE,
+  POPPY_LEAF3_SOURCE,
+  POPPY_LEAF4_SOURCE,
+] as const;
+
+export const WILD_VIOLET_STEM1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.stem1;
+export const WILD_VIOLET_STEM2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.stem2;
+export const WILD_VIOLET_STEM3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.stem3;
+export const WILD_VIOLET_STEM4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.stem4;
+export const WILD_VIOLET_LEAF1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.leaf1;
+export const WILD_VIOLET_LEAF2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.leaf2;
+export const WILD_VIOLET_LEAF3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.leaf3;
+export const WILD_VIOLET_LEAF4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.leaf4;
+export const WILD_VIOLET_FLOWER1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.flower1;
+export const WILD_VIOLET_FLOWER2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.flower2;
+export const WILD_VIOLET_FLOWER3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.flower3;
+export const WILD_VIOLET_FLOWER4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.wild_violet.flower4;
+
+export const WILD_VIOLET_STEM_SOURCES = [
+  WILD_VIOLET_STEM1_SOURCE,
+  WILD_VIOLET_STEM2_SOURCE,
+  WILD_VIOLET_STEM3_SOURCE,
+  WILD_VIOLET_STEM4_SOURCE,
+] as const;
+
+export const WILD_VIOLET_FLOWER_SOURCES = [
+  WILD_VIOLET_FLOWER1_SOURCE,
+  WILD_VIOLET_FLOWER2_SOURCE,
+  WILD_VIOLET_FLOWER3_SOURCE,
+  WILD_VIOLET_FLOWER4_SOURCE,
+] as const;
+
+export const WILD_VIOLET_LEAF_SOURCES = [
+  WILD_VIOLET_LEAF1_SOURCE,
+  WILD_VIOLET_LEAF2_SOURCE,
+  WILD_VIOLET_LEAF3_SOURCE,
+  WILD_VIOLET_LEAF4_SOURCE,
+] as const;
+
 export type FlowerGardenPetalKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.roses;
 export type FlowerGardenBushKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bush;
 export type FlowerGardenSoilKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.soil;
 export type FlowerGardenDandelionKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.dandelion;
+export type FlowerGardenChamomileKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.chamomile;
+export type FlowerGardenPoppyKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.poppy;
+export type FlowerGardenWildVioletKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.wild_violet;
 
 export type FlowerGardenThemeImages = {
   roses: Record<FlowerGardenPetalKey, unknown>;
@@ -126,6 +273,15 @@ export type FlowerGardenThemeImages = {
   dandelionStemImages: SkImage[] | null;
   dandelionLeafImages: SkImage[] | null;
   dandelionFlowerImages: SkImage[] | null;
+  chamomileStemImages: SkImage[] | null;
+  chamomileLeafImages: SkImage[] | null;
+  chamomileFlowerImages: SkImage[] | null;
+  poppyStemImages: SkImage[] | null;
+  poppyLeafImages: SkImage[] | null;
+  poppyFlowerImages: SkImage[] | null;
+  wildVioletStemImages: SkImage[] | null;
+  wildVioletLeafImages: SkImage[] | null;
+  wildVioletFlowerImages: SkImage[] | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT =

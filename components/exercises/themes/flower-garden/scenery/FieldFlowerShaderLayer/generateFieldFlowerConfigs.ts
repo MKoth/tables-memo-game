@@ -1,9 +1,15 @@
 import type { Rng } from '../BushShaderLayer/helpers/seededRandom';
-import type { DandelionConfig, LeafVariant } from './types';
+import type { FieldFlowerConfig, FieldFlowerType, LeafVariant } from './types';
 
 const MAX_PLACEMENT_ATTEMPTS = 300;
+const FLOWER_TYPES: FieldFlowerType[] = [
+  'dandelion',
+  'chamomile',
+  'poppy',
+  'wild_violet',
+];
 
-export type GenerateDandelionConfigsInput = {
+export type GenerateFieldFlowerConfigsInput = {
   screenWidth: number;
   screenHeight: number;
   rng: Rng;
@@ -27,6 +33,7 @@ export type GenerateDandelionConfigsInput = {
   clusterShadowOffsetY: number;
   flowerTopShadowOffsetX: number;
   flowerTopShadowOffsetY: number;
+  bottomPadding: number;
 };
 
 const LEAF_VARIANT_COUNT = 4;
@@ -35,56 +42,88 @@ function randomIntInRange(rng: Rng, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
 }
 
-export function validateDandelionConfigs(
-  configs: DandelionConfig[],
-  input: GenerateDandelionConfigsInput,
+function distributeFlowerTypes(count: number, rng: Rng): FieldFlowerType[] {
+  const perType = Math.floor(count / FLOWER_TYPES.length);
+  const remainder = count - perType * FLOWER_TYPES.length;
+  const types: FieldFlowerType[] = [];
+
+  for (const t of FLOWER_TYPES) {
+    for (let i = 0; i < perType; i++) {
+      types.push(t);
+    }
+  }
+
+  const shuffled: FieldFlowerType[] = [];
+  const pool = [...FLOWER_TYPES];
+  while (pool.length > 0) {
+    const idx = Math.floor(rng() * pool.length);
+    shuffled.push(pool[idx]!);
+    pool.splice(idx, 1);
+  }
+
+  for (let i = 0; i < remainder; i++) {
+    types.push(shuffled[i % shuffled.length]!);
+  }
+
+  for (let i = types.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [types[i], types[j]] = [types[j]!, types[i]!];
+  }
+
+  return types;
+}
+
+export function validateFieldFlowerConfigs(
+  configs: FieldFlowerConfig[],
+  input: GenerateFieldFlowerConfigsInput,
 ): void {
   if (configs.length !== input.count) {
     throw new Error(
-      `validateDandelionConfigs: expected ${input.count} configs, got ${configs.length}`,
+      `validateFieldFlowerConfigs: expected ${input.count} configs, got ${configs.length}`,
     );
   }
 
   const lowerYStart = input.screenHeight * (1 - input.lowerScreenFraction);
-  for (const dc of configs) {
-    if (dc.headerY < lowerYStart || dc.headerY > input.screenHeight) {
+  const upperYEnd = input.screenHeight - input.bottomPadding;
+  for (const fc of configs) {
+    if (fc.headerY < lowerYStart || fc.headerY > upperYEnd) {
       throw new Error(
-        `validateDandelionConfigs: dandelion ${dc.dandelionId} headerY ${dc.headerY} outside lower ${input.lowerScreenFraction} band`,
+        `validateFieldFlowerConfigs: flower ${fc.flowerId} headerY ${fc.headerY} outside lower ${input.lowerScreenFraction} band`,
       );
     }
-    if (dc.headerX < 0 || dc.headerX > input.screenWidth) {
+    if (fc.headerX < 0 || fc.headerX > input.screenWidth) {
       throw new Error(
-        `validateDandelionConfigs: dandelion ${dc.dandelionId} headerX ${dc.headerX} outside screen`,
+        `validateFieldFlowerConfigs: flower ${fc.flowerId} headerX ${fc.headerX} outside screen`,
       );
     }
-    if (dc.leafCount < input.minLeaves || dc.leafCount > input.maxLeaves) {
+    if (fc.leafCount < input.minLeaves || fc.leafCount > input.maxLeaves) {
       throw new Error(
-        `validateDandelionConfigs: dandelion ${dc.dandelionId} leafCount ${dc.leafCount} out of range [${input.minLeaves}, ${input.maxLeaves}]`,
+        `validateFieldFlowerConfigs: flower ${fc.flowerId} leafCount ${fc.leafCount} out of range [${input.minLeaves}, ${input.maxLeaves}]`,
       );
     }
-    for (const v of dc.leafVariants) {
+    for (const v of fc.leafVariants) {
       if (v < 0 || v >= LEAF_VARIANT_COUNT) {
         throw new Error(
-          `validateDandelionConfigs: dandelion ${dc.dandelionId} has leaf variant ${v} out of range`,
+          `validateFieldFlowerConfigs: flower ${fc.flowerId} has leaf variant ${v} out of range`,
         );
       }
     }
-    if (dc.stemVariant < 0 || dc.stemVariant >= LEAF_VARIANT_COUNT) {
+    if (fc.stemVariant < 0 || fc.stemVariant >= LEAF_VARIANT_COUNT) {
       throw new Error(
-        `validateDandelionConfigs: dandelion ${dc.dandelionId} has stemVariant ${dc.stemVariant} out of range`,
+        `validateFieldFlowerConfigs: flower ${fc.flowerId} has stemVariant ${fc.stemVariant} out of range`,
       );
     }
-    if (dc.flowerVariant < 0 || dc.flowerVariant >= LEAF_VARIANT_COUNT) {
+    if (fc.flowerVariant < 0 || fc.flowerVariant >= LEAF_VARIANT_COUNT) {
       throw new Error(
-        `validateDandelionConfigs: dandelion ${dc.dandelionId} has flowerVariant ${dc.flowerVariant} out of range`,
+        `validateFieldFlowerConfigs: flower ${fc.flowerId} has flowerVariant ${fc.flowerVariant} out of range`,
       );
     }
   }
 }
 
-export function generateDandelionConfigs(
-  input: GenerateDandelionConfigsInput,
-): DandelionConfig[] {
+export function generateFieldFlowerConfigs(
+  input: GenerateFieldFlowerConfigsInput,
+): FieldFlowerConfig[] {
   const {
     screenWidth,
     screenHeight,
@@ -109,15 +148,18 @@ export function generateDandelionConfigs(
     clusterShadowOffsetY,
     flowerTopShadowOffsetX,
     flowerTopShadowOffsetY,
+    bottomPadding,
   } = input;
 
   if (count <= 0) return [];
 
-  const configs: DandelionConfig[] = [];
+  const flowerTypes = distributeFlowerTypes(count, rng);
+
+  const configs: FieldFlowerConfig[] = [];
   const lowerYStart = screenHeight * (1 - lowerScreenFraction);
   const xMin = screenWidth * 0.1;
   const xRange = screenWidth * 0.8;
-  const yMaxExtent = (screenHeight - lowerYStart) * 0.6;
+  const yMaxExtent = screenHeight - lowerYStart - bottomPadding;
 
   function randomPosition(): { x: number; y: number } {
     return {
@@ -186,7 +228,8 @@ export function generateDandelionConfigs(
     }
 
     configs.push({
-      dandelionId: i,
+      flowerId: i,
+      flowerType: flowerTypes[i]!,
       headerX: hx,
       headerY: hy,
       offsetX,
@@ -211,6 +254,6 @@ export function generateDandelionConfigs(
     });
   }
 
-  validateDandelionConfigs(configs, input);
+  validateFieldFlowerConfigs(configs, input);
   return configs;
 }

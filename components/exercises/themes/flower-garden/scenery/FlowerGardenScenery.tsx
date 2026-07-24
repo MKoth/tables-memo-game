@@ -8,8 +8,8 @@ import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
 import { FlowerGardenGrassCanvas } from './FlowerGardenGrassCanvas';
-import { DandelionShaderLayer } from './DandelionShaderLayer/DandelionShaderLayer';
-import { useDandelionConfigs } from './DandelionShaderLayer/useDandelionConfigs';
+import { FieldFlowerShaderLayer } from './FieldFlowerShaderLayer/FieldFlowerShaderLayer';
+import { useFieldFlowerConfigs } from './FieldFlowerShaderLayer/useFieldFlowerConfigs';
 import type { GrassHoleMaskConfig } from '../shaders/grassHoleMask.sksl';
 
 const grassHoleMaskConfig: GrassHoleMaskConfig = {
@@ -23,13 +23,22 @@ const grassHoleMaskConfig: GrassHoleMaskConfig = {
   noiseScale: 0.2,
 };
 
+function allImagesReady(
+  ...sets: (readonly import('@shopify/react-native-skia').SkImage[] | null)[]
+): boolean {
+  for (const set of sets) {
+    if (set == null || set.length < 4) return false;
+  }
+  return true;
+}
+
 function FlowerGardenSceneryContent() {
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
   const { table } = useFlowerGardenTableContext();
   const { wordSpriteBridge } = useExerciseRuntime();
   const bushConfigs = useBushConfigs(table);
-  const dandelionConfigs = useDandelionConfigs();
+  const fieldFlowerConfigs = useFieldFlowerConfigs();
 
   const roseBellSizes = useMemo<number[]>(
     () => wordSpriteBridge?.bodySizes ?? [],
@@ -52,14 +61,22 @@ function FlowerGardenSceneryContent() {
   const dandelionStemImages = images.dandelionStemImages;
   const dandelionLeafImages = images.dandelionLeafImages;
   const dandelionFlowerImages = images.dandelionFlowerImages;
+  const chamomileStemImages = images.chamomileStemImages;
+  const chamomileLeafImages = images.chamomileLeafImages;
+  const chamomileFlowerImages = images.chamomileFlowerImages;
+  const poppyStemImages = images.poppyStemImages;
+  const poppyLeafImages = images.poppyLeafImages;
+  const poppyFlowerImages = images.poppyFlowerImages;
+  const wildVioletStemImages = images.wildVioletStemImages;
+  const wildVioletLeafImages = images.wildVioletLeafImages;
+  const wildVioletFlowerImages = images.wildVioletFlowerImages;
 
-  const dandelionReady =
-    dandelionStemImages != null &&
-    dandelionStemImages.length >= 4 &&
-    dandelionLeafImages != null &&
-    dandelionLeafImages.length >= 4 &&
-    dandelionFlowerImages != null &&
-    dandelionFlowerImages.length >= 4;
+  const fieldFlowersReady = allImagesReady(
+    dandelionStemImages, dandelionLeafImages, dandelionFlowerImages,
+    chamomileStemImages, chamomileLeafImages, chamomileFlowerImages,
+    poppyStemImages, poppyLeafImages, poppyFlowerImages,
+    wildVioletStemImages, wildVioletLeafImages, wildVioletFlowerImages,
+  );
 
   return (
     <>
@@ -99,12 +116,21 @@ function FlowerGardenSceneryContent() {
           />
         </>
       )}
-      {dandelionReady && dandelionConfigs.length > 0 && (
-        <DandelionShaderLayer
-          configs={dandelionConfigs}
-          stemImages={dandelionStemImages}
-          leafImages={dandelionLeafImages}
-          flowerImages={dandelionFlowerImages}
+      {fieldFlowersReady && fieldFlowerConfigs.length > 0 && (
+        <FieldFlowerShaderLayer
+          configs={fieldFlowerConfigs}
+          dandelionStemImages={dandelionStemImages!}
+          dandelionLeafImages={dandelionLeafImages!}
+          dandelionFlowerImages={dandelionFlowerImages!}
+          chamomileStemImages={chamomileStemImages!}
+          chamomileLeafImages={chamomileLeafImages!}
+          chamomileFlowerImages={chamomileFlowerImages!}
+          poppyStemImages={poppyStemImages!}
+          poppyLeafImages={poppyLeafImages!}
+          poppyFlowerImages={poppyFlowerImages!}
+          wildVioletStemImages={wildVioletStemImages!}
+          wildVioletLeafImages={wildVioletLeafImages!}
+          wildVioletFlowerImages={wildVioletFlowerImages!}
         />
       )}
     </>

@@ -2,22 +2,22 @@ import { useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { createRng, hashSeedString } from '../BushShaderLayer/helpers/seededRandom';
 import {
-  generateDandelionConfigs,
-  type GenerateDandelionConfigsInput,
-} from './generateDandelionConfigs';
-import type { DandelionConfig } from './types';
+  generateFieldFlowerConfigs,
+  type GenerateFieldFlowerConfigsInput,
+} from './generateFieldFlowerConfigs';
+import type { FieldFlowerConfig } from './types';
 
-const DANDELION_SEED = 'dandelion-scenery-v1';
+const FIELD_FLOWER_SEED = 'field-flower-scenery-v1';
 
-export const DEFAULT_DANDELION_COUNT = 7;
+export const DEFAULT_FIELD_FLOWER_COUNT = 12;
 export const DEFAULT_MIN_LEAVES = 5;
 export const DEFAULT_MAX_LEAVES = 7;
-export const DEFAULT_MIN_DISTANCE = 150;
+export const DEFAULT_MIN_DISTANCE = 190;
 export const DEFAULT_LOWER_SCREEN_FRACTION = 0.4;
-export const DEFAULT_MIN_FLOWER_SIZE = 55;
-export const DEFAULT_MAX_FLOWER_SIZE = 85;
-export const DEFAULT_MIN_LEAF_LENGTH = 50;
-export const DEFAULT_MAX_LEAF_LENGTH = 60;
+export const DEFAULT_MIN_FLOWER_SIZE = 45;
+export const DEFAULT_MAX_FLOWER_SIZE = 65;
+export const DEFAULT_MIN_LEAF_LENGTH = 30;
+export const DEFAULT_MAX_LEAF_LENGTH = 45;
 export const DEFAULT_MIN_LEAF_WIDTH = 25;
 export const DEFAULT_MAX_LEAF_WIDTH = 32;
 export const DEFAULT_STEM_BASE_WIDTH = 5;
@@ -29,8 +29,9 @@ export const DEFAULT_CLUSTER_SHADOW_OFFSET_X = 0;
 export const DEFAULT_CLUSTER_SHADOW_OFFSET_Y = -10;
 export const DEFAULT_FLOWER_TOP_SHADOW_OFFSET_X = 0;
 export const DEFAULT_FLOWER_TOP_SHADOW_OFFSET_Y = -30;
+export const DEFAULT_BOTTOM_PADDING = 60;
 
-export type UseDandelionConfigsOptions = {
+export type UseFieldFlowerConfigsOptions = {
   count?: number;
   minLeaves?: number;
   maxLeaves?: number;
@@ -51,14 +52,15 @@ export type UseDandelionConfigsOptions = {
   clusterShadowOffsetY?: number;
   flowerTopShadowOffsetX?: number;
   flowerTopShadowOffsetY?: number;
+  bottomPadding?: number;
 };
 
-export function useDandelionConfigs(
-  options: UseDandelionConfigsOptions = {},
-): DandelionConfig[] {
+export function useFieldFlowerConfigs(
+  options: UseFieldFlowerConfigsOptions = {},
+): FieldFlowerConfig[] {
   const { width, height } = useWindowDimensions();
 
-  const count = options.count ?? DEFAULT_DANDELION_COUNT;
+  const count = options.count ?? DEFAULT_FIELD_FLOWER_COUNT;
   const minLeaves = options.minLeaves ?? DEFAULT_MIN_LEAVES;
   const maxLeaves = options.maxLeaves ?? DEFAULT_MAX_LEAVES;
   const lowerScreenFraction = options.lowerScreenFraction ?? DEFAULT_LOWER_SCREEN_FRACTION;
@@ -78,14 +80,15 @@ export function useDandelionConfigs(
   const clusterShadowOffsetY = options.clusterShadowOffsetY ?? DEFAULT_CLUSTER_SHADOW_OFFSET_Y;
   const flowerTopShadowOffsetX = options.flowerTopShadowOffsetX ?? DEFAULT_FLOWER_TOP_SHADOW_OFFSET_X;
   const flowerTopShadowOffsetY = options.flowerTopShadowOffsetY ?? DEFAULT_FLOWER_TOP_SHADOW_OFFSET_Y;
+  const bottomPadding = options.bottomPadding ?? DEFAULT_BOTTOM_PADDING;
 
   return useMemo(() => {
     if (width === 0 || height === 0) return [];
 
-    const input: GenerateDandelionConfigsInput = {
+    const input: GenerateFieldFlowerConfigsInput = {
       screenWidth: width,
       screenHeight: height,
-      rng: createRng(hashSeedString(DANDELION_SEED)),
+      rng: createRng(hashSeedString(FIELD_FLOWER_SEED)),
       count,
       minLeaves,
       maxLeaves,
@@ -106,9 +109,10 @@ export function useDandelionConfigs(
       clusterShadowOffsetY,
       flowerTopShadowOffsetX,
       flowerTopShadowOffsetY,
+      bottomPadding,
     };
 
-    return generateDandelionConfigs(input);
+    return generateFieldFlowerConfigs(input);
   }, [
     width,
     height,
@@ -132,5 +136,6 @@ export function useDandelionConfigs(
     clusterShadowOffsetY,
     flowerTopShadowOffsetX,
     flowerTopShadowOffsetY,
+    bottomPadding,
   ]);
 }
