@@ -150,6 +150,13 @@ describe('generateFieldFlowerConfigs', () => {
     }
   });
 
+  it('defaults occupant to null for every config', () => {
+    const configs = generateFieldFlowerConfigs(buildInput({ count: 5 }));
+    for (const fc of configs) {
+      expect(fc.occupant).toBeNull();
+    }
+  });
+
   it('distributes flower types roughly evenly for a large count', () => {
     const configs = generateFieldFlowerConfigs(buildInput({ count: 200 }));
     const counts: Record<string, number> = {};

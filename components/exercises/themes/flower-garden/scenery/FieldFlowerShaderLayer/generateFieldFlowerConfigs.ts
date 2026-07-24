@@ -251,6 +251,7 @@ export function generateFieldFlowerConfigs(
       clusterShadowOffsetY,
       flowerTopShadowOffsetX,
       flowerTopShadowOffsetY,
+      occupant: null,
     });
   }
 

@@ -15,6 +15,9 @@ import {
   FLOWER_GARDEN_IMAGE_ASSETS,
   FLOWER_GARDEN_PRELOAD_TOTAL,
   LEAF_SOURCES,
+  LYCAENIDAE_BODY_SOURCE,
+  LYCAENIDAE_LEFT_WING_SOURCES,
+  LYCAENIDAE_RIGHT_WING_SOURCES,
   PETAL_SOURCES,
   POPPY_FLOWER_SOURCES,
   POPPY_LEAF_SOURCES,
@@ -30,6 +33,7 @@ import {
   type FlowerGardenDandelionKey,
   type FlowerGardenPetalKey,
   type FlowerGardenPoppyKey,
+  type FlowerGardenLycaenidaeKey,
   type FlowerGardenThemeImages,
   type FlowerGardenWildVioletKey,
 } from './flowerGardenThemeAssets';
@@ -116,6 +120,15 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         }
         for (let i = 0; i < wildVioletEntries.length; i++) {
           wildVioletEntries[i]!;
+          trackSource();
+        }
+
+        const lycaenidaeEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae,
+        ) as Array<[FlowerGardenLycaenidaeKey, number]>;
+
+        for (let i = 0; i < lycaenidaeEntries.length; i++) {
+          lycaenidaeEntries[i]!;
           trackSource();
         }
 
@@ -509,6 +522,63 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        let lycaenidaeBodyImage: SkImage | null = null;
+        try {
+          lycaenidaeBodyImage = await loadSkiaImage(LYCAENIDAE_BODY_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load lycaenidae body SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const lycaenidaeLeftWingLoadResults = await Promise.allSettled(
+          LYCAENIDAE_LEFT_WING_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode lycaenidae left wing image');
+            }
+            return img;
+          }),
+        );
+        const lycaenidaeWingLeftImages: SkImage[] = [];
+        for (const result of lycaenidaeLeftWingLoadResults) {
+          if (result.status === 'fulfilled') {
+            lycaenidaeWingLeftImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a lycaenidae left wing image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const lycaenidaeRightWingLoadResults = await Promise.allSettled(
+          LYCAENIDAE_RIGHT_WING_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode lycaenidae right wing image');
+            }
+            return img;
+          }),
+        );
+        const lycaenidaeWingRightImages: SkImage[] = [];
+        for (const result of lycaenidaeRightWingLoadResults) {
+          if (result.status === 'fulfilled') {
+            lycaenidaeWingRightImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a lycaenidae right wing image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -533,6 +603,9 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             wildVioletStemImages: wildVioletStemImages.length === WILD_VIOLET_STEM_SOURCES.length ? wildVioletStemImages : null,
             wildVioletLeafImages: wildVioletLeafImages.length === WILD_VIOLET_LEAF_SOURCES.length ? wildVioletLeafImages : null,
             wildVioletFlowerImages: wildVioletFlowerImages.length === WILD_VIOLET_FLOWER_SOURCES.length ? wildVioletFlowerImages : null,
+            lycaenidaeBodyImage,
+            lycaenidaeWingLeftImages: lycaenidaeWingLeftImages.length === LYCAENIDAE_LEFT_WING_SOURCES.length ? lycaenidaeWingLeftImages : null,
+            lycaenidaeWingRightImages: lycaenidaeWingRightImages.length === LYCAENIDAE_RIGHT_WING_SOURCES.length ? lycaenidaeWingRightImages : null,
           },
         });
       } catch (error) {

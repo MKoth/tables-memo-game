@@ -79,6 +79,27 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     flower3: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_flower3.png'),
     flower4: require('../../../../../../assets/images/flower_garden_theme/wild_violet/wild_violet_flower4.png'),
   },
+  lycaenidae: {
+    body: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_body.png'),
+    leftWing1: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing1.png'),
+    leftWing2: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing2.png'),
+    leftWing3: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing3.png'),
+    leftWing4: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing4.png'),
+    leftWing5: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing5.png'),
+    leftWing6: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing6.png'),
+    leftWing7: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing7.png'),
+    leftWing8: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing8.png'),
+    leftWing9: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_left_wing9.png'),
+    rightWing1: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing1.png'),
+    rightWing2: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing2.png'),
+    rightWing3: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing3.png'),
+    rightWing4: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing4.png'),
+    rightWing5: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing5.png'),
+    rightWing6: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing6.png'),
+    rightWing7: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing7.png'),
+    rightWing8: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing8.png'),
+    rightWing9: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing9.png'),
+  },
 } as const;
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
@@ -252,6 +273,52 @@ export const WILD_VIOLET_LEAF_SOURCES = [
   WILD_VIOLET_LEAF4_SOURCE,
 ] as const;
 
+export const LYCAENIDAE_BODY_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.body;
+
+export const LYCAENIDAE_LEFT_WING1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing1;
+export const LYCAENIDAE_LEFT_WING2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing2;
+export const LYCAENIDAE_LEFT_WING3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing3;
+export const LYCAENIDAE_LEFT_WING4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing4;
+export const LYCAENIDAE_LEFT_WING5_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing5;
+export const LYCAENIDAE_LEFT_WING6_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing6;
+export const LYCAENIDAE_LEFT_WING7_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing7;
+export const LYCAENIDAE_LEFT_WING8_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing8;
+export const LYCAENIDAE_LEFT_WING9_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.leftWing9;
+
+export const LYCAENIDAE_RIGHT_WING1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing1;
+export const LYCAENIDAE_RIGHT_WING2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing2;
+export const LYCAENIDAE_RIGHT_WING3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing3;
+export const LYCAENIDAE_RIGHT_WING4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing4;
+export const LYCAENIDAE_RIGHT_WING5_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing5;
+export const LYCAENIDAE_RIGHT_WING6_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing6;
+export const LYCAENIDAE_RIGHT_WING7_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing7;
+export const LYCAENIDAE_RIGHT_WING8_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing8;
+export const LYCAENIDAE_RIGHT_WING9_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae.rightWing9;
+
+export const LYCAENIDAE_LEFT_WING_SOURCES = [
+  LYCAENIDAE_LEFT_WING1_SOURCE,
+  LYCAENIDAE_LEFT_WING2_SOURCE,
+  LYCAENIDAE_LEFT_WING3_SOURCE,
+  LYCAENIDAE_LEFT_WING4_SOURCE,
+  LYCAENIDAE_LEFT_WING5_SOURCE,
+  LYCAENIDAE_LEFT_WING6_SOURCE,
+  LYCAENIDAE_LEFT_WING7_SOURCE,
+  LYCAENIDAE_LEFT_WING8_SOURCE,
+  LYCAENIDAE_LEFT_WING9_SOURCE,
+] as const;
+
+export const LYCAENIDAE_RIGHT_WING_SOURCES = [
+  LYCAENIDAE_RIGHT_WING1_SOURCE,
+  LYCAENIDAE_RIGHT_WING2_SOURCE,
+  LYCAENIDAE_RIGHT_WING3_SOURCE,
+  LYCAENIDAE_RIGHT_WING4_SOURCE,
+  LYCAENIDAE_RIGHT_WING5_SOURCE,
+  LYCAENIDAE_RIGHT_WING6_SOURCE,
+  LYCAENIDAE_RIGHT_WING7_SOURCE,
+  LYCAENIDAE_RIGHT_WING8_SOURCE,
+  LYCAENIDAE_RIGHT_WING9_SOURCE,
+] as const;
+
 export type FlowerGardenPetalKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.roses;
 export type FlowerGardenBushKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bush;
 export type FlowerGardenSoilKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.soil;
@@ -259,6 +326,7 @@ export type FlowerGardenDandelionKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.d
 export type FlowerGardenChamomileKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.chamomile;
 export type FlowerGardenPoppyKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.poppy;
 export type FlowerGardenWildVioletKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.wild_violet;
+export type FlowerGardenLycaenidaeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae;
 
 export type FlowerGardenThemeImages = {
   roses: Record<FlowerGardenPetalKey, unknown>;
@@ -282,6 +350,9 @@ export type FlowerGardenThemeImages = {
   wildVioletStemImages: SkImage[] | null;
   wildVioletLeafImages: SkImage[] | null;
   wildVioletFlowerImages: SkImage[] | null;
+  lycaenidaeBodyImage: SkImage | null;
+  lycaenidaeWingLeftImages: SkImage[] | null;
+  lycaenidaeWingRightImages: SkImage[] | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT =

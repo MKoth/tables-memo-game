@@ -31,6 +31,7 @@ export type FieldFlowerConfig = {
   clusterShadowOffsetY: number;
   flowerTopShadowOffsetX: number;
   flowerTopShadowOffsetY: number;
+  occupant: number | null;
 };
 
 export type FieldFlowerUniforms = {
