@@ -33,7 +33,7 @@ uniform shader rightWingTexture;
 
 const float WING_STRETCH_GAIN = ${ROAMER_BUTTERFLY_WING_STRETCH_GAIN};
 const float WING_LENGTH_RATIO = ${ROAMER_BUTTERFLY_WING_LENGTH_RATIO};
-const float WING_OVERLAP = 5.0;
+const float WING_OVERLAP = 21.0;
 
 half4 sampleBody(vec2 localPos, float halfW, float halfH) {
   vec2 bodyUV = vec2(
@@ -49,22 +49,23 @@ half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
   float effLen = halfW * WING_LENGTH_RATIO * (1.0 + flap * WING_STRETCH_GAIN);
   float effHalfH = effLen / (wingLeftAspect * 2.0);
 
-  float leftEdge = -(bodyEdge + effLen);
+  float tipX = -(bodyEdge + effLen);
   float rightEdge = -bodyEdge + WING_OVERLAP;
 
-  if (localPos.x < leftEdge || localPos.x > rightEdge) {
+  if (localPos.x < tipX || localPos.x > rightEdge) {
     return half4(0.0);
   }
 
-  float u = (localPos.x - leftEdge) / effLen;
-  if (u > 1.0) { u = 1.0; }
+  float u = -(localPos.x + bodyEdge) / effLen;
+  if (u < 0.0) { u = 0.0; }
   float v = localPos.y / (effHalfH * 2.0) + 0.5;
 
   if (v < 0.0 || v > 1.0) {
     return half4(0.0);
   }
 
-  vec2 texCoord = vec2(u * wingLeftImageW, v * wingLeftImageH);
+  float imageU = 1.0 - u;
+  vec2 texCoord = vec2(imageU * wingLeftImageW, v * wingLeftImageH);
   return leftWingTexture.eval(texCoord);
 }
 
@@ -74,14 +75,14 @@ half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float flap) {
   float effHalfH = effLen / (wingRightAspect * 2.0);
 
   float leftEdge = bodyEdge - WING_OVERLAP;
-  float rightEdge = bodyEdge + effLen;
+  float tipX = bodyEdge + effLen;
 
-  if (localPos.x < leftEdge || localPos.x > rightEdge) {
+  if (localPos.x < leftEdge || localPos.x > tipX) {
     return half4(0.0);
   }
 
-  float u = (localPos.x - leftEdge) / effLen;
-  if (u > 1.0) { u = 1.0; }
+  float u = (localPos.x - bodyEdge) / effLen;
+  if (u < 0.0) { u = 0.0; }
   float v = localPos.y / (effHalfH * 2.0) + 0.5;
 
   if (v < 0.0 || v > 1.0) {
@@ -107,23 +108,23 @@ half4 main(float2 fragCoord) {
     return color;
   }
 
+  if (abs(local.x) < halfW && abs(local.y) < halfH) {
+    half4 bodyColor = sampleBody(local, halfW, halfH);
+    if (bodyColor.a > 0.01) {
+      color = bodyColor;
+    }
+  }
+
   half4 leftWingColor = sampleLeftWing(local, halfW, halfH, wingLeftFlap);
   if (leftWingColor.a > 0.01) {
-    color = leftWingColor;
+    float a = leftWingColor.a;
+    color = leftWingColor * a + color * (1.0 - a);
   }
 
   half4 rightWingColor = sampleRightWing(local, halfW, halfH, wingRightFlap);
   if (rightWingColor.a > 0.01) {
     float a = rightWingColor.a;
     color = rightWingColor * a + color * (1.0 - a);
-  }
-
-  if (abs(local.x) < halfW && abs(local.y) < halfH) {
-    half4 bodyColor = sampleBody(local, halfW, halfH);
-    if (bodyColor.a > 0.01) {
-      float a = bodyColor.a;
-      color = bodyColor * a + color * (1.0 - a);
-    }
   }
 
   if (color.a < 0.01) {
