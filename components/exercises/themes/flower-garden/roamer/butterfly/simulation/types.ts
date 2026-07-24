@@ -1,3 +1,5 @@
+import type { SharedValue } from 'react-native-reanimated';
+
 export enum FlightState {
   FLYING_IDLE = 0,
   FLYING_CRUISE = 1,
@@ -39,6 +41,20 @@ export type ButterflyState = {
   sitTimer: number;
 };
 
+export type ButterflySharedRuntime = {
+  spawn: ButterflySpawn;
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+  angle: SharedValue<number>;
+  speed: SharedValue<number>;
+  wingPhase: SharedValue<number>;
+  state: SharedValue<number>;
+  stateTimer: SharedValue<number>;
+  wanderAngle: SharedValue<number>;
+  prevAngle: SharedValue<number>;
+  targetBaseSpeed: SharedValue<number>;
+};
+
 export type ButterflyRuntime = {
   spawn: ButterflySpawn;
   state: ButterflyState;
@@ -72,4 +88,16 @@ export type ButterflyUniforms = {
   legPhasesAdvanced: number[];
   renderMode: number;
   bodyTint?: number[];
+};
+
+export type ButterflyRuntimeEntry = {
+  spawn: ButterflySpawn;
+  runtime: ButterflySharedRuntime;
+};
+
+export type SwimZone = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 };

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   ImageShader,
   Rect,
@@ -7,6 +7,7 @@ import {
   type SkRuntimeEffect,
   type SkImage,
 } from '@shopify/react-native-skia';
+import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 import {
   BUTTERFLY_SKSL,
   butterflyUniformDefaults,
@@ -14,9 +15,9 @@ import {
 import {
   ROAMER_BUTTERFLY_BODY_LENGTH,
   ROAMER_BUTTERFLY_BODY_THICKNESS,
-  ROAMER_BUTTERFLY_WING_STRETCH_GAIN,
-  ROAMER_BUTTERFLY_WING_LENGTH_RATIO,
   ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN,
+  ROAMER_BUTTERFLY_WING_LENGTH_RATIO,
+  ROAMER_BUTTERFLY_WING_STRETCH_GAIN,
 } from './config/butterflySettings';
 
 function compileButterflyEffect(): SkRuntimeEffect {
@@ -29,14 +30,13 @@ function compileButterflyEffect(): SkRuntimeEffect {
 
 const butterflyEffect = compileButterflyEffect();
 
+const bodyTintUniform: number[] = [1, 1, 1];
+
 export type RoamerButterflyInstanceProps = {
-  bodyCenterX: number;
-  bodyCenterY: number;
-  bodyAngle: number;
-  bodyScale: number;
-  wingLeftFlap: number;
-  wingRightFlap: number;
-  legVisibility: number;
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+  angle: SharedValue<number>;
+  wingPhase: SharedValue<number>;
   renderMode: number;
   bodyImage: SkImage;
   leftWingImage: SkImage;
@@ -44,20 +44,15 @@ export type RoamerButterflyInstanceProps = {
 };
 
 export function RoamerButterflyInstance({
-  bodyCenterX,
-  bodyCenterY,
-  bodyAngle,
-  bodyScale,
-  wingLeftFlap,
-  wingRightFlap,
-  legVisibility,
+  x,
+  y,
+  angle,
+  wingPhase,
   renderMode,
   bodyImage,
   leftWingImage,
   rightWingImage,
 }: RoamerButterflyInstanceProps) {
-  const bodyDisplayW = ROAMER_BUTTERFLY_BODY_LENGTH * bodyScale;
-  const bodyDisplayH = ROAMER_BUTTERFLY_BODY_THICKNESS * bodyScale;
   const bodyImageW = bodyImage.width();
   const bodyImageH = bodyImage.height();
   const leftWingImageW = leftWingImage.width();
@@ -67,65 +62,62 @@ export function RoamerButterflyInstance({
   const leftWingAspect = leftWingImageW / leftWingImageH;
   const rightWingAspect = rightWingImageW / rightWingImageH;
 
-  const halfW = bodyDisplayW / 2;
-  const halfH = bodyDisplayH / 2;
+  const rect = useDerivedValue(() => {
+    const bodyScale = 1;
+    const bodyDisplayW = ROAMER_BUTTERFLY_BODY_LENGTH * bodyScale;
+    const bodyDisplayH = ROAMER_BUTTERFLY_BODY_THICKNESS * bodyScale;
+    const halfW = bodyDisplayW / 2;
+    const halfH = bodyDisplayH / 2;
 
-  const leftWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * (1 + wingLeftFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
-  const rightWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * (1 + wingRightFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
-  const leftWingHalfH = halfH * 1.2;
-  const rightWingHalfH = halfH * 1.2;
+    const wingFlap = Math.sin(wingPhase.value);
+    const leftWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * (1 + wingFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
+    const rightWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * (1 + wingFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
+    const wingHalfH = halfH * 1.2;
 
-  const cosA = Math.abs(Math.cos(bodyAngle));
-  const sinA = Math.abs(Math.sin(bodyAngle));
+    const bodyAngle = angle.value;
+    const cosA = Math.abs(Math.cos(bodyAngle));
+    const sinA = Math.abs(Math.sin(bodyAngle));
 
-  const wingSpanX = Math.max(leftWingEffLen, rightWingEffLen);
-  const wingSpanY = Math.max(leftWingHalfH, rightWingHalfH);
+    const wingSpanX = Math.max(leftWingEffLen, rightWingEffLen);
+    const wingSpanY = wingHalfH;
 
-  const rectHalfW = (halfW + wingSpanX) * cosA + (halfH + wingSpanY) * sinA;
-  const rectHalfH = (halfW + wingSpanX) * sinA + (halfH + wingSpanY) * cosA;
+    const rectHalfW = (halfW + wingSpanX) * cosA + (halfH + wingSpanY) * sinA;
+    const rectHalfH = (halfW + wingSpanX) * sinA + (halfH + wingSpanY) * cosA;
 
-  const margin = ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN;
-  const rectX = bodyCenterX - rectHalfW - margin;
-  const rectY = bodyCenterY - rectHalfH - margin;
-  const rectWidth = Math.max(1, rectHalfW * 2 + margin * 2);
-  const rectHeight = Math.max(1, rectHalfH * 2 + margin * 2);
+    const margin = ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN;
+    return {
+      x: x.value - rectHalfW - margin,
+      y: y.value - rectHalfH - margin,
+      width: Math.max(1, rectHalfW * 2 + margin * 2),
+      height: Math.max(1, rectHalfH * 2 + margin * 2),
+    };
+  });
 
-  const uniforms = useMemo(() => ({
-    bodyW: bodyDisplayW,
-    bodyH: bodyDisplayH,
-    bodyCenterX,
-    bodyCenterY,
-    bodyAngle,
-    bodyScale,
-    bodyImageW: bodyImageW,
-    bodyImageH: bodyImageH,
-    wingLeftFlap,
-    wingRightFlap,
-    wingLeftImageW: leftWingImageW,
-    wingLeftImageH: leftWingImageH,
-    wingRightImageW: rightWingImageW,
-    wingRightImageH: rightWingImageH,
-    wingLeftAspect: leftWingAspect,
-    wingRightAspect: rightWingAspect,
-    legVisibility,
-    renderMode,
-    bodyTint: butterflyUniformDefaults.bodyTint,
-    bodyTintStrength: butterflyUniformDefaults.bodyTintStrength,
-  }), [
-    bodyDisplayW, bodyDisplayH, bodyCenterX, bodyCenterY, bodyAngle, bodyScale,
-    bodyImageW, bodyImageH,
-    wingLeftFlap, wingRightFlap,
-    leftWingImageW, leftWingImageH, rightWingImageW, rightWingImageH,
-    leftWingAspect, rightWingAspect,
-    legVisibility, renderMode,
-  ]);
-
-  const rect = useMemo(() => ({
-    x: rectX,
-    y: rectY,
-    width: rectWidth,
-    height: rectHeight,
-  }), [rectX, rectY, rectWidth, rectHeight]);
+  const uniforms = useDerivedValue(() => {
+    const wingFlap = Math.sin(wingPhase.value);
+    return {
+      bodyW: ROAMER_BUTTERFLY_BODY_LENGTH,
+      bodyH: ROAMER_BUTTERFLY_BODY_THICKNESS,
+      bodyCenterX: x.value,
+      bodyCenterY: y.value,
+      bodyAngle: angle.value,
+      bodyScale: 1,
+      bodyImageW: bodyImageW,
+      bodyImageH: bodyImageH,
+      wingLeftFlap: wingFlap,
+      wingRightFlap: wingFlap,
+      wingLeftImageW: leftWingImageW,
+      wingLeftImageH: leftWingImageH,
+      wingRightImageW: rightWingImageW,
+      wingRightImageH: rightWingImageH,
+      wingLeftAspect: leftWingAspect,
+      wingRightAspect: rightWingAspect,
+      legVisibility: 0,
+      renderMode,
+      bodyTint: bodyTintUniform,
+      bodyTintStrength: butterflyUniformDefaults.bodyTintStrength,
+    };
+  });
 
   return (
     <Rect rect={rect}>

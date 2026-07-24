@@ -1,10 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Canvas, Group } from '@shopify/react-native-skia';
 import { useExerciseLayout } from '../../../../core';
 import { useFlowerGardenAssetsContext } from '../../core/providers/FlowerGardenAssetsProvider';
-import { createRng, hashSeedString } from '../../scenery/BushShaderLayer/helpers/seededRandom';
-import { createButterflySpawnsFromWords } from './simulation/createButterflySpawns';
+import { useButterflySimulation } from './simulation/useButterflySimulation';
 import { RoamerButterflyInstance } from './RoamerButterflyInstance';
 
 export type RoamerButterflyLayerProps = {
@@ -19,61 +18,59 @@ export function RoamerButterflyLayer({
   sessionId = 'default',
 }: RoamerButterflyLayerProps) {
   const layout = useExerciseLayout();
-  const { roamerRect } = layout;
+  const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
   const { images } = useFlowerGardenAssetsContext();
 
-  const seed = useMemo(() => hashSeedString(`butterfly-${sessionId}`), [sessionId]);
-  const rng = useMemo(() => createRng(seed), [seed]);
+  const sim = useButterflySimulation({
+    words,
+    width: screenWidth,
+    height: screenHeight,
+    roamerRect,
+    layoutKey,
+    sessionId,
+  });
 
-  const spawns = useMemo(
-    () => createButterflySpawnsFromWords(words, rng),
-    [words, rng],
-  );
-
-  const instances = useMemo(() => {
-    if (
-      images.lycaenidaeBodyImage == null ||
-      images.lycaenidaeWingLeftImages == null ||
-      images.lycaenidaeWingRightImages == null
-    ) {
-      return [];
-    }
-
-    return spawns.map((spawn, index) => {
-      const leftWingImage = images.lycaenidaeWingLeftImages![spawn.wingPairIndex];
-      const rightWingImage = images.lycaenidaeWingRightImages![spawn.wingPairIndex];
-
-      if (leftWingImage == null || rightWingImage == null) {
-        return null;
-      }
-
-      return (
-        <RoamerButterflyInstance
-          key={`butterfly-${index}`}
-          bodyCenterX={roamerRect.x + spawn.xRatio * roamerRect.w}
-          bodyCenterY={roamerRect.y + spawn.yRatio * roamerRect.h}
-          bodyAngle={0}
-          bodyScale={1}
-          wingLeftFlap={0}
-          wingRightFlap={0}
-          legVisibility={0}
-          renderMode={0}
-          bodyImage={images.lycaenidaeBodyImage!}
-          leftWingImage={leftWingImage}
-          rightWingImage={rightWingImage}
-        />
-      );
-    }).filter(Boolean);
-  }, [spawns, images.lycaenidaeBodyImage, images.lycaenidaeWingLeftImages, images.lycaenidaeWingRightImages, roamerRect]);
-
-  if (instances.length === 0) {
+  if (
+    images.lycaenidaeBodyImage == null ||
+    images.lycaenidaeWingLeftImages == null ||
+    images.lycaenidaeWingRightImages == null
+  ) {
     return null;
   }
+
+  if (sim.runtimeEntries.length === 0) {
+    return null;
+  }
+
+  const bodyImage = images.lycaenidaeBodyImage;
+  const leftWingImages = images.lycaenidaeWingLeftImages;
+  const rightWingImages = images.lycaenidaeWingRightImages;
 
   return (
     <Canvas style={styles.canvas} pointerEvents={interactive ? 'auto' : 'none'}>
       <Group>
-        {instances}
+        {sim.runtimeEntries.map(({ spawn, runtime }, index) => {
+          const leftWingImage = leftWingImages[spawn.wingPairIndex];
+          const rightWingImage = rightWingImages[spawn.wingPairIndex];
+
+          if (leftWingImage == null || rightWingImage == null) {
+            return null;
+          }
+
+          return (
+            <RoamerButterflyInstance
+              key={`butterfly-${index}`}
+              x={runtime.x}
+              y={runtime.y}
+              angle={runtime.angle}
+              wingPhase={runtime.wingPhase}
+              renderMode={0}
+              bodyImage={bodyImage}
+              leftWingImage={leftWingImage}
+              rightWingImage={rightWingImage}
+            />
+          );
+        })}
       </Group>
     </Canvas>
   );
