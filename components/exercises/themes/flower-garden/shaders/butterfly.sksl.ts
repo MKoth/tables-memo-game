@@ -33,8 +33,7 @@ uniform shader rightWingTexture;
 
 const float WING_STRETCH_GAIN = ${ROAMER_BUTTERFLY_WING_STRETCH_GAIN};
 const float WING_LENGTH_RATIO = ${ROAMER_BUTTERFLY_WING_LENGTH_RATIO};
-
-const float LEG_REGION_COUNT = 6.0;
+const float WING_OVERLAP = 5.0;
 
 half4 sampleBody(vec2 localPos, float halfW, float halfH) {
   vec2 bodyUV = vec2(
@@ -51,13 +50,14 @@ half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
   float effHalfH = effLen / (wingLeftAspect * 2.0);
 
   float leftEdge = -(bodyEdge + effLen);
-  float rightEdge = -bodyEdge;
+  float rightEdge = -bodyEdge + WING_OVERLAP;
 
   if (localPos.x < leftEdge || localPos.x > rightEdge) {
     return half4(0.0);
   }
 
-  float u = (localPos.x - leftEdge) / (rightEdge - leftEdge);
+  float u = (localPos.x - leftEdge) / effLen;
+  if (u > 1.0) { u = 1.0; }
   float v = localPos.y / (effHalfH * 2.0) + 0.5;
 
   if (v < 0.0 || v > 1.0) {
@@ -73,14 +73,15 @@ half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float flap) {
   float effLen = halfW * WING_LENGTH_RATIO * (1.0 + flap * WING_STRETCH_GAIN);
   float effHalfH = effLen / (wingRightAspect * 2.0);
 
-  float leftEdge = bodyEdge;
+  float leftEdge = bodyEdge - WING_OVERLAP;
   float rightEdge = bodyEdge + effLen;
 
   if (localPos.x < leftEdge || localPos.x > rightEdge) {
     return half4(0.0);
   }
 
-  float u = (localPos.x - leftEdge) / (rightEdge - leftEdge);
+  float u = (localPos.x - leftEdge) / effLen;
+  if (u > 1.0) { u = 1.0; }
   float v = localPos.y / (effHalfH * 2.0) + 0.5;
 
   if (v < 0.0 || v > 1.0) {
