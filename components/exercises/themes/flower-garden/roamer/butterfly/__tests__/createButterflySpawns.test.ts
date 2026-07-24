@@ -41,27 +41,6 @@ describe('createRandomVisualSpawn', () => {
     expect(spawn.initialAngle).toBeLessThanOrEqual(6.2831855);
   });
 
-  it('returns wingLeftPhaseOffset as a valid radian value', () => {
-    const rng = createRng(0xc0ffee);
-    const spawn = createRandomVisualSpawn(rng);
-    expect(spawn.wingLeftPhaseOffset).toBeGreaterThanOrEqual(0);
-    expect(spawn.wingLeftPhaseOffset).toBeLessThanOrEqual(6.2831855);
-  });
-
-  it('returns wingRightPhaseOffset as a valid radian value', () => {
-    const rng = createRng(0xc0ffee);
-    const spawn = createRandomVisualSpawn(rng);
-    expect(spawn.wingRightPhaseOffset).toBeGreaterThanOrEqual(0);
-    expect(spawn.wingRightPhaseOffset).toBeLessThanOrEqual(6.2831855);
-  });
-
-  it('returns positive wing frequencies', () => {
-    const rng = createRng(0xc0ffee);
-    const spawn = createRandomVisualSpawn(rng);
-    expect(spawn.wingLeftFreq).toBeGreaterThan(0);
-    expect(spawn.wingRightFreq).toBeGreaterThan(0);
-  });
-
   it('returns legPhaseOffsets with 6 entries', () => {
     const rng = createRng(0xc0ffee);
     const spawn = createRandomVisualSpawn(rng);

@@ -15,10 +15,6 @@ export type ButterflySpawn = {
   yRatio: number;
   phase: number;
   initialAngle: number;
-  wingLeftPhaseOffset: number;
-  wingRightPhaseOffset: number;
-  wingLeftFreq: number;
-  wingRightFreq: number;
   legPhaseOffsets: number[];
   wingPairIndex: number;
 };
@@ -48,11 +44,13 @@ export type ButterflySharedRuntime = {
   angle: SharedValue<number>;
   speed: SharedValue<number>;
   wingPhase: SharedValue<number>;
+  noisePhase: SharedValue<number>;
+  idleNoisePhase: SharedValue<number>;
+  pathCoeff: SharedValue<number>;
   state: SharedValue<number>;
   stateTimer: SharedValue<number>;
   wanderAngle: SharedValue<number>;
   prevAngle: SharedValue<number>;
-  targetBaseSpeed: SharedValue<number>;
 };
 
 export type ButterflyRuntime = {

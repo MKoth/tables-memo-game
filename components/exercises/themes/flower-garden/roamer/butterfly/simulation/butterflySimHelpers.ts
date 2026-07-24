@@ -1,12 +1,9 @@
 import {
-  ROAMER_BUTTERFLY_BASE_SPEED_MAX,
-  ROAMER_BUTTERFLY_BASE_SPEED_MIN,
   ROAMER_BUTTERFLY_CRUISE_DURATION_JITTER,
   ROAMER_BUTTERFLY_CRUISE_DURATION_MAX,
   ROAMER_BUTTERFLY_CRUISE_DURATION_MIN,
   ROAMER_BUTTERFLY_IDLE_DURATION_BASE,
   ROAMER_BUTTERFLY_IDLE_DURATION_JITTER,
-  ROAMER_BUTTERFLY_SPEED_PICK_BIAS,
 } from '../config/butterflySimConfig';
 
 const TWO_PI = Math.PI * 2;
@@ -46,10 +43,20 @@ export function pickWanderAngle(currentAngle: number, phase: number): number {
   return currentAngle + deviation;
 }
 
-export function pickTargetBaseSpeed(phase: number): number {
+export function pickErraticWanderAngle(
+  currentAngle: number,
+  phase: number,
+  wingPhaseDiff: number,
+): number {
   'worklet';
-  const t = Math.pow(Math.abs(Math.sin(phase * 2.13)) * 0.5 + 0.25 * Math.abs(Math.sin(phase * 5.7 + 1.1)), 1 / ROAMER_BUTTERFLY_SPEED_PICK_BIAS);
-  return ROAMER_BUTTERFLY_BASE_SPEED_MIN + t * (ROAMER_BUTTERFLY_BASE_SPEED_MAX - ROAMER_BUTTERFLY_BASE_SPEED_MIN);
+  const baseDev = Math.sin(phase * 7.3) * 0.15 + Math.sin(phase * 13.7) * 0.1;
+  const spikeTrigger = Math.abs(Math.sin(phase * 2.17));
+  const spike = spikeTrigger > 0.88
+    ? Math.sin(phase * 5.3) * 0.35
+    : 0;
+  const wingMod = Math.sin(wingPhaseDiff * 0.7 + phase * 3.1) * 0.2;
+  const deviation = (baseDev + spike + wingMod) * Math.PI;
+  return currentAngle + deviation;
 }
 
 export function cruiseDurationForPhase(phase: number): number {

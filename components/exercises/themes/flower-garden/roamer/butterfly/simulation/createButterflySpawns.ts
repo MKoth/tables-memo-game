@@ -4,10 +4,6 @@ import type { ButterflySpawn } from './types';
 
 const TWO_PI = Math.PI * 2;
 
-function randomInRange(rng: Rng, min: number, max: number): number {
-  return min + rng() * (max - min);
-}
-
 export function createRandomVisualSpawn(rng: Rng): ButterflySpawn {
   const wingPairIndex = assignWingPairIndices(1, rng)[0]!;
 
@@ -16,10 +12,6 @@ export function createRandomVisualSpawn(rng: Rng): ButterflySpawn {
     yRatio: rng(),
     phase: rng() * TWO_PI,
     initialAngle: rng() * TWO_PI,
-    wingLeftPhaseOffset: rng() * TWO_PI,
-    wingRightPhaseOffset: rng() * TWO_PI,
-    wingLeftFreq: randomInRange(rng, 50, 50),
-    wingRightFreq: randomInRange(rng, 50, 50),
     legPhaseOffsets: Array.from({ length: 6 }, () => rng() * TWO_PI),
     wingPairIndex,
   };
@@ -41,10 +33,6 @@ export function createButterflySpawnsFromWords(
       yRatio: rng(),
       phase: rng() * TWO_PI,
       initialAngle: rng() * TWO_PI,
-      wingLeftPhaseOffset: rng() * TWO_PI,
-      wingRightPhaseOffset: rng() * TWO_PI,
-      wingLeftFreq: randomInRange(rng, 2, 6),
-      wingRightFreq: randomInRange(rng, 2, 6),
       legPhaseOffsets: Array.from({ length: 6 }, () => rng() * TWO_PI),
       wingPairIndex: wingPairIndices[i]!,
     };
