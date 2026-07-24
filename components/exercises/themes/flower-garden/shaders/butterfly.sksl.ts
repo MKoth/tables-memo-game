@@ -4,8 +4,9 @@ import {
   ROAMER_BUTTERFLY_BODY_SCALE,
   ROAMER_BUTTERFLY_WING_STRETCH_GAIN,
   ROAMER_BUTTERFLY_WING_THIN_GAIN,
-  ROAMER_BUTTERFLY_WING_LENGTH,
-  ROAMER_BUTTERFLY_WING_WIDTH,
+  ROAMER_BUTTERFLY_WING_LENGTH_RATIO,
+  ROAMER_BUTTERFLY_WING_WIDTH_RATIO,
+  ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN,
 } from '../roamer/butterfly/config/butterflySettings';
 
 export const BUTTERFLY_SKSL = `
@@ -33,8 +34,8 @@ uniform shader rightWingTexture;
 
 const float WING_STRETCH_GAIN = ${ROAMER_BUTTERFLY_WING_STRETCH_GAIN};
 const float WING_THIN_GAIN = ${ROAMER_BUTTERFLY_WING_THIN_GAIN};
-const float WING_LENGTH = ${ROAMER_BUTTERFLY_WING_LENGTH};
-const float WING_WIDTH = ${ROAMER_BUTTERFLY_WING_WIDTH};
+const float WING_LENGTH_RATIO = ${ROAMER_BUTTERFLY_WING_LENGTH_RATIO};
+const float WING_WIDTH_RATIO = ${ROAMER_BUTTERFLY_WING_WIDTH_RATIO};
 
 const float LEG_REGION_COUNT = 6.0;
 
@@ -49,8 +50,8 @@ half4 sampleBody(vec2 localPos, float halfW, float halfH) {
 
 half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
   float bodyEdge = halfW;
-  float effLen = WING_LENGTH * (1.0 + flap * WING_STRETCH_GAIN);
-  float effW = WING_WIDTH * (1.0 - flap * WING_THIN_GAIN);
+  float effLen = halfW * WING_LENGTH_RATIO * (1.0 + flap * WING_STRETCH_GAIN);
+  float effW = halfH * WING_WIDTH_RATIO * (1.0 - flap * WING_THIN_GAIN);
 
   float leftEdge = -(bodyEdge + effLen);
   float rightEdge = -bodyEdge;
@@ -70,8 +71,8 @@ half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
 
 half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float flap) {
   float bodyEdge = halfW;
-  float effLen = WING_LENGTH * (1.0 + flap * WING_STRETCH_GAIN);
-  float effW = WING_WIDTH * (1.0 - flap * WING_THIN_GAIN);
+  float effLen = halfW * WING_LENGTH_RATIO * (1.0 + flap * WING_STRETCH_GAIN);
+  float effW = halfH * WING_WIDTH_RATIO * (1.0 - flap * WING_THIN_GAIN);
 
   float leftEdge = bodyEdge;
   float rightEdge = bodyEdge + effLen;

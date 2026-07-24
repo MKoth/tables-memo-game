@@ -12,10 +12,12 @@ import {
   butterflyUniformDefaults,
 } from '../../shaders/butterfly.sksl';
 import {
+  ROAMER_BUTTERFLY_BODY_LENGTH,
+  ROAMER_BUTTERFLY_BODY_THICKNESS,
   ROAMER_BUTTERFLY_WING_STRETCH_GAIN,
   ROAMER_BUTTERFLY_WING_THIN_GAIN,
-  ROAMER_BUTTERFLY_WING_LENGTH,
-  ROAMER_BUTTERFLY_WING_WIDTH,
+  ROAMER_BUTTERFLY_WING_LENGTH_RATIO,
+  ROAMER_BUTTERFLY_WING_WIDTH_RATIO,
   ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN,
 } from './config/butterflySettings';
 
@@ -56,26 +58,28 @@ export function RoamerButterflyInstance({
   leftWingImage,
   rightWingImage,
 }: RoamerButterflyInstanceProps) {
-  const bodyW = bodyImage.width();
-  const bodyH = bodyImage.height();
-  const leftWingW = leftWingImage.width();
-  const leftWingH = leftWingImage.height();
-  const rightWingW = rightWingImage.width();
-  const rightWingH = rightWingImage.height();
+  const bodyDisplayW = ROAMER_BUTTERFLY_BODY_LENGTH * bodyScale;
+  const bodyDisplayH = ROAMER_BUTTERFLY_BODY_THICKNESS * bodyScale;
+  const bodyImageW = bodyImage.width();
+  const bodyImageH = bodyImage.height();
+  const leftWingImageW = leftWingImage.width();
+  const leftWingImageH = leftWingImage.height();
+  const rightWingImageW = rightWingImage.width();
+  const rightWingImageH = rightWingImage.height();
 
-  const halfW = (bodyW * bodyScale) / 2;
-  const halfH = (bodyH * bodyScale) / 2;
+  const halfW = bodyDisplayW / 2;
+  const halfH = bodyDisplayH / 2;
 
-  const leftWingEffLen = ROAMER_BUTTERFLY_WING_LENGTH * (1 + wingLeftFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
-  const leftWingEffW = ROAMER_BUTTERFLY_WING_WIDTH * (1 - wingLeftFlap * ROAMER_BUTTERFLY_WING_THIN_GAIN);
-  const rightWingEffLen = ROAMER_BUTTERFLY_WING_LENGTH * (1 + wingRightFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
-  const rightWingEffW = ROAMER_BUTTERFLY_WING_WIDTH * (1 - wingRightFlap * ROAMER_BUTTERFLY_WING_THIN_GAIN);
+  const leftWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * (1 + wingLeftFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
+  const leftWingEffW = halfH * ROAMER_BUTTERFLY_WING_WIDTH_RATIO * (1 - wingLeftFlap * ROAMER_BUTTERFLY_WING_THIN_GAIN);
+  const rightWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * (1 + wingRightFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
+  const rightWingEffW = halfH * ROAMER_BUTTERFLY_WING_WIDTH_RATIO * (1 - wingRightFlap * ROAMER_BUTTERFLY_WING_THIN_GAIN);
 
   const cosA = Math.abs(Math.cos(bodyAngle));
   const sinA = Math.abs(Math.sin(bodyAngle));
 
-  const wingSpanX = Math.max(leftWingEffLen, rightWingEffLen) * halfW;
-  const wingSpanY = Math.max(leftWingEffW, rightWingEffW) * halfH;
+  const wingSpanX = Math.max(leftWingEffLen, rightWingEffLen);
+  const wingSpanY = Math.max(leftWingEffW, rightWingEffW);
 
   const rectHalfW = (halfW + wingSpanX) * cosA + (halfH + wingSpanY) * sinA;
   const rectHalfH = (halfW + wingSpanX) * sinA + (halfH + wingSpanY) * cosA;
@@ -87,28 +91,29 @@ export function RoamerButterflyInstance({
   const rectHeight = Math.max(1, rectHalfH * 2 + margin * 2);
 
   const uniforms = useMemo(() => ({
-    bodyW,
-    bodyH,
+    bodyW: bodyDisplayW,
+    bodyH: bodyDisplayH,
     bodyCenterX,
     bodyCenterY,
     bodyAngle,
     bodyScale,
-    bodyImageW: bodyW,
-    bodyImageH: bodyH,
+    bodyImageW: bodyImageW,
+    bodyImageH: bodyImageH,
     wingLeftFlap,
     wingRightFlap,
-    wingLeftImageW: leftWingW,
-    wingLeftImageH: leftWingH,
-    wingRightImageW: rightWingW,
-    wingRightImageH: rightWingH,
+    wingLeftImageW: leftWingImageW,
+    wingLeftImageH: leftWingImageH,
+    wingRightImageW: rightWingImageW,
+    wingRightImageH: rightWingImageH,
     legVisibility,
     renderMode,
     bodyTint: butterflyUniformDefaults.bodyTint,
     bodyTintStrength: butterflyUniformDefaults.bodyTintStrength,
   }), [
-    bodyW, bodyH, bodyCenterX, bodyCenterY, bodyAngle, bodyScale,
+    bodyDisplayW, bodyDisplayH, bodyCenterX, bodyCenterY, bodyAngle, bodyScale,
+    bodyImageW, bodyImageH,
     wingLeftFlap, wingRightFlap,
-    leftWingW, leftWingH, rightWingW, rightWingH,
+    leftWingImageW, leftWingImageH, rightWingImageW, rightWingImageH,
     legVisibility, renderMode,
   ]);
 
@@ -126,8 +131,8 @@ export function RoamerButterflyInstance({
           image={bodyImage}
           x={0}
           y={0}
-          width={bodyW}
-          height={bodyH}
+          width={bodyImageW}
+          height={bodyImageH}
           fit="fill"
           tx="clamp"
           ty="clamp"
@@ -136,8 +141,8 @@ export function RoamerButterflyInstance({
           image={leftWingImage}
           x={0}
           y={0}
-          width={leftWingW}
-          height={leftWingH}
+          width={leftWingImageW}
+          height={leftWingImageH}
           fit="fill"
           tx="clamp"
           ty="clamp"
@@ -146,8 +151,8 @@ export function RoamerButterflyInstance({
           image={rightWingImage}
           x={0}
           y={0}
-          width={rightWingW}
-          height={rightWingH}
+          width={rightWingImageW}
+          height={rightWingImageH}
           fit="fill"
           tx="clamp"
           ty="clamp"
