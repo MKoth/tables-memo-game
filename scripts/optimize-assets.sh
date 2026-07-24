@@ -27,6 +27,7 @@ ASSETS_DIR="$(cd "$(dirname "$0")/../assets" && pwd)"
 THEME_IMAGES_DIR="$ASSETS_DIR/images/undersea_theme"
 ROSES_DIR="$ASSETS_DIR/images/flower_garden_theme/roses"
 SOIL_DIR="$ASSETS_DIR/images/flower_garden_theme/soil"
+LYCAENIDAE_DIR="$ASSETS_DIR/images/flower_garden_theme/lycaenidae"
 
 if command -v magick &>/dev/null; then
   IM="magick"
@@ -137,6 +138,16 @@ process_rose "$ROSES_DIR/stem.png" "64x768"
 echo ""
 echo "=== Soil (grass-tilable: 300x300 palette-optimised tile, was 1254x1254) ==="
 process_rose "$SOIL_DIR/grass-tilable.png" "300x300"
+
+echo ""
+echo "=== Lycaenidae butterflies (resize 128x128 body, 64x96 wings, 64-colour palette) ==="
+LY_BODY="$LYCAENIDAE_DIR/lycaenidae_body.png"
+if [[ -f "$LY_BODY" ]]; then
+  process_rose "$LY_BODY" "128x128"
+fi
+for f in "$LYCAENIDAE_DIR"/lycaenidae_left_wing*.png "$LYCAENIDAE_DIR"/lycaenidae_right_wing*.png; do
+  process_rose "$f" "64x96"
+done
 
 echo ""
 echo "All done. Clear Metro cache to pick up new assets:"
