@@ -11,8 +11,8 @@ The generic floating word-display role in the exercise framework. A WordSprite c
 _Avoid_: jellyfish (use only when describing the undersea realisation specifically)
 
 **Roamer**:
-The generic roaming capturable-creature role in the exercise framework. A Roamer free-roams the screen on a simulation layer, can be tapped or captured, and carries a word (typically in the translation-match exercise). The undersea theme realises this role as a koi fish; another theme could use a bird, a butterfly, or any other roaming creature.
-_Avoid_: koi, fish (use only when describing the undersea realisation specifically)
+The generic roaming capturable-creature role in the exercise framework. A Roamer free-roams the screen on a simulation layer, can be tapped or captured, and carries a word (typically in the translation-match exercise). The undersea theme realises this role as a koi fish; the flower-garden theme realises it as a butterfly.
+_Avoid_: koi, fish, butterfly (use only when describing a theme's realisation specifically)
 
 **Scenery**:
 The generic scene-background role in the exercise framework. Scenery fills the visual background behind the exercises. The undersea theme realises this as a seafloor with stones and seaweed; another theme could use a garden, a sky, or any other scene.
@@ -55,6 +55,42 @@ _Avoid_: petal (reserved for the rose head), foliage
 **Leaf side**:
 Whether a rose leaf sits on the outer or inner arc of its stem's quadratic bezier curve, determined once at stem initialisation by the sign of the dot product of the leaf's outward direction and the stem's normal at the leaf's `t` parameter. Outer leaves draw in front of the stem band; inner leaves draw behind. Since the stem geometry is constant, this per-leaf pre-computation is equivalent to a per-pixel test in the shader.
 _Avoid_: leaf front/behind, leaf z
+
+**Butterfly**:
+The flower-garden realisation of a Roamer — the visual creature that free-roams the roamer zone in the flower-garden theme. A butterfly is composed of one body image and two wing images (left and right) drawn from a fixed 9-variant wing-pair set. The undersea theme's koi is the equivalent realisation; the two are interchangeable at the `Roamer` contract level.
+_Avoid_: lycaenidae (reserved for the asset family / folder name), moth, pollinator
+
+**Wing pair**:
+A single index in `1..9` that selects the matching `lycaenidae_left_wing{i}.png` and `lycaenidae_right_wing{i}.png` images. Each butterfly is assigned one wing pair at spawn time. The assignment policy is: shuffle the 9 pairs, deal one each to the first 9 butterflies in spawn order, then for any overflow use `(startOffset + i) % 9` where `startOffset` is a random integer in `0..8` rolled once per session. Wings never change after spawn.
+_Avoid_: wing variant, wing set
+
+**Field flower**:
+A small flower-head image drawn as part of the flower-garden Scenery that roamers can land on. Field flowers are not WordSprites — they never carry a word and never appear in the WordSprite zone. Each field flower has a single world position (its anchor) and an `occupant: roamerIndex | null` slot recording which butterfly is sitting on it, or `null` if free. Field flowers live inside the roamer zone (not in a separate band) and are scattered at fixed count (12) per session, with placement seeded so the same session re-renders identically.
+_Avoid_: rest flower, landing pad, garden decoration
+
+**Flower anchor**:
+The `(x, y)` world position of a field flower's center, used as the sitting target for an approaching butterfly. When a butterfly is in `SITTING` or `WAIT_AT_TAKEN_FLOWER` state, its position is derived from the anchor (with small arc offset for sitting motion) — not from the flight sim.
+_Avoid_: flower position, landing point, perch
+
+**Occupant**:
+The single roamerIndex (or `null`) recorded on a field flower that names the butterfly currently sitting on it. A field flower is either free (`occupant === null`) or taken (`occupant !== null`). Two butterflies cannot share an occupant slot; an approaching butterfly that finds the slot taken enters `WAIT_AT_TAKEN_FLOWER` and polls the slot each frame for the transition to `null`.
+_Avoid_: sitter, owner, holder
+
+**Wing phase**:
+The accumulated per-wing flap phase in radians, advanced each frame as `phase += wingFrequency * dt`. Each butterfly carries two wing phases (left and right). The flap itself is a UV-thin / UV-thick stretch of the wing region driven by `sin(wingPhase)`. The phase difference between left and right wings (`leftPhase - rightPhase`) is the source of per-frame turn rate — that difference is the steering input, replacing the koi's wander-angle model for butterflies. Frequencies and the per-side phase offset are jittered per butterfly at spawn.
+_Avoid_: flap phase, wing angle
+
+**Flight state**:
+One of seven named states a butterfly occupies at a time: `FLYING_IDLE` (flapping in place, small drift on all axes, no target), `FLYING_CRUISE` (wander target + wing-phase steering toward it), `FLYING_TURN` (deliberate heading change to a new wander target), `APPROACH_FLOWER` (locked path to a specific flower anchor, wing phase still steers), `WAIT_AT_TAKEN_FLOWER` (position holds near the anchor, polls `occupant` for `null`), `SITTING` (on anchor, arc micro-motion, on-place turning, legs visible), `LIFTING_OFF` (scale lerps from sitting size to full, position at anchor, then transitions to `FLYING_CRUISE`). One state is active per butterfly; transitions are listed in the `Butterfly state machine` ADR.
+_Avoid_: mode, phase (reserved for wave/fin/flap phase), status
+
+**Sitting draw pass**:
+The render pass that draws a roamer whose state is in the sitting cluster (`WAIT_AT_TAKEN_FLOWER`, `SITTING`, `LIFTING_OFF`). The sitting pass and the flying pass read from the same roamer runtime and the same shared `positions` array — they are two Skia draw calls selecting the same instance, gated by the runtime's current `flight state`. Position and angle are the same world coordinates across passes; switching which pass renders is a one-frame toggle with no coordinate hand-off. This is the layer-flip pattern that avoids the flicker seen when a koi moves between pool and bubble (where the position would otherwise re-anchor at the wrong coord for one frame).
+_Avoid_: lower layer, sit pass, ground pass
+
+**Leg phase**:
+A per-leg accumulated phase, advanced each frame as `phase += legFrequency * dt`. Each butterfly carries six leg phases (3 per side). The body image is one PNG with all six legs baked in; the shader reveals each leg by a per-leg region mask whose bend amount is `sin(legPhase + legPhaseOffset)`. Leg phases advance only when the roamer is in `SITTING` and either arc-moving or on-place-turning; leg phases are held at zero (legs hidden) outside the sitting cluster and during the approach. The 6 legs step with a half-phase offset between the leg and its diagonal pair, producing a tripod gait.
+_Avoid_: leg cycle, walk phase, stride
 
 ### Domain terms
 
