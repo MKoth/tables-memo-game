@@ -33,6 +33,8 @@ uniform shader rightWingTexture;
 
 const float WING_STRETCH_GAIN = ${ROAMER_BUTTERFLY_WING_STRETCH_GAIN};
 const float WING_LENGTH_RATIO = ${ROAMER_BUTTERFLY_WING_LENGTH_RATIO};
+const float WING_LENGTH_SCALE = 0.25;
+const float WING_HEIGHT_RATIO = 1.2;
 const float WING_OVERLAP = 21.0;
 
 half4 sampleBody(vec2 localPos, float halfW, float halfH) {
@@ -46,43 +48,42 @@ half4 sampleBody(vec2 localPos, float halfW, float halfH) {
 
 half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
   float bodyEdge = halfW;
-  float effLen = halfW * WING_LENGTH_RATIO * (1.0 + flap * WING_STRETCH_GAIN);
-  float effHalfH = effLen / (wingLeftAspect * 2.0);
+  float effLen = halfW * WING_LENGTH_RATIO * WING_LENGTH_SCALE * (1.0 + flap * WING_STRETCH_GAIN);
+  float effHalfH = halfH * WING_HEIGHT_RATIO;
 
-  float tipX = -(bodyEdge + effLen);
+  float leftEdge = -(bodyEdge + effLen);
   float rightEdge = -bodyEdge + WING_OVERLAP;
+  float rectWidth = rightEdge - leftEdge;
 
-  if (localPos.x < tipX || localPos.x > rightEdge) {
+  if (localPos.x < leftEdge || localPos.x > rightEdge) {
     return half4(0.0);
   }
 
-  float u = -(localPos.x + bodyEdge) / effLen;
-  if (u < 0.0) { u = 0.0; }
+  float u = (localPos.x - leftEdge) / rectWidth;
   float v = localPos.y / (effHalfH * 2.0) + 0.5;
 
   if (v < 0.0 || v > 1.0) {
     return half4(0.0);
   }
 
-  float imageU = 1.0 - u;
-  vec2 texCoord = vec2(imageU * wingLeftImageW, v * wingLeftImageH);
+  vec2 texCoord = vec2(u * wingLeftImageW, v * wingLeftImageH);
   return leftWingTexture.eval(texCoord);
 }
 
 half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float flap) {
   float bodyEdge = halfW;
-  float effLen = halfW * WING_LENGTH_RATIO * (1.0 + flap * WING_STRETCH_GAIN);
-  float effHalfH = effLen / (wingRightAspect * 2.0);
+  float effLen = halfW * WING_LENGTH_RATIO * WING_LENGTH_SCALE * (1.0 + flap * WING_STRETCH_GAIN);
+  float effHalfH = halfH * WING_HEIGHT_RATIO;
 
   float leftEdge = bodyEdge - WING_OVERLAP;
   float tipX = bodyEdge + effLen;
+  float rectWidth = tipX - leftEdge;
 
   if (localPos.x < leftEdge || localPos.x > tipX) {
     return half4(0.0);
   }
 
-  float u = (localPos.x - bodyEdge) / effLen;
-  if (u < 0.0) { u = 0.0; }
+  float u = (localPos.x - leftEdge) / rectWidth;
   float v = localPos.y / (effHalfH * 2.0) + 0.5;
 
   if (v < 0.0 || v > 1.0) {
