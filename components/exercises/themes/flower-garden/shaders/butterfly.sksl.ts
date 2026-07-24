@@ -48,7 +48,8 @@ half4 sampleBody(vec2 localPos, float halfW, float halfH) {
 
 half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
   float bodyEdge = halfW;
-  float effLen = halfW * WING_LENGTH_RATIO * WING_LENGTH_SCALE * (1.0 + flap * WING_STRETCH_GAIN);
+  float contract = 1.0 - abs(flap) * WING_STRETCH_GAIN;
+  float effLen = halfW * WING_LENGTH_RATIO * WING_LENGTH_SCALE * contract;
   float effHalfH = halfH * WING_HEIGHT_RATIO;
 
   float leftEdge = -(bodyEdge + effLen);
@@ -72,7 +73,8 @@ half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
 
 half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float flap) {
   float bodyEdge = halfW;
-  float effLen = halfW * WING_LENGTH_RATIO * WING_LENGTH_SCALE * (1.0 + flap * WING_STRETCH_GAIN);
+  float contract = 1.0 - abs(flap) * WING_STRETCH_GAIN;
+  float effLen = halfW * WING_LENGTH_RATIO * WING_LENGTH_SCALE * contract;
   float effHalfH = halfH * WING_HEIGHT_RATIO;
 
   float leftEdge = bodyEdge - WING_OVERLAP;

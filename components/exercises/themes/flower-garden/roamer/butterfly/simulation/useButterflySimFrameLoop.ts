@@ -85,7 +85,7 @@ export function useButterflySimFrameLoop(
             if (distSq < SEPARATION_RADIUS_SQ && distSq > SEPARATION_MIN_DIST_SQ) {
               const dist = Math.sqrt(distSq);
               const overlap = 1 - dist / ROAMER_BUTTERFLY_SEPARATION_RADIUS;
-              const awayAngle = Math.atan2(dy, dx);
+              const awayAngle = Math.atan2(dy, dx) + Math.PI / 2;
               const str = Math.min(1, overlap * ROAMER_BUTTERFLY_SEPARATION_STEER * dt);
               runtime.angle.value = lerpAngle(runtime.angle.value, awayAngle, str);
               runtime.wanderAngle.value = lerpAngle(runtime.wanderAngle.value, awayAngle, str);

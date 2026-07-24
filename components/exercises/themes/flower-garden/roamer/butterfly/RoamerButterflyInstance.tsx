@@ -70,8 +70,9 @@ export function RoamerButterflyInstance({
     const halfH = bodyDisplayH / 2;
 
     const wingFlap = Math.sin(wingPhase.value);
-    const leftWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * (1 + wingFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
-    const rightWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * (1 + wingFlap * ROAMER_BUTTERFLY_WING_STRETCH_GAIN);
+    const contract = 1 - Math.abs(wingFlap) * ROAMER_BUTTERFLY_WING_STRETCH_GAIN;
+    const leftWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * contract;
+    const rightWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * contract;
     const wingHalfH = halfH * 1.2;
 
     const bodyAngle = angle.value;

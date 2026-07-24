@@ -43,8 +43,9 @@ export function updateButterfly(
       Math.min(1, ROAMER_BUTTERFLY_SPEED_LERP_FACTOR * dt),
     );
 
-    butterfly.x.value += Math.cos(butterfly.angle.value) * butterfly.speed.value * dt;
-    butterfly.y.value += Math.sin(butterfly.angle.value) * butterfly.speed.value * dt;
+    const moveAngle = butterfly.angle.value - Math.PI / 2;
+    butterfly.x.value += Math.cos(moveAngle) * butterfly.speed.value * dt;
+    butterfly.y.value += Math.sin(moveAngle) * butterfly.speed.value * dt;
 
     const nearEdge =
       butterfly.x.value < steerMinX ||
@@ -57,8 +58,8 @@ export function updateButterfly(
         centerY - butterfly.y.value,
         centerX - butterfly.x.value,
       );
-      const offset = Math.sin(cfg.phase * 5.1) * ROAMER_BUTTERFLY_BOUNDARY_TURN_OFFSET;
-      const turnTarget = toCenter + offset;
+      const turnTarget = toCenter + Math.PI / 2 +
+        Math.sin(cfg.phase * 5.1) * ROAMER_BUTTERFLY_BOUNDARY_TURN_OFFSET;
       butterfly.angle.value = lerpAngle(
         butterfly.angle.value,
         turnTarget,

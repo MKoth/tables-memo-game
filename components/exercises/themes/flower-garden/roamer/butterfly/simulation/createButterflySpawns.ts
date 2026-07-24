@@ -18,8 +18,8 @@ export function createRandomVisualSpawn(rng: Rng): ButterflySpawn {
     initialAngle: rng() * TWO_PI,
     wingLeftPhaseOffset: rng() * TWO_PI,
     wingRightPhaseOffset: rng() * TWO_PI,
-    wingLeftFreq: randomInRange(rng, 2, 6),
-    wingRightFreq: randomInRange(rng, 2, 6),
+    wingLeftFreq: randomInRange(rng, 50, 50),
+    wingRightFreq: randomInRange(rng, 50, 50),
     legPhaseOffsets: Array.from({ length: 6 }, () => rng() * TWO_PI),
     wingPairIndex,
   };
