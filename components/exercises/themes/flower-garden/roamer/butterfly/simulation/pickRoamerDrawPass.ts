@@ -3,6 +3,7 @@ import { FlightState } from './types';
 export type RoamerDrawPass = 'flying' | 'sitting' | 'none';
 
 export function pickRoamerDrawPass(flightState: FlightState): RoamerDrawPass {
+  'worklet';
   switch (flightState) {
     case FlightState.FLYING_IDLE:
     case FlightState.FLYING_CRUISE:
