@@ -12,6 +12,9 @@ export type PersistedButterflySimBundle = {
   swimZone: SwimZone;
   runtimeEntries: ButterflyRuntimeEntry[];
   sharedPositions: SharedValue<number[]>;
+  fieldFlowerAnchorsX: number[];
+  fieldFlowerAnchorsY: number[];
+  occupantSlots: SharedValue<number[]>;
 };
 
 export function buildButterflySimBundle(
@@ -21,6 +24,8 @@ export function buildButterflySimBundle(
   roamerRect: ZoneRect,
   layoutKey: string,
   rng: () => number,
+  fieldFlowerAnchorsX: number[] = [],
+  fieldFlowerAnchorsY: number[] = [],
 ): PersistedButterflySimBundle {
   const swimZone: SwimZone = {
     x: roamerRect.x,
@@ -47,6 +52,9 @@ export function buildButterflySimBundle(
     swimZone,
     runtimeEntries,
     sharedPositions: makeMutable(posArr),
+    fieldFlowerAnchorsX,
+    fieldFlowerAnchorsY,
+    occupantSlots: makeMutable(new Array(fieldFlowerAnchorsX.length).fill(-1)),
   };
 }
 

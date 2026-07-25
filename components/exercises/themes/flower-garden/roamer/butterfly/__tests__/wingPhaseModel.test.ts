@@ -33,6 +33,11 @@ function createMockRuntime(overrides?: { [key: string]: number }): any {
     stateTimer: sv(o.stateTimer ?? 10),
     wanderAngle: sv(o.wanderAngle ?? 0),
     prevAngle: sv(o.prevAngle ?? 0),
+    bodyScale: sv(o.bodyScale ?? 1),
+    targetFlowerIndex: sv(o.targetFlowerIndex ?? -1),
+    targetFlowerX: sv(o.targetFlowerX ?? 0),
+    targetFlowerY: sv(o.targetFlowerY ?? 0),
+    sitTimer: sv(o.sitTimer ?? 0),
   };
 }
 
@@ -41,6 +46,10 @@ const STEER_MAX = 400;
 const HARD_MIN = 10;
 const HARD_MAX = 590;
 const CENTER = 300;
+const EMPTY_ANCHORS_X: number[] = [];
+const EMPTY_ANCHORS_Y: number[] = [];
+const EMPTY_SLOTS: number[] = [];
+const ROAMER_IDX = 0;
 
 describe('wing-phase model', () => {
   it('wingPhase advances at rate derived from pathCoeff', () => {
@@ -49,7 +58,7 @@ describe('wing-phase model', () => {
     const expectedFreq = ROAMER_BUTTERFLY_WING_FREQ_MIN;
     const expectedPhase = expectedFreq * dt;
 
-    updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER);
+    updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX);
 
     expect(rt.wingPhase.value).toBeCloseTo(expectedPhase, 5);
   });
@@ -59,7 +68,7 @@ describe('wing-phase model', () => {
     const dt = 0.1;
     const expectedSpeed = ROAMER_BUTTERFLY_BASE_SPEED_MAX;
 
-    updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER);
+    updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX);
 
     expect(rt.speed.value).toBeGreaterThan(0);
     expect(rt.speed.value).toBeLessThanOrEqual(expectedSpeed);
@@ -75,7 +84,7 @@ describe('wing-phase model', () => {
     const initialCoeff = rt.pathCoeff.value;
     const dt = 0.02;
 
-    updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER);
+    updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX);
 
     expect(rt.state.value).toBe(FlightState.FLYING_CRUISE);
     expect(rt.pathCoeff.value).not.toBeCloseTo(initialCoeff, 5);
@@ -94,7 +103,7 @@ describe('wing-phase model', () => {
     const dt = 0.016;
     const initialX = rt.x.value;
 
-    updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER);
+    updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX);
 
     expect(rt.x.value).not.toBeCloseTo(initialX, 3);
   });
@@ -112,7 +121,7 @@ describe('wing-phase model', () => {
       });
       const dt = 0.02;
 
-      updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER);
+      updateButterfly(rt, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX);
 
       if (rt.state.value === FlightState.FLYING_CRUISE) {
         expect(rt.pathCoeff.value).toBeGreaterThanOrEqual(0);

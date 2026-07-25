@@ -24,17 +24,27 @@ export type ButterflyState = {
   positionX: number;
   positionY: number;
   angle: number;
+  speed: number;
   wingPhaseLeft: number;
   wingPhaseRight: number;
+  noisePhase: number;
+  idleNoisePhase: number;
   legPhases: number[];
   bodyScale: number;
   legVisibility: number;
   sitPhase: number;
-  targetFlowerIndex: number | null;
-  wanderTargetX: number | null;
-  wanderTargetY: number | null;
+  phase: number;
+  pathCoeff: number;
+  wanderAngle: number;
+  targetFlowerIndex: number;
+  targetFlowerX: number;
+  targetFlowerY: number;
+  wanderTargetX: number;
+  wanderTargetY: number;
+  lastTargetFlowerIndex: number;
   waitTimer: number;
   sitTimer: number;
+  stateTimer: number;
 };
 
 export type ButterflySharedRuntime = {
@@ -51,6 +61,11 @@ export type ButterflySharedRuntime = {
   stateTimer: SharedValue<number>;
   wanderAngle: SharedValue<number>;
   prevAngle: SharedValue<number>;
+  bodyScale: SharedValue<number>;
+  targetFlowerIndex: SharedValue<number>;
+  targetFlowerX: SharedValue<number>;
+  targetFlowerY: SharedValue<number>;
+  sitTimer: SharedValue<number>;
 };
 
 export type ButterflyRuntime = {

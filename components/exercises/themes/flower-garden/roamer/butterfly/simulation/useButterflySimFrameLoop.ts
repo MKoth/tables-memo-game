@@ -20,6 +20,9 @@ export function useButterflySimFrameLoop(
   runtimes: ButterflyRuntimeEntry[],
   swimZone: SwimZone,
   sharedPositions: SharedValue<number[]>,
+  fieldFlowerAnchorsX: number[],
+  fieldFlowerAnchorsY: number[],
+  occupantSlots: SharedValue<number[]>,
 ): void {
   const lastTimestamp = useSharedValue(-1);
   const butterflyCount = runtimes.length;
@@ -51,6 +54,7 @@ export function useButterflySimFrameLoop(
       lastTimestamp.value = frameInfo.timestamp;
 
       const pos = sharedPositions.value;
+      const occSlots = occupantSlots.value.slice();
 
       for (let i = 0; i < butterflyCount; i++) {
         const runtime = runtimes[i]!.runtime;
@@ -68,9 +72,16 @@ export function useButterflySimFrameLoop(
           hardMaxY,
           centerX,
           centerY,
+          fieldFlowerAnchorsX,
+          fieldFlowerAnchorsY,
+          occSlots,
+          i,
         );
 
-        if (runtime.state.value === FlightState.FLYING_CRUISE) {
+        if (
+          runtime.state.value === FlightState.FLYING_CRUISE ||
+          runtime.state.value === FlightState.APPROACH_FLOWER
+        ) {
           const fx = runtime.x.value;
           const fy = runtime.y.value;
 
@@ -97,11 +108,13 @@ export function useButterflySimFrameLoop(
         pos[i * 2 + 1] = runtime.y.value;
       }
 
+      occupantSlots.value = occSlots;
       sharedPositions.value = pos;
     },
     [
       lastTimestamp,
       sharedPositions,
+      occupantSlots,
       butterflyCount,
       runtimes,
       steerMinX,
@@ -114,6 +127,8 @@ export function useButterflySimFrameLoop(
       hardMaxY,
       centerX,
       centerY,
+      fieldFlowerAnchorsX,
+      fieldFlowerAnchorsY,
     ],
   );
 

@@ -1,29 +1,89 @@
 import { FlightState, type ButterflySharedRuntime } from './types';
-import {
-  ROAMER_BUTTERFLY_ANGLE_LERP,
-  ROAMER_BUTTERFLY_BASE_SPEED_MAX,
-  ROAMER_BUTTERFLY_BASE_SPEED_MIN,
-  ROAMER_BUTTERFLY_BOUNDARY_TURN_OFFSET,
-  ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED,
-  ROAMER_BUTTERFLY_IDLE_NOISE_AMPLITUDE,
-  ROAMER_BUTTERFLY_IDLE_NOISE_FREQUENCY,
-  ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MAX,
-  ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MIN,
-  ROAMER_BUTTERFLY_NOISE_FREQ_MAX,
-  ROAMER_BUTTERFLY_NOISE_FREQ_MIN,
-  ROAMER_BUTTERFLY_SPEED_LERP_FACTOR,
-  ROAMER_BUTTERFLY_WANDER_LERP,
-  ROAMER_BUTTERFLY_WING_FREQ_MAX,
-  ROAMER_BUTTERFLY_WING_FREQ_MIN,
-} from '../config/butterflySimConfig';
-import {
-  clamp,
-  cruiseDurationForPhase,
-  idleDurationForPhase,
-  lerp,
-  lerpAngle,
-  pickErraticWanderAngle,
-} from './butterflySimHelpers';
+import { stepFlightStateMachine, type FlightContext } from './stepFlightStateMachine';
+
+export function readButterflyState(
+  butterfly: ButterflySharedRuntime,
+): {
+  flightState: FlightState;
+  positionX: number;
+  positionY: number;
+  angle: number;
+  speed: number;
+  wingPhaseLeft: number;
+  wingPhaseRight: number;
+  noisePhase: number;
+  idleNoisePhase: number;
+  pathCoeff: number;
+  stateTimer: number;
+  wanderAngle: number;
+  bodyScale: number;
+  targetFlowerIndex: number;
+  targetFlowerX: number;
+  targetFlowerY: number;
+  sitTimer: number;
+} {
+  'worklet';
+  return {
+    flightState: butterfly.state.value as FlightState,
+    positionX: butterfly.x.value,
+    positionY: butterfly.y.value,
+    angle: butterfly.angle.value,
+    speed: butterfly.speed.value,
+    wingPhaseLeft: butterfly.wingPhase.value,
+    wingPhaseRight: butterfly.wingPhase.value,
+    noisePhase: butterfly.noisePhase.value,
+    idleNoisePhase: butterfly.idleNoisePhase.value,
+    pathCoeff: butterfly.pathCoeff.value,
+    stateTimer: butterfly.stateTimer.value,
+    wanderAngle: butterfly.wanderAngle.value,
+    bodyScale: butterfly.bodyScale.value,
+    targetFlowerIndex: butterfly.targetFlowerIndex.value,
+    targetFlowerX: butterfly.targetFlowerX.value,
+    targetFlowerY: butterfly.targetFlowerY.value,
+    sitTimer: butterfly.sitTimer.value,
+  };
+}
+
+export function writeButterflyState(
+  butterfly: ButterflySharedRuntime,
+  next: {
+    flightState: FlightState;
+    positionX: number;
+    positionY: number;
+    angle: number;
+    speed: number;
+    wingPhaseLeft: number;
+    wingPhaseRight: number;
+    noisePhase: number;
+    idleNoisePhase: number;
+    pathCoeff: number;
+    stateTimer: number;
+    wanderAngle: number;
+    bodyScale: number;
+    targetFlowerIndex: number;
+    targetFlowerX: number;
+    targetFlowerY: number;
+    sitTimer: number;
+  },
+): void {
+  'worklet';
+  butterfly.state.value = next.flightState;
+  butterfly.x.value = next.positionX;
+  butterfly.y.value = next.positionY;
+  butterfly.angle.value = next.angle;
+  butterfly.speed.value = next.speed;
+  butterfly.wingPhase.value = next.wingPhaseLeft;
+  butterfly.noisePhase.value = next.noisePhase;
+  butterfly.idleNoisePhase.value = next.idleNoisePhase;
+  butterfly.pathCoeff.value = next.pathCoeff;
+  butterfly.stateTimer.value = next.stateTimer;
+  butterfly.wanderAngle.value = next.wanderAngle;
+  butterfly.bodyScale.value = next.bodyScale;
+  butterfly.targetFlowerIndex.value = next.targetFlowerIndex;
+  butterfly.targetFlowerX.value = next.targetFlowerX;
+  butterfly.targetFlowerY.value = next.targetFlowerY;
+  butterfly.sitTimer.value = next.sitTimer;
+}
 
 export function updateButterfly(
   butterfly: ButterflySharedRuntime,
@@ -38,94 +98,68 @@ export function updateButterfly(
   hardMaxY: number,
   centerX: number,
   centerY: number,
+  fieldFlowerAnchorsX: number[],
+  fieldFlowerAnchorsY: number[],
+  occupantSlots: number[],
+  roamerIndex: number,
 ): void {
   'worklet';
-  const cfg = butterfly.spawn;
-  const pc = butterfly.pathCoeff.value;
+  const state = readButterflyState(butterfly);
 
-  const wingFreq = ROAMER_BUTTERFLY_WING_FREQ_MIN + pc * (ROAMER_BUTTERFLY_WING_FREQ_MAX - ROAMER_BUTTERFLY_WING_FREQ_MIN);
-  butterfly.wingPhase.value += wingFreq * dt;
+  const ctx: FlightContext = {
+    dt,
+    steerMinX,
+    steerMaxX,
+    steerMinY,
+    steerMaxY,
+    hardMinX,
+    hardMaxX,
+    hardMinY,
+    hardMaxY,
+    centerX,
+    centerY,
+    fieldFlowerAnchorsX,
+    fieldFlowerAnchorsY,
+    occupantSlots,
+    roamerIndex,
+  };
 
-  if (butterfly.state.value === FlightState.FLYING_CRUISE) {
-    const targetSpeed = ROAMER_BUTTERFLY_BASE_SPEED_MIN + pc * (ROAMER_BUTTERFLY_BASE_SPEED_MAX - ROAMER_BUTTERFLY_BASE_SPEED_MIN);
-    butterfly.speed.value = lerp(
-      butterfly.speed.value,
-      targetSpeed,
-      Math.min(1, ROAMER_BUTTERFLY_SPEED_LERP_FACTOR * dt),
-    );
+  const initialState = {
+    ...state,
+    phase: butterfly.spawn.phase,
+    legPhases: butterfly.spawn.legPhaseOffsets.map(() => 0),
+    wingPhaseLeft: state.wingPhaseLeft,
+    wingPhaseRight: state.wingPhaseRight,
+    legVisibility: 0,
+    sitPhase: 0,
+    targetFlowerX: state.targetFlowerX,
+    targetFlowerY: state.targetFlowerY,
+    wanderTargetX: 0,
+    wanderTargetY: 0,
+    lastTargetFlowerIndex: -1,
+    waitTimer: 0,
+    sitTimer: state.sitTimer,
+  };
 
-    butterfly.angle.value = lerpAngle(
-      butterfly.angle.value,
-      butterfly.wanderAngle.value,
-      Math.min(1, ROAMER_BUTTERFLY_WANDER_LERP * dt),
-    );
+  const next = stepFlightStateMachine(initialState, ctx);
 
-    const noiseFreq = ROAMER_BUTTERFLY_NOISE_FREQ_MIN + pc * (ROAMER_BUTTERFLY_NOISE_FREQ_MAX - ROAMER_BUTTERFLY_NOISE_FREQ_MIN);
-    butterfly.noisePhase.value += noiseFreq * dt;
-    const noiseAmp = ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MIN + pc * (ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MAX - ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MIN);
-    const noiseOffset = Math.sin(butterfly.noisePhase.value) * noiseAmp * dt;
-    const noisePerpX = Math.cos(butterfly.angle.value);
-    const noisePerpY = Math.sin(butterfly.angle.value);
-
-    const moveAngle = butterfly.angle.value - Math.PI / 2;
-    butterfly.x.value +=
-      Math.cos(moveAngle) * butterfly.speed.value * dt + noisePerpX * noiseOffset;
-    butterfly.y.value +=
-      Math.sin(moveAngle) * butterfly.speed.value * dt + noisePerpY * noiseOffset;
-
-    const nearEdge =
-      butterfly.x.value < steerMinX ||
-      butterfly.x.value > steerMaxX ||
-      butterfly.y.value < steerMinY ||
-      butterfly.y.value > steerMaxY;
-
-    if (nearEdge) {
-      const toCenter = Math.atan2(
-        centerY - butterfly.y.value,
-        centerX - butterfly.x.value,
-      );
-      const turnTarget = toCenter + Math.PI / 2 +
-        Math.sin(cfg.phase * 5.1) * ROAMER_BUTTERFLY_BOUNDARY_TURN_OFFSET;
-      butterfly.angle.value = lerpAngle(
-        butterfly.angle.value,
-        turnTarget,
-        Math.min(1, ROAMER_BUTTERFLY_ANGLE_LERP * dt),
-      );
-      butterfly.wanderAngle.value = turnTarget;
-    }
-
-    butterfly.stateTimer.value -= dt;
-    if (butterfly.stateTimer.value <= 0) {
-      butterfly.state.value = FlightState.FLYING_IDLE;
-      butterfly.speed.value = ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED;
-      butterfly.prevAngle.value = butterfly.angle.value;
-      butterfly.stateTimer.value = idleDurationForPhase(cfg.phase);
-    }
-  } else {
-    butterfly.speed.value = ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED;
-    butterfly.idleNoisePhase.value += ROAMER_BUTTERFLY_IDLE_NOISE_FREQUENCY * dt;
-    const idleAmp = ROAMER_BUTTERFLY_IDLE_NOISE_AMPLITUDE * dt;
-    const idleNoiseX = Math.sin(butterfly.idleNoisePhase.value) * idleAmp;
-    const idleNoiseY = Math.sin(butterfly.idleNoisePhase.value * 1.7 + 1.3) * idleAmp;
-    const driftAngle = cfg.phase * 2.0 + butterfly.wingPhase.value * 0.3;
-    butterfly.x.value += Math.cos(driftAngle) * ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED * dt + idleNoiseX;
-    butterfly.y.value += Math.sin(driftAngle) * ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED * dt + idleNoiseY;
-
-    butterfly.stateTimer.value -= dt;
-    if (butterfly.stateTimer.value <= 0) {
-      butterfly.pathCoeff.value = 0.5 + 0.5 * Math.sin(
-        butterfly.wingPhase.value * 3.17 + cfg.phase * 5.23,
-      );
-      butterfly.state.value = FlightState.FLYING_CRUISE;
-      butterfly.stateTimer.value = cruiseDurationForPhase(cfg.phase);
-      butterfly.wanderAngle.value = pickErraticWanderAngle(
-        butterfly.angle.value,
-        cfg.phase,
-        0,
-      );
-    }
-  }
-
-  butterfly.x.value = clamp(butterfly.x.value, hardMinX, hardMaxX);
-  butterfly.y.value = clamp(butterfly.y.value, hardMinY, hardMaxY);
+  writeButterflyState(butterfly, {
+    flightState: next.flightState,
+    positionX: next.positionX,
+    positionY: next.positionY,
+    angle: next.angle,
+    speed: next.speed,
+    wingPhaseLeft: next.wingPhaseLeft,
+    wingPhaseRight: next.wingPhaseRight,
+    noisePhase: next.noisePhase,
+    idleNoisePhase: next.idleNoisePhase,
+    pathCoeff: next.pathCoeff,
+    stateTimer: next.stateTimer,
+    wanderAngle: next.wanderAngle,
+    bodyScale: next.bodyScale,
+    targetFlowerIndex: next.targetFlowerIndex,
+    targetFlowerX: next.targetFlowerX,
+    targetFlowerY: next.targetFlowerY,
+    sitTimer: next.sitTimer,
+  });
 }

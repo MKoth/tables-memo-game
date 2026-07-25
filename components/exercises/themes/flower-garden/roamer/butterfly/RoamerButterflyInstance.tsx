@@ -37,6 +37,7 @@ export type RoamerButterflyInstanceProps = {
   y: SharedValue<number>;
   angle: SharedValue<number>;
   wingPhase: SharedValue<number>;
+  bodyScale: SharedValue<number>;
   renderMode: number;
   bodyImage: SkImage;
   leftWingImage: SkImage;
@@ -48,6 +49,7 @@ export function RoamerButterflyInstance({
   y,
   angle,
   wingPhase,
+  bodyScale,
   renderMode,
   bodyImage,
   leftWingImage,
@@ -63,9 +65,9 @@ export function RoamerButterflyInstance({
   const rightWingAspect = rightWingImageW / rightWingImageH;
 
   const rect = useDerivedValue(() => {
-    const bodyScale = 1;
-    const bodyDisplayW = ROAMER_BUTTERFLY_BODY_LENGTH * bodyScale;
-    const bodyDisplayH = ROAMER_BUTTERFLY_BODY_THICKNESS * bodyScale;
+    const bs = bodyScale.value;
+    const bodyDisplayW = ROAMER_BUTTERFLY_BODY_LENGTH * bs;
+    const bodyDisplayH = ROAMER_BUTTERFLY_BODY_THICKNESS * bs;
     const halfW = bodyDisplayW / 2;
     const halfH = bodyDisplayH / 2;
 
@@ -102,7 +104,7 @@ export function RoamerButterflyInstance({
       bodyCenterX: x.value,
       bodyCenterY: y.value,
       bodyAngle: angle.value,
-      bodyScale: 1,
+      bodyScale: bodyScale.value,
       bodyImageW: bodyImageW,
       bodyImageH: bodyImageH,
       wingLeftFlap: wingFlap,

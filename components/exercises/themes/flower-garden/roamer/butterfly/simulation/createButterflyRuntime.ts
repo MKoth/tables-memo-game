@@ -39,5 +39,10 @@ export function createButterflyRuntime(
     stateTimer: makeMutable(cruiseDurationForPhase(spawn.phase)),
     wanderAngle: makeMutable(spawn.initialAngle),
     prevAngle: makeMutable(spawn.initialAngle),
+    bodyScale: makeMutable(1),
+    targetFlowerIndex: makeMutable(-1),
+    targetFlowerX: makeMutable(0),
+    targetFlowerY: makeMutable(0),
+    sitTimer: makeMutable(0),
   };
 }

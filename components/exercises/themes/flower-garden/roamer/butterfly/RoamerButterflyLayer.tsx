@@ -1,10 +1,13 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { Canvas, Group } from '@shopify/react-native-skia';
+import { Canvas, Group, type SkImage } from '@shopify/react-native-skia';
+import { useDerivedValue } from 'react-native-reanimated';
 import { useExerciseLayout } from '../../../../core';
 import { useFlowerGardenAssetsContext } from '../../core/providers/FlowerGardenAssetsProvider';
 import { useButterflySimulation } from './simulation/useButterflySimulation';
 import { RoamerButterflyInstance } from './RoamerButterflyInstance';
+import { FlightState, type ButterflySharedRuntime } from './simulation/types';
+import { pickRoamerDrawPass } from './simulation/pickRoamerDrawPass';
 
 export type RoamerButterflyLayerProps = {
   words: string[];
@@ -58,13 +61,9 @@ export function RoamerButterflyLayer({
           }
 
           return (
-            <RoamerButterflyInstance
+            <ButterflyWithPasses
               key={`butterfly-${index}`}
-              x={runtime.x}
-              y={runtime.y}
-              angle={runtime.angle}
-              wingPhase={runtime.wingPhase}
-              renderMode={0}
+              runtime={runtime}
               bodyImage={bodyImage}
               leftWingImage={leftWingImage}
               rightWingImage={rightWingImage}
@@ -73,6 +72,59 @@ export function RoamerButterflyLayer({
         })}
       </Group>
     </Canvas>
+  );
+}
+
+function ButterflyWithPasses({
+  runtime,
+  bodyImage,
+  leftWingImage,
+  rightWingImage,
+}: {
+  runtime: ButterflySharedRuntime;
+  bodyImage: SkImage;
+  leftWingImage: SkImage;
+  rightWingImage: SkImage;
+}) {
+  const flyingOpacity = useDerivedValue(() => {
+    const pass = pickRoamerDrawPass(runtime.state.value as FlightState);
+    return pass === 'flying' ? 1 : 0;
+  });
+
+  const sittingOpacity = useDerivedValue(() => {
+    const pass = pickRoamerDrawPass(runtime.state.value as FlightState);
+    return pass === 'sitting' ? 1 : 0;
+  });
+
+  return (
+    <>
+      <Group opacity={flyingOpacity}>
+        <RoamerButterflyInstance
+          x={runtime.x}
+          y={runtime.y}
+          angle={runtime.angle}
+          wingPhase={runtime.wingPhase}
+          bodyScale={runtime.bodyScale}
+          renderMode={0}
+          bodyImage={bodyImage}
+          leftWingImage={leftWingImage}
+          rightWingImage={rightWingImage}
+        />
+      </Group>
+      <Group opacity={sittingOpacity}>
+        <RoamerButterflyInstance
+          x={runtime.x}
+          y={runtime.y}
+          angle={runtime.angle}
+          wingPhase={runtime.wingPhase}
+          bodyScale={runtime.bodyScale}
+          renderMode={1}
+          bodyImage={bodyImage}
+          leftWingImage={leftWingImage}
+          rightWingImage={rightWingImage}
+        />
+      </Group>
+    </>
   );
 }
 
