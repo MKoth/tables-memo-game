@@ -200,10 +200,10 @@ export function stepFlightStateMachine(
         };
       }
 
-      const approachAngle = Math.atan2(dy, dx) + Math.PI / 2;
+      const toFlower = Math.atan2(dy, dx);
       const speed = ROAMER_BUTTERFLY_BASE_SPEED_MIN;
-      let x = initial.positionX + Math.cos(approachAngle) * speed * ctx.dt;
-      let y = initial.positionY + Math.sin(approachAngle) * speed * ctx.dt;
+      let x = initial.positionX + Math.cos(toFlower) * speed * ctx.dt;
+      let y = initial.positionY + Math.sin(toFlower) * speed * ctx.dt;
 
       const clamped = { x: clamp(x, ctx.hardMinX, ctx.hardMaxX), y: clamp(y, ctx.hardMinY, ctx.hardMaxY) };
 
@@ -212,7 +212,7 @@ export function stepFlightStateMachine(
         flightState: FlightState.APPROACH_FLOWER,
         positionX: clamped.x,
         positionY: clamped.y,
-        angle: approachAngle,
+        angle: toFlower + Math.PI / 2,
         speed,
         stateTimer: initial.stateTimer - ctx.dt,
       };
