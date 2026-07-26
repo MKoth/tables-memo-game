@@ -53,7 +53,7 @@ half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float flap) {
   float effHalfH = halfH * WING_HEIGHT_RATIO;
 
   float leftEdge = -(bodyEdge + effLen);
-  float rightEdge = -bodyEdge + WING_OVERLAP;
+  float rightEdge = -bodyEdge + WING_OVERLAP * bodyScale;
   float rectWidth = rightEdge - leftEdge;
 
   if (localPos.x < leftEdge || localPos.x > rightEdge) {
@@ -77,7 +77,7 @@ half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float flap) {
   float effLen = halfW * WING_LENGTH_RATIO * WING_LENGTH_SCALE * contract;
   float effHalfH = halfH * WING_HEIGHT_RATIO;
 
-  float leftEdge = bodyEdge - WING_OVERLAP;
+  float leftEdge = bodyEdge - WING_OVERLAP * bodyScale;
   float tipX = bodyEdge + effLen;
   float rectWidth = tipX - leftEdge;
 

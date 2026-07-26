@@ -21,6 +21,9 @@ export function readButterflyState(
   targetFlowerX: number;
   targetFlowerY: number;
   sitTimer: number;
+  approachOrbitTimer: number;
+  sitWingPauseTimer: number;
+  sitWingPauseTriggered: number;
 } {
   'worklet';
   return {
@@ -41,6 +44,9 @@ export function readButterflyState(
     targetFlowerX: butterfly.targetFlowerX.value,
     targetFlowerY: butterfly.targetFlowerY.value,
     sitTimer: butterfly.sitTimer.value,
+    approachOrbitTimer: butterfly.approachOrbitTimer.value,
+    sitWingPauseTimer: butterfly.sitWingPauseTimer.value,
+    sitWingPauseTriggered: butterfly.sitWingPauseTriggered.value,
   };
 }
 
@@ -64,6 +70,9 @@ export function writeButterflyState(
     targetFlowerX: number;
     targetFlowerY: number;
     sitTimer: number;
+    approachOrbitTimer: number;
+    sitWingPauseTimer: number;
+    sitWingPauseTriggered: number;
   },
 ): void {
   'worklet';
@@ -83,6 +92,9 @@ export function writeButterflyState(
   butterfly.targetFlowerX.value = next.targetFlowerX;
   butterfly.targetFlowerY.value = next.targetFlowerY;
   butterfly.sitTimer.value = next.sitTimer;
+  butterfly.approachOrbitTimer.value = next.approachOrbitTimer;
+  butterfly.sitWingPauseTimer.value = next.sitWingPauseTimer;
+  butterfly.sitWingPauseTriggered.value = next.sitWingPauseTriggered;
 }
 
 export function updateButterfly(
@@ -139,6 +151,9 @@ export function updateButterfly(
     lastTargetFlowerIndex: -1,
     waitTimer: 0,
     sitTimer: state.sitTimer,
+    approachOrbitTimer: state.approachOrbitTimer,
+    sitWingPauseTimer: state.sitWingPauseTimer,
+    sitWingPauseTriggered: state.sitWingPauseTriggered,
   };
 
   const next = stepFlightStateMachine(initialState, ctx);
@@ -161,5 +176,8 @@ export function updateButterfly(
     targetFlowerX: next.targetFlowerX,
     targetFlowerY: next.targetFlowerY,
     sitTimer: next.sitTimer,
+    approachOrbitTimer: next.approachOrbitTimer,
+    sitWingPauseTimer: next.sitWingPauseTimer,
+    sitWingPauseTriggered: next.sitWingPauseTriggered,
   });
 }

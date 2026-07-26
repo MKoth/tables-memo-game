@@ -38,6 +38,9 @@ function createMockRuntime(overrides?: { [key: string]: number }): any {
     targetFlowerX: sv(o.targetFlowerX ?? 0),
     targetFlowerY: sv(o.targetFlowerY ?? 0),
     sitTimer: sv(o.sitTimer ?? 0),
+    approachOrbitTimer: sv(o.approachOrbitTimer ?? 0),
+    sitWingPauseTimer: sv(o.sitWingPauseTimer ?? 0),
+    sitWingPauseTriggered: sv(o.sitWingPauseTriggered ?? 0),
   };
 }
 

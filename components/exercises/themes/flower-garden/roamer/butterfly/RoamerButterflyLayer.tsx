@@ -55,14 +55,26 @@ export function RoamerButterflyLayer({
         {sim.runtimeEntries.map(({ spawn, runtime }, index) => {
           const leftWingImage = leftWingImages[spawn.wingPairIndex];
           const rightWingImage = rightWingImages[spawn.wingPairIndex];
-
-          if (leftWingImage == null || rightWingImage == null) {
-            return null;
-          }
-
+          if (leftWingImage == null || rightWingImage == null) return null;
           return (
-            <ButterflyWithPasses
-              key={`butterfly-${index}`}
+            <ButterflySittingPass
+              key={`sitting-${index}`}
+              runtime={runtime}
+              bodyImage={bodyImage}
+              leftWingImage={leftWingImage}
+              rightWingImage={rightWingImage}
+            />
+          );
+        })}
+      </Group>
+      <Group>
+        {sim.runtimeEntries.map(({ spawn, runtime }, index) => {
+          const leftWingImage = leftWingImages[spawn.wingPairIndex];
+          const rightWingImage = rightWingImages[spawn.wingPairIndex];
+          if (leftWingImage == null || rightWingImage == null) return null;
+          return (
+            <ButterflyFlyingPass
+              key={`flying-${index}`}
               runtime={runtime}
               bodyImage={bodyImage}
               leftWingImage={leftWingImage}
@@ -75,7 +87,7 @@ export function RoamerButterflyLayer({
   );
 }
 
-function ButterflyWithPasses({
+function ButterflySittingPass({
   runtime,
   bodyImage,
   leftWingImage,
@@ -86,45 +98,58 @@ function ButterflyWithPasses({
   leftWingImage: SkImage;
   rightWingImage: SkImage;
 }) {
-  const flyingOpacity = useDerivedValue(() => {
-    const pass = pickRoamerDrawPass(runtime.state.value as FlightState);
-    return pass === 'flying' ? 1 : 0;
-  });
-
-  const sittingOpacity = useDerivedValue(() => {
+  const opacity = useDerivedValue(() => {
     const pass = pickRoamerDrawPass(runtime.state.value as FlightState);
     return pass === 'sitting' ? 1 : 0;
   });
 
   return (
-    <>
-      <Group opacity={flyingOpacity}>
-        <RoamerButterflyInstance
-          x={runtime.x}
-          y={runtime.y}
-          angle={runtime.angle}
-          wingPhase={runtime.wingPhase}
-          bodyScale={runtime.bodyScale}
-          renderMode={0}
-          bodyImage={bodyImage}
-          leftWingImage={leftWingImage}
-          rightWingImage={rightWingImage}
-        />
-      </Group>
-      <Group opacity={sittingOpacity}>
-        <RoamerButterflyInstance
-          x={runtime.x}
-          y={runtime.y}
-          angle={runtime.angle}
-          wingPhase={runtime.wingPhase}
-          bodyScale={runtime.bodyScale}
-          renderMode={1}
-          bodyImage={bodyImage}
-          leftWingImage={leftWingImage}
-          rightWingImage={rightWingImage}
-        />
-      </Group>
-    </>
+    <Group opacity={opacity}>
+      <RoamerButterflyInstance
+        x={runtime.x}
+        y={runtime.y}
+        angle={runtime.angle}
+        wingPhase={runtime.wingPhase}
+        bodyScale={runtime.bodyScale}
+        renderMode={1}
+        bodyImage={bodyImage}
+        leftWingImage={leftWingImage}
+        rightWingImage={rightWingImage}
+      />
+    </Group>
+  );
+}
+
+function ButterflyFlyingPass({
+  runtime,
+  bodyImage,
+  leftWingImage,
+  rightWingImage,
+}: {
+  runtime: ButterflySharedRuntime;
+  bodyImage: SkImage;
+  leftWingImage: SkImage;
+  rightWingImage: SkImage;
+}) {
+  const opacity = useDerivedValue(() => {
+    const pass = pickRoamerDrawPass(runtime.state.value as FlightState);
+    return pass === 'flying' ? 1 : 0;
+  });
+
+  return (
+    <Group opacity={opacity}>
+      <RoamerButterflyInstance
+        x={runtime.x}
+        y={runtime.y}
+        angle={runtime.angle}
+        wingPhase={runtime.wingPhase}
+        bodyScale={runtime.bodyScale}
+        renderMode={0}
+        bodyImage={bodyImage}
+        leftWingImage={leftWingImage}
+        rightWingImage={rightWingImage}
+      />
+    </Group>
   );
 }
 

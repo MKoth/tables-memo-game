@@ -33,6 +33,9 @@ function makeState(overrides?: Partial<ButterflyState>): ButterflyState {
     waitTimer: 0,
     sitTimer: 0,
     stateTimer: 10,
+    approachOrbitTimer: 0,
+    sitWingPauseTimer: 0,
+    sitWingPauseTriggered: 0,
     ...overrides,
   };
 }

@@ -44,5 +44,8 @@ export function createButterflyRuntime(
     targetFlowerX: makeMutable(0),
     targetFlowerY: makeMutable(0),
     sitTimer: makeMutable(0),
+    approachOrbitTimer: makeMutable(0),
+    sitWingPauseTimer: makeMutable(0),
+    sitWingPauseTriggered: makeMutable(0),
   };
 }
