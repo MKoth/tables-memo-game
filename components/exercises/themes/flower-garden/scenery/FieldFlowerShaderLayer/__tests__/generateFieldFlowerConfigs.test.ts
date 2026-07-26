@@ -38,6 +38,10 @@ function buildInput(
     flowerTopShadowOffsetX: overrides.flowerTopShadowOffsetX ?? 0,
     flowerTopShadowOffsetY: overrides.flowerTopShadowOffsetY ?? 0,
     bottomPadding: overrides.bottomPadding ?? 0,
+    minSwingAmplitude: overrides.minSwingAmplitude ?? 3,
+    maxSwingAmplitude: overrides.maxSwingAmplitude ?? 10,
+    minSwingSpeed: overrides.minSwingSpeed ?? 1.0,
+    maxSwingSpeed: overrides.maxSwingSpeed ?? 2.0,
   };
 }
 

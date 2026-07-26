@@ -9,6 +9,8 @@ import {
   type SkImage,
   type SkRuntimeEffect,
 } from '@shopify/react-native-skia';
+import { useDerivedValue } from 'react-native-reanimated';
+import { useExerciseClockQuantized } from '../../../../core';
 import type { FieldFlowerConfig, FieldFlowerType } from './types';
 import { MAX_FIELD_FLOWERS, MAX_LEAVES_PER_FLOWER, COVERING_SIZE } from './types';
 import { DANDELION_SKSL } from '../../shaders/dandelion.sksl';
@@ -42,23 +44,13 @@ const flowerEffects: Record<FieldFlowerType, SkRuntimeEffect> = {
 
 const FLOWER_RECT_MARGIN = 20;
 
-function padArray(arr: readonly number[], target: number, fill = 0): number[] {
-  const len = Math.min(arr.length, target);
-  const out: number[] = [];
-  for (let i = 0; i < len; i++) {
-    out.push(arr[i] ?? fill);
-  }
-  for (let i = len; i < target; i++) {
-    out.push(fill);
-  }
-  return out;
-}
-
 function computeFlowerRect(
   config: FieldFlowerConfig,
   margin: number,
 ): { x: number; y: number; w: number; h: number } {
   const sg = 1.05;
+  const swingMargin = Math.abs(config.swingAmplitude) + 5;
+  const totalMargin = margin + swingMargin;
   const lx = config.headerX;
   const ly = config.headerY;
   const fx = config.headerX + config.offsetX;
@@ -71,10 +63,10 @@ function computeFlowerRect(
   const sfy = config.headerY + config.offsetY + config.flowerTopShadowOffsetY;
   const sflowerR = config.flowerSize * config.offsetScale * sg * 0.5;
 
-  const minX = Math.min(lx - leafR, fx - flowerR, slx - leafR, sfx - sflowerR) - margin;
-  const maxX = Math.max(lx + leafR, fx + flowerR, slx + leafR, sfx + sflowerR) + margin;
-  const minY = Math.min(ly - leafR, fy - flowerR, sly - leafR, sfy - sflowerR) - margin;
-  const maxY = Math.max(ly + leafR, fy + flowerR, sly + leafR, sfy + sflowerR) + margin;
+  const minX = Math.min(lx - leafR, fx - flowerR, slx - leafR, sfx - sflowerR) - totalMargin;
+  const maxX = Math.max(lx + leafR, fx + flowerR, slx + leafR, sfx + sflowerR) + totalMargin;
+  const minY = Math.min(ly - leafR, fy - flowerR, sly - leafR, sfy - sflowerR) - totalMargin;
+  const maxY = Math.max(ly + leafR, fy + flowerR, sly + leafR, sfy + sflowerR) + totalMargin;
 
   return {
     x: minX,
@@ -84,49 +76,12 @@ function computeFlowerRect(
   };
 }
 
-function pickFlowerUniforms(
-  config: FieldFlowerConfig,
-): Record<string, number | number[]> {
-  const leafVariantArray: number[] = [];
-  const leafLengthArray: number[] = [];
-  const leafWidthArray: number[] = [];
-  for (let j = 0; j < config.leafVariants.length; j++) {
-    leafVariantArray.push(config.leafVariants[j] ?? 0);
-    leafLengthArray.push(config.leafLengths[j] ?? 0);
-    leafWidthArray.push(config.leafWidths[j] ?? 0);
-  }
-
-  return {
-    dandelionCount: 1,
-    headerX: padArray([config.headerX], MAX_FIELD_FLOWERS),
-    headerY: padArray([config.headerY], MAX_FIELD_FLOWERS),
-    offsetX: padArray([config.offsetX], MAX_FIELD_FLOWERS),
-    offsetY: padArray([config.offsetY], MAX_FIELD_FLOWERS),
-    offsetScale: padArray([config.offsetScale], MAX_FIELD_FLOWERS),
-    stemBaseX: padArray([config.stemBaseX], MAX_FIELD_FLOWERS),
-    stemBaseY: padArray([config.stemBaseY], MAX_FIELD_FLOWERS),
-    stemBaseWidth: padArray([config.stemBaseWidth], MAX_FIELD_FLOWERS),
-    stemTopWidth: padArray([config.stemTopWidth], MAX_FIELD_FLOWERS),
-    stemVariant: padArray([config.stemVariant], MAX_FIELD_FLOWERS),
-    flowerVariant: padArray([config.flowerVariant], MAX_FIELD_FLOWERS),
-    leafCount: padArray([config.leafCount], MAX_FIELD_FLOWERS),
-    leafVariant: padArray(leafVariantArray, MAX_LEAVES_PER_FLOWER * MAX_FIELD_FLOWERS),
-    perLeafLength: padArray(leafLengthArray, MAX_LEAVES_PER_FLOWER * MAX_FIELD_FLOWERS),
-    perLeafWidth: padArray(leafWidthArray, MAX_LEAVES_PER_FLOWER * MAX_FIELD_FLOWERS),
-    flowerSize: padArray([config.flowerSize], MAX_FIELD_FLOWERS),
-    ringRotation: padArray([config.ringRotation], MAX_FIELD_FLOWERS),
-    clusterShadowOffsetX: padArray([config.clusterShadowOffsetX], MAX_FIELD_FLOWERS),
-    clusterShadowOffsetY: padArray([config.clusterShadowOffsetY], MAX_FIELD_FLOWERS),
-    flowerTopShadowOffsetX: padArray([config.flowerTopShadowOffsetX], MAX_FIELD_FLOWERS),
-    flowerTopShadowOffsetY: padArray([config.flowerTopShadowOffsetY], MAX_FIELD_FLOWERS),
-  };
-}
-
 type FieldFlowerRectProps = {
   config: FieldFlowerConfig;
   stemImages: readonly SkImage[];
   leafImages: readonly SkImage[];
   flowerImages: readonly SkImage[];
+  clock: ReturnType<typeof useExerciseClockQuantized>;
 };
 
 function FieldFlowerRect({
@@ -134,6 +89,7 @@ function FieldFlowerRect({
   stemImages,
   leafImages,
   flowerImages,
+  clock,
 }: FieldFlowerRectProps) {
   const { stemW, leafW, flowerW } = useMemo(() => {
     const stemImgW = stemImages.length >= 4 ? 1 : 0;
@@ -142,7 +98,62 @@ function FieldFlowerRect({
     return { stemW: stemImgW, leafW: leafImgW, flowerW: flowerImgW };
   }, [stemImages, leafImages, flowerImages]);
 
-  const uniforms = useMemo(() => pickFlowerUniforms(config), [config]);
+  const uniforms = useDerivedValue(() => {
+    const iTime = clock.value / 1000;
+    const swing =
+      Math.sin(iTime * config.swingSpeed + config.swingPhase) *
+      config.swingAmplitude;
+    const cosA = Math.cos(config.swingAngle);
+    const sinA = Math.sin(config.swingAngle);
+    const swingX = swing * cosA;
+    const swingY = swing * sinA;
+    const leafSwingX = swingX * 0.4;
+    const leafSwingY = swingY * 0.4;
+
+    const n = MAX_FIELD_FLOWERS;
+    const leafVariant: number[] = [];
+    const leafLength: number[] = [];
+    const leafWidth: number[] = [];
+    for (let j = 0; j < config.leafVariants.length; j++) {
+      leafVariant.push(config.leafVariants[j] ?? 0);
+      leafLength.push(config.leafLengths[j] ?? 0);
+      leafWidth.push(config.leafWidths[j] ?? 0);
+    }
+    const padLen = MAX_LEAVES_PER_FLOWER * n;
+
+    function pad(arr: readonly number[], target: number): number[] {
+      const len = Math.min(arr.length, target);
+      const out: number[] = [];
+      for (let i = 0; i < len; i++) out.push(arr[i] ?? 0);
+      for (let i = len; i < target; i++) out.push(0);
+      return out;
+    }
+
+    return {
+      dandelionCount: 1,
+      headerX: pad([config.headerX], n),
+      headerY: pad([config.headerY], n),
+      offsetX: pad([config.offsetX + swingX], n),
+      offsetY: pad([config.offsetY + swingY], n),
+      offsetScale: pad([config.offsetScale], n),
+      stemBaseX: pad([config.stemBaseX], n),
+      stemBaseY: pad([config.stemBaseY], n),
+      stemBaseWidth: pad([config.stemBaseWidth], n),
+      stemTopWidth: pad([config.stemTopWidth], n),
+      stemVariant: pad([config.stemVariant], n),
+      flowerVariant: pad([config.flowerVariant], n),
+      leafCount: pad([config.leafCount], n),
+      leafVariant: pad(leafVariant, padLen),
+      perLeafLength: pad(leafLength, padLen),
+      perLeafWidth: pad(leafWidth, padLen),
+      flowerSize: pad([config.flowerSize], n),
+      ringRotation: pad([config.ringRotation], n),
+      clusterShadowOffsetX: pad([config.clusterShadowOffsetX + leafSwingX], n),
+      clusterShadowOffsetY: pad([config.clusterShadowOffsetY + leafSwingY], n),
+      flowerTopShadowOffsetX: pad([config.flowerTopShadowOffsetX], n),
+      flowerTopShadowOffsetY: pad([config.flowerTopShadowOffsetY], n),
+    };
+  });
 
   const flowerRect = useMemo(
     () => computeFlowerRect(config, FLOWER_RECT_MARGIN),
@@ -259,6 +270,7 @@ function FieldFlowerShaderLayerImpl({
   wildVioletFlowerImages,
 }: FieldFlowerShaderLayerProps) {
   const { width, height } = useWindowDimensions();
+  const clock = useExerciseClockQuantized(20);
 
   const imageSets: Record<FieldFlowerType, FlowerImageSet> = useMemo(
     () => ({
@@ -313,6 +325,7 @@ function FieldFlowerShaderLayerImpl({
             stemImages={set.stemImages}
             leafImages={set.leafImages}
             flowerImages={set.flowerImages}
+            clock={clock}
           />
         );
       })}

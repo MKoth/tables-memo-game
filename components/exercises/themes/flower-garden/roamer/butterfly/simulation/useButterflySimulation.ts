@@ -88,6 +88,10 @@ export function useButterflySimulation({
       flowerTopShadowOffsetX: 0,
       flowerTopShadowOffsetY: -30,
       bottomPadding: 60,
+      minSwingAmplitude: 0,
+      maxSwingAmplitude: 0,
+      minSwingSpeed: 1.0,
+      maxSwingSpeed: 1.0,
     });
     return {
       x: configs.map(c => c.headerX),

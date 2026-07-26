@@ -34,6 +34,10 @@ export type GenerateFieldFlowerConfigsInput = {
   flowerTopShadowOffsetX: number;
   flowerTopShadowOffsetY: number;
   bottomPadding: number;
+  minSwingAmplitude: number;
+  maxSwingAmplitude: number;
+  minSwingSpeed: number;
+  maxSwingSpeed: number;
 };
 
 const LEAF_VARIANT_COUNT = 4;
@@ -149,6 +153,10 @@ export function generateFieldFlowerConfigs(
     flowerTopShadowOffsetX,
     flowerTopShadowOffsetY,
     bottomPadding,
+    minSwingAmplitude,
+    maxSwingAmplitude,
+    minSwingSpeed,
+    maxSwingSpeed,
   } = input;
 
   if (count <= 0) return [];
@@ -251,6 +259,10 @@ export function generateFieldFlowerConfigs(
       clusterShadowOffsetY,
       flowerTopShadowOffsetX,
       flowerTopShadowOffsetY,
+      swingAmplitude: randomFloatInRange(rng, minSwingAmplitude, maxSwingAmplitude),
+      swingSpeed: randomFloatInRange(rng, minSwingSpeed, maxSwingSpeed),
+      swingPhase: rng() * 6.2831853,
+      swingAngle: rng() * 6.2831853,
       occupant: null,
     });
   }

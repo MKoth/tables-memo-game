@@ -30,6 +30,10 @@ export const DEFAULT_CLUSTER_SHADOW_OFFSET_Y = -10;
 export const DEFAULT_FLOWER_TOP_SHADOW_OFFSET_X = 0;
 export const DEFAULT_FLOWER_TOP_SHADOW_OFFSET_Y = -30;
 export const DEFAULT_BOTTOM_PADDING = 60;
+export const DEFAULT_MIN_SWING_AMPLITUDE = 1;
+export const DEFAULT_MAX_SWING_AMPLITUDE = 3;
+export const DEFAULT_MIN_SWING_SPEED = 1.5;
+export const DEFAULT_MAX_SWING_SPEED = 4.9;
 
 export type UseFieldFlowerConfigsOptions = {
   count?: number;
@@ -53,6 +57,10 @@ export type UseFieldFlowerConfigsOptions = {
   flowerTopShadowOffsetX?: number;
   flowerTopShadowOffsetY?: number;
   bottomPadding?: number;
+  minSwingAmplitude?: number;
+  maxSwingAmplitude?: number;
+  minSwingSpeed?: number;
+  maxSwingSpeed?: number;
 };
 
 export function useFieldFlowerConfigs(
@@ -81,6 +89,10 @@ export function useFieldFlowerConfigs(
   const flowerTopShadowOffsetX = options.flowerTopShadowOffsetX ?? DEFAULT_FLOWER_TOP_SHADOW_OFFSET_X;
   const flowerTopShadowOffsetY = options.flowerTopShadowOffsetY ?? DEFAULT_FLOWER_TOP_SHADOW_OFFSET_Y;
   const bottomPadding = options.bottomPadding ?? DEFAULT_BOTTOM_PADDING;
+  const minSwingAmplitude = options.minSwingAmplitude ?? DEFAULT_MIN_SWING_AMPLITUDE;
+  const maxSwingAmplitude = options.maxSwingAmplitude ?? DEFAULT_MAX_SWING_AMPLITUDE;
+  const minSwingSpeed = options.minSwingSpeed ?? DEFAULT_MIN_SWING_SPEED;
+  const maxSwingSpeed = options.maxSwingSpeed ?? DEFAULT_MAX_SWING_SPEED;
 
   return useMemo(() => {
     if (width === 0 || height === 0) return [];
@@ -110,6 +122,10 @@ export function useFieldFlowerConfigs(
       flowerTopShadowOffsetX,
       flowerTopShadowOffsetY,
       bottomPadding,
+      minSwingAmplitude,
+      maxSwingAmplitude,
+      minSwingSpeed,
+      maxSwingSpeed,
     };
 
     return generateFieldFlowerConfigs(input);
@@ -137,5 +153,9 @@ export function useFieldFlowerConfigs(
     flowerTopShadowOffsetX,
     flowerTopShadowOffsetY,
     bottomPadding,
+    minSwingAmplitude,
+    maxSwingAmplitude,
+    minSwingSpeed,
+    maxSwingSpeed,
   ]);
 }

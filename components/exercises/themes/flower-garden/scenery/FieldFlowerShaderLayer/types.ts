@@ -31,6 +31,10 @@ export type FieldFlowerConfig = {
   clusterShadowOffsetY: number;
   flowerTopShadowOffsetX: number;
   flowerTopShadowOffsetY: number;
+  swingAmplitude: number;
+  swingSpeed: number;
+  swingPhase: number;
+  swingAngle: number;
   occupant: number | null;
 };
 
