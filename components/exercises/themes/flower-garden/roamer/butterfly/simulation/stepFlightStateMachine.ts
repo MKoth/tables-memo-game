@@ -53,12 +53,34 @@ export type FlightContext = {
   fieldFlowerAnchorsY: number[];
   occupantSlots: number[];
   roamerIndex: number;
+  elapsedMs: number;
+  flowerSwingAmplitudes: number[];
+  flowerSwingSpeeds: number[];
+  flowerSwingPhases: number[];
+  flowerSwingAngles: number[];
 };
 
 function pickRandomBetween(rngPhase: number, min: number, max: number): number {
   'worklet';
   const t = Math.abs(Math.sin(rngPhase * 13.7 + 7.3));
   return min + t * (max - min);
+}
+
+function computeFlowerSwingOffset(
+  elapsedMs: number,
+  flowerIndex: number,
+  swingAmplitudes: number[],
+  swingSpeeds: number[],
+  swingPhases: number[],
+  swingAngles: number[],
+): { x: number; y: number } {
+  'worklet';
+  const amp = swingAmplitudes[flowerIndex] ?? 0;
+  const speed = swingSpeeds[flowerIndex] ?? 0;
+  const phase = swingPhases[flowerIndex] ?? 0;
+  const angle = swingAngles[flowerIndex] ?? 0;
+  const swing = Math.sin((elapsedMs / 1000) * speed + phase) * amp;
+  return { x: swing * Math.cos(angle), y: swing * Math.sin(angle) };
 }
 
 function advanceIdleNoise(phase: number, dt: number): { nextPhase: number; noiseX: number; noiseY: number } {
@@ -128,7 +150,11 @@ export function stepFlightStateMachine(
           const freeFlowerIds: number[] = [];
           for (let i = 0; i < ctx.fieldFlowerAnchorsX.length; i++) {
             if (ctx.occupantSlots[i] === -1 && i !== state.lastTargetFlowerIndex) {
-              freeFlowerIds.push(i);
+              const fx = ctx.fieldFlowerAnchorsX[i]!;
+              const fy = ctx.fieldFlowerAnchorsY[i]!;
+              if (fx >= ctx.hardMinX && fx <= ctx.hardMaxX && fy >= ctx.hardMinY && fy <= ctx.hardMaxY) {
+                freeFlowerIds.push(i);
+              }
             }
           }
           const targetId = pickFieldFlowerTarget(freeFlowerIds, state.lastTargetFlowerIndex, roll * 5);
@@ -253,7 +279,11 @@ export function stepFlightStateMachine(
           const freeFlowerIds: number[] = [];
           for (let i = 0; i < ctx.fieldFlowerAnchorsX.length; i++) {
             if (ctx.occupantSlots[i] === -1) {
-              freeFlowerIds.push(i);
+              const fx = ctx.fieldFlowerAnchorsX[i]!;
+              const fy = ctx.fieldFlowerAnchorsY[i]!;
+              if (fx >= ctx.hardMinX && fx <= ctx.hardMaxX && fy >= ctx.hardMinY && fy <= ctx.hardMaxY) {
+                freeFlowerIds.push(i);
+              }
             }
           }
           const newTargetId = pickFieldFlowerTarget(freeFlowerIds, flowerIndex, Math.abs(Math.sin(state.phase * 7.1 + ctx.dt)));
@@ -315,11 +345,19 @@ export function stepFlightStateMachine(
           ROAMER_BUTTERFLY_SIT_DURATION_MIN_MS / 1000,
           ROAMER_BUTTERFLY_SIT_DURATION_MAX_MS / 1000,
         );
+        const swingOff = computeFlowerSwingOffset(
+          ctx.elapsedMs,
+          initial.targetFlowerIndex,
+          ctx.flowerSwingAmplitudes,
+          ctx.flowerSwingSpeeds,
+          ctx.flowerSwingPhases,
+          ctx.flowerSwingAngles,
+        );
         return {
           ...initial,
           flightState: FlightState.SITTING,
-          positionX: targetX,
-          positionY: targetY,
+          positionX: targetX + swingOff.x,
+          positionY: targetY + swingOff.y,
           bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
           stateTimer: sitDuration,
           sitTimer: sitDuration,
@@ -415,11 +453,20 @@ export function stepFlightStateMachine(
         };
       }
 
+      const swingOff = computeFlowerSwingOffset(
+        ctx.elapsedMs,
+        initial.targetFlowerIndex,
+        ctx.flowerSwingAmplitudes,
+        ctx.flowerSwingSpeeds,
+        ctx.flowerSwingPhases,
+        ctx.flowerSwingAngles,
+      );
+
       return {
         ...state,
         flightState: FlightState.SITTING,
-        positionX: initial.positionX,
-        positionY: initial.positionY,
+        positionX: initial.targetFlowerX + swingOff.x,
+        positionY: initial.targetFlowerY + swingOff.y,
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
         angle: initial.angle,
         speed: initial.speed,

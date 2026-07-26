@@ -9,7 +9,6 @@ import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
 import { FlowerGardenGrassCanvas } from './FlowerGardenGrassCanvas';
 import { FieldFlowerShaderLayer } from './FieldFlowerShaderLayer/FieldFlowerShaderLayer';
-import { useFieldFlowerConfigs } from './FieldFlowerShaderLayer/useFieldFlowerConfigs';
 import type { GrassHoleMaskConfig } from '../shaders/grassHoleMask.sksl';
 
 const grassHoleMaskConfig: GrassHoleMaskConfig = {
@@ -35,10 +34,9 @@ function allImagesReady(
 function FlowerGardenSceneryContent() {
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
-  const { table } = useFlowerGardenTableContext();
+  const { table, fieldFlowerConfigs } = useFlowerGardenTableContext();
   const { wordSpriteBridge } = useExerciseRuntime();
   const bushConfigs = useBushConfigs(table);
-  const fieldFlowerConfigs = useFieldFlowerConfigs();
 
   const roseBellSizes = useMemo<number[]>(
     () => wordSpriteBridge?.bodySizes ?? [],
@@ -116,7 +114,7 @@ function FlowerGardenSceneryContent() {
           />
         </>
       )}
-      {fieldFlowersReady && fieldFlowerConfigs.length > 0 && (
+      {fieldFlowersReady && fieldFlowerConfigs != null && fieldFlowerConfigs.length > 0 && (
         <FieldFlowerShaderLayer
           configs={fieldFlowerConfigs}
           dandelionStemImages={dandelionStemImages!}

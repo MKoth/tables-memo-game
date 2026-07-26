@@ -8,6 +8,7 @@ import { ExerciseShell } from '../../shared';
 import { ExerciseCornerControls } from '../../ui';
 import { FlowerGardenScenery } from './scenery/FlowerGardenScenery';
 import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
+import { useFieldFlowerConfigs } from './scenery/FieldFlowerShaderLayer/useFieldFlowerConfigs';
 
 const WORD_SPRITE_LAYER_Z = 5;
 const SCENERY_Z = 1;
@@ -18,11 +19,12 @@ function FlowerGardenExerciseContent() {
   const words = useMemo(() => getTableBodyWords(table), [table]);
   const tutorialStep = useExerciseStore((state) => state.tutorialStep);
   const tutorialActive = tutorialStep !== 'idle';
+  const fieldFlowerConfigs = useFieldFlowerConfigs();
 
   return (
     <ExerciseRuntimeProvider>
       <ExerciseClockProvider>
-        <FlowerGardenTableProvider value={{ table }}>
+        <FlowerGardenTableProvider value={{ table, fieldFlowerConfigs }}>
           <View style={styles.container}>
             <View style={styles.sceneryLayer} pointerEvents="none">
               <FlowerGardenScenery />

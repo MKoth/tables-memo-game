@@ -114,6 +114,11 @@ export function updateButterfly(
   fieldFlowerAnchorsY: number[],
   occupantSlots: number[],
   roamerIndex: number,
+  elapsedMs: number,
+  flowerSwingAmplitudes: number[],
+  flowerSwingSpeeds: number[],
+  flowerSwingPhases: number[],
+  flowerSwingAngles: number[],
 ): void {
   'worklet';
   const state = readButterflyState(butterfly);
@@ -134,6 +139,11 @@ export function updateButterfly(
     fieldFlowerAnchorsY,
     occupantSlots,
     roamerIndex,
+    elapsedMs,
+    flowerSwingAmplitudes,
+    flowerSwingSpeeds,
+    flowerSwingPhases,
+    flowerSwingAngles,
   };
 
   const initialState = {

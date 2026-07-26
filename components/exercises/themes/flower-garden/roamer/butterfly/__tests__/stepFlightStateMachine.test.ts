@@ -57,6 +57,11 @@ function makeContext(overrides?: Partial<FlightContext>): FlightContext {
     fieldFlowerAnchorsY: [350, 250],
     occupantSlots: [-1, -1],
     roamerIndex: 0,
+    elapsedMs: 1000,
+    flowerSwingAmplitudes: [0, 0],
+    flowerSwingSpeeds: [0, 0],
+    flowerSwingPhases: [0, 0],
+    flowerSwingAngles: [0, 0],
     ...overrides,
   };
 }
@@ -121,6 +126,8 @@ describe('stepFlightStateMachine', () => {
         flightState: FlightState.SITTING,
         positionX: 200,
         positionY: 350,
+        targetFlowerX: 200,
+        targetFlowerY: 350,
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
         stateTimer: 1,
       });

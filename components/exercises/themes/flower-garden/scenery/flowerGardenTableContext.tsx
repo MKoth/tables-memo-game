@@ -1,8 +1,10 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
 import type { TableData } from '../../../../../data/tableData';
+import type { FieldFlowerConfig } from './FieldFlowerShaderLayer/types';
 
 export type FlowerGardenTableContextValue = {
   table: TableData | null;
+  fieldFlowerConfigs?: readonly FieldFlowerConfig[];
 };
 
 const FlowerGardenTableContext = createContext<FlowerGardenTableContextValue | null>(null);

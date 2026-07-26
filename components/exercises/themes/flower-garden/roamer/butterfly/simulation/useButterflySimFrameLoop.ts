@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import { useExerciseClockQuantized } from '../../../../../core';
 import { FlightState, type ButterflyRuntimeEntry, type SwimZone } from './types';
 import {
   ROAMER_BUTTERFLY_BOUNDARY_MARGIN,
@@ -23,8 +24,13 @@ export function useButterflySimFrameLoop(
   fieldFlowerAnchorsX: number[],
   fieldFlowerAnchorsY: number[],
   occupantSlots: SharedValue<number[]>,
+  flowerSwingAmplitudes: number[],
+  flowerSwingSpeeds: number[],
+  flowerSwingPhases: number[],
+  flowerSwingAngles: number[],
 ): void {
   const lastTimestamp = useSharedValue(-1);
+  const exerciseClock = useExerciseClockQuantized(20);
   const butterflyCount = runtimes.length;
 
   const steerMinX = swimZone.x + swimZone.w * ROAMER_BUTTERFLY_BOUNDARY_MARGIN_RATIO;
@@ -52,6 +58,7 @@ export function useButterflySimFrameLoop(
       }
       const dt = Math.min(elapsed / 1000, 0.05);
       lastTimestamp.value = frameInfo.timestamp;
+      const elapsedMs = exerciseClock.value;
 
       const pos = sharedPositions.value;
       const occSlots = occupantSlots.value.slice();
@@ -76,6 +83,11 @@ export function useButterflySimFrameLoop(
           fieldFlowerAnchorsY,
           occSlots,
           i,
+          elapsedMs,
+          flowerSwingAmplitudes,
+          flowerSwingSpeeds,
+          flowerSwingPhases,
+          flowerSwingAngles,
         );
 
         if (
@@ -129,6 +141,11 @@ export function useButterflySimFrameLoop(
       centerY,
       fieldFlowerAnchorsX,
       fieldFlowerAnchorsY,
+      flowerSwingAmplitudes,
+      flowerSwingSpeeds,
+      flowerSwingPhases,
+      flowerSwingAngles,
+      exerciseClock,
     ],
   );
 
