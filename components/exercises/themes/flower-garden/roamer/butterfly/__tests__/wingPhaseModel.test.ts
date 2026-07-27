@@ -46,6 +46,8 @@ function createMockRuntime(overrides?: { [key: string]: number }): any {
     sitTargetOffsetX: sv(o.sitTargetOffsetX ?? 0),
     sitTargetOffsetY: sv(o.sitTargetOffsetY ?? 0),
     sitActionTimer: sv(o.sitActionTimer ?? 0),
+    legPhases: [sv(0), sv(0), sv(0), sv(0), sv(0), sv(0)],
+    legVisibility: sv(0),
   };
 }
 

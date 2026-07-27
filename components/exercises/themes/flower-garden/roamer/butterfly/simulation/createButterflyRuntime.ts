@@ -3,6 +3,7 @@ import { FlightState, type ButterflySharedRuntime, type ButterflySpawn, type Swi
 import {
   ROAMER_BUTTERFLY_BASE_SPEED_MIN,
   ROAMER_BUTTERFLY_BOUNDARY_MARGIN,
+  ROAMER_BUTTERFLY_LEG_COUNT,
 } from '../config/butterflySimConfig';
 import {
   clamp,
@@ -52,5 +53,7 @@ export function createButterflyRuntime(
     sitTargetOffsetX: makeMutable(0),
     sitTargetOffsetY: makeMutable(0),
     sitActionTimer: makeMutable(0),
+    legPhases: Array.from({ length: ROAMER_BUTTERFLY_LEG_COUNT }, () => makeMutable(0)),
+    legVisibility: makeMutable(0),
   };
 }

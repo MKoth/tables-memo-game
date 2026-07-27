@@ -115,6 +115,9 @@ function ButterflySittingPass({
         bodyImage={bodyImage}
         leftWingImage={leftWingImage}
         rightWingImage={rightWingImage}
+        legPhases={runtime.legPhases}
+        legVisibility={runtime.legVisibility}
+        spawnLegPhaseOffsets={runtime.spawn.legPhaseOffsets}
       />
     </Group>
   );
@@ -148,6 +151,9 @@ function ButterflyFlyingPass({
         bodyImage={bodyImage}
         leftWingImage={leftWingImage}
         rightWingImage={rightWingImage}
+        legPhases={runtime.legPhases}
+        legVisibility={runtime.legVisibility}
+        spawnLegPhaseOffsets={runtime.spawn.legPhaseOffsets}
       />
     </Group>
   );

@@ -82,6 +82,8 @@ export type ButterflySharedRuntime = {
   sitTargetOffsetX: SharedValue<number>;
   sitTargetOffsetY: SharedValue<number>;
   sitActionTimer: SharedValue<number>;
+  legPhases: SharedValue<number>[];
+  legVisibility: SharedValue<number>;
 };
 
 export type ButterflyRuntime = {

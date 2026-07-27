@@ -42,6 +42,9 @@ export type RoamerButterflyInstanceProps = {
   bodyImage: SkImage;
   leftWingImage: SkImage;
   rightWingImage: SkImage;
+  legPhases: SharedValue<number>[];
+  legVisibility: SharedValue<number>;
+  spawnLegPhaseOffsets: number[];
 };
 
 export function RoamerButterflyInstance({
@@ -54,6 +57,9 @@ export function RoamerButterflyInstance({
   bodyImage,
   leftWingImage,
   rightWingImage,
+  legPhases,
+  legVisibility,
+  spawnLegPhaseOffsets,
 }: RoamerButterflyInstanceProps) {
   const bodyImageW = bodyImage.width();
   const bodyImageH = bodyImage.height();
@@ -98,6 +104,9 @@ export function RoamerButterflyInstance({
 
   const uniforms = useDerivedValue(() => {
     const wingFlap = Math.sin(wingPhase.value);
+    const legPhasesAdvanced = legPhases.map((sv, i) =>
+      Math.sin(sv.value + spawnLegPhaseOffsets[i]!),
+    );
     return {
       bodyW: ROAMER_BUTTERFLY_BODY_LENGTH,
       bodyH: ROAMER_BUTTERFLY_BODY_THICKNESS,
@@ -115,7 +124,8 @@ export function RoamerButterflyInstance({
       wingRightImageH: rightWingImageH,
       wingLeftAspect: leftWingAspect,
       wingRightAspect: rightWingAspect,
-      legVisibility: 0,
+      legVisibility: legVisibility.value,
+      legPhasesAdvanced,
       renderMode,
       bodyTint: bodyTintUniform,
       bodyTintStrength: butterflyUniformDefaults.bodyTintStrength,

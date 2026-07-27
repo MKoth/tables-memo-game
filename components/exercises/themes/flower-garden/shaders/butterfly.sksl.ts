@@ -24,6 +24,7 @@ uniform float wingRightImageH;
 uniform float wingLeftAspect;
 uniform float wingRightAspect;
 uniform float legVisibility;
+uniform float legPhasesAdvanced[6];
 uniform float renderMode;
 uniform float3 bodyTint;
 uniform float bodyTintStrength;
@@ -36,6 +37,9 @@ const float WING_LENGTH_RATIO = ${ROAMER_BUTTERFLY_WING_LENGTH_RATIO};
 const float WING_LENGTH_SCALE = 0.25;
 const float WING_HEIGHT_RATIO = 1.2;
 const float WING_OVERLAP = 21.0;
+
+const float LEG_BEND_AMOUNT = 0.3;
+const int LEG_COUNT = 6;
 
 half4 sampleBody(vec2 localPos, float halfW, float halfH) {
   vec2 bodyUV = vec2(
@@ -128,6 +132,37 @@ half4 main(float2 fragCoord) {
   if (rightWingColor.a > 0.01) {
     float a = rightWingColor.a;
     color = rightWingColor * a + color * (1.0 - a);
+  }
+
+  if (renderMode > 0.5 && renderMode < 1.5 && legVisibility > 0.01) {
+    vec2 bodyUV = vec2(
+      local.x / (halfW * 2.0) + 0.5,
+      local.y / (halfH * 2.0) + 0.5
+    );
+    vec4 legRects[LEG_COUNT];
+    legRects[0] = vec4(0.18, 0.50, 0.12, 0.20);
+    legRects[1] = vec4(0.70, 0.50, 0.12, 0.20);
+    legRects[2] = vec4(0.16, 0.62, 0.12, 0.22);
+    legRects[3] = vec4(0.72, 0.62, 0.12, 0.22);
+    legRects[4] = vec4(0.20, 0.72, 0.12, 0.24);
+    legRects[5] = vec4(0.68, 0.72, 0.12, 0.24);
+    for (int i = 0; i < LEG_COUNT; i++) {
+      vec4 legRect = legRects[i];
+      float legBend = legPhasesAdvanced[i] * LEG_BEND_AMOUNT * legVisibility;
+      float uMin = legRect.x;
+      float uMax = legRect.x + legRect.z;
+      float vMin = legRect.y;
+      float vMax = legRect.y + legRect.w;
+      if (bodyUV.x >= uMin && bodyUV.x <= uMax && bodyUV.y >= vMin && bodyUV.y <= vMax) {
+        vec2 displacedUV = bodyUV + vec2(legBend, legBend * 0.5);
+        vec2 texCoord = displacedUV * vec2(bodyImageW, bodyImageH);
+        half4 legColor = bodyTexture.eval(texCoord);
+        if (legColor.a > 0.01) {
+          float a = legColor.a * legVisibility;
+          color = legColor * a + color * (1.0 - a);
+        }
+      }
+    }
   }
 
   if (color.a < 0.01) {

@@ -29,6 +29,8 @@ export function readButterflyState(
   sitTargetOffsetX: number;
   sitTargetOffsetY: number;
   sitActionTimer: number;
+  legPhases: number[];
+  legVisibility: number;
 } {
   'worklet';
   return {
@@ -57,6 +59,8 @@ export function readButterflyState(
     sitTargetOffsetX: butterfly.sitTargetOffsetX.value,
     sitTargetOffsetY: butterfly.sitTargetOffsetY.value,
     sitActionTimer: butterfly.sitActionTimer.value,
+    legPhases: butterfly.legPhases.map(sv => sv.value),
+    legVisibility: butterfly.legVisibility.value,
   };
 }
 
@@ -88,6 +92,8 @@ export function writeButterflyState(
     sitTargetOffsetX: number;
     sitTargetOffsetY: number;
     sitActionTimer: number;
+    legPhases: number[];
+    legVisibility: number;
   },
 ): void {
   'worklet';
@@ -115,6 +121,10 @@ export function writeButterflyState(
   butterfly.sitTargetOffsetX.value = next.sitTargetOffsetX;
   butterfly.sitTargetOffsetY.value = next.sitTargetOffsetY;
   butterfly.sitActionTimer.value = next.sitActionTimer;
+  for (let i = 0; i < next.legPhases.length; i++) {
+    butterfly.legPhases[i]!.value = next.legPhases[i]!;
+  }
+  butterfly.legVisibility.value = next.legVisibility;
 }
 
 export function updateButterfly(
@@ -171,10 +181,10 @@ export function updateButterfly(
   const initialState = {
     ...state,
     phase: butterfly.spawn.phase,
-    legPhases: butterfly.spawn.legPhaseOffsets.map(() => 0),
+    legPhases: state.legPhases,
     wingPhaseLeft: state.wingPhaseLeft,
     wingPhaseRight: state.wingPhaseRight,
-    legVisibility: 0,
+    legVisibility: state.legVisibility,
     sitPhase: 0,
     targetFlowerX: state.targetFlowerX,
     targetFlowerY: state.targetFlowerY,
@@ -221,5 +231,7 @@ export function updateButterfly(
     sitTargetOffsetX: next.sitTargetOffsetX,
     sitTargetOffsetY: next.sitTargetOffsetY,
     sitActionTimer: next.sitActionTimer,
+    legPhases: next.legPhases,
+    legVisibility: next.legVisibility,
   });
 }
