@@ -38,7 +38,7 @@ const float WING_LENGTH_SCALE = 0.25;
 const float WING_HEIGHT_RATIO = 1.2;
 const float WING_OVERLAP = 21.0;
 
-const float LEG_BEND_AMOUNT = 0.3;
+const float LEG_BEND_AMOUNT = 1.0;
 const int LEG_COUNT = 6;
 
 half4 sampleBody(vec2 localPos, float halfW, float halfH) {
@@ -151,18 +151,6 @@ half4 main(float2 fragCoord) {
     }
   }
 
-  half4 leftWingColor = sampleLeftWing(local, halfW, halfH, wingLeftFlap);
-  if (leftWingColor.a > 0.01) {
-    float a = leftWingColor.a;
-    color = leftWingColor * a + color * (1.0 - a);
-  }
-
-  half4 rightWingColor = sampleRightWing(local, halfW, halfH, wingRightFlap);
-  if (rightWingColor.a > 0.01) {
-    float a = rightWingColor.a;
-    color = rightWingColor * a + color * (1.0 - a);
-  }
-
   if (sittingPass && legVisibility > 0.001) {
     vec2 bodyUV = vec2(
       local.x / (halfW * 2.0) + 0.5,
@@ -201,6 +189,18 @@ half4 main(float2 fragCoord) {
         }
       }
     }
+  }
+
+  half4 leftWingColor = sampleLeftWing(local, halfW, halfH, wingLeftFlap);
+  if (leftWingColor.a > 0.01) {
+    float a = leftWingColor.a;
+    color = leftWingColor * a + color * (1.0 - a);
+  }
+
+  half4 rightWingColor = sampleRightWing(local, halfW, halfH, wingRightFlap);
+  if (rightWingColor.a > 0.01) {
+    float a = rightWingColor.a;
+    color = rightWingColor * a + color * (1.0 - a);
   }
 
   if (color.a < 0.01) {
