@@ -57,7 +57,7 @@ export function useButterflySimulation({
   const seed = useMemo(() => hashSeedString(`butterfly-${sessionId}`), [sessionId]);
   const rng = useMemo(() => createRng(seed), [seed]);
 
-  const { fieldFlowerConfigs } = useFlowerGardenTableContext();
+  const { fieldFlowerConfigs, flowerSwingBoosts } = useFlowerGardenTableContext();
   const configs = fieldFlowerConfigs ?? [];
 
   const fieldFlowerAnchorsX = useMemo(() => configs.map(c => c.headerX), [configs]);
@@ -107,6 +107,7 @@ export function useButterflySimulation({
     flowerSwingSpeeds,
     flowerSwingPhases,
     flowerSwingAngles,
+    flowerSwingBoosts,
   );
 
   const renderProps = {

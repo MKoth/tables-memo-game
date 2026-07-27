@@ -26,6 +26,8 @@ import {
   ROAMER_BUTTERFLY_WANDER_LERP,
   ROAMER_BUTTERFLY_WING_FREQ_MAX,
   ROAMER_BUTTERFLY_WING_FREQ_MIN,
+  ROAMER_BUTTERFLY_LAND_AMPLITUDE_BOOST,
+  ROAMER_BUTTERFLY_TAKEOFF_AMPLITUDE_BOOST,
 } from '../config/butterflySimConfig';
 import {
   clamp,
@@ -58,6 +60,7 @@ export type FlightContext = {
   flowerSwingSpeeds: number[];
   flowerSwingPhases: number[];
   flowerSwingAngles: number[];
+  boostsMutable: number[];
 };
 
 function pickRandomBetween(rngPhase: number, min: number, max: number): number {
@@ -73,9 +76,10 @@ function computeFlowerSwingOffset(
   swingSpeeds: number[],
   swingPhases: number[],
   swingAngles: number[],
+  boostAmount: number,
 ): { x: number; y: number } {
   'worklet';
-  const amp = swingAmplitudes[flowerIndex] ?? 0;
+  const amp = (swingAmplitudes[flowerIndex] ?? 0) + boostAmount;
   const speed = swingSpeeds[flowerIndex] ?? 0;
   const phase = swingPhases[flowerIndex] ?? 0;
   const angle = swingAngles[flowerIndex] ?? 0;
@@ -345,13 +349,16 @@ export function stepFlightStateMachine(
           ROAMER_BUTTERFLY_SIT_DURATION_MIN_MS / 1000,
           ROAMER_BUTTERFLY_SIT_DURATION_MAX_MS / 1000,
         );
+        const fi = initial.targetFlowerIndex;
+        ctx.boostsMutable[fi] = (ctx.boostsMutable[fi] ?? 0) + ROAMER_BUTTERFLY_LAND_AMPLITUDE_BOOST;
         const swingOff = computeFlowerSwingOffset(
           ctx.elapsedMs,
-          initial.targetFlowerIndex,
+          fi,
           ctx.flowerSwingAmplitudes,
           ctx.flowerSwingSpeeds,
           ctx.flowerSwingPhases,
           ctx.flowerSwingAngles,
+          ctx.boostsMutable[fi],
         );
         return {
           ...initial,
@@ -420,6 +427,8 @@ export function stepFlightStateMachine(
 
       if (nextTimer <= 0) {
         ctx.occupantSlots[initial.targetFlowerIndex] = -1;
+        const tfi = initial.targetFlowerIndex;
+        ctx.boostsMutable[tfi] = (ctx.boostsMutable[tfi] ?? 0) + ROAMER_BUTTERFLY_TAKEOFF_AMPLITUDE_BOOST;
         return {
           ...state,
           flightState: FlightState.LIFTING_OFF,
@@ -453,13 +462,15 @@ export function stepFlightStateMachine(
         };
       }
 
+      const sfi = initial.targetFlowerIndex;
       const swingOff = computeFlowerSwingOffset(
         ctx.elapsedMs,
-        initial.targetFlowerIndex,
+        sfi,
         ctx.flowerSwingAmplitudes,
         ctx.flowerSwingSpeeds,
         ctx.flowerSwingPhases,
         ctx.flowerSwingAngles,
+        ctx.boostsMutable[sfi] ?? 0,
       );
 
       return {

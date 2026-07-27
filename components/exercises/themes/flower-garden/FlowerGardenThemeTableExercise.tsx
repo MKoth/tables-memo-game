@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSharedValue } from 'react-native-reanimated';
 import { getTableBodyWords, spanishPresentTable2Plural } from '../../../../data/tableData';
 import { ExerciseClockProvider, ExerciseRuntimeProvider, TABLE_EXERCISE_STORE_CONFIG, useExerciseStore } from '../../core';
 import { FlowerGardenWordSpriteTableLayer } from './carrier/FlowerGardenWordSpriteTableLayer/FlowerGardenWordSpriteTableLayerOuter';
@@ -20,11 +21,16 @@ function FlowerGardenExerciseContent() {
   const tutorialStep = useExerciseStore((state) => state.tutorialStep);
   const tutorialActive = tutorialStep !== 'idle';
   const fieldFlowerConfigs = useFieldFlowerConfigs();
+  const flowerSwingBoosts = useSharedValue<number[]>([]);
+
+  useEffect(() => {
+    flowerSwingBoosts.value = new Array(Math.max(fieldFlowerConfigs.length, 1)).fill(0);
+  }, [fieldFlowerConfigs.length, flowerSwingBoosts]);
 
   return (
     <ExerciseRuntimeProvider>
       <ExerciseClockProvider>
-        <FlowerGardenTableProvider value={{ table, fieldFlowerConfigs }}>
+        <FlowerGardenTableProvider value={{ table, fieldFlowerConfigs, flowerSwingBoosts }}>
           <View style={styles.container}>
             <View style={styles.sceneryLayer} pointerEvents="none">
               <FlowerGardenScenery />

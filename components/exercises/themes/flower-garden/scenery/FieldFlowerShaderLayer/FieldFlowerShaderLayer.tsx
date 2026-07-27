@@ -9,7 +9,7 @@ import {
   type SkImage,
   type SkRuntimeEffect,
 } from '@shopify/react-native-skia';
-import { useDerivedValue } from 'react-native-reanimated';
+import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 import { useExerciseClockQuantized } from '../../../../core';
 import type { FieldFlowerConfig, FieldFlowerType } from './types';
 import { MAX_FIELD_FLOWERS, MAX_LEAVES_PER_FLOWER, COVERING_SIZE } from './types';
@@ -82,6 +82,7 @@ type FieldFlowerRectProps = {
   leafImages: readonly SkImage[];
   flowerImages: readonly SkImage[];
   clock: ReturnType<typeof useExerciseClockQuantized>;
+  flowerSwingBoosts: SharedValue<number[]> | undefined;
 };
 
 function FieldFlowerRect({
@@ -90,6 +91,7 @@ function FieldFlowerRect({
   leafImages,
   flowerImages,
   clock,
+  flowerSwingBoosts,
 }: FieldFlowerRectProps) {
   const { stemW, leafW, flowerW } = useMemo(() => {
     const stemImgW = stemImages.length >= 4 ? 1 : 0;
@@ -100,9 +102,11 @@ function FieldFlowerRect({
 
   const uniforms = useDerivedValue(() => {
     const iTime = clock.value / 1000;
+    const boost = flowerSwingBoosts?.value[config.flowerId] ?? 0;
+    const effectiveAmp = config.swingAmplitude + boost;
     const swing =
       Math.sin(iTime * config.swingSpeed + config.swingPhase) *
-      config.swingAmplitude;
+      effectiveAmp;
     const cosA = Math.cos(config.swingAngle);
     const sinA = Math.sin(config.swingAngle);
     const swingX = swing * cosA;
@@ -234,6 +238,7 @@ function FieldFlowerRect({
 
 export type FieldFlowerShaderLayerProps = {
   configs: readonly FieldFlowerConfig[];
+  flowerSwingBoosts: SharedValue<number[]> | undefined;
   dandelionStemImages: readonly SkImage[];
   dandelionLeafImages: readonly SkImage[];
   dandelionFlowerImages: readonly SkImage[];
@@ -256,6 +261,7 @@ type FlowerImageSet = {
 
 function FieldFlowerShaderLayerImpl({
   configs,
+  flowerSwingBoosts,
   dandelionStemImages,
   dandelionLeafImages,
   dandelionFlowerImages,
@@ -326,6 +332,7 @@ function FieldFlowerShaderLayerImpl({
             leafImages={set.leafImages}
             flowerImages={set.flowerImages}
             clock={clock}
+            flowerSwingBoosts={flowerSwingBoosts}
           />
         );
       })}

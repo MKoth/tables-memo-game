@@ -1,10 +1,12 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
 import type { TableData } from '../../../../../data/tableData';
 import type { FieldFlowerConfig } from './FieldFlowerShaderLayer/types';
 
 export type FlowerGardenTableContextValue = {
   table: TableData | null;
   fieldFlowerConfigs?: readonly FieldFlowerConfig[];
+  flowerSwingBoosts?: SharedValue<number[]>;
 };
 
 const FlowerGardenTableContext = createContext<FlowerGardenTableContextValue | null>(null);

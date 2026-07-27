@@ -34,7 +34,7 @@ function allImagesReady(
 function FlowerGardenSceneryContent() {
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
-  const { table, fieldFlowerConfigs } = useFlowerGardenTableContext();
+  const { table, fieldFlowerConfigs, flowerSwingBoosts } = useFlowerGardenTableContext();
   const { wordSpriteBridge } = useExerciseRuntime();
   const bushConfigs = useBushConfigs(table);
 
@@ -117,6 +117,7 @@ function FlowerGardenSceneryContent() {
       {fieldFlowersReady && fieldFlowerConfigs != null && fieldFlowerConfigs.length > 0 && (
         <FieldFlowerShaderLayer
           configs={fieldFlowerConfigs}
+          flowerSwingBoosts={flowerSwingBoosts}
           dandelionStemImages={dandelionStemImages!}
           dandelionLeafImages={dandelionLeafImages!}
           dandelionFlowerImages={dandelionFlowerImages!}

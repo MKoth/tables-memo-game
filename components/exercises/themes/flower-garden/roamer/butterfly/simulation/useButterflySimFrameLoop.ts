@@ -10,6 +10,7 @@ import {
   ROAMER_BUTTERFLY_SEPARATION_RADIUS,
   ROAMER_BUTTERFLY_SEPARATION_STEER,
   ROAMER_BUTTERFLY_SIM_STEP_MS,
+  FLOWER_SWING_BOOST_DECAY_RATE,
 } from '../config/butterflySimConfig';
 import { lerpAngle } from './butterflySimHelpers';
 import { updateButterfly } from './updateButterfly';
@@ -28,6 +29,7 @@ export function useButterflySimFrameLoop(
   flowerSwingSpeeds: number[],
   flowerSwingPhases: number[],
   flowerSwingAngles: number[],
+  flowerSwingBoosts: SharedValue<number[]> | undefined,
 ): void {
   const lastTimestamp = useSharedValue(-1);
   const exerciseClock = useExerciseClockQuantized(20);
@@ -62,6 +64,12 @@ export function useButterflySimFrameLoop(
 
       const pos = sharedPositions.value;
       const occSlots = occupantSlots.value.slice();
+      const boosts = flowerSwingBoosts != null ? flowerSwingBoosts.value.slice() : [];
+      for (let i = 0; i < boosts.length; i++) {
+        if (boosts[i] > 0) {
+          boosts[i] = Math.max(0, boosts[i] - FLOWER_SWING_BOOST_DECAY_RATE * dt);
+        }
+      }
 
       for (let i = 0; i < butterflyCount; i++) {
         const runtime = runtimes[i]!.runtime;
@@ -88,6 +96,7 @@ export function useButterflySimFrameLoop(
           flowerSwingSpeeds,
           flowerSwingPhases,
           flowerSwingAngles,
+          boosts,
         );
 
         if (
@@ -122,6 +131,9 @@ export function useButterflySimFrameLoop(
 
       occupantSlots.value = occSlots;
       sharedPositions.value = pos;
+      if (flowerSwingBoosts != null) {
+        flowerSwingBoosts.value = boosts;
+      }
     },
     [
       lastTimestamp,
@@ -146,6 +158,7 @@ export function useButterflySimFrameLoop(
       flowerSwingPhases,
       flowerSwingAngles,
       exerciseClock,
+      flowerSwingBoosts,
     ],
   );
 

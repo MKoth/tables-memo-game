@@ -62,6 +62,7 @@ function makeContext(overrides?: Partial<FlightContext>): FlightContext {
     flowerSwingSpeeds: [0, 0],
     flowerSwingPhases: [0, 0],
     flowerSwingAngles: [0, 0],
+    boostsMutable: [0, 0],
     ...overrides,
   };
 }
