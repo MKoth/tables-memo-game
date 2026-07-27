@@ -48,6 +48,9 @@ export type ButterflyState = {
   approachOrbitTimer: number;
   sitWingPauseTimer: number;
   sitWingPauseTriggered: number;
+  sittingSubMode: number;
+  sitSubModeTimer: number;
+  sitTurnTargetAngle: number;
 };
 
 export type ButterflySharedRuntime = {
@@ -72,6 +75,10 @@ export type ButterflySharedRuntime = {
   approachOrbitTimer: SharedValue<number>;
   sitWingPauseTimer: SharedValue<number>;
   sitWingPauseTriggered: SharedValue<number>;
+  sittingSubMode: SharedValue<number>;
+  sitPhase: SharedValue<number>;
+  sitSubModeTimer: SharedValue<number>;
+  sitTurnTargetAngle: SharedValue<number>;
 };
 
 export type ButterflyRuntime = {

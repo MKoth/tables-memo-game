@@ -41,6 +41,10 @@ function createMockRuntime(overrides?: { [key: string]: number }): any {
     approachOrbitTimer: sv(o.approachOrbitTimer ?? 0),
     sitWingPauseTimer: sv(o.sitWingPauseTimer ?? 0),
     sitWingPauseTriggered: sv(o.sitWingPauseTriggered ?? 0),
+    sittingSubMode: sv(o.sittingSubMode ?? 0),
+    sitPhase: sv(o.sitPhase ?? 0),
+    sitSubModeTimer: sv(o.sitSubModeTimer ?? 3),
+    sitTurnTargetAngle: sv(o.sitTurnTargetAngle ?? 0),
   };
 }
 
