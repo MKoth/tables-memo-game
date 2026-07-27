@@ -2,8 +2,6 @@ import { FlightState, type ButterflyState } from '../simulation/types';
 import { stepFlightStateMachine, type FlightContext } from '../simulation/stepFlightStateMachine';
 import {
   ROAMER_BUTTERFLY_LEG_FREQUENCY,
-  ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_IN_MS,
-  ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_OUT_MS,
   ROAMER_BUTTERFLY_SIT_BODY_SCALE,
   ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS,
 } from '../config/butterflySimConfig';
@@ -241,8 +239,8 @@ describe('leg phase advancement', () => {
   });
 });
 
-describe('legVisibility lerp', () => {
-  it('legVisibility fades in on SITTING', () => {
+describe('legVisibility', () => {
+  it('is 1 in SITTING', () => {
     const state = makeState({
       flightState: FlightState.SITTING,
       positionX: 200,
@@ -258,38 +256,12 @@ describe('legVisibility lerp', () => {
       stateTimer: 10,
       legVisibility: 0,
     });
-    const fadeInDurationSec = ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_IN_MS / 1000;
-    const ctx = makeContext({ dt: fadeInDurationSec / 2 });
+    const ctx = makeContext({ dt: 0.1 });
     const next = stepFlightStateMachine(state, ctx);
-
-    expect(next.legVisibility).toBeGreaterThan(0);
-    expect(next.legVisibility).toBeLessThan(1);
+    expect(next.legVisibility).toBe(1);
   });
 
-  it('legVisibility reaches 1 after full fade-in duration', () => {
-    const state = makeState({
-      flightState: FlightState.SITTING,
-      positionX: 200,
-      positionY: 350,
-      targetFlowerX: 200,
-      targetFlowerY: 350,
-      bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-      sitOffsetX: 0,
-      sitOffsetY: 0,
-      sitTargetOffsetX: 10,
-      sitTargetOffsetY: 0,
-      sitActionTimer: 0,
-      stateTimer: 10,
-      legVisibility: 0,
-    });
-    const fadeInDurationSec = ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_IN_MS / 1000;
-    const ctx = makeContext({ dt: fadeInDurationSec * 1.5 });
-    const next = stepFlightStateMachine(state, ctx);
-
-    expect(next.legVisibility).toBeCloseTo(1, 4);
-  });
-
-  it('legVisibility fades out on LIFTING_OFF', () => {
+  it('is 0 in LIFTING_OFF', () => {
     const state = makeState({
       flightState: FlightState.LIFTING_OFF,
       positionX: 200,
@@ -299,32 +271,12 @@ describe('legVisibility lerp', () => {
       targetFlowerIndex: 0,
       legVisibility: 1,
     });
-    const fadeOutDurationSec = ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_OUT_MS / 1000;
-    const ctx = makeContext({ dt: fadeOutDurationSec / 2 });
+    const ctx = makeContext({ dt: 0.1 });
     const next = stepFlightStateMachine(state, ctx);
-
-    expect(next.legVisibility).toBeGreaterThan(0);
-    expect(next.legVisibility).toBeLessThan(1);
+    expect(next.legVisibility).toBe(0);
   });
 
-  it('legVisibility reaches 0 after full fade-out in LIFTING_OFF', () => {
-    const state = makeState({
-      flightState: FlightState.LIFTING_OFF,
-      positionX: 200,
-      positionY: 350,
-      bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-      stateTimer: 1.0,
-      targetFlowerIndex: 0,
-      legVisibility: 1,
-    });
-    const fadeOutDurationSec = ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_OUT_MS / 1000;
-    const ctx = makeContext({ dt: fadeOutDurationSec * 1.5 });
-    const next = stepFlightStateMachine(state, ctx);
-
-    expect(next.legVisibility).toBeCloseTo(0, 4);
-  });
-
-  it('legVisibility is 0 in FLYING_CRUISE', () => {
+  it('is 0 in FLYING_CRUISE', () => {
     const state = makeState({
       flightState: FlightState.FLYING_CRUISE,
       legVisibility: 0.5,
@@ -366,43 +318,31 @@ describe('legVisibility lerp', () => {
 });
 
 describe('tripod-gait phase offsets', () => {
-  it('FL offset is PI apart from FR offset (mod 2*PI)', () => {
-    const TWO_PI = Math.PI * 2;
-    const diff = Math.abs(
-      (ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[1]! - ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[0]!) % TWO_PI,
-    );
-    expect(diff).toBeCloseTo(Math.PI, 5);
+  it('Group A (FL, MR, BL) have offset 0', () => {
+    expect(ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[0]).toBe(0);
+    expect(ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[3]).toBe(0);
+    expect(ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[4]).toBe(0);
   });
 
-  it('ML offset is PI apart from MR offset (mod 2*PI)', () => {
-    const TWO_PI = Math.PI * 2;
-    const diff = Math.abs(
-      (ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[3]! - ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[2]!) % TWO_PI,
-    );
-    expect(diff).toBeCloseTo(Math.PI, 5);
-  });
-
-  it('BL offset is PI apart from BR offset (mod 2*PI)', () => {
-    const TWO_PI = Math.PI * 2;
-    const diff = Math.abs(
-      (ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[5]! - ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[4]!) % TWO_PI,
-    );
-    expect(diff).toBeCloseTo(Math.PI, 5);
+  it('Group B (FR, ML, BR) have offset PI', () => {
+    expect(ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[1]).toBe(Math.PI);
+    expect(ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[2]).toBe(Math.PI);
+    expect(ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS[5]).toBe(Math.PI);
   });
 
   it('has exactly 6 leg offsets', () => {
     expect(ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS).toHaveLength(6);
   });
 
-  it('spawn leg phase offsets enforce tripod pattern (FL+PI=FR mod 2*PI)', () => {
+  it('spawn enforces same-group alignment: FL and MR have same offset mod 2*PI', () => {
     const TWO_PI = Math.PI * 2;
     const { createRandomVisualSpawn } = require('../simulation/createButterflySpawns');
     const { createRng } = require('../../../scenery/BushShaderLayer/helpers/seededRandom');
     const rng = createRng(42);
     const spawn = createRandomVisualSpawn(rng);
-    const diff = Math.abs(
-      (spawn.legPhaseOffsets[1]! - spawn.legPhaseOffsets[0]!) % TWO_PI,
+    const diffFLMR = Math.abs(
+      (spawn.legPhaseOffsets[3]! - spawn.legPhaseOffsets[0]!) % TWO_PI,
     );
-    expect(diff).toBeCloseTo(Math.PI, 5);
+    expect(diffFLMR).toBeLessThan(0.01);
   });
 });

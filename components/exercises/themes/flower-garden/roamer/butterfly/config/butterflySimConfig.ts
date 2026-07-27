@@ -16,18 +16,18 @@ export const ROAMER_BUTTERFLY_WAIT_AT_TAKEN_FLOWER_PATIENCE_MS = 3000;
 export const ROAMER_BUTTERFLY_LIFT_OFF_DURATION_MS = 500;
 export const ROAMER_BUTTERFLY_FLIGHT_PICK_FLOWER_PROBABILITY = 0.2;
 export const ROAMER_BUTTERFLY_SIT_LEG_FREQUENCY = 3;
-export const ROAMER_BUTTERFLY_LEG_FREQUENCY = 3;
+export const ROAMER_BUTTERFLY_LEG_FREQUENCY = 10;
 export const ROAMER_BUTTERFLY_LEG_BEND_AMOUNT = 0.3;
 export const ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_IN_MS = 300;
 export const ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_OUT_MS = 300;
 
 export const ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS: readonly number[] = [
-  0,
-  Math.PI,
-  (2 * Math.PI) / 3,
-  (2 * Math.PI) / 3 + Math.PI,
-  (4 * Math.PI) / 3,
-  (4 * Math.PI) / 3 + Math.PI,
+  0,        // FL — Group A: (FL, MR, BL) move together
+  Math.PI,  // FR — Group B: (FR, ML, BR) antiphase
+  Math.PI,  // ML — Group B
+  0,        // MR — Group A
+  0,        // BL — Group A
+  Math.PI,  // BR — Group B
 ];
 
 export const ROAMER_BUTTERFLY_APPROACH_DISTANCE_THRESHOLD = 3;

@@ -100,6 +100,25 @@ half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float flap) {
   return rightWingTexture.eval(texCoord);
 }
 
+void setLegRects(inout vec4 lrs[LEG_COUNT]) {
+  lrs[0] = vec4(0.274, 0.297, 0.140, 0.150);
+  lrs[1] = vec4(0.574, 0.297, 0.154, 0.150);
+  lrs[2] = vec4(0.224, 0.477, 0.170, 0.127);
+  lrs[3] = vec4(0.594, 0.457, 0.180, 0.137);
+  lrs[4] = vec4(0.281, 0.580, 0.142, 0.203);
+  lrs[5] = vec4(0.561, 0.580, 0.142, 0.203);
+}
+
+bool isInsideAnyLeg(vec2 uv, vec4 lrs[LEG_COUNT]) {
+  for (int i = 0; i < LEG_COUNT; i++) {
+    vec4 lr = lrs[i];
+    if (uv.x >= lr.x && uv.x <= lr.x + lr.z && uv.y >= lr.y && uv.y <= lr.y + lr.w) {
+      return true;
+    }
+  }
+  return false;
+}
+
 half4 main(float2 fragCoord) {
   vec2 rel = fragCoord - vec2(bodyCenterX, bodyCenterY);
   float ca = cos(-bodyAngle);
@@ -115,10 +134,26 @@ half4 main(float2 fragCoord) {
     return color;
   }
 
+  vec4 legRects[LEG_COUNT];
+  bool sittingPass = renderMode > 0.5 && renderMode < 1.5;
+  if (sittingPass) {
+    setLegRects(legRects);
+  }
+
   if (abs(local.x) < halfW && abs(local.y) < halfH) {
-    half4 bodyColor = sampleBody(local, halfW, halfH);
-    if (bodyColor.a > 0.01) {
-      color = bodyColor;
+    bool skip = false;
+    if (sittingPass) {
+      vec2 bodyUV = vec2(
+        local.x / (halfW * 2.0) + 0.5,
+        local.y / (halfH * 2.0) + 0.5
+      );
+      skip = isInsideAnyLeg(bodyUV, legRects);
+    }
+    if (!skip) {
+      half4 bodyColor = sampleBody(local, halfW, halfH);
+      if (bodyColor.a > 0.01) {
+        color = bodyColor;
+      }
     }
   }
 
@@ -134,31 +169,40 @@ half4 main(float2 fragCoord) {
     color = rightWingColor * a + color * (1.0 - a);
   }
 
-  if (renderMode > 0.5 && renderMode < 1.5 && legVisibility > 0.01) {
+  if (sittingPass && legVisibility > 0.001) {
     vec2 bodyUV = vec2(
       local.x / (halfW * 2.0) + 0.5,
       local.y / (halfH * 2.0) + 0.5
     );
-    vec4 legRects[LEG_COUNT];
-    legRects[0] = vec4(0.18, 0.50, 0.12, 0.20);
-    legRects[1] = vec4(0.70, 0.50, 0.12, 0.20);
-    legRects[2] = vec4(0.16, 0.62, 0.12, 0.22);
-    legRects[3] = vec4(0.72, 0.62, 0.12, 0.22);
-    legRects[4] = vec4(0.20, 0.72, 0.12, 0.24);
-    legRects[5] = vec4(0.68, 0.72, 0.12, 0.24);
     for (int i = 0; i < LEG_COUNT; i++) {
-      vec4 legRect = legRects[i];
-      float legBend = legPhasesAdvanced[i] * LEG_BEND_AMOUNT * legVisibility;
-      float uMin = legRect.x;
-      float uMax = legRect.x + legRect.z;
-      float vMin = legRect.y;
-      float vMax = legRect.y + legRect.w;
-      if (bodyUV.x >= uMin && bodyUV.x <= uMax && bodyUV.y >= vMin && bodyUV.y <= vMax) {
-        vec2 displacedUV = bodyUV + vec2(legBend, legBend * 0.5);
-        vec2 texCoord = displacedUV * vec2(bodyImageW, bodyImageH);
+      vec4 lr = legRects[i];
+      float attachU;
+      float legMinU;
+      float legMaxU;
+      if (i == 0 || i == 2 || i == 4) {
+        attachU = lr.x + lr.z;
+        legMinU = attachU - lr.z * legVisibility;
+        legMaxU = attachU;
+      } else {
+        attachU = lr.x;
+        legMinU = attachU;
+        legMaxU = attachU + lr.z * legVisibility;
+      }
+      float vMin = lr.y;
+      float vMax = lr.y + lr.w;
+      if (bodyUV.y >= vMin && bodyUV.y <= vMax && bodyUV.x >= legMinU && bodyUV.x <= legMaxU) {
+        float weight;
+        if (i == 0 || i == 2 || i == 4) {
+          weight = (lr.x + lr.z - bodyUV.x) / lr.z;
+        } else {
+          weight = (bodyUV.x - lr.x) / lr.z;
+        }
+        float bend = clamp(weight, 0.0, 1.0) * legPhasesAdvanced[i] * LEG_BEND_AMOUNT * lr.w;
+        float displacedV = clamp(bodyUV.y + bend, vMin, vMax);
+        vec2 texCoord = vec2(bodyUV.x, displacedV) * vec2(bodyImageW, bodyImageH);
         half4 legColor = bodyTexture.eval(texCoord);
         if (legColor.a > 0.01) {
-          float a = legColor.a * legVisibility;
+          float a = legColor.a;
           color = legColor * a + color * (1.0 - a);
         }
       }

@@ -34,8 +34,6 @@ import {
   ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS,
   ROAMER_BUTTERFLY_SIT_MOVE_TURN_SPEED,
   ROAMER_BUTTERFLY_LEG_FREQUENCY,
-  ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_IN_MS,
-  ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_OUT_MS,
   ROAMER_BUTTERFLY_LEG_COUNT,
 } from '../config/butterflySimConfig';
 import {
@@ -538,7 +536,7 @@ export function stepFlightStateMachine(
         }
       }
 
-      const legVisibility = Math.min(1, initial.legVisibility + ctx.dt / (ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_IN_MS / 1000));
+      const legVisibility = 1;
 
       if (nextTimer <= 0) {
         ctx.occupantSlots[initial.targetFlowerIndex] = -1;
@@ -645,7 +643,7 @@ export function stepFlightStateMachine(
       const progress = clamp(elapsed / totalDuration, 0, 1);
       const bodyScale = lerp(ROAMER_BUTTERFLY_SIT_BODY_SCALE, 1, progress);
       const { nextPhase: liftNoisePhase, noiseX: liftNoiseX, noiseY: liftNoiseY } = advanceIdleNoise(initial.idleNoisePhase, ctx.dt);
-      const legVisibility = Math.max(0, initial.legVisibility - ctx.dt / (ROAMER_BUTTERFLY_LEG_VISIBILITY_FADE_OUT_MS / 1000));
+      const legVisibility = 0;
 
       if (nextTimer <= 0) {
         return {
