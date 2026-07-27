@@ -135,21 +135,15 @@ half4 main(float2 fragCoord) {
   }
 
   vec4 legRects[LEG_COUNT];
+  setLegRects(legRects);
   bool sittingPass = renderMode > 0.5 && renderMode < 1.5;
-  if (sittingPass) {
-    setLegRects(legRects);
-  }
 
   if (abs(local.x) < halfW && abs(local.y) < halfH) {
-    bool skip = false;
-    if (sittingPass) {
-      vec2 bodyUV = vec2(
-        local.x / (halfW * 2.0) + 0.5,
-        local.y / (halfH * 2.0) + 0.5
-      );
-      skip = isInsideAnyLeg(bodyUV, legRects);
-    }
-    if (!skip) {
+    vec2 bodyUV = vec2(
+      local.x / (halfW * 2.0) + 0.5,
+      local.y / (halfH * 2.0) + 0.5
+    );
+    if (!isInsideAnyLeg(bodyUV, legRects)) {
       half4 bodyColor = sampleBody(local, halfW, halfH);
       if (bodyColor.a > 0.01) {
         color = bodyColor;
