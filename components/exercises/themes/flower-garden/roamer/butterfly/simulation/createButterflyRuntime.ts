@@ -3,8 +3,6 @@ import { FlightState, type ButterflySharedRuntime, type ButterflySpawn, type Swi
 import {
   ROAMER_BUTTERFLY_BASE_SPEED_MIN,
   ROAMER_BUTTERFLY_BOUNDARY_MARGIN,
-  ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE,
-  ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS,
 } from '../config/butterflySimConfig';
 import {
   clamp,
@@ -49,9 +47,10 @@ export function createButterflyRuntime(
     approachOrbitTimer: makeMutable(0),
     sitWingPauseTimer: makeMutable(0),
     sitWingPauseTriggered: makeMutable(0),
-    sittingSubMode: makeMutable(ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE),
-    sitPhase: makeMutable(0),
-    sitSubModeTimer: makeMutable(ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS / 1000),
-    sitTurnTargetAngle: makeMutable(spawn.initialAngle),
+    sitOffsetX: makeMutable(0),
+    sitOffsetY: makeMutable(0),
+    sitTargetOffsetX: makeMutable(0),
+    sitTargetOffsetY: makeMutable(0),
+    sitActionTimer: makeMutable(0),
   };
 }

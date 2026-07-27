@@ -24,10 +24,11 @@ export function readButterflyState(
   approachOrbitTimer: number;
   sitWingPauseTimer: number;
   sitWingPauseTriggered: number;
-  sittingSubMode: number;
-  sitPhase: number;
-  sitSubModeTimer: number;
-  sitTurnTargetAngle: number;
+  sitOffsetX: number;
+  sitOffsetY: number;
+  sitTargetOffsetX: number;
+  sitTargetOffsetY: number;
+  sitActionTimer: number;
 } {
   'worklet';
   return {
@@ -51,10 +52,11 @@ export function readButterflyState(
     approachOrbitTimer: butterfly.approachOrbitTimer.value,
     sitWingPauseTimer: butterfly.sitWingPauseTimer.value,
     sitWingPauseTriggered: butterfly.sitWingPauseTriggered.value,
-    sittingSubMode: butterfly.sittingSubMode.value,
-    sitPhase: butterfly.sitPhase.value,
-    sitSubModeTimer: butterfly.sitSubModeTimer.value,
-    sitTurnTargetAngle: butterfly.sitTurnTargetAngle.value,
+    sitOffsetX: butterfly.sitOffsetX.value,
+    sitOffsetY: butterfly.sitOffsetY.value,
+    sitTargetOffsetX: butterfly.sitTargetOffsetX.value,
+    sitTargetOffsetY: butterfly.sitTargetOffsetY.value,
+    sitActionTimer: butterfly.sitActionTimer.value,
   };
 }
 
@@ -81,10 +83,11 @@ export function writeButterflyState(
     approachOrbitTimer: number;
     sitWingPauseTimer: number;
     sitWingPauseTriggered: number;
-    sittingSubMode: number;
-    sitPhase: number;
-    sitSubModeTimer: number;
-    sitTurnTargetAngle: number;
+    sitOffsetX: number;
+    sitOffsetY: number;
+    sitTargetOffsetX: number;
+    sitTargetOffsetY: number;
+    sitActionTimer: number;
   },
 ): void {
   'worklet';
@@ -107,10 +110,11 @@ export function writeButterflyState(
   butterfly.approachOrbitTimer.value = next.approachOrbitTimer;
   butterfly.sitWingPauseTimer.value = next.sitWingPauseTimer;
   butterfly.sitWingPauseTriggered.value = next.sitWingPauseTriggered;
-  butterfly.sittingSubMode.value = next.sittingSubMode;
-  butterfly.sitPhase.value = next.sitPhase;
-  butterfly.sitSubModeTimer.value = next.sitSubModeTimer;
-  butterfly.sitTurnTargetAngle.value = next.sitTurnTargetAngle;
+  butterfly.sitOffsetX.value = next.sitOffsetX;
+  butterfly.sitOffsetY.value = next.sitOffsetY;
+  butterfly.sitTargetOffsetX.value = next.sitTargetOffsetX;
+  butterfly.sitTargetOffsetY.value = next.sitTargetOffsetY;
+  butterfly.sitActionTimer.value = next.sitActionTimer;
 }
 
 export function updateButterfly(
@@ -171,7 +175,7 @@ export function updateButterfly(
     wingPhaseLeft: state.wingPhaseLeft,
     wingPhaseRight: state.wingPhaseRight,
     legVisibility: 0,
-    sitPhase: state.sitPhase,
+    sitPhase: 0,
     targetFlowerX: state.targetFlowerX,
     targetFlowerY: state.targetFlowerY,
     wanderTargetX: 0,
@@ -182,9 +186,11 @@ export function updateButterfly(
     approachOrbitTimer: state.approachOrbitTimer,
     sitWingPauseTimer: state.sitWingPauseTimer,
     sitWingPauseTriggered: state.sitWingPauseTriggered,
-    sittingSubMode: state.sittingSubMode,
-    sitSubModeTimer: state.sitSubModeTimer,
-    sitTurnTargetAngle: state.sitTurnTargetAngle,
+    sitOffsetX: state.sitOffsetX,
+    sitOffsetY: state.sitOffsetY,
+    sitTargetOffsetX: state.sitTargetOffsetX,
+    sitTargetOffsetY: state.sitTargetOffsetY,
+    sitActionTimer: state.sitActionTimer,
   };
 
   const next = stepFlightStateMachine(initialState, ctx);
@@ -210,9 +216,10 @@ export function updateButterfly(
     approachOrbitTimer: next.approachOrbitTimer,
     sitWingPauseTimer: next.sitWingPauseTimer,
     sitWingPauseTriggered: next.sitWingPauseTriggered,
-    sittingSubMode: next.sittingSubMode,
-    sitPhase: next.sitPhase,
-    sitSubModeTimer: next.sitSubModeTimer,
-    sitTurnTargetAngle: next.sitTurnTargetAngle,
+    sitOffsetX: next.sitOffsetX,
+    sitOffsetY: next.sitOffsetY,
+    sitTargetOffsetX: next.sitTargetOffsetX,
+    sitTargetOffsetY: next.sitTargetOffsetY,
+    sitActionTimer: next.sitActionTimer,
   });
 }

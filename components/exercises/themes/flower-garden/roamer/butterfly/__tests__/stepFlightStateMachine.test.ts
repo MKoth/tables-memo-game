@@ -4,15 +4,10 @@ import {
   ROAMER_BUTTERFLY_APPROACH_DISTANCE_THRESHOLD,
   ROAMER_BUTTERFLY_LIFT_OFF_DURATION_MS,
   ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-  ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE,
-  ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC,
-  ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN,
-  ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS,
-  ROAMER_BUTTERFLY_SITTING_ARC_DURATION_MS,
-  ROAMER_BUTTERFLY_SITTING_TURN_DURATION_MS,
-  ROAMER_BUTTERFLY_SIT_ARC_RADIUS,
-  ROAMER_BUTTERFLY_SIT_ARC_SPEED,
-  ROAMER_BUTTERFLY_SIT_ARC_VERTICAL_SQUASH,
+  ROAMER_BUTTERFLY_SIT_MOVE_RADIUS,
+  ROAMER_BUTTERFLY_SIT_MOVE_SPEED,
+  ROAMER_BUTTERFLY_SIT_MOVE_VERTICAL_SQUASH,
+  ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS,
 } from '../config/butterflySimConfig';
 
 function makeState(overrides?: Partial<ButterflyState>): ButterflyState {
@@ -45,9 +40,11 @@ function makeState(overrides?: Partial<ButterflyState>): ButterflyState {
     approachOrbitTimer: 0,
     sitWingPauseTimer: 0,
     sitWingPauseTriggered: 0,
-    sittingSubMode: 0,
-    sitSubModeTimer: 3,
-    sitTurnTargetAngle: 0,
+    sitOffsetX: 0,
+    sitOffsetY: 0,
+    sitTargetOffsetX: 0,
+    sitTargetOffsetY: 0,
+    sitActionTimer: 0,
     ...overrides,
   };
 }
@@ -133,59 +130,8 @@ describe('stepFlightStateMachine', () => {
     });
   });
 
-  describe('SITTING state', () => {
-    it('stays in SITTING while timer is positive', () => {
-      const state = makeState({
-        flightState: FlightState.SITTING,
-        positionX: 200,
-        positionY: 350,
-        targetFlowerX: 200,
-        targetFlowerY: 350,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-        stateTimer: 1,
-      });
-      const ctx = makeContext({ dt: 0.1 });
-      const next = stepFlightStateMachine(state, ctx);
-      expect(next.flightState).toBe(FlightState.SITTING);
-      expect(next.bodyScale).toBe(ROAMER_BUTTERFLY_SIT_BODY_SCALE);
-      expect(next.positionX).toBe(200);
-      expect(next.positionY).toBe(350);
-    });
-
-    it('transitions to LIFTING_OFF when timer expires', () => {
-      const state = makeState({
-        flightState: FlightState.SITTING,
-        positionX: 200,
-        positionY: 350,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-        stateTimer: 0.01,
-      });
-      const ctx = makeContext({ dt: 0.02 });
-      const next = stepFlightStateMachine(state, ctx);
-      expect(next.flightState).toBe(FlightState.LIFTING_OFF);
-    });
-  });
-
-  describe('SITTING → LIFTING_OFF transition', () => {
-    it('clears occupant slot when transitioning to LIFTING_OFF', () => {
-      const occupantSlots = [0, -1];
-      const state = makeState({
-        flightState: FlightState.SITTING,
-        positionX: 200,
-        positionY: 350,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-        stateTimer: 0.01,
-        targetFlowerIndex: 0,
-      });
-      const ctx = makeContext({ dt: 0.02, occupantSlots });
-      const next = stepFlightStateMachine(state, ctx);
-      expect(next.flightState).toBe(FlightState.LIFTING_OFF);
-      expect(occupantSlots[0]).toBe(-1);
-    });
-  });
-
-  describe('SITTING sub-mode: entry initialization', () => {
-    it('sets sittingSubMode to IDLE on APPROACH_FLOWER → SITTING transition', () => {
+  describe('SITTING state: entry initialization', () => {
+    it('sets sitOffsetX/Y to 0 and picks target offset on APPROACH_FLOWER → SITTING', () => {
       const flowerX = 200;
       const flowerY = 350;
       const state = makeState({
@@ -198,208 +144,105 @@ describe('stepFlightStateMachine', () => {
       });
       const ctx = makeContext();
       const next = stepFlightStateMachine(state, ctx);
-      expect(next.sittingSubMode).toBe(ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE);
-      expect(next.sitSubModeTimer).toBeCloseTo(ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS / 1000, 4);
+      expect(next.sitOffsetX).toBe(0);
+      expect(next.sitOffsetY).toBe(0);
+      expect(next.sitActionTimer).toBe(0);
+      const dist = Math.sqrt(
+        next.sitTargetOffsetX * next.sitTargetOffsetX +
+        next.sitTargetOffsetY * next.sitTargetOffsetY,
+      );
+      expect(dist).toBeLessThanOrEqual(ROAMER_BUTTERFLY_SIT_MOVE_RADIUS + 0.01);
     });
   });
 
-  describe('SITTING sub-mode: idle → arc → turn → idle cycle', () => {
-    it('transitions from IDLE to ARC when sub-mode timer expires', () => {
+  describe('SITTING state: movement toward target', () => {
+    it('moves sitOffset toward sitTargetOffset when sitActionTimer is 0', () => {
       const state = makeState({
         flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE,
-        sitSubModeTimer: 0.01,
         stateTimer: 10,
+        sitOffsetX: 0,
+        sitOffsetY: 0,
+        sitTargetOffsetX: 10,
+        sitTargetOffsetY: 0,
+        sitActionTimer: 0,
         positionX: 200,
         positionY: 350,
         targetFlowerX: 200,
         targetFlowerY: 350,
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
       });
-      const ctx = makeContext({ dt: 0.02 });
+      const ctx = makeContext({ dt: 0.1 });
       const next = stepFlightStateMachine(state, ctx);
-      expect(next.sittingSubMode).toBe(ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC);
-      expect(next.sitSubModeTimer).toBeCloseTo(ROAMER_BUTTERFLY_SITTING_ARC_DURATION_MS / 1000, 2);
-    });
-
-    it('transitions from ARC to TURN when sub-mode timer expires', () => {
-      const state = makeState({
-        flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC,
-        sitSubModeTimer: 0.01,
-        stateTimer: 10,
-        positionX: 200,
-        positionY: 350,
-        targetFlowerX: 200,
-        targetFlowerY: 350,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-      });
-      const ctx = makeContext({ dt: 0.02 });
-      const next = stepFlightStateMachine(state, ctx);
-      expect(next.sittingSubMode).toBe(ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN);
-      expect(next.sitSubModeTimer).toBeCloseTo(ROAMER_BUTTERFLY_SITTING_TURN_DURATION_MS / 1000, 2);
-    });
-
-    it('transitions from TURN to IDLE when sub-mode timer expires', () => {
-      const state = makeState({
-        flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN,
-        sitSubModeTimer: 0.01,
-        stateTimer: 10,
-        positionX: 200,
-        positionY: 350,
-        targetFlowerX: 200,
-        targetFlowerY: 350,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-      });
-      const ctx = makeContext({ dt: 0.02 });
-      const next = stepFlightStateMachine(state, ctx);
-      expect(next.sittingSubMode).toBe(ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE);
-      expect(next.sitSubModeTimer).toBeCloseTo(ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS / 1000, 2);
-    });
-
-    it('completes full idle → arc → turn → idle cycle', () => {
-      const idleDur = ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS / 1000;
-      const arcDur = ROAMER_BUTTERFLY_SITTING_ARC_DURATION_MS / 1000;
-      const turnDur = ROAMER_BUTTERFLY_SITTING_TURN_DURATION_MS / 1000;
-
-      let state = makeState({
-        flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE,
-        sitSubModeTimer: idleDur,
-        stateTimer: idleDur + arcDur + turnDur + 1,
-        positionX: 200,
-        positionY: 350,
-        targetFlowerX: 200,
-        targetFlowerY: 350,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-      });
-
-      const dt = idleDur + 0.01;
-      state = stepFlightStateMachine(state, makeContext({ dt }));
-      expect(state.sittingSubMode).toBe(ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC);
-
-      const dt2 = arcDur + 0.01;
-      state = stepFlightStateMachine(state, makeContext({ dt: dt2 }));
-      expect(state.sittingSubMode).toBe(ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN);
-
-      const dt3 = turnDur + 0.01;
-      state = stepFlightStateMachine(state, makeContext({ dt: dt3 }));
-      expect(state.sittingSubMode).toBe(ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE);
+      const expectedStep = ROAMER_BUTTERFLY_SIT_MOVE_SPEED * 0.1;
+      expect(next.sitOffsetX).toBeCloseTo(expectedStep, 2);
+      expect(next.sitOffsetY).toBe(0);
+      expect(next.sitActionTimer).toBe(0);
     });
   });
 
-  describe('SITTING sub-mode: sitPhase advancement', () => {
-    it('advances sitPhase in ARC sub-mode', () => {
+  describe('SITTING state: reaching target picks next target then pauses', () => {
+    it('snaps to current target, picks new target, sets pause timer', () => {
       const state = makeState({
         flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC,
-        sitPhase: 0,
-        sitSubModeTimer: 5,
         stateTimer: 10,
+        sitOffsetX: 9.5,
+        sitOffsetY: 0,
+        sitTargetOffsetX: 10,
+        sitTargetOffsetY: 0,
+        sitActionTimer: 0,
         positionX: 200,
         positionY: 350,
         targetFlowerX: 200,
         targetFlowerY: 350,
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
       });
-      const ctx = makeContext({ dt: 1.0 });
+      const ctx = makeContext({ dt: 0.1 });
       const next = stepFlightStateMachine(state, ctx);
-      expect(next.sitPhase).toBeCloseTo(ROAMER_BUTTERFLY_SIT_ARC_SPEED * 1.0, 5);
-    });
-
-    it('does not advance sitPhase in IDLE sub-mode', () => {
-      const state = makeState({
-        flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE,
-        sitPhase: 0.5,
-        sitSubModeTimer: 5,
-        stateTimer: 10,
-        positionX: 200,
-        positionY: 350,
-        targetFlowerX: 200,
-        targetFlowerY: 350,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-      });
-      const ctx = makeContext({ dt: 1.0 });
-      const next = stepFlightStateMachine(state, ctx);
-      expect(next.sitPhase).toBe(0.5);
-    });
-
-    it('does not advance sitPhase in TURN sub-mode', () => {
-      const state = makeState({
-        flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN,
-        sitPhase: 0.3,
-        sitSubModeTimer: 5,
-        stateTimer: 10,
-        positionX: 200,
-        positionY: 350,
-        targetFlowerX: 200,
-        targetFlowerY: 350,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-      });
-      const ctx = makeContext({ dt: 1.0 });
-      const next = stepFlightStateMachine(state, ctx);
-      expect(next.sitPhase).toBe(0.3);
+      expect(next.sitOffsetX).toBeCloseTo(10, 4);
+      expect(next.sitActionTimer).toBeGreaterThan(0);
+      expect(next.sitActionTimer).toBeCloseTo(ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS / 1000, 2);
+      const nextTargetDist = Math.sqrt(
+        next.sitTargetOffsetX * next.sitTargetOffsetX +
+        next.sitTargetOffsetY * next.sitTargetOffsetY,
+      );
+      expect(nextTargetDist).toBeLessThanOrEqual(ROAMER_BUTTERFLY_SIT_MOVE_RADIUS + 0.01);
     });
   });
 
-  describe('SITTING sub-mode: arc position offset', () => {
-    it('positions include arc offset in ARC sub-mode', () => {
-      const anchorX = 200;
-      const anchorY = 350;
-      const initialSitPhase = 0;
+  describe('SITTING state: pausing between moves', () => {
+    it('counts down sitActionTimer while pausing', () => {
       const state = makeState({
         flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC,
-        sitPhase: initialSitPhase,
-        sitSubModeTimer: 5,
         stateTimer: 10,
-        positionX: anchorX,
-        positionY: anchorY,
-        targetFlowerX: anchorX,
-        targetFlowerY: anchorY,
+        sitOffsetX: 10,
+        sitOffsetY: 0,
+        sitTargetOffsetX: 10,
+        sitTargetOffsetY: 0,
+        sitActionTimer: 2,
+        positionX: 200,
+        positionY: 350,
+        targetFlowerX: 200,
+        targetFlowerY: 350,
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
       });
-      const dt = 1.0;
-      const ctx = makeContext({ dt });
+      const ctx = makeContext({ dt: 0.5 });
       const next = stepFlightStateMachine(state, ctx);
-      const advancedPhase = initialSitPhase + ROAMER_BUTTERFLY_SIT_ARC_SPEED * dt;
-      const expectedX = anchorX + Math.cos(advancedPhase) * ROAMER_BUTTERFLY_SIT_ARC_RADIUS;
-      const expectedY = anchorY + Math.sin(advancedPhase) * ROAMER_BUTTERFLY_SIT_ARC_RADIUS * ROAMER_BUTTERFLY_SIT_ARC_VERTICAL_SQUASH;
-      expect(next.positionX).toBeCloseTo(expectedX, 4);
-      expect(next.positionY).toBeCloseTo(expectedY, 4);
-    });
-
-    it('positions hold at anchor in IDLE sub-mode', () => {
-      const anchorX = 200;
-      const anchorY = 350;
-      const state = makeState({
-        flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE,
-        sitSubModeTimer: 5,
-        stateTimer: 10,
-        positionX: anchorX,
-        positionY: anchorY,
-        targetFlowerX: anchorX,
-        targetFlowerY: anchorY,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-      });
-      const ctx = makeContext({ dt: 1.0 });
-      const next = stepFlightStateMachine(state, ctx);
-      expect(next.positionX).toBe(anchorX);
-      expect(next.positionY).toBe(anchorY);
+      expect(next.sitActionTimer).toBeCloseTo(1.5, 4);
+      expect(next.sitOffsetX).toBe(10);
+      expect(next.sitOffsetY).toBe(0);
     });
   });
 
-  describe('SITTING sub-mode: on-place turn', () => {
-    it('sets sitTurnTargetAngle when entering TURN sub-mode', () => {
+  describe('SITTING state: angle faces movement direction', () => {
+    it('angle lerps toward atan2 of target direction', () => {
       const state = makeState({
         flightState: FlightState.SITTING,
-        sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC,
-        sitSubModeTimer: 0.01,
         stateTimer: 10,
+        sitOffsetX: 0,
+        sitOffsetY: 0,
+        sitTargetOffsetX: 10,
+        sitTargetOffsetY: 10,
+        sitActionTimer: 0,
         angle: 0,
         positionX: 200,
         positionY: 350,
@@ -407,10 +250,29 @@ describe('stepFlightStateMachine', () => {
         targetFlowerY: 350,
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
       });
-      const ctx = makeContext({ dt: 0.02 });
+      const ctx = makeContext({ dt: 0.3 });
       const next = stepFlightStateMachine(state, ctx);
-      expect(next.sittingSubMode).toBe(ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN);
-      expect(next.sitTurnTargetAngle).not.toBe(0);
+      const desiredAngle = Math.atan2(10, 10);
+      expect(next.angle).toBeGreaterThan(0);
+      expect(next.angle).toBeLessThan(desiredAngle);
+    });
+  });
+
+  describe('SITTING → LIFTING_OFF transition', () => {
+    it('clears occupant slot when transitioning to LIFTING_OFF', () => {
+      const occupantSlots = [0, -1];
+      const state = makeState({
+        flightState: FlightState.SITTING,
+        stateTimer: 0.01,
+        positionX: 200,
+        positionY: 350,
+        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
+        targetFlowerIndex: 0,
+      });
+      const ctx = makeContext({ dt: 0.02, occupantSlots });
+      const next = stepFlightStateMachine(state, ctx);
+      expect(next.flightState).toBe(FlightState.LIFTING_OFF);
+      expect(occupantSlots[0]).toBe(-1);
     });
   });
 

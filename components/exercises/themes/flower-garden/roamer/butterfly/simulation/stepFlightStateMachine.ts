@@ -28,16 +28,11 @@ import {
   ROAMER_BUTTERFLY_WING_FREQ_MIN,
   ROAMER_BUTTERFLY_LAND_AMPLITUDE_BOOST,
   ROAMER_BUTTERFLY_TAKEOFF_AMPLITUDE_BOOST,
-  ROAMER_BUTTERFLY_SIT_ARC_RADIUS,
-  ROAMER_BUTTERFLY_SIT_ARC_SPEED,
-  ROAMER_BUTTERFLY_SIT_ARC_VERTICAL_SQUASH,
-  ROAMER_BUTTERFLY_SIT_TURN_ANGLE_DELTA,
-  ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE,
-  ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC,
-  ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN,
-  ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS,
-  ROAMER_BUTTERFLY_SITTING_ARC_DURATION_MS,
-  ROAMER_BUTTERFLY_SITTING_TURN_DURATION_MS,
+  ROAMER_BUTTERFLY_SIT_MOVE_RADIUS,
+  ROAMER_BUTTERFLY_SIT_MOVE_SPEED,
+  ROAMER_BUTTERFLY_SIT_MOVE_VERTICAL_SQUASH,
+  ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS,
+  ROAMER_BUTTERFLY_SIT_MOVE_TURN_SPEED,
 } from '../config/butterflySimConfig';
 import {
   clamp,
@@ -45,7 +40,6 @@ import {
   idleDurationForPhase,
   lerp,
   lerpAngle,
-  normalizeAngle,
   pickErraticWanderAngle,
 } from './butterflySimHelpers';
 import { pickFieldFlowerTarget } from './pickFieldFlowerTarget';
@@ -404,6 +398,10 @@ export function stepFlightStateMachine(
           ctx.flowerSwingAngles,
           ctx.boostsMutable[fi],
         );
+        const targetAngle = Math.sin(state.phase * 7.7 + state.wingPhaseLeft * 3.1) * Math.PI;
+        const targetRadius = (Math.abs(Math.sin(state.phase * 11.3 + state.wingPhaseLeft * 5.7 + 1.3))) * ROAMER_BUTTERFLY_SIT_MOVE_RADIUS;
+        const initTargetOffX = Math.cos(targetAngle) * targetRadius;
+        const initTargetOffY = Math.sin(targetAngle) * targetRadius * ROAMER_BUTTERFLY_SIT_MOVE_VERTICAL_SQUASH;
         return {
           ...initial,
           flightState: FlightState.SITTING,
@@ -415,9 +413,11 @@ export function stepFlightStateMachine(
           idleNoisePhase: diveIdleNoise,
           sitWingPauseTimer: 0,
           sitWingPauseTriggered: 0,
-          sittingSubMode: ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE,
-          sitSubModeTimer: ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS / 1000,
-          sitTurnTargetAngle: initial.angle,
+          sitOffsetX: 0,
+          sitOffsetY: 0,
+          sitTargetOffsetX: initTargetOffX,
+          sitTargetOffsetY: initTargetOffY,
+          sitActionTimer: 0,
         };
       }
 
@@ -472,28 +472,35 @@ export function stepFlightStateMachine(
         }
       }
 
-      let nextSittingSubMode = initial.sittingSubMode;
-      let nextSubModeTimer = initial.sitSubModeTimer - ctx.dt;
-      let nextSitPhase = initial.sitPhase;
-      let nextSitTurnTargetAngle = initial.sitTurnTargetAngle;
+      let nextOffsetX = initial.sitOffsetX;
+      let nextOffsetY = initial.sitOffsetY;
+      let nextTargetX = initial.sitTargetOffsetX;
+      let nextTargetY = initial.sitTargetOffsetY;
+      let nextActionTimer = initial.sitActionTimer;
 
-      if (nextSubModeTimer <= 0) {
-        if (nextSittingSubMode === ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE) {
-          nextSittingSubMode = ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC;
-          nextSubModeTimer = ROAMER_BUTTERFLY_SITTING_ARC_DURATION_MS / 1000;
-        } else if (nextSittingSubMode === ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC) {
-          nextSittingSubMode = ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN;
-          nextSubModeTimer = ROAMER_BUTTERFLY_SITTING_TURN_DURATION_MS / 1000;
-          const turnDelta = (Math.sin(state.phase * 7.7 + wingL * 3.1)) * ROAMER_BUTTERFLY_SIT_TURN_ANGLE_DELTA;
-          nextSitTurnTargetAngle = normalizeAngle(initial.angle + turnDelta);
-        } else {
-          nextSittingSubMode = ROAMER_BUTTERFLY_SIT_SUB_MODE_IDLE;
-          nextSubModeTimer = ROAMER_BUTTERFLY_SITTING_IDLE_DURATION_MS / 1000;
-        }
+      if (nextActionTimer > 0) {
+        nextActionTimer = Math.max(0, nextActionTimer - ctx.dt);
       }
 
-      if (nextSittingSubMode === ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC) {
-        nextSitPhase += ROAMER_BUTTERFLY_SIT_ARC_SPEED * ctx.dt;
+      if (nextActionTimer <= 0) {
+        const dx = nextTargetX - nextOffsetX;
+        const dy = nextTargetY - nextOffsetY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 1) {
+          nextOffsetX = nextTargetX;
+          nextOffsetY = nextTargetY;
+          const newAngle = Math.sin(state.phase * 7.7 + wingL * 3.1 + initial.stateTimer * 1.3) * Math.PI;
+          const newRadius = (Math.abs(Math.sin(state.phase * 11.3 + wingL * 5.7 + initial.stateTimer * 2.1))) * ROAMER_BUTTERFLY_SIT_MOVE_RADIUS;
+          nextTargetX = Math.cos(newAngle) * newRadius;
+          nextTargetY = Math.sin(newAngle) * newRadius * ROAMER_BUTTERFLY_SIT_MOVE_VERTICAL_SQUASH;
+          nextActionTimer = ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS / 1000;
+        } else {
+          const step = ROAMER_BUTTERFLY_SIT_MOVE_SPEED * ctx.dt;
+          const clampedStep = Math.min(step, dist);
+          nextOffsetX += (dx / dist) * clampedStep;
+          nextOffsetY += (dy / dist) * clampedStep;
+        }
       }
 
       if (nextTimer <= 0) {
@@ -523,16 +530,17 @@ export function stepFlightStateMachine(
           wanderTargetY: 0,
           legPhases: initial.legPhases,
           legVisibility: 0,
-          sitPhase: nextSitPhase,
           waitTimer: 0,
           sitTimer: 0,
           stateTimer: ROAMER_BUTTERFLY_LIFT_OFF_DURATION_MS / 1000,
           approachOrbitTimer: 0,
           sitWingPauseTimer: 0,
           sitWingPauseTriggered: 0,
-          sittingSubMode: nextSittingSubMode,
-          sitSubModeTimer: nextSubModeTimer,
-          sitTurnTargetAngle: nextSitTurnTargetAngle,
+          sitOffsetX: nextOffsetX,
+          sitOffsetY: nextOffsetY,
+          sitTargetOffsetX: nextTargetX,
+          sitTargetOffsetY: nextTargetY,
+          sitActionTimer: nextActionTimer,
         };
       }
 
@@ -547,19 +555,14 @@ export function stepFlightStateMachine(
         ctx.boostsMutable[sfi] ?? 0,
       );
 
-      const basePosX = initial.targetFlowerX + swingOff.x;
-      const basePosY = initial.targetFlowerY + swingOff.y;
+      const posX = initial.targetFlowerX + swingOff.x + nextOffsetX;
+      const posY = initial.targetFlowerY + swingOff.y + nextOffsetY;
 
-      let posX = basePosX;
-      let posY = basePosY;
-      let angle = initial.angle;
-
-      if (nextSittingSubMode === ROAMER_BUTTERFLY_SIT_SUB_MODE_ARC) {
-        posX = basePosX + Math.cos(nextSitPhase) * ROAMER_BUTTERFLY_SIT_ARC_RADIUS;
-        posY = basePosY + Math.sin(nextSitPhase) * ROAMER_BUTTERFLY_SIT_ARC_RADIUS * ROAMER_BUTTERFLY_SIT_ARC_VERTICAL_SQUASH;
-      } else if (nextSittingSubMode === ROAMER_BUTTERFLY_SIT_SUB_MODE_TURN) {
-        angle = lerpAngle(initial.angle, nextSitTurnTargetAngle, Math.min(1, 3.0 * ctx.dt));
-      }
+      const moveDx = nextTargetX - nextOffsetX;
+      const moveDy = nextTargetY - nextOffsetY;
+      const moveDist = Math.sqrt(moveDx * moveDx + moveDy * moveDy);
+      const desiredAngle = moveDist > 0.5 ? Math.atan2(moveDy, moveDx) : initial.angle;
+      const angle = lerpAngle(initial.angle, desiredAngle, Math.min(1, ROAMER_BUTTERFLY_SIT_MOVE_TURN_SPEED * ctx.dt));
 
       return {
         ...state,
@@ -584,16 +587,17 @@ export function stepFlightStateMachine(
         wanderTargetY: 0,
         legPhases: initial.legPhases,
         legVisibility: 0,
-        sitPhase: nextSitPhase,
         waitTimer: 0,
         sitTimer: 0,
         stateTimer: nextTimer,
         approachOrbitTimer: 0,
         sitWingPauseTimer: pauseTimer,
         sitWingPauseTriggered: pauseTriggered,
-        sittingSubMode: nextSittingSubMode,
-        sitSubModeTimer: nextSubModeTimer,
-        sitTurnTargetAngle: nextSitTurnTargetAngle,
+        sitOffsetX: nextOffsetX,
+        sitOffsetY: nextOffsetY,
+        sitTargetOffsetX: nextTargetX,
+        sitTargetOffsetY: nextTargetY,
+        sitActionTimer: nextActionTimer,
       };
     }
 
