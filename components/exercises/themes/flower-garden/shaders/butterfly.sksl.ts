@@ -28,6 +28,10 @@ uniform float legPhasesAdvanced[6];
 uniform float renderMode;
 uniform float3 bodyTint;
 uniform float bodyTintStrength;
+uniform float shadowOffsetX;
+uniform float shadowOffsetY;
+uniform float shadowSize;
+uniform float shadowOpacity;
 uniform shader bodyTexture;
 uniform shader leftWingTexture;
 uniform shader rightWingTexture;
@@ -134,6 +138,36 @@ half4 main(float2 fragCoord) {
     return color;
   }
 
+  vec2 shadowRel = fragCoord - vec2(bodyCenterX + shadowOffsetX, bodyCenterY + shadowOffsetY);
+  vec2 shadowLocal = vec2(ca * shadowRel.x - sa * shadowRel.y, sa * shadowRel.x + ca * shadowRel.y);
+  float shadowScale = 1.0 / max(shadowSize, 0.001);
+  vec2 scaledShadowLocal = shadowLocal * shadowScale;
+
+  half4 shadowComposite = half4(0.0);
+
+  half4 bodyShadow = sampleBody(scaledShadowLocal, halfW, halfH);
+  if (bodyShadow.a > 0.01) {
+    float a = bodyShadow.a;
+    shadowComposite = bodyShadow * a + shadowComposite * (1.0 - a);
+  }
+
+  half4 leftWingShadow = sampleLeftWing(scaledShadowLocal, halfW, halfH, wingLeftFlap);
+  if (leftWingShadow.a > 0.01) {
+    float a = leftWingShadow.a;
+    shadowComposite = leftWingShadow * a + shadowComposite * (1.0 - a);
+  }
+
+  half4 rightWingShadow = sampleRightWing(scaledShadowLocal, halfW, halfH, wingRightFlap);
+  if (rightWingShadow.a > 0.01) {
+    float a = rightWingShadow.a;
+    shadowComposite = rightWingShadow * a + shadowComposite * (1.0 - a);
+  }
+
+  if (shadowComposite.a > 0.01) {
+    half4 s = half4(0.0, 0.0, 0.0, shadowComposite.a * shadowOpacity);
+    color = s + color * (1.0 - s.a);
+  }
+
   vec4 legRects[LEG_COUNT];
   setLegRects(legRects);
   bool sittingPass = renderMode > 0.5 && renderMode < 1.5;
@@ -236,4 +270,8 @@ export const butterflyUniformDefaults = {
   renderMode: 0,
   bodyTint: [1, 1, 1] as const,
   bodyTintStrength: 0,
+  shadowOffsetX: 0,
+  shadowOffsetY: 0,
+  shadowSize: 1,
+  shadowOpacity: 0,
 } as const;

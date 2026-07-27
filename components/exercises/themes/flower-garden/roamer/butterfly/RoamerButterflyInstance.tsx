@@ -18,6 +18,14 @@ import {
   ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN,
   ROAMER_BUTTERFLY_WING_LENGTH_RATIO,
   ROAMER_BUTTERFLY_WING_STRETCH_GAIN,
+  ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_X,
+  ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_Y,
+  ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_X,
+  ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_Y,
+  ROAMER_BUTTERFLY_SHADOW_SIZE_SITTING,
+  ROAMER_BUTTERFLY_SHADOW_SIZE_FLYING,
+  ROAMER_BUTTERFLY_SHADOW_OPACITY_SITTING,
+  ROAMER_BUTTERFLY_SHADOW_OPACITY_FLYING,
 } from './config/butterflySettings';
 
 function compileButterflyEffect(): SkRuntimeEffect {
@@ -93,7 +101,23 @@ export function RoamerButterflyInstance({
     const rectHalfW = (halfW + wingSpanX) * cosA + (halfH + wingSpanY) * sinA;
     const rectHalfH = (halfW + wingSpanX) * sinA + (halfH + wingSpanY) * cosA;
 
-    const margin = ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN;
+    const isSitting = renderMode > 0.5;
+    const shadowOffX = isSitting
+      ? ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_X
+      : ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_X;
+    const shadowOffY = isSitting
+      ? ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_Y
+      : ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_Y;
+    const shadowSz = isSitting
+      ? ROAMER_BUTTERFLY_SHADOW_SIZE_SITTING
+      : ROAMER_BUTTERFLY_SHADOW_SIZE_FLYING;
+
+    const shadowOffsetExtra = Math.abs(shadowOffX) + Math.abs(shadowOffY);
+    const shadowScaleExtra =
+      Math.max(rectHalfW, rectHalfH) * Math.max(0, shadowSz - 1);
+
+    const margin =
+      ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN + shadowOffsetExtra + shadowScaleExtra;
     return {
       x: x.value - rectHalfW - margin,
       y: y.value - rectHalfH - margin,
@@ -103,6 +127,7 @@ export function RoamerButterflyInstance({
   });
 
   const uniforms = useDerivedValue(() => {
+    const isSitting = renderMode > 0.5;
     const wingFlap = Math.sin(wingPhase.value);
     const legPhasesAdvanced = legPhases.map((sv, i) =>
       Math.sin(sv.value + spawnLegPhaseOffsets[i]!),
@@ -129,6 +154,18 @@ export function RoamerButterflyInstance({
       renderMode,
       bodyTint: bodyTintUniform,
       bodyTintStrength: butterflyUniformDefaults.bodyTintStrength,
+      shadowOffsetX: isSitting
+        ? ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_X
+        : ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_X,
+      shadowOffsetY: isSitting
+        ? ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_Y
+        : ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_Y,
+      shadowSize: isSitting
+        ? ROAMER_BUTTERFLY_SHADOW_SIZE_SITTING
+        : ROAMER_BUTTERFLY_SHADOW_SIZE_FLYING,
+      shadowOpacity: isSitting
+        ? ROAMER_BUTTERFLY_SHADOW_OPACITY_SITTING
+        : ROAMER_BUTTERFLY_SHADOW_OPACITY_FLYING,
     };
   });
 
