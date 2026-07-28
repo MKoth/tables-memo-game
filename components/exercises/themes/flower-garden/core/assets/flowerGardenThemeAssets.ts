@@ -100,6 +100,16 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     rightWing8: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing8.png'),
     rightWing9: require('../../../../../../assets/images/flower_garden_theme/lycaenidae/lycaenidae_right_wing9.png'),
   },
+  bee: {
+    body: require('../../../../../../assets/images/flower_garden_theme/bee/bee_body.png'),
+    leftWing: require('../../../../../../assets/images/flower_garden_theme/bee/bee_left_wing.png'),
+    rightWing: require('../../../../../../assets/images/flower_garden_theme/bee/bee_right_wing.png'),
+  },
+  bumblebee: {
+    body: require('../../../../../../assets/images/flower_garden_theme/bumblebee/bumblebee_body.png'),
+    leftWing: require('../../../../../../assets/images/flower_garden_theme/bumblebee/bumblebee_left_wing.png'),
+    rightWing: require('../../../../../../assets/images/flower_garden_theme/bumblebee/bumblebee_right_wing.png'),
+  },
 } as const;
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
@@ -326,7 +336,17 @@ export type FlowerGardenDandelionKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.d
 export type FlowerGardenChamomileKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.chamomile;
 export type FlowerGardenPoppyKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.poppy;
 export type FlowerGardenWildVioletKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.wild_violet;
+export const BEE_BODY_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bee.body;
+export const BEE_LEFT_WING_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bee.leftWing;
+export const BEE_RIGHT_WING_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bee.rightWing;
+
+export const BUMBLEBEE_BODY_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.body;
+export const BUMBLEBEE_LEFT_WING_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.leftWing;
+export const BUMBLEBEE_RIGHT_WING_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.rightWing;
+
 export type FlowerGardenLycaenidaeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae;
+export type FlowerGardenBeeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bee;
+export type FlowerGardenBumblebeeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bumblebee;
 
 export type FlowerGardenThemeImages = {
   roses: Record<FlowerGardenPetalKey, unknown>;
@@ -353,12 +373,25 @@ export type FlowerGardenThemeImages = {
   lycaenidaeBodyImage: SkImage | null;
   lycaenidaeWingLeftImages: SkImage[] | null;
   lycaenidaeWingRightImages: SkImage[] | null;
+  beeBodyImage: SkImage | null;
+  beeLeftWingImage: SkImage | null;
+  beeRightWingImage: SkImage | null;
+  bumblebeeBodyImage: SkImage | null;
+  bumblebeeLeftWingImage: SkImage | null;
+  bumblebeeRightWingImage: SkImage | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roses).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bush).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.soil).length;
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.soil).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.dandelion).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.chamomile).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.poppy).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.wild_violet).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bee).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bumblebee).length;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;
 

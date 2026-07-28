@@ -3,6 +3,12 @@ import type { SkImage } from '@shopify/react-native-skia';
 import type { ThemeAssets } from '../../../../themeContract';
 import { loadSkiaImage } from '../../../../core/assets/loadSkiaImage';
 import {
+  BEE_BODY_SOURCE,
+  BEE_LEFT_WING_SOURCE,
+  BEE_RIGHT_WING_SOURCE,
+  BUMBLEBEE_BODY_SOURCE,
+  BUMBLEBEE_LEFT_WING_SOURCE,
+  BUMBLEBEE_RIGHT_WING_SOURCE,
   CALYX_SOURCE,
   CHAMOMILE_FLOWER_SOURCES,
   CHAMOMILE_LEAF_SOURCES,
@@ -34,6 +40,8 @@ import {
   type FlowerGardenPetalKey,
   type FlowerGardenPoppyKey,
   type FlowerGardenLycaenidaeKey,
+  type FlowerGardenBeeKey,
+  type FlowerGardenBumblebeeKey,
   type FlowerGardenThemeImages,
   type FlowerGardenWildVioletKey,
 } from './flowerGardenThemeAssets';
@@ -129,6 +137,24 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
         for (let i = 0; i < lycaenidaeEntries.length; i++) {
           lycaenidaeEntries[i]!;
+          trackSource();
+        }
+
+        const beeEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.bee,
+        ) as Array<[FlowerGardenBeeKey, number]>;
+
+        for (let i = 0; i < beeEntries.length; i++) {
+          beeEntries[i]!;
+          trackSource();
+        }
+
+        const bumblebeeEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.bumblebee,
+        ) as Array<[FlowerGardenBumblebeeKey, number]>;
+
+        for (let i = 0; i < bumblebeeEntries.length; i++) {
+          bumblebeeEntries[i]!;
           trackSource();
         }
 
@@ -579,6 +605,84 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        let beeBodyImage: SkImage | null = null;
+        try {
+          beeBodyImage = await loadSkiaImage(BEE_BODY_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load bee body SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        let beeLeftWingImage: SkImage | null = null;
+        try {
+          beeLeftWingImage = await loadSkiaImage(BEE_LEFT_WING_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load bee left wing SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        let beeRightWingImage: SkImage | null = null;
+        try {
+          beeRightWingImage = await loadSkiaImage(BEE_RIGHT_WING_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load bee right wing SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        let bumblebeeBodyImage: SkImage | null = null;
+        try {
+          bumblebeeBodyImage = await loadSkiaImage(BUMBLEBEE_BODY_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load bumblebee body SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        let bumblebeeLeftWingImage: SkImage | null = null;
+        try {
+          bumblebeeLeftWingImage = await loadSkiaImage(BUMBLEBEE_LEFT_WING_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load bumblebee left wing SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        let bumblebeeRightWingImage: SkImage | null = null;
+        try {
+          bumblebeeRightWingImage = await loadSkiaImage(BUMBLEBEE_RIGHT_WING_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load bumblebee right wing SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -606,6 +710,12 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             lycaenidaeBodyImage,
             lycaenidaeWingLeftImages: lycaenidaeWingLeftImages.length === LYCAENIDAE_LEFT_WING_SOURCES.length ? lycaenidaeWingLeftImages : null,
             lycaenidaeWingRightImages: lycaenidaeWingRightImages.length === LYCAENIDAE_RIGHT_WING_SOURCES.length ? lycaenidaeWingRightImages : null,
+            beeBodyImage,
+            beeLeftWingImage,
+            beeRightWingImage,
+            bumblebeeBodyImage,
+            bumblebeeLeftWingImage,
+            bumblebeeRightWingImage,
           },
         });
       } catch (error) {
