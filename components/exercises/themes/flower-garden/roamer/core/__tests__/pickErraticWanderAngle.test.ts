@@ -1,8 +1,8 @@
-import { pickErraticWanderAngle } from '../simulation/butterflySimHelpers';
+import { pickErraticWanderAngle } from '../roamerSimHelpers';
 import {
   ROAMER_BUTTERFLY_WANDER_DEVIATION_MAX,
   ROAMER_BUTTERFLY_WANDER_DEVIATION_MIN,
-} from '../config/butterflySimConfig';
+} from '../../butterfly/config/butterflySimConfig';
 
 describe('pickErraticWanderAngle', () => {
   it('same phase and wingPhaseDiff produce the same output', () => {

@@ -1,5 +1,5 @@
-import type { Rng } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
-import { ROAMER_BUTTERFLY_WING_PAIR_COUNT } from '../config/butterflySimConfig';
+import type { Rng } from '../../scenery/BushShaderLayer/helpers/seededRandom';
+import { ROAMER_BUTTERFLY_WING_PAIR_COUNT } from '../butterfly/config/butterflySimConfig';
 
 function fisherYatesShuffle(arr: number[], rng: Rng): void {
   for (let i = arr.length - 1; i > 0; i--) {

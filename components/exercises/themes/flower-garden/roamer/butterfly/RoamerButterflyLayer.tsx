@@ -4,10 +4,10 @@ import { Canvas, Group, type SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { useExerciseLayout } from '../../../../core';
 import { useFlowerGardenAssetsContext } from '../../core/providers/FlowerGardenAssetsProvider';
-import { useButterflySimulation } from './simulation/useButterflySimulation';
+import { useRoamerSimulation } from '../core/useRoamerSimulation';
 import { RoamerButterflyInstance } from './RoamerButterflyInstance';
-import { FlightState, type ButterflySharedRuntime } from './simulation/types';
-import { pickRoamerDrawPass } from './simulation/pickRoamerDrawPass';
+import { FlightState, type RoamerSharedRuntime } from '../core/types';
+import { pickRoamerDrawPass } from '../core/pickRoamerDrawPass';
 
 export type RoamerButterflyLayerProps = {
   words: string[];
@@ -24,7 +24,7 @@ export function RoamerButterflyLayer({
   const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
   const { images } = useFlowerGardenAssetsContext();
 
-  const sim = useButterflySimulation({
+  const sim = useRoamerSimulation({
     words,
     width: screenWidth,
     height: screenHeight,
@@ -93,7 +93,7 @@ function ButterflySittingPass({
   leftWingImage,
   rightWingImage,
 }: {
-  runtime: ButterflySharedRuntime;
+  runtime: RoamerSharedRuntime;
   bodyImage: SkImage;
   leftWingImage: SkImage;
   rightWingImage: SkImage;
@@ -129,7 +129,7 @@ function ButterflyFlyingPass({
   leftWingImage,
   rightWingImage,
 }: {
-  runtime: ButterflySharedRuntime;
+  runtime: RoamerSharedRuntime;
   bodyImage: SkImage;
   leftWingImage: SkImage;
   rightWingImage: SkImage;

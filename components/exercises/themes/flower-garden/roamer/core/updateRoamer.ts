@@ -1,8 +1,9 @@
-import { FlightState, type ButterflySharedRuntime } from './types';
+import { FlightState, type RoamerSharedRuntime } from './types';
+import type { RoamerConfig } from './roamerConfig';
 import { stepFlightStateMachine, type FlightContext } from './stepFlightStateMachine';
 
-export function readButterflyState(
-  butterfly: ButterflySharedRuntime,
+export function readRoamerState(
+  roamer: RoamerSharedRuntime,
 ): {
   flightState: FlightState;
   positionX: number;
@@ -34,38 +35,38 @@ export function readButterflyState(
 } {
   'worklet';
   return {
-    flightState: butterfly.state.value as FlightState,
-    positionX: butterfly.x.value,
-    positionY: butterfly.y.value,
-    angle: butterfly.angle.value,
-    speed: butterfly.speed.value,
-    wingPhaseLeft: butterfly.wingPhase.value,
-    wingPhaseRight: butterfly.wingPhase.value,
-    noisePhase: butterfly.noisePhase.value,
-    idleNoisePhase: butterfly.idleNoisePhase.value,
-    pathCoeff: butterfly.pathCoeff.value,
-    stateTimer: butterfly.stateTimer.value,
-    wanderAngle: butterfly.wanderAngle.value,
-    bodyScale: butterfly.bodyScale.value,
-    targetFlowerIndex: butterfly.targetFlowerIndex.value,
-    targetFlowerX: butterfly.targetFlowerX.value,
-    targetFlowerY: butterfly.targetFlowerY.value,
-    sitTimer: butterfly.sitTimer.value,
-    approachOrbitTimer: butterfly.approachOrbitTimer.value,
-    sitWingPauseTimer: butterfly.sitWingPauseTimer.value,
-    sitWingPauseTriggered: butterfly.sitWingPauseTriggered.value,
-    sitOffsetX: butterfly.sitOffsetX.value,
-    sitOffsetY: butterfly.sitOffsetY.value,
-    sitTargetOffsetX: butterfly.sitTargetOffsetX.value,
-    sitTargetOffsetY: butterfly.sitTargetOffsetY.value,
-    sitActionTimer: butterfly.sitActionTimer.value,
-    legPhases: butterfly.legPhases.map(sv => sv.value),
-    legVisibility: butterfly.legVisibility.value,
+    flightState: roamer.state.value as FlightState,
+    positionX: roamer.x.value,
+    positionY: roamer.y.value,
+    angle: roamer.angle.value,
+    speed: roamer.speed.value,
+    wingPhaseLeft: roamer.wingPhase.value,
+    wingPhaseRight: roamer.wingPhase.value,
+    noisePhase: roamer.noisePhase.value,
+    idleNoisePhase: roamer.idleNoisePhase.value,
+    pathCoeff: roamer.pathCoeff.value,
+    stateTimer: roamer.stateTimer.value,
+    wanderAngle: roamer.wanderAngle.value,
+    bodyScale: roamer.bodyScale.value,
+    targetFlowerIndex: roamer.targetFlowerIndex.value,
+    targetFlowerX: roamer.targetFlowerX.value,
+    targetFlowerY: roamer.targetFlowerY.value,
+    sitTimer: roamer.sitTimer.value,
+    approachOrbitTimer: roamer.approachOrbitTimer.value,
+    sitWingPauseTimer: roamer.sitWingPauseTimer.value,
+    sitWingPauseTriggered: roamer.sitWingPauseTriggered.value,
+    sitOffsetX: roamer.sitOffsetX.value,
+    sitOffsetY: roamer.sitOffsetY.value,
+    sitTargetOffsetX: roamer.sitTargetOffsetX.value,
+    sitTargetOffsetY: roamer.sitTargetOffsetY.value,
+    sitActionTimer: roamer.sitActionTimer.value,
+    legPhases: roamer.legPhases.map(sv => sv.value),
+    legVisibility: roamer.legVisibility.value,
   };
 }
 
-export function writeButterflyState(
-  butterfly: ButterflySharedRuntime,
+export function writeRoamerState(
+  roamer: RoamerSharedRuntime,
   next: {
     flightState: FlightState;
     positionX: number;
@@ -97,38 +98,39 @@ export function writeButterflyState(
   },
 ): void {
   'worklet';
-  butterfly.state.value = next.flightState;
-  butterfly.x.value = next.positionX;
-  butterfly.y.value = next.positionY;
-  butterfly.angle.value = next.angle;
-  butterfly.speed.value = next.speed;
-  butterfly.wingPhase.value = next.wingPhaseLeft;
-  butterfly.noisePhase.value = next.noisePhase;
-  butterfly.idleNoisePhase.value = next.idleNoisePhase;
-  butterfly.pathCoeff.value = next.pathCoeff;
-  butterfly.stateTimer.value = next.stateTimer;
-  butterfly.wanderAngle.value = next.wanderAngle;
-  butterfly.bodyScale.value = next.bodyScale;
-  butterfly.targetFlowerIndex.value = next.targetFlowerIndex;
-  butterfly.targetFlowerX.value = next.targetFlowerX;
-  butterfly.targetFlowerY.value = next.targetFlowerY;
-  butterfly.sitTimer.value = next.sitTimer;
-  butterfly.approachOrbitTimer.value = next.approachOrbitTimer;
-  butterfly.sitWingPauseTimer.value = next.sitWingPauseTimer;
-  butterfly.sitWingPauseTriggered.value = next.sitWingPauseTriggered;
-  butterfly.sitOffsetX.value = next.sitOffsetX;
-  butterfly.sitOffsetY.value = next.sitOffsetY;
-  butterfly.sitTargetOffsetX.value = next.sitTargetOffsetX;
-  butterfly.sitTargetOffsetY.value = next.sitTargetOffsetY;
-  butterfly.sitActionTimer.value = next.sitActionTimer;
+  roamer.state.value = next.flightState;
+  roamer.x.value = next.positionX;
+  roamer.y.value = next.positionY;
+  roamer.angle.value = next.angle;
+  roamer.speed.value = next.speed;
+  roamer.wingPhase.value = next.wingPhaseLeft;
+  roamer.noisePhase.value = next.noisePhase;
+  roamer.idleNoisePhase.value = next.idleNoisePhase;
+  roamer.pathCoeff.value = next.pathCoeff;
+  roamer.stateTimer.value = next.stateTimer;
+  roamer.wanderAngle.value = next.wanderAngle;
+  roamer.bodyScale.value = next.bodyScale;
+  roamer.targetFlowerIndex.value = next.targetFlowerIndex;
+  roamer.targetFlowerX.value = next.targetFlowerX;
+  roamer.targetFlowerY.value = next.targetFlowerY;
+  roamer.sitTimer.value = next.sitTimer;
+  roamer.approachOrbitTimer.value = next.approachOrbitTimer;
+  roamer.sitWingPauseTimer.value = next.sitWingPauseTimer;
+  roamer.sitWingPauseTriggered.value = next.sitWingPauseTriggered;
+  roamer.sitOffsetX.value = next.sitOffsetX;
+  roamer.sitOffsetY.value = next.sitOffsetY;
+  roamer.sitTargetOffsetX.value = next.sitTargetOffsetX;
+  roamer.sitTargetOffsetY.value = next.sitTargetOffsetY;
+  roamer.sitActionTimer.value = next.sitActionTimer;
   for (let i = 0; i < next.legPhases.length; i++) {
-    butterfly.legPhases[i]!.value = next.legPhases[i]!;
+    roamer.legPhases[i]!.value = next.legPhases[i]!;
   }
-  butterfly.legVisibility.value = next.legVisibility;
+  roamer.legVisibility.value = next.legVisibility;
 }
 
-export function updateButterfly(
-  butterfly: ButterflySharedRuntime,
+export function updateRoamer(
+  roamer: RoamerSharedRuntime,
+  config: RoamerConfig,
   dt: number,
   steerMinX: number,
   steerMaxX: number,
@@ -152,7 +154,7 @@ export function updateButterfly(
   boostsMutable: number[],
 ): void {
   'worklet';
-  const state = readButterflyState(butterfly);
+  const state = readRoamerState(roamer);
 
   const ctx: FlightContext = {
     dt,
@@ -180,7 +182,7 @@ export function updateButterfly(
 
   const initialState = {
     ...state,
-    phase: butterfly.spawn.phase,
+    phase: roamer.spawn.phase,
     legPhases: state.legPhases,
     wingPhaseLeft: state.wingPhaseLeft,
     wingPhaseRight: state.wingPhaseRight,
@@ -203,9 +205,9 @@ export function updateButterfly(
     sitActionTimer: state.sitActionTimer,
   };
 
-  const next = stepFlightStateMachine(initialState, ctx);
+  const next = stepFlightStateMachine(initialState, ctx, config);
 
-  writeButterflyState(butterfly, {
+  writeRoamerState(roamer, {
     flightState: next.flightState,
     positionX: next.positionX,
     positionY: next.positionY,

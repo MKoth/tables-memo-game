@@ -1,8 +1,8 @@
-import { pickWanderAngle } from '../simulation/butterflySimHelpers';
+import { pickWanderAngle } from '../roamerSimHelpers';
 import {
   ROAMER_BUTTERFLY_WANDER_DEVIATION_MAX,
   ROAMER_BUTTERFLY_WANDER_DEVIATION_MIN,
-} from '../config/butterflySimConfig';
+} from '../../butterfly/config/butterflySimConfig';
 
 describe('pickWanderAngle', () => {
   it('same phase produces the same output', () => {

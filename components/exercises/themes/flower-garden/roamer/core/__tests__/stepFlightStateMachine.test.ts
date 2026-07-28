@@ -1,5 +1,6 @@
-import { FlightState, type ButterflyState } from '../simulation/types';
-import { stepFlightStateMachine, type FlightContext } from '../simulation/stepFlightStateMachine';
+import { FlightState, type RoamerState } from '../types';
+import { stepFlightStateMachine, type FlightContext } from '../stepFlightStateMachine';
+import { butterflyRoamerConfig } from '../../butterfly/config/butterflySimConfig';
 import {
   ROAMER_BUTTERFLY_APPROACH_DISTANCE_THRESHOLD,
   ROAMER_BUTTERFLY_LIFT_OFF_DURATION_MS,
@@ -8,9 +9,9 @@ import {
   ROAMER_BUTTERFLY_SIT_MOVE_SPEED,
   ROAMER_BUTTERFLY_SIT_MOVE_VERTICAL_SQUASH,
   ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS,
-} from '../config/butterflySimConfig';
+} from '../../butterfly/config/butterflySimConfig';
 
-function makeState(overrides?: Partial<ButterflyState>): ButterflyState {
+function makeState(overrides?: Partial<RoamerState>): RoamerState {
   return {
     flightState: FlightState.FLYING_CRUISE,
     positionX: 200,
@@ -76,6 +77,8 @@ function makeContext(overrides?: Partial<FlightContext>): FlightContext {
   };
 }
 
+const config = butterflyRoamerConfig;
+
 describe('stepFlightStateMachine', () => {
   describe('APPROACH_FLOWER state', () => {
     it('transitions to SITTING when close to target', () => {
@@ -90,7 +93,7 @@ describe('stepFlightStateMachine', () => {
         targetFlowerY: flowerY,
       });
       const ctx = makeContext();
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.flightState).toBe(FlightState.SITTING);
       expect(next.bodyScale).toBe(ROAMER_BUTTERFLY_SIT_BODY_SCALE);
     });
@@ -108,7 +111,7 @@ describe('stepFlightStateMachine', () => {
         targetFlowerY: flowerY,
       });
       const ctx = makeContext({ occupantSlots });
-      stepFlightStateMachine(state, ctx);
+      stepFlightStateMachine(state, ctx, config);
       expect(occupantSlots[0]).toBe(0);
     });
 
@@ -122,7 +125,7 @@ describe('stepFlightStateMachine', () => {
         targetFlowerY: 250,
       });
       const ctx = makeContext({ dt: 0.1 });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.flightState).toBe(FlightState.APPROACH_FLOWER);
       const dx = next.positionX - state.positionX;
       const dy = next.positionY - state.positionY;
@@ -143,7 +146,7 @@ describe('stepFlightStateMachine', () => {
         targetFlowerY: flowerY,
       });
       const ctx = makeContext();
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.sitOffsetX).toBe(0);
       expect(next.sitOffsetY).toBe(0);
       expect(next.sitActionTimer).toBe(0);
@@ -172,7 +175,7 @@ describe('stepFlightStateMachine', () => {
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
       });
       const ctx = makeContext({ dt: 0.1 });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       const expectedStep = ROAMER_BUTTERFLY_SIT_MOVE_SPEED * 0.1;
       expect(next.sitOffsetX).toBeCloseTo(expectedStep, 2);
       expect(next.sitOffsetY).toBe(0);
@@ -197,7 +200,7 @@ describe('stepFlightStateMachine', () => {
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
       });
       const ctx = makeContext({ dt: 0.1 });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.sitOffsetX).toBeCloseTo(10, 4);
       expect(next.sitActionTimer).toBeGreaterThan(0);
       expect(next.sitActionTimer).toBeCloseTo(ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS / 1000, 2);
@@ -226,7 +229,7 @@ describe('stepFlightStateMachine', () => {
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
       });
       const ctx = makeContext({ dt: 0.5 });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.sitActionTimer).toBeCloseTo(1.5, 4);
       expect(next.sitOffsetX).toBe(10);
       expect(next.sitOffsetY).toBe(0);
@@ -251,7 +254,7 @@ describe('stepFlightStateMachine', () => {
         bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
       });
       const ctx = makeContext({ dt: 0.3 });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       const desiredAngle = Math.atan2(10, 10);
       expect(next.angle).toBeGreaterThan(0);
       expect(next.angle).toBeLessThan(desiredAngle);
@@ -270,7 +273,7 @@ describe('stepFlightStateMachine', () => {
         targetFlowerIndex: 0,
       });
       const ctx = makeContext({ dt: 0.02, occupantSlots });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.flightState).toBe(FlightState.LIFTING_OFF);
       expect(occupantSlots[0]).toBe(-1);
     });
@@ -286,7 +289,7 @@ describe('stepFlightStateMachine', () => {
         positionY: 300,
       });
       const ctx = makeContext({ dt: 0.1 });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.flightState).toBe(FlightState.FLYING_TURN);
       expect(next.stateTimer).toBeCloseTo(0.4, 4);
     });
@@ -300,7 +303,7 @@ describe('stepFlightStateMachine', () => {
         positionY: 300,
       });
       const ctx = makeContext({ dt: 0.02 });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.flightState).toBe(FlightState.FLYING_CRUISE);
     });
   });
@@ -317,7 +320,7 @@ describe('stepFlightStateMachine', () => {
       });
       const halfWay = (ROAMER_BUTTERFLY_LIFT_OFF_DURATION_MS / 1000) / 2;
       const ctx = makeContext({ dt: halfWay });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.bodyScale).toBeGreaterThan(ROAMER_BUTTERFLY_SIT_BODY_SCALE);
       expect(next.bodyScale).toBeLessThan(1);
     });
@@ -332,7 +335,7 @@ describe('stepFlightStateMachine', () => {
         targetFlowerIndex: 0,
       });
       const ctx = makeContext({ dt: 0.02 });
-      const next = stepFlightStateMachine(state, ctx);
+      const next = stepFlightStateMachine(state, ctx, config);
       expect(next.flightState).toBe(FlightState.FLYING_CRUISE);
       expect(next.bodyScale).toBe(1);
     });

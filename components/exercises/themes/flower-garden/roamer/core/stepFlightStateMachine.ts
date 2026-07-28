@@ -1,41 +1,5 @@
-import { FlightState, type ButterflyState } from './types';
-import {
-  ROAMER_BUTTERFLY_APPROACH_DISTANCE_THRESHOLD,
-  ROAMER_BUTTERFLY_APPROACH_ORBIT_DURATION_MAX,
-  ROAMER_BUTTERFLY_APPROACH_ORBIT_DURATION_MIN,
-  ROAMER_BUTTERFLY_BASE_SPEED_MAX,
-  ROAMER_BUTTERFLY_BASE_SPEED_MIN,
-  ROAMER_BUTTERFLY_BOUNDARY_TURN_OFFSET,
-  ROAMER_BUTTERFLY_FLIGHT_PICK_FLOWER_PROBABILITY,
-  ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED,
-  ROAMER_BUTTERFLY_IDLE_NOISE_AMPLITUDE,
-  ROAMER_BUTTERFLY_IDLE_NOISE_FREQUENCY,
-  ROAMER_BUTTERFLY_LIFT_OFF_DURATION_MS,
-  ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MAX,
-  ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MIN,
-  ROAMER_BUTTERFLY_NOISE_FREQ_MAX,
-  ROAMER_BUTTERFLY_NOISE_FREQ_MIN,
-  ROAMER_BUTTERFLY_SIT_BODY_SCALE,
-  ROAMER_BUTTERFLY_SIT_DURATION_MAX_MS,
-  ROAMER_BUTTERFLY_SIT_DURATION_MIN_MS,
-  ROAMER_BUTTERFLY_SIT_WING_FREQ_MAX,
-  ROAMER_BUTTERFLY_SIT_WING_FREQ_MIN,
-  ROAMER_BUTTERFLY_SIT_WING_PAUSE_DURATION_MAX_MS,
-  ROAMER_BUTTERFLY_SIT_WING_PAUSE_DURATION_MIN_MS,
-  ROAMER_BUTTERFLY_SPEED_LERP_FACTOR,
-  ROAMER_BUTTERFLY_WANDER_LERP,
-  ROAMER_BUTTERFLY_WING_FREQ_MAX,
-  ROAMER_BUTTERFLY_WING_FREQ_MIN,
-  ROAMER_BUTTERFLY_LAND_AMPLITUDE_BOOST,
-  ROAMER_BUTTERFLY_TAKEOFF_AMPLITUDE_BOOST,
-  ROAMER_BUTTERFLY_SIT_MOVE_RADIUS,
-  ROAMER_BUTTERFLY_SIT_MOVE_SPEED,
-  ROAMER_BUTTERFLY_SIT_MOVE_VERTICAL_SQUASH,
-  ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS,
-  ROAMER_BUTTERFLY_SIT_MOVE_TURN_SPEED,
-  ROAMER_BUTTERFLY_LEG_FREQUENCY,
-  ROAMER_BUTTERFLY_LEG_COUNT,
-} from '../config/butterflySimConfig';
+import { FlightState, type RoamerState } from './types';
+import type { RoamerConfig } from './roamerConfig';
 import {
   clamp,
   cruiseDurationForPhase,
@@ -43,7 +7,7 @@ import {
   lerp,
   lerpAngle,
   pickErraticWanderAngle,
-} from './butterflySimHelpers';
+} from './roamerSimHelpers';
 import { pickFieldFlowerTarget } from './pickFieldFlowerTarget';
 
 export type FlightContext = {
@@ -94,10 +58,12 @@ function computeFlowerSwingOffset(
   return { x: swing * Math.cos(angle), y: swing * Math.sin(angle) };
 }
 
-function advanceIdleNoise(phase: number, dt: number): { nextPhase: number; noiseX: number; noiseY: number } {
+function advanceIdleNoise(
+  phase: number, dt: number, config: RoamerConfig,
+): { nextPhase: number; noiseX: number; noiseY: number } {
   'worklet';
-  const nextPhase = phase + ROAMER_BUTTERFLY_IDLE_NOISE_FREQUENCY * dt;
-  const amp = ROAMER_BUTTERFLY_IDLE_NOISE_AMPLITUDE * dt;
+  const nextPhase = phase + config.idleNoiseFrequency * dt;
+  const amp = config.idleNoiseAmplitude * dt;
   return {
     nextPhase,
     noiseX: Math.sin(nextPhase) * amp,
@@ -106,14 +72,15 @@ function advanceIdleNoise(phase: number, dt: number): { nextPhase: number; noise
 }
 
 export function stepFlightStateMachine(
-  state: ButterflyState,
+  state: RoamerState,
   ctx: FlightContext,
-): ButterflyState {
+  config: RoamerConfig,
+): RoamerState {
   'worklet';
 
   const pc = state.pathCoeff;
 
-  const wingFreq = ROAMER_BUTTERFLY_WING_FREQ_MIN + pc * (ROAMER_BUTTERFLY_WING_FREQ_MAX - ROAMER_BUTTERFLY_WING_FREQ_MIN);
+  const wingFreq = config.wingFreqMin + pc * (config.wingFreqMax - config.wingFreqMin);
 
   const nextWingL = state.wingPhaseLeft + wingFreq * ctx.dt;
   const nextWingR = state.wingPhaseLeft + wingFreq * ctx.dt;
@@ -126,8 +93,8 @@ export function stepFlightStateMachine(
 
   switch (state.flightState) {
     case FlightState.FLYING_TURN: {
-      const turnTargetSpeed = ROAMER_BUTTERFLY_BASE_SPEED_MIN + pc * (ROAMER_BUTTERFLY_BASE_SPEED_MAX - ROAMER_BUTTERFLY_BASE_SPEED_MIN) * 0.5;
-      const speed = lerp(initial.speed, turnTargetSpeed, Math.min(1, ROAMER_BUTTERFLY_SPEED_LERP_FACTOR * ctx.dt));
+      const turnTargetSpeed = config.baseSpeedMin + pc * (config.baseSpeedMax - config.baseSpeedMin) * 0.5;
+      const speed = lerp(initial.speed, turnTargetSpeed, Math.min(1, config.speedLerpFactor * ctx.dt));
       const angle = lerpAngle(initial.angle, initial.wanderAngle, Math.min(1, 3.0 * ctx.dt));
       const moveAngle = angle - Math.PI / 2;
       let x = initial.positionX + Math.cos(moveAngle) * speed * ctx.dt;
@@ -143,7 +110,7 @@ export function stepFlightStateMachine(
           positionY: clamped.y,
           angle,
           speed,
-          stateTimer: cruiseDurationForPhase(state.phase),
+          stateTimer: cruiseDurationForPhase(state.phase, config),
           legPhases: initial.legPhases,
           legVisibility: 0,
         };
@@ -163,13 +130,13 @@ export function stepFlightStateMachine(
     }
 
     case FlightState.FLYING_CRUISE: {
-      const targetSpeed = ROAMER_BUTTERFLY_BASE_SPEED_MIN + pc * (ROAMER_BUTTERFLY_BASE_SPEED_MAX - ROAMER_BUTTERFLY_BASE_SPEED_MIN);
-      const speed = lerp(initial.speed, targetSpeed, Math.min(1, ROAMER_BUTTERFLY_SPEED_LERP_FACTOR * ctx.dt));
-      const angle = lerpAngle(initial.angle, initial.wanderAngle, Math.min(1, ROAMER_BUTTERFLY_WANDER_LERP * ctx.dt));
+      const targetSpeed = config.baseSpeedMin + pc * (config.baseSpeedMax - config.baseSpeedMin);
+      const speed = lerp(initial.speed, targetSpeed, Math.min(1, config.speedLerpFactor * ctx.dt));
+      const angle = lerpAngle(initial.angle, initial.wanderAngle, Math.min(1, config.wanderLerp * ctx.dt));
 
-      const noiseFreq = ROAMER_BUTTERFLY_NOISE_FREQ_MIN + pc * (ROAMER_BUTTERFLY_NOISE_FREQ_MAX - ROAMER_BUTTERFLY_NOISE_FREQ_MIN);
+      const noiseFreq = config.noiseFreqMin + pc * (config.noiseFreqMax - config.noiseFreqMin);
       const nextNoisePhase = initial.noisePhase + noiseFreq * ctx.dt;
-      const noiseAmp = ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MIN + pc * (ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MAX - ROAMER_BUTTERFLY_NOISE_AMPLITUDE_MIN);
+      const noiseAmp = config.noiseAmplitudeMin + pc * (config.noiseAmplitudeMax - config.noiseAmplitudeMin);
       const noiseOffset = Math.sin(nextNoisePhase) * noiseAmp * ctx.dt;
       const noisePerpX = Math.cos(angle);
       const noisePerpY = Math.sin(angle);
@@ -184,7 +151,7 @@ export function stepFlightStateMachine(
 
       if (nearEdge) {
         const toCenter = Math.atan2(ctx.centerY - y, ctx.centerX - x);
-        wanderAngle = toCenter + Math.PI / 2 + Math.sin(state.phase * 5.1) * ROAMER_BUTTERFLY_BOUNDARY_TURN_OFFSET;
+        wanderAngle = toCenter + Math.PI / 2 + Math.sin(state.phase * 5.1) * config.boundaryTurnOffset;
       }
 
       const clamped = { x: clamp(x, ctx.hardMinX, ctx.hardMaxX), y: clamp(y, ctx.hardMinY, ctx.hardMaxY) };
@@ -194,7 +161,7 @@ export function stepFlightStateMachine(
 
       if (nextTimer <= 0) {
         const roll = Math.abs(Math.sin(state.phase * 17.3 + nextWingL * 3.1));
-        if (roll < ROAMER_BUTTERFLY_FLIGHT_PICK_FLOWER_PROBABILITY) {
+        if (roll < config.flightPickFlowerProbability) {
           const freeFlowerIds: number[] = [];
           for (let i = 0; i < ctx.fieldFlowerAnchorsX.length; i++) {
             if (ctx.occupantSlots[i] === -1 && i !== state.lastTargetFlowerIndex) {
@@ -209,8 +176,8 @@ export function stepFlightStateMachine(
           if (targetId != null) {
             const orbitDuration = pickRandomBetween(
               state.phase + state.wingPhaseLeft,
-              ROAMER_BUTTERFLY_APPROACH_ORBIT_DURATION_MIN,
-              ROAMER_BUTTERFLY_APPROACH_ORBIT_DURATION_MAX,
+              config.approachOrbitDurationMin,
+              config.approachOrbitDurationMax,
             );
             return {
               ...initial,
@@ -218,7 +185,7 @@ export function stepFlightStateMachine(
               positionX: clamped.x,
               positionY: clamped.y,
               angle,
-              speed: ROAMER_BUTTERFLY_BASE_SPEED_MIN,
+              speed: config.baseSpeedMin,
               targetFlowerIndex: targetId,
               targetFlowerX: ctx.fieldFlowerAnchorsX[targetId]!,
               targetFlowerY: ctx.fieldFlowerAnchorsY[targetId]!,
@@ -231,7 +198,7 @@ export function stepFlightStateMachine(
           }
         }
         nextState = FlightState.FLYING_IDLE;
-        nextTimer = idleDurationForPhase(state.phase);
+        nextTimer = idleDurationForPhase(state.phase, config);
       }
 
       const nextAngle = nearEdge
@@ -254,13 +221,13 @@ export function stepFlightStateMachine(
     }
 
     case FlightState.FLYING_IDLE: {
-      const idleNoisePhase = initial.idleNoisePhase + ROAMER_BUTTERFLY_IDLE_NOISE_FREQUENCY * ctx.dt;
-      const idleAmp = ROAMER_BUTTERFLY_IDLE_NOISE_AMPLITUDE * ctx.dt;
+      const idleNoisePhase = initial.idleNoisePhase + config.idleNoiseFrequency * ctx.dt;
+      const idleAmp = config.idleNoiseAmplitude * ctx.dt;
       const idleNoiseX = Math.sin(idleNoisePhase) * idleAmp;
       const idleNoiseY = Math.sin(idleNoisePhase * 1.7 + 1.3) * idleAmp;
       const driftAngle = state.phase * 2.0 + nextWingL * 0.3;
-      let x = initial.positionX + Math.cos(driftAngle) * ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED * ctx.dt + idleNoiseX;
-      let y = initial.positionY + Math.sin(driftAngle) * ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED * ctx.dt + idleNoiseY;
+      let x = initial.positionX + Math.cos(driftAngle) * config.idleDriftSpeed * ctx.dt + idleNoiseX;
+      let y = initial.positionY + Math.sin(driftAngle) * config.idleDriftSpeed * ctx.dt + idleNoiseY;
 
       const clamped = { x: clamp(x, ctx.hardMinX, ctx.hardMaxX), y: clamp(y, ctx.hardMinY, ctx.hardMaxY) };
 
@@ -272,7 +239,7 @@ export function stepFlightStateMachine(
       if (nextTimer <= 0) {
         nextState = FlightState.FLYING_CRUISE;
         newPathCoeff = 0.5 + 0.5 * Math.sin(nextWingL * 3.17 + state.phase * 5.23);
-        nextTimer = cruiseDurationForPhase(state.phase);
+        nextTimer = cruiseDurationForPhase(state.phase, config);
         newWanderAngle = pickErraticWanderAngle(initial.angle, state.phase, 0);
       }
 
@@ -281,7 +248,7 @@ export function stepFlightStateMachine(
         flightState: nextState,
         positionX: clamped.x,
         positionY: clamped.y,
-        speed: ROAMER_BUTTERFLY_IDLE_DRIFT_SPEED,
+        speed: config.idleDriftSpeed,
         idleNoisePhase,
         pathCoeff: newPathCoeff,
         wanderAngle: newWanderAngle,
@@ -302,8 +269,8 @@ export function stepFlightStateMachine(
 
       if (isOrbiting) {
         const orbitAngle = Math.atan2(dy, dx) + Math.PI / 2;
-        const speed = ROAMER_BUTTERFLY_BASE_SPEED_MIN;
-        const { nextPhase: nextIdleNoise, noiseX, noiseY } = advanceIdleNoise(initial.idleNoisePhase, ctx.dt);
+        const speed = config.baseSpeedMin;
+        const { nextPhase: nextIdleNoise, noiseX, noiseY } = advanceIdleNoise(initial.idleNoisePhase, ctx.dt, config);
         let x = initial.positionX + Math.cos(orbitAngle) * speed * ctx.dt + noiseX;
         let y = initial.positionY + Math.sin(orbitAngle) * speed * ctx.dt + noiseY;
 
@@ -346,8 +313,8 @@ export function stepFlightStateMachine(
           if (newTargetId != null) {
             const newOrbitDuration = pickRandomBetween(
               state.phase + state.wingPhaseLeft + 1.3,
-              ROAMER_BUTTERFLY_APPROACH_ORBIT_DURATION_MIN,
-              ROAMER_BUTTERFLY_APPROACH_ORBIT_DURATION_MAX,
+              config.approachOrbitDurationMin,
+              config.approachOrbitDurationMax,
             );
             return {
               ...initial,
@@ -373,10 +340,10 @@ export function stepFlightStateMachine(
             positionX: clamped.x,
             positionY: clamped.y,
             angle: orbitAngle,
-            speed: ROAMER_BUTTERFLY_BASE_SPEED_MIN,
+            speed: config.baseSpeedMin,
             targetFlowerIndex: -1,
             approachOrbitTimer: 0,
-            stateTimer: cruiseDurationForPhase(state.phase),
+            stateTimer: cruiseDurationForPhase(state.phase, config),
             idleNoisePhase: nextIdleNoise,
             legPhases: initial.legPhases,
             legVisibility: 0,
@@ -398,17 +365,17 @@ export function stepFlightStateMachine(
         };
       }
 
-      const { nextPhase: diveIdleNoise, noiseX: diveNoiseX, noiseY: diveNoiseY } = advanceIdleNoise(initial.idleNoisePhase, ctx.dt);
+      const { nextPhase: diveIdleNoise, noiseX: diveNoiseX, noiseY: diveNoiseY } = advanceIdleNoise(initial.idleNoisePhase, ctx.dt, config);
 
-      if (dist < ROAMER_BUTTERFLY_APPROACH_DISTANCE_THRESHOLD) {
+      if (dist < config.approachDistanceThreshold) {
         ctx.occupantSlots[initial.targetFlowerIndex] = ctx.roamerIndex;
         const sitDuration = pickRandomBetween(
           state.phase + state.wingPhaseLeft + 2.7,
-          ROAMER_BUTTERFLY_SIT_DURATION_MIN_MS / 1000,
-          ROAMER_BUTTERFLY_SIT_DURATION_MAX_MS / 1000,
+          config.sitDurationMinMs / 1000,
+          config.sitDurationMaxMs / 1000,
         );
         const fi = initial.targetFlowerIndex;
-        ctx.boostsMutable[fi] = (ctx.boostsMutable[fi] ?? 0) + ROAMER_BUTTERFLY_LAND_AMPLITUDE_BOOST;
+        ctx.boostsMutable[fi] = (ctx.boostsMutable[fi] ?? 0) + config.landAmplitudeBoost;
         const swingOff = computeFlowerSwingOffset(
           ctx.elapsedMs,
           fi,
@@ -419,15 +386,15 @@ export function stepFlightStateMachine(
           ctx.boostsMutable[fi],
         );
         const targetAngle = Math.sin(state.phase * 7.7 + state.wingPhaseLeft * 3.1) * Math.PI;
-        const targetRadius = (Math.abs(Math.sin(state.phase * 11.3 + state.wingPhaseLeft * 5.7 + 1.3))) * ROAMER_BUTTERFLY_SIT_MOVE_RADIUS;
+        const targetRadius = (Math.abs(Math.sin(state.phase * 11.3 + state.wingPhaseLeft * 5.7 + 1.3))) * config.sitMoveRadius;
         const initTargetOffX = Math.cos(targetAngle) * targetRadius;
-        const initTargetOffY = Math.sin(targetAngle) * targetRadius * ROAMER_BUTTERFLY_SIT_MOVE_VERTICAL_SQUASH;
+        const initTargetOffY = Math.sin(targetAngle) * targetRadius * config.sitMoveVerticalSquash;
         return {
           ...initial,
           flightState: FlightState.SITTING,
           positionX: targetX + swingOff.x,
           positionY: targetY + swingOff.y,
-          bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
+          bodyScale: config.sitBodyScale,
           stateTimer: sitDuration,
           sitTimer: sitDuration,
           idleNoisePhase: diveIdleNoise,
@@ -444,7 +411,7 @@ export function stepFlightStateMachine(
       }
 
       const toFlower = Math.atan2(dy, dx);
-      const speed = ROAMER_BUTTERFLY_BASE_SPEED_MIN;
+      const speed = config.baseSpeedMin;
       let x = initial.positionX + Math.cos(toFlower) * speed * ctx.dt + diveNoiseX;
       let y = initial.positionY + Math.sin(toFlower) * speed * ctx.dt + diveNoiseY;
 
@@ -466,7 +433,7 @@ export function stepFlightStateMachine(
     }
 
     case FlightState.SITTING: {
-      const sitWingFreq = ROAMER_BUTTERFLY_SIT_WING_FREQ_MIN + pc * (ROAMER_BUTTERFLY_SIT_WING_FREQ_MAX - ROAMER_BUTTERFLY_SIT_WING_FREQ_MIN);
+      const sitWingFreq = config.sitWingFreqMin + pc * (config.sitWingFreqMax - config.sitWingFreqMin);
       const nextTimer = initial.stateTimer - ctx.dt;
 
       let wingL = state.wingPhaseLeft;
@@ -487,8 +454,8 @@ export function stepFlightStateMachine(
             pauseTriggered = 1;
             pauseTimer = pickRandomBetween(
               state.phase + state.wingPhaseLeft,
-              ROAMER_BUTTERFLY_SIT_WING_PAUSE_DURATION_MIN_MS / 1000,
-              ROAMER_BUTTERFLY_SIT_WING_PAUSE_DURATION_MAX_MS / 1000,
+              config.sitWingPauseDurationMinMs / 1000,
+              config.sitWingPauseDurationMaxMs / 1000,
             );
           }
         } else {
@@ -517,13 +484,13 @@ export function stepFlightStateMachine(
           nextOffsetX = nextTargetX;
           nextOffsetY = nextTargetY;
           const newAngle = Math.sin(state.phase * 7.7 + wingL * 3.1 + initial.stateTimer * 1.3) * Math.PI;
-          const newRadius = (Math.abs(Math.sin(state.phase * 11.3 + wingL * 5.7 + initial.stateTimer * 2.1))) * ROAMER_BUTTERFLY_SIT_MOVE_RADIUS;
+          const newRadius = (Math.abs(Math.sin(state.phase * 11.3 + wingL * 5.7 + initial.stateTimer * 2.1))) * config.sitMoveRadius;
           nextTargetX = Math.cos(newAngle) * newRadius;
-          nextTargetY = Math.sin(newAngle) * newRadius * ROAMER_BUTTERFLY_SIT_MOVE_VERTICAL_SQUASH;
-          nextActionTimer = ROAMER_BUTTERFLY_SIT_PAUSE_DURATION_MS / 1000;
+          nextTargetY = Math.sin(newAngle) * newRadius * config.sitMoveVerticalSquash;
+          nextActionTimer = config.sitPauseDurationMs / 1000;
         } else {
           isMoving = true;
-          const step = ROAMER_BUTTERFLY_SIT_MOVE_SPEED * ctx.dt;
+          const step = config.sitMoveSpeed * ctx.dt;
           const clampedStep = Math.min(step, dist);
           nextOffsetX += (dx / dist) * clampedStep;
           nextOffsetY += (dy / dist) * clampedStep;
@@ -531,8 +498,8 @@ export function stepFlightStateMachine(
       }
 
       if (isMoving) {
-        for (let i = 0; i < ROAMER_BUTTERFLY_LEG_COUNT; i++) {
-          legPhases[i] = initial.legPhases[i]! + ROAMER_BUTTERFLY_LEG_FREQUENCY * ctx.dt;
+        for (let i = 0; i < 6; i++) {
+          legPhases[i] = initial.legPhases[i]! + config.legFrequency * ctx.dt;
         }
       }
 
@@ -541,13 +508,13 @@ export function stepFlightStateMachine(
       if (nextTimer <= 0) {
         ctx.occupantSlots[initial.targetFlowerIndex] = -1;
         const tfi = initial.targetFlowerIndex;
-        ctx.boostsMutable[tfi] = (ctx.boostsMutable[tfi] ?? 0) + ROAMER_BUTTERFLY_TAKEOFF_AMPLITUDE_BOOST;
+        ctx.boostsMutable[tfi] = (ctx.boostsMutable[tfi] ?? 0) + config.takeoffAmplitudeBoost;
         return {
           ...state,
           flightState: FlightState.LIFTING_OFF,
           positionX: initial.positionX,
           positionY: initial.positionY,
-          bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
+          bodyScale: config.sitBodyScale,
           angle: initial.angle,
           speed: initial.speed,
           pathCoeff: initial.pathCoeff,
@@ -567,7 +534,7 @@ export function stepFlightStateMachine(
           legVisibility,
           waitTimer: 0,
           sitTimer: 0,
-          stateTimer: ROAMER_BUTTERFLY_LIFT_OFF_DURATION_MS / 1000,
+          stateTimer: config.liftOffDurationMs / 1000,
           approachOrbitTimer: 0,
           sitWingPauseTimer: 0,
           sitWingPauseTriggered: 0,
@@ -597,14 +564,14 @@ export function stepFlightStateMachine(
       const moveDy = nextTargetY - nextOffsetY;
       const moveDist = Math.sqrt(moveDx * moveDx + moveDy * moveDy);
       const desiredAngle = moveDist > 0.5 ? Math.atan2(moveDy, moveDx) : initial.angle;
-      const angle = lerpAngle(initial.angle, desiredAngle, Math.min(1, ROAMER_BUTTERFLY_SIT_MOVE_TURN_SPEED * ctx.dt));
+      const angle = lerpAngle(initial.angle, desiredAngle, Math.min(1, config.sitMoveTurnSpeed * ctx.dt));
 
       return {
         ...state,
         flightState: FlightState.SITTING,
         positionX: posX,
         positionY: posY,
-        bodyScale: ROAMER_BUTTERFLY_SIT_BODY_SCALE,
+        bodyScale: config.sitBodyScale,
         angle,
         speed: initial.speed,
         pathCoeff: initial.pathCoeff,
@@ -637,12 +604,12 @@ export function stepFlightStateMachine(
     }
 
     case FlightState.LIFTING_OFF: {
-      const totalDuration = ROAMER_BUTTERFLY_LIFT_OFF_DURATION_MS / 1000;
+      const totalDuration = config.liftOffDurationMs / 1000;
       const nextTimer = initial.stateTimer - ctx.dt;
       const elapsed = totalDuration - nextTimer;
       const progress = clamp(elapsed / totalDuration, 0, 1);
-      const bodyScale = lerp(ROAMER_BUTTERFLY_SIT_BODY_SCALE, 1, progress);
-      const { nextPhase: liftNoisePhase, noiseX: liftNoiseX, noiseY: liftNoiseY } = advanceIdleNoise(initial.idleNoisePhase, ctx.dt);
+      const bodyScale = lerp(config.sitBodyScale, 1, progress);
+      const { nextPhase: liftNoisePhase, noiseX: liftNoiseX, noiseY: liftNoiseY } = advanceIdleNoise(initial.idleNoisePhase, ctx.dt, config);
       const legVisibility = 0;
 
       if (nextTimer <= 0) {
@@ -650,8 +617,8 @@ export function stepFlightStateMachine(
           ...initial,
           flightState: FlightState.FLYING_CRUISE,
           bodyScale: 1,
-          stateTimer: cruiseDurationForPhase(state.phase),
-          speed: ROAMER_BUTTERFLY_BASE_SPEED_MIN,
+          stateTimer: cruiseDurationForPhase(state.phase, config),
+          speed: config.baseSpeedMin,
           targetFlowerIndex: -1,
           lastTargetFlowerIndex: initial.targetFlowerIndex,
           approachOrbitTimer: 0,

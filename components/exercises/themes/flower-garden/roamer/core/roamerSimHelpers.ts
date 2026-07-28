@@ -1,10 +1,4 @@
-import {
-  ROAMER_BUTTERFLY_CRUISE_DURATION_JITTER,
-  ROAMER_BUTTERFLY_CRUISE_DURATION_MAX,
-  ROAMER_BUTTERFLY_CRUISE_DURATION_MIN,
-  ROAMER_BUTTERFLY_IDLE_DURATION_BASE,
-  ROAMER_BUTTERFLY_IDLE_DURATION_JITTER,
-} from '../config/butterflySimConfig';
+import type { RoamerConfig } from './roamerConfig';
 
 const TWO_PI = Math.PI * 2;
 
@@ -59,18 +53,18 @@ export function pickErraticWanderAngle(
   return currentAngle + deviation;
 }
 
-export function cruiseDurationForPhase(phase: number): number {
+export function cruiseDurationForPhase(phase: number, config: RoamerConfig): number {
   'worklet';
   const t = clamp(
     (Math.abs(Math.sin(phase * 1.7)) * 0.5 + 0.5 * Math.abs(Math.sin(phase * 4.1 + 0.5))),
     0,
     1,
   );
-  const base = ROAMER_BUTTERFLY_CRUISE_DURATION_MAX - t * (ROAMER_BUTTERFLY_CRUISE_DURATION_MAX - ROAMER_BUTTERFLY_CRUISE_DURATION_MIN);
-  return base + (Math.sin(phase * 9.7) * 0.5 * ROAMER_BUTTERFLY_CRUISE_DURATION_JITTER);
+  const base = config.cruiseDurationMax - t * (config.cruiseDurationMax - config.cruiseDurationMin);
+  return base + (Math.sin(phase * 9.7) * 0.5 * config.cruiseDurationJitter);
 }
 
-export function idleDurationForPhase(phase: number): number {
+export function idleDurationForPhase(phase: number, config: RoamerConfig): number {
   'worklet';
-  return ROAMER_BUTTERFLY_IDLE_DURATION_BASE + (Math.sin(phase * 7.3) * 0.5 * ROAMER_BUTTERFLY_IDLE_DURATION_JITTER);
+  return config.idleDurationBase + (Math.sin(phase * 7.3) * 0.5 * config.idleDurationJitter);
 }

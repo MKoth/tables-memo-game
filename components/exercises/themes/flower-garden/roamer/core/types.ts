@@ -10,16 +10,19 @@ export enum FlightState {
   LIFTING_OFF = 6,
 }
 
-export type ButterflySpawn = {
+export type RoamerSpecies = 'butterfly' | 'bee' | 'bumblebee';
+
+export type RoamerSpawn = {
   xRatio: number;
   yRatio: number;
   phase: number;
   initialAngle: number;
   legPhaseOffsets: number[];
   wingPairIndex: number;
+  species: RoamerSpecies;
 };
 
-export type ButterflyState = {
+export type RoamerState = {
   flightState: FlightState;
   positionX: number;
   positionY: number;
@@ -55,8 +58,8 @@ export type ButterflyState = {
   sitActionTimer: number;
 };
 
-export type ButterflySharedRuntime = {
-  spawn: ButterflySpawn;
+export type RoamerSharedRuntime = {
+  spawn: RoamerSpawn;
   x: SharedValue<number>;
   y: SharedValue<number>;
   angle: SharedValue<number>;
@@ -86,44 +89,16 @@ export type ButterflySharedRuntime = {
   legVisibility: SharedValue<number>;
 };
 
-export type ButterflyRuntime = {
-  spawn: ButterflySpawn;
-  state: ButterflyState;
+export type RoamerRuntimeEntry = {
+  spawn: RoamerSpawn;
+  runtime: RoamerSharedRuntime;
 };
 
-export type ButterflyPosition = {
+export type RoamerPosition = {
   x: number;
   y: number;
   angle: number;
   flightState: FlightState;
-};
-
-export type RoamerButterflyState = {
-  runtimes: ButterflyRuntime[];
-  positions: ButterflyPosition[];
-};
-
-export type ButterflyUniforms = {
-  bodyW: number;
-  bodyH: number;
-  bodyCenterX: number;
-  bodyCenterY: number;
-  bodyAngle: number;
-  bodyScale: number;
-  wingLeftFlap: number;
-  wingRightFlap: number;
-  wingLeftPhase: number;
-  wingRightPhase: number;
-  legVisibility: number;
-  legPhases: number[];
-  legPhasesAdvanced: number[];
-  renderMode: number;
-  bodyTint?: number[];
-};
-
-export type ButterflyRuntimeEntry = {
-  spawn: ButterflySpawn;
-  runtime: ButterflySharedRuntime;
 };
 
 export type SwimZone = {

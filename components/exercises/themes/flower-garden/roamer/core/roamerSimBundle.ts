@@ -1,23 +1,23 @@
 import { makeMutable, type SharedValue } from 'react-native-reanimated';
-import type { ZoneRect } from '../../../../../core/layout/computeExerciseLayout';
-import { createButterflyRuntime } from './createButterflyRuntime';
-import { createButterflySpawnsFromWords } from './createButterflySpawns';
-import type { ButterflyRuntimeEntry, SwimZone } from './types';
+import type { ZoneRect } from '../../../../core/layout/computeExerciseLayout';
+import { createRoamerRuntime } from './createRoamerRuntime';
+import { createRoamerSpawnsFromWords } from './createRoamerSpawns';
+import type { RoamerRuntimeEntry, SwimZone } from './types';
 
-export type PersistedButterflySimBundle = {
+export type PersistedRoamerSimBundle = {
   wordsKey: string;
   layoutKey: string;
   width: number;
   height: number;
   swimZone: SwimZone;
-  runtimeEntries: ButterflyRuntimeEntry[];
+  runtimeEntries: RoamerRuntimeEntry[];
   sharedPositions: SharedValue<number[]>;
   fieldFlowerAnchorsX: number[];
   fieldFlowerAnchorsY: number[];
   occupantSlots: SharedValue<number[]>;
 };
 
-export function buildButterflySimBundle(
+export function buildRoamerSimBundle(
   words: string[],
   width: number,
   height: number,
@@ -26,17 +26,17 @@ export function buildButterflySimBundle(
   rng: () => number,
   fieldFlowerAnchorsX: number[] = [],
   fieldFlowerAnchorsY: number[] = [],
-): PersistedButterflySimBundle {
+): PersistedRoamerSimBundle {
   const swimZone: SwimZone = {
     x: roamerRect.x,
     y: roamerRect.y,
     w: roamerRect.w,
     h: roamerRect.h,
   };
-  const spawns = createButterflySpawnsFromWords(words, rng);
+  const spawns = createRoamerSpawnsFromWords(words, rng);
   const runtimeEntries = spawns.map(spawn => ({
     spawn,
-    runtime: createButterflyRuntime(spawn, swimZone),
+    runtime: createRoamerRuntime(spawn, swimZone),
   }));
   const posArr = new Array(runtimeEntries.length * 2).fill(0);
   for (let i = 0; i < runtimeEntries.length; i++) {
@@ -58,8 +58,8 @@ export function buildButterflySimBundle(
   };
 }
 
-export function relayoutButterflySimBundle(
-  bundle: PersistedButterflySimBundle,
+export function relayoutRoamerSimBundle(
+  bundle: PersistedRoamerSimBundle,
   roamerRect: ZoneRect,
   width: number,
   height: number,
@@ -74,9 +74,9 @@ export function relayoutButterflySimBundle(
 
   const pos = bundle.sharedPositions.value.slice();
   for (let i = 0; i < bundle.runtimeEntries.length; i++) {
-    const butterfly = bundle.runtimeEntries[i]!.runtime;
-    pos[i * 2] = butterfly.x.value;
-    pos[i * 2 + 1] = butterfly.y.value;
+    const roamer = bundle.runtimeEntries[i]!.runtime;
+    pos[i * 2] = roamer.x.value;
+    pos[i * 2 + 1] = roamer.y.value;
   }
 
   bundle.sharedPositions.value = pos;

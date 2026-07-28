@@ -1,19 +1,20 @@
 import { makeMutable } from 'react-native-reanimated';
-import { FlightState, type ButterflySharedRuntime, type ButterflySpawn, type SwimZone } from './types';
+import { FlightState, type RoamerSharedRuntime, type RoamerSpawn, type SwimZone } from './types';
 import {
   ROAMER_BUTTERFLY_BASE_SPEED_MIN,
   ROAMER_BUTTERFLY_BOUNDARY_MARGIN,
   ROAMER_BUTTERFLY_LEG_COUNT,
-} from '../config/butterflySimConfig';
+} from '../butterfly/config/butterflySimConfig';
+import { butterflyRoamerConfig } from '../butterfly/config/butterflySimConfig';
 import {
   clamp,
   cruiseDurationForPhase,
-} from './butterflySimHelpers';
+} from './roamerSimHelpers';
 
-export function createButterflyRuntime(
-  spawn: ButterflySpawn,
+export function createRoamerRuntime(
+  spawn: RoamerSpawn,
   swimZone: SwimZone,
-): ButterflySharedRuntime {
+): RoamerSharedRuntime {
   return {
     spawn,
     x: makeMutable(
@@ -37,7 +38,7 @@ export function createButterflyRuntime(
     idleNoisePhase: makeMutable(spawn.phase * 1.7),
     pathCoeff: makeMutable(0.5),
     state: makeMutable(FlightState.FLYING_CRUISE),
-    stateTimer: makeMutable(cruiseDurationForPhase(spawn.phase)),
+    stateTimer: makeMutable(cruiseDurationForPhase(spawn.phase, butterflyRoamerConfig)),
     wanderAngle: makeMutable(spawn.initialAngle),
     prevAngle: makeMutable(spawn.initialAngle),
     bodyScale: makeMutable(1),

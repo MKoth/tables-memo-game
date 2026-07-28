@@ -1,12 +1,13 @@
-import { FlightState, type ButterflyState } from '../simulation/types';
-import { stepFlightStateMachine, type FlightContext } from '../simulation/stepFlightStateMachine';
+import { FlightState, type RoamerState } from '../types';
+import { stepFlightStateMachine, type FlightContext } from '../stepFlightStateMachine';
+import { butterflyRoamerConfig } from '../../butterfly/config/butterflySimConfig';
 import {
   ROAMER_BUTTERFLY_LEG_FREQUENCY,
   ROAMER_BUTTERFLY_SIT_BODY_SCALE,
   ROAMER_BUTTERFLY_LEG_TRIPOD_OFFSETS,
-} from '../config/butterflySimConfig';
+} from '../../butterfly/config/butterflySimConfig';
 
-function makeState(overrides?: Partial<ButterflyState>): ButterflyState {
+function makeState(overrides?: Partial<RoamerState>): RoamerState {
   return {
     flightState: FlightState.FLYING_CRUISE,
     positionX: 200,
@@ -72,6 +73,8 @@ function makeContext(overrides?: Partial<FlightContext>): FlightContext {
   };
 }
 
+const config = butterflyRoamerConfig;
+
 describe('leg phase advancement', () => {
   it('advances leg phases when moving on flower in SITTING', () => {
     const state = makeState({
@@ -90,7 +93,7 @@ describe('leg phase advancement', () => {
       legPhases: [0, 0, 0, 0, 0, 0],
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     const expectedAdvance = ROAMER_BUTTERFLY_LEG_FREQUENCY * 0.1;
     for (let i = 0; i < 6; i++) {
@@ -116,7 +119,7 @@ describe('leg phase advancement', () => {
       legVisibility: 1,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     for (let i = 0; i < 6; i++) {
       expect(next.legPhases[i]).toBeCloseTo(state.legPhases[i]!, 5);
@@ -141,7 +144,7 @@ describe('leg phase advancement', () => {
       legVisibility: 1,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     expect(next.sitOffsetX).toBeCloseTo(10, 4);
     expect(next.sitActionTimer).toBeGreaterThan(0);
@@ -157,7 +160,7 @@ describe('leg phase advancement', () => {
       stateTimer: 10,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     for (let i = 0; i < 6; i++) {
       expect(next.legPhases[i]).toBeCloseTo(state.legPhases[i]!, 5);
@@ -171,7 +174,7 @@ describe('leg phase advancement', () => {
       stateTimer: 1,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     for (let i = 0; i < 6; i++) {
       expect(next.legPhases[i]).toBeCloseTo(state.legPhases[i]!, 5);
@@ -189,7 +192,7 @@ describe('leg phase advancement', () => {
       legPhases: [1, 2, 3, 4, 5, 6],
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     for (let i = 0; i < 6; i++) {
       expect(next.legPhases[i]).toBeCloseTo(state.legPhases[i]!, 5);
@@ -207,7 +210,7 @@ describe('leg phase advancement', () => {
       legPhases: [1, 2, 3, 4, 5, 6],
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     for (let i = 0; i < 6; i++) {
       expect(next.legPhases[i]).toBeCloseTo(state.legPhases[i]!, 5);
@@ -231,7 +234,7 @@ describe('leg phase advancement', () => {
       legPhases: [0, 0, 0, 0, 0, 0],
     });
     const ctx = makeContext({ dt: 0.5 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     for (let i = 0; i < 6; i++) {
       expect(next.legPhases[i]!).toBeGreaterThan(state.legPhases[i]!);
@@ -257,7 +260,7 @@ describe('legVisibility', () => {
       legVisibility: 0,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
     expect(next.legVisibility).toBe(1);
   });
 
@@ -272,7 +275,7 @@ describe('legVisibility', () => {
       legVisibility: 1,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
     expect(next.legVisibility).toBe(0);
   });
 
@@ -283,7 +286,7 @@ describe('legVisibility', () => {
       stateTimer: 10,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     expect(next.legVisibility).toBe(0);
   });
@@ -295,7 +298,7 @@ describe('legVisibility', () => {
       stateTimer: 1,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     expect(next.legVisibility).toBe(0);
   });
@@ -311,7 +314,7 @@ describe('legVisibility', () => {
       legVisibility: 0.5,
     });
     const ctx = makeContext({ dt: 0.1 });
-    const next = stepFlightStateMachine(state, ctx);
+    const next = stepFlightStateMachine(state, ctx, config);
 
     expect(next.legVisibility).toBe(0);
   });
@@ -336,7 +339,7 @@ describe('tripod-gait phase offsets', () => {
 
   it('spawn enforces same-group alignment: FL and MR have same offset mod 2*PI', () => {
     const TWO_PI = Math.PI * 2;
-    const { createRandomVisualSpawn } = require('../simulation/createButterflySpawns');
+    const { createRandomVisualSpawn } = require('../createRoamerSpawns');
     const { createRng } = require('../../../scenery/BushShaderLayer/helpers/seededRandom');
     const rng = createRng(42);
     const spawn = createRandomVisualSpawn(rng);

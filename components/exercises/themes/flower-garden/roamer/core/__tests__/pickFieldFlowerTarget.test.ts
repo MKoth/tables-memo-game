@@ -1,4 +1,4 @@
-import { pickFieldFlowerTarget } from '../simulation/pickFieldFlowerTarget';
+import { pickFieldFlowerTarget } from '../pickFieldFlowerTarget';
 
 describe('pickFieldFlowerTarget', () => {
   it('returns a flower id from the free list', () => {

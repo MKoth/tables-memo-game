@@ -1,5 +1,5 @@
-import { FlightState } from '../simulation/types';
-import { pickRoamerDrawPass } from '../simulation/pickRoamerDrawPass';
+import { FlightState } from '../types';
+import { pickRoamerDrawPass } from '../pickRoamerDrawPass';
 
 describe('pickRoamerDrawPass', () => {
   it('returns "flying" for FLYING_IDLE', () => {

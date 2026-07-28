@@ -1,6 +1,6 @@
 import { createRng } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
-import { assignWingPairIndices } from '../simulation/wingPairAllocator';
-import { ROAMER_BUTTERFLY_WING_PAIR_COUNT } from '../config/butterflySimConfig';
+import { assignWingPairIndices } from '../wingPairAllocator';
+import { ROAMER_BUTTERFLY_WING_PAIR_COUNT } from '../../butterfly/config/butterflySimConfig';
 
 describe('assignWingPairIndices', () => {
   it('every output is in [0, ROAMER_BUTTERFLY_WING_PAIR_COUNT)', () => {

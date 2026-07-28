@@ -1,9 +1,9 @@
 import { createRng } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
 import {
   createRandomVisualSpawn,
-  createButterflySpawnsFromWords,
-} from '../simulation/createButterflySpawns';
-import { ROAMER_BUTTERFLY_WING_PAIR_COUNT } from '../config/butterflySimConfig';
+  createRoamerSpawnsFromWords,
+} from '../createRoamerSpawns';
+import { ROAMER_BUTTERFLY_WING_PAIR_COUNT } from '../../butterfly/config/butterflySimConfig';
 
 describe('createRandomVisualSpawn', () => {
   it('returns a spawn with wingPairIndex in [0, ROAMER_BUTTERFLY_WING_PAIR_COUNT)', () => {
@@ -11,6 +11,12 @@ describe('createRandomVisualSpawn', () => {
     const spawn = createRandomVisualSpawn(rng);
     expect(spawn.wingPairIndex).toBeGreaterThanOrEqual(0);
     expect(spawn.wingPairIndex).toBeLessThan(ROAMER_BUTTERFLY_WING_PAIR_COUNT);
+  });
+
+  it('returns a spawn with a valid species', () => {
+    const rng = createRng(0xc0ffee);
+    const spawn = createRandomVisualSpawn(rng);
+    expect(['butterfly', 'bee', 'bumblebee']).toContain(spawn.species);
   });
 
   it('returns xRatio in [0, 1]', () => {
@@ -67,34 +73,43 @@ describe('createRandomVisualSpawn', () => {
   });
 });
 
-describe('createButterflySpawnsFromWords', () => {
+describe('createRoamerSpawnsFromWords', () => {
   it('returns one spawn per word', () => {
     const words = ['hablo', 'hablas', 'habla'];
     const rng = createRng(0xc0ffee);
-    const spawns = createButterflySpawnsFromWords(words, rng);
+    const spawns = createRoamerSpawnsFromWords(words, rng);
     expect(spawns).toHaveLength(3);
   });
 
   it('returns empty array for empty words', () => {
     const rng = createRng(0xc0ffee);
-    const spawns = createButterflySpawnsFromWords([], rng);
+    const spawns = createRoamerSpawnsFromWords([], rng);
     expect(spawns).toEqual([]);
   });
 
   it('every spawn has wingPairIndex in [0, ROAMER_BUTTERFLY_WING_PAIR_COUNT)', () => {
     const words = ['uno', 'dos', 'tres', 'cuatro', 'cinco'];
     const rng = createRng(0xc0ffee);
-    const spawns = createButterflySpawnsFromWords(words, rng);
+    const spawns = createRoamerSpawnsFromWords(words, rng);
     for (const spawn of spawns) {
       expect(spawn.wingPairIndex).toBeGreaterThanOrEqual(0);
       expect(spawn.wingPairIndex).toBeLessThan(ROAMER_BUTTERFLY_WING_PAIR_COUNT);
     }
   });
 
+  it('every spawn has a valid species field', () => {
+    const words = ['uno', 'dos', 'tres', 'cuatro', 'cinco'];
+    const rng = createRng(0xc0ffee);
+    const spawns = createRoamerSpawnsFromWords(words, rng);
+    for (const spawn of spawns) {
+      expect(['butterfly', 'bee', 'bumblebee']).toContain(spawn.species);
+    }
+  });
+
   it('for n <= 9, no two spawns share wingPairIndex', () => {
     const words = ['a', 'b', 'c', 'd', 'e', 'f'];
     const rng = createRng(0xc0ffee);
-    const spawns = createButterflySpawnsFromWords(words, rng);
+    const spawns = createRoamerSpawnsFromWords(words, rng);
     const indices = spawns.map(s => s.wingPairIndex);
     const seen = new Set(indices);
     expect(seen.size).toBe(indices.length);
@@ -103,7 +118,7 @@ describe('createButterflySpawnsFromWords', () => {
   it('for n > 9, round-robin is observable (indices repeat)', () => {
     const words = Array.from({ length: 12 }, (_, i) => `word${i}`);
     const rng = createRng(0xc0ffee);
-    const spawns = createButterflySpawnsFromWords(words, rng);
+    const spawns = createRoamerSpawnsFromWords(words, rng);
     const indices = spawns.map(s => s.wingPairIndex);
     const first9 = indices.slice(0, 9);
     const first9Set = new Set(first9);
@@ -117,7 +132,7 @@ describe('createButterflySpawnsFromWords', () => {
   it('every spawn has xRatio and yRatio in [0, 1]', () => {
     const words = ['a', 'b', 'c'];
     const rng = createRng(0xc0ffee);
-    const spawns = createButterflySpawnsFromWords(words, rng);
+    const spawns = createRoamerSpawnsFromWords(words, rng);
     for (const spawn of spawns) {
       expect(spawn.xRatio).toBeGreaterThanOrEqual(0);
       expect(spawn.xRatio).toBeLessThanOrEqual(1);
@@ -129,7 +144,7 @@ describe('createButterflySpawnsFromWords', () => {
   it('positions are not all identical (variation exists)', () => {
     const words = ['a', 'b', 'c', 'd', 'e'];
     const rng = createRng(0xc0ffee);
-    const spawns = createButterflySpawnsFromWords(words, rng);
+    const spawns = createRoamerSpawnsFromWords(words, rng);
     const xPositions = new Set(spawns.map(s => s.xRatio));
     expect(xPositions.size).toBeGreaterThan(1);
   });
@@ -139,15 +154,15 @@ describe('createButterflySpawnsFromWords', () => {
     const seed = 0xabc;
     const rng1 = createRng(seed);
     const rng2 = createRng(seed);
-    const a = createButterflySpawnsFromWords(words, rng1);
-    const b = createButterflySpawnsFromWords(words, rng2);
+    const a = createRoamerSpawnsFromWords(words, rng1);
+    const b = createRoamerSpawnsFromWords(words, rng2);
     expect(a).toEqual(b);
   });
 
   it('different seed produces different spawns', () => {
     const words = ['a', 'b', 'c'];
-    const a = createButterflySpawnsFromWords(words, createRng(1));
-    const b = createButterflySpawnsFromWords(words, createRng(2));
+    const a = createRoamerSpawnsFromWords(words, createRng(1));
+    const b = createRoamerSpawnsFromWords(words, createRng(2));
     expect(a).not.toEqual(b);
   });
 });

@@ -1,25 +1,26 @@
 import { useMemo, useRef } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
+import { butterflyRoamerConfig } from '../butterfly/config/butterflySimConfig';
 import {
   ROAMER_BUTTERFLY_HIT_RADIUS,
-} from '../config/butterflySimConfig';
+} from '../butterfly/config/butterflySimConfig';
 import {
   ROAMER_BUTTERFLY_BODY_LENGTH,
   ROAMER_BUTTERFLY_BODY_THICKNESS,
-} from '../config/butterflySettings';
-import { createRng, hashSeedString } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
-import type { ZoneRect } from '../../../../../core/layout/computeExerciseLayout';
+} from '../butterfly/config/butterflySettings';
+import { createRng, hashSeedString } from '../../scenery/BushShaderLayer/helpers/seededRandom';
+import type { ZoneRect } from '../../../../core/layout/computeExerciseLayout';
 import {
-  buildButterflySimBundle,
-  relayoutButterflySimBundle,
-  type PersistedButterflySimBundle,
-} from './butterflySimBundle';
-import { useButterflySimFrameLoop } from './useButterflySimFrameLoop';
-import type { ButterflyRuntimeEntry, SwimZone } from './types';
-import { useFlowerGardenTableContext } from '../../../scenery/flowerGardenTableContext';
+  buildRoamerSimBundle,
+  relayoutRoamerSimBundle,
+  type PersistedRoamerSimBundle,
+} from './roamerSimBundle';
+import { useRoamerSimFrameLoop } from './useRoamerSimFrameLoop';
+import type { RoamerRuntimeEntry, SwimZone } from './types';
+import { useFlowerGardenTableContext } from '../../scenery/flowerGardenTableContext';
 
-export type ButterflySimulation = {
-  runtimeEntries: ButterflyRuntimeEntry[];
+export type RoamerSimulation = {
+  runtimeEntries: RoamerRuntimeEntry[];
   sharedPositions: ReturnType<typeof useSharedValue<number[]>>;
   swimZone: SwimZone;
   swimZoneTop: number;
@@ -36,7 +37,7 @@ export type ButterflySimulation = {
   occupantSlots: ReturnType<typeof useSharedValue<number[]>>;
 };
 
-export type UseButterflySimulationParams = {
+export type UseRoamerSimulationParams = {
   words: string[];
   width: number;
   height: number;
@@ -45,16 +46,16 @@ export type UseButterflySimulationParams = {
   sessionId?: string;
 };
 
-export function useButterflySimulation({
+export function useRoamerSimulation({
   words,
   width,
   height,
   roamerRect,
   layoutKey,
   sessionId = 'default',
-}: UseButterflySimulationParams): ButterflySimulation {
+}: UseRoamerSimulationParams): RoamerSimulation {
   const wordsKey = words.join('\0');
-  const seed = useMemo(() => hashSeedString(`butterfly-${sessionId}`), [sessionId]);
+  const seed = useMemo(() => hashSeedString(`roamer-${sessionId}`), [sessionId]);
   const rng = useMemo(() => createRng(seed), [seed]);
 
   const { fieldFlowerConfigs, flowerSwingBoosts } = useFlowerGardenTableContext();
@@ -67,10 +68,10 @@ export function useButterflySimulation({
   const flowerSwingPhases = useMemo(() => configs.map(c => c.swingPhase), [configs]);
   const flowerSwingAngles = useMemo(() => configs.map(c => c.swingAngle), [configs]);
 
-  const bundleRef = useRef<PersistedButterflySimBundle | null>(null);
+  const bundleRef = useRef<PersistedRoamerSimBundle | null>(null);
 
   if (bundleRef.current == null || bundleRef.current.wordsKey !== wordsKey) {
-    bundleRef.current = buildButterflySimBundle(
+    bundleRef.current = buildRoamerSimBundle(
       words,
       width,
       height,
@@ -85,7 +86,7 @@ export function useButterflySimulation({
     bundleRef.current.width !== width ||
     bundleRef.current.height !== height
   ) {
-    relayoutButterflySimBundle(
+    relayoutRoamerSimBundle(
       bundleRef.current,
       roamerRect,
       width,
@@ -96,7 +97,7 @@ export function useButterflySimulation({
 
   const { runtimeEntries, sharedPositions, swimZone, occupantSlots } = bundleRef.current;
 
-  useButterflySimFrameLoop(
+  useRoamerSimFrameLoop(
     runtimeEntries,
     swimZone,
     sharedPositions,
@@ -108,6 +109,7 @@ export function useButterflySimulation({
     flowerSwingPhases,
     flowerSwingAngles,
     flowerSwingBoosts,
+    butterflyRoamerConfig,
   );
 
   const renderProps = {

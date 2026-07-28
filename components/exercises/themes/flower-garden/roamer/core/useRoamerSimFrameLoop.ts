@@ -2,24 +2,17 @@ import { useCallback, useEffect } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
-import { useExerciseClockQuantized } from '../../../../../core';
-import { FlightState, type ButterflyRuntimeEntry, type SwimZone } from './types';
+import { useExerciseClockQuantized } from '../../../../core';
+import { FlightState, type RoamerRuntimeEntry, type SwimZone } from './types';
+import type { RoamerConfig } from './roamerConfig';
 import {
   ROAMER_BUTTERFLY_BOUNDARY_MARGIN,
-  ROAMER_BUTTERFLY_BOUNDARY_MARGIN_RATIO,
-  ROAMER_BUTTERFLY_SEPARATION_RADIUS,
-  ROAMER_BUTTERFLY_SEPARATION_STEER,
-  ROAMER_BUTTERFLY_SIM_STEP_MS,
-  FLOWER_SWING_BOOST_DECAY_RATE,
-} from '../config/butterflySimConfig';
-import { lerpAngle } from './butterflySimHelpers';
-import { updateButterfly } from './updateButterfly';
+} from '../butterfly/config/butterflySimConfig';
+import { lerpAngle } from './roamerSimHelpers';
+import { updateRoamer } from './updateRoamer';
 
-const SEPARATION_RADIUS_SQ = ROAMER_BUTTERFLY_SEPARATION_RADIUS * ROAMER_BUTTERFLY_SEPARATION_RADIUS;
-const SEPARATION_MIN_DIST_SQ = 0.25;
-
-export function useButterflySimFrameLoop(
-  runtimes: ButterflyRuntimeEntry[],
+export function useRoamerSimFrameLoop(
+  runtimes: RoamerRuntimeEntry[],
   swimZone: SwimZone,
   sharedPositions: SharedValue<number[]>,
   fieldFlowerAnchorsX: number[],
@@ -30,21 +23,25 @@ export function useButterflySimFrameLoop(
   flowerSwingPhases: number[],
   flowerSwingAngles: number[],
   flowerSwingBoosts: SharedValue<number[]> | undefined,
+  config: RoamerConfig,
 ): void {
   const lastTimestamp = useSharedValue(-1);
   const exerciseClock = useExerciseClockQuantized(20);
-  const butterflyCount = runtimes.length;
+  const roamerCount = runtimes.length;
 
-  const steerMinX = swimZone.x + swimZone.w * ROAMER_BUTTERFLY_BOUNDARY_MARGIN_RATIO;
-  const steerMaxX = swimZone.x + swimZone.w * (1 - ROAMER_BUTTERFLY_BOUNDARY_MARGIN_RATIO);
-  const steerMinY = swimZone.y + swimZone.h * ROAMER_BUTTERFLY_BOUNDARY_MARGIN_RATIO;
-  const steerMaxY = swimZone.y + swimZone.h * (1 - ROAMER_BUTTERFLY_BOUNDARY_MARGIN_RATIO);
+  const steerMinX = swimZone.x + swimZone.w * config.boundaryMarginRatio;
+  const steerMaxX = swimZone.x + swimZone.w * (1 - config.boundaryMarginRatio);
+  const steerMinY = swimZone.y + swimZone.h * config.boundaryMarginRatio;
+  const steerMaxY = swimZone.y + swimZone.h * (1 - config.boundaryMarginRatio);
   const hardMinX = swimZone.x + ROAMER_BUTTERFLY_BOUNDARY_MARGIN;
   const hardMaxX = swimZone.x + swimZone.w - ROAMER_BUTTERFLY_BOUNDARY_MARGIN;
   const hardMinY = swimZone.y + ROAMER_BUTTERFLY_BOUNDARY_MARGIN;
   const hardMaxY = swimZone.y + swimZone.h - ROAMER_BUTTERFLY_BOUNDARY_MARGIN;
   const centerX = swimZone.x + swimZone.w * 0.5;
   const centerY = swimZone.y + swimZone.h * 0.5;
+
+  const SEPARATION_RADIUS_SQ = config.separationRadius * config.separationRadius;
+  const SEPARATION_MIN_DIST_SQ = 0.25;
 
   const onSimFrame = useCallback(
     (frameInfo: { timestamp: number }) => {
@@ -55,7 +52,7 @@ export function useButterflySimFrameLoop(
       }
 
       const elapsed = frameInfo.timestamp - lastTimestamp.value;
-      if (elapsed < ROAMER_BUTTERFLY_SIM_STEP_MS) {
+      if (elapsed < config.simStepMs) {
         return;
       }
       const dt = Math.min(elapsed / 1000, 0.05);
@@ -67,15 +64,16 @@ export function useButterflySimFrameLoop(
       const boosts = flowerSwingBoosts != null ? flowerSwingBoosts.value.slice() : [];
       for (let i = 0; i < boosts.length; i++) {
         if (boosts[i] > 0) {
-          boosts[i] = Math.max(0, boosts[i] - FLOWER_SWING_BOOST_DECAY_RATE * dt);
+          boosts[i] = Math.max(0, boosts[i] - config.flowerSwingBoostDecayRate * dt);
         }
       }
 
-      for (let i = 0; i < butterflyCount; i++) {
+      for (let i = 0; i < roamerCount; i++) {
         const runtime = runtimes[i]!.runtime;
 
-        updateButterfly(
+        updateRoamer(
           runtime,
+          config,
           dt,
           steerMinX,
           steerMaxX,
@@ -106,7 +104,7 @@ export function useButterflySimFrameLoop(
           const fx = runtime.x.value;
           const fy = runtime.y.value;
 
-          for (let j = 0; j < butterflyCount; j++) {
+          for (let j = 0; j < roamerCount; j++) {
             if (j === i) {
               continue;
             }
@@ -116,9 +114,9 @@ export function useButterflySimFrameLoop(
             const distSq = dx * dx + dy * dy;
             if (distSq < SEPARATION_RADIUS_SQ && distSq > SEPARATION_MIN_DIST_SQ) {
               const dist = Math.sqrt(distSq);
-              const overlap = 1 - dist / ROAMER_BUTTERFLY_SEPARATION_RADIUS;
+              const overlap = 1 - dist / config.separationRadius;
               const awayAngle = Math.atan2(dy, dx) + Math.PI / 2;
-              const str = Math.min(1, overlap * ROAMER_BUTTERFLY_SEPARATION_STEER * dt);
+              const str = Math.min(1, overlap * config.separationSteer * dt);
               runtime.angle.value = lerpAngle(runtime.angle.value, awayAngle, str);
               runtime.wanderAngle.value = lerpAngle(runtime.wanderAngle.value, awayAngle, str);
             }
@@ -139,7 +137,7 @@ export function useButterflySimFrameLoop(
       lastTimestamp,
       sharedPositions,
       occupantSlots,
-      butterflyCount,
+      roamerCount,
       runtimes,
       steerMinX,
       steerMaxX,
@@ -159,6 +157,9 @@ export function useButterflySimFrameLoop(
       flowerSwingAngles,
       exerciseClock,
       flowerSwingBoosts,
+      config,
+      SEPARATION_RADIUS_SQ,
+      SEPARATION_MIN_DIST_SQ,
     ],
   );
 
