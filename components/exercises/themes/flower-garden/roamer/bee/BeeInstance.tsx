@@ -9,38 +9,42 @@ import {
 } from '@shopify/react-native-skia';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 import {
-  BUTTERFLY_SKSL,
-  butterflyUniformDefaults,
-} from '../../shaders/butterfly.sksl';
+  BEE_SKSL,
+  beeUniformDefaults,
+} from '../../shaders/bee.sksl';
 import {
-  ROAMER_BUTTERFLY_BODY_LENGTH,
-  ROAMER_BUTTERFLY_BODY_THICKNESS,
-  ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN,
-  ROAMER_BUTTERFLY_WING_LENGTH_RATIO,
-  ROAMER_BUTTERFLY_WING_STRETCH_GAIN,
-  ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_X,
-  ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_Y,
-  ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_X,
-  ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_Y,
-  ROAMER_BUTTERFLY_SHADOW_SIZE_SITTING,
-  ROAMER_BUTTERFLY_SHADOW_SIZE_FLYING,
-  ROAMER_BUTTERFLY_SHADOW_OPACITY_SITTING,
-  ROAMER_BUTTERFLY_SHADOW_OPACITY_FLYING,
-} from './config/butterflySettings';
+  BEE_BODY_LENGTH,
+  BEE_BODY_THICKNESS,
+  BEE_RENDER_BOUNDS_MARGIN,
+  BEE_WING_PHASE1_ANGLE,
+  BEE_WING_PHASE2_ANGLE,
+  BEE_SIT_WING_FOLD_ANGLE,
+  BEE_WING_TRANSPARENCY,
+  BEE_WING_LENGTH,
+  BEE_WING_THICKNESS,
+  BEE_SHADOW_OFFSET_SITTING_X,
+  BEE_SHADOW_OFFSET_SITTING_Y,
+  BEE_SHADOW_OFFSET_FLYING_X,
+  BEE_SHADOW_OFFSET_FLYING_Y,
+  BEE_SHADOW_SIZE_SITTING,
+  BEE_SHADOW_SIZE_FLYING,
+  BEE_SHADOW_OPACITY_SITTING,
+  BEE_SHADOW_OPACITY_FLYING,
+} from './config/beeSettings';
 
-function compileButterflyEffect(): SkRuntimeEffect {
-  const effect = Skia.RuntimeEffect.Make(BUTTERFLY_SKSL);
+function compileBeeEffect(): SkRuntimeEffect {
+  const effect = Skia.RuntimeEffect.Make(BEE_SKSL);
   if (!effect) {
-    throw new Error('Failed to compile butterfly shader');
+    throw new Error('Failed to compile bee shader');
   }
   return effect;
 }
 
-const butterflyEffect = compileButterflyEffect();
+const beeEffect = compileBeeEffect();
 
 const bodyTintUniform: number[] = [1, 1, 1];
 
-export type RoamerButterflyInstanceProps = {
+export type BeeInstanceProps = {
   x: SharedValue<number>;
   y: SharedValue<number>;
   angle: SharedValue<number>;
@@ -55,7 +59,7 @@ export type RoamerButterflyInstanceProps = {
   spawnLegPhaseOffsets: number[];
 };
 
-export function RoamerButterflyInstance({
+export function BeeInstance({
   x,
   y,
   angle,
@@ -68,56 +72,45 @@ export function RoamerButterflyInstance({
   legPhases,
   legVisibility,
   spawnLegPhaseOffsets,
-}: RoamerButterflyInstanceProps) {
+}: BeeInstanceProps) {
   const bodyImageW = bodyImage.width();
   const bodyImageH = bodyImage.height();
   const leftWingImageW = leftWingImage.width();
   const leftWingImageH = leftWingImage.height();
   const rightWingImageW = rightWingImage.width();
   const rightWingImageH = rightWingImage.height();
-  const leftWingAspect = leftWingImageW / leftWingImageH;
-  const rightWingAspect = rightWingImageW / rightWingImageH;
 
   const rect = useDerivedValue(() => {
     const bs = bodyScale.value;
-    const bodyDisplayW = ROAMER_BUTTERFLY_BODY_LENGTH * bs;
-    const bodyDisplayH = ROAMER_BUTTERFLY_BODY_THICKNESS * bs;
+    const bodyDisplayW = BEE_BODY_LENGTH * bs;
+    const bodyDisplayH = BEE_BODY_THICKNESS * bs;
     const halfW = bodyDisplayW / 2;
     const halfH = bodyDisplayH / 2;
-
-    const wingFlap = Math.sin(wingPhase.value);
-    const contract = 1 - Math.abs(wingFlap) * ROAMER_BUTTERFLY_WING_STRETCH_GAIN;
-    const leftWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * contract;
-    const rightWingEffLen = halfW * ROAMER_BUTTERFLY_WING_LENGTH_RATIO * 0.25 * contract;
-    const wingHalfH = halfH * 1.2;
 
     const bodyAngle = angle.value;
     const cosA = Math.abs(Math.cos(bodyAngle));
     const sinA = Math.abs(Math.sin(bodyAngle));
 
-    const wingSpanX = Math.max(leftWingEffLen, rightWingEffLen);
-    const wingSpanY = wingHalfH;
-
-    const rectHalfW = (halfW + wingSpanX) * cosA + (halfH + wingSpanY) * sinA;
-    const rectHalfH = (halfW + wingSpanX) * sinA + (halfH + wingSpanY) * cosA;
+    const rectHalfW = halfW * cosA + halfH * sinA + BEE_WING_LENGTH * bs;
+    const rectHalfH = halfW * sinA + halfH * cosA + BEE_WING_THICKNESS * bs;
 
     const isSitting = renderMode > 0.5;
     const shadowOffX = isSitting
-      ? ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_X
-      : ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_X;
+      ? BEE_SHADOW_OFFSET_SITTING_X
+      : BEE_SHADOW_OFFSET_FLYING_X;
     const shadowOffY = isSitting
-      ? ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_Y
-      : ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_Y;
+      ? BEE_SHADOW_OFFSET_SITTING_Y
+      : BEE_SHADOW_OFFSET_FLYING_Y;
     const shadowSz = isSitting
-      ? ROAMER_BUTTERFLY_SHADOW_SIZE_SITTING
-      : ROAMER_BUTTERFLY_SHADOW_SIZE_FLYING;
+      ? BEE_SHADOW_SIZE_SITTING
+      : BEE_SHADOW_SIZE_FLYING;
 
     const shadowOffsetExtra = Math.abs(shadowOffX) + Math.abs(shadowOffY);
     const shadowScaleExtra =
       Math.max(rectHalfW, rectHalfH) * Math.max(0, shadowSz - 1);
 
     const margin =
-      ROAMER_BUTTERFLY_RENDER_BOUNDS_MARGIN + shadowOffsetExtra + shadowScaleExtra;
+      BEE_RENDER_BOUNDS_MARGIN + shadowOffsetExtra + shadowScaleExtra;
     return {
       x: x.value - rectHalfW - margin,
       y: y.value - rectHalfH - margin,
@@ -128,50 +121,56 @@ export function RoamerButterflyInstance({
 
   const uniforms = useDerivedValue(() => {
     const isSitting = renderMode > 0.5;
-    const wingFlap = Math.sin(wingPhase.value);
+    const normalizedPhase = Math.abs(Math.sin(wingPhase.value));
+    const wingAngle = isSitting
+      ? BEE_SIT_WING_FOLD_ANGLE
+      : BEE_WING_PHASE1_ANGLE + normalizedPhase * (BEE_WING_PHASE2_ANGLE - BEE_WING_PHASE1_ANGLE);
+    const wingTransparency = isSitting ? 1 : BEE_WING_TRANSPARENCY;
+
     const legPhasesAdvanced = legPhases.map((sv, i) =>
       Math.sin(sv.value + spawnLegPhaseOffsets[i]!),
     );
     return {
-      bodyW: ROAMER_BUTTERFLY_BODY_LENGTH,
-      bodyH: ROAMER_BUTTERFLY_BODY_THICKNESS,
+      bodyW: BEE_BODY_LENGTH,
+      bodyH: BEE_BODY_THICKNESS,
       bodyCenterX: x.value,
       bodyCenterY: y.value,
       bodyAngle: angle.value,
       bodyScale: bodyScale.value,
       bodyImageW: bodyImageW,
       bodyImageH: bodyImageH,
-      wingLeftFlap: wingFlap,
-      wingRightFlap: wingFlap,
+      wingLeftAngle: wingAngle,
+      wingRightAngle: wingAngle,
+      wingLength: BEE_WING_LENGTH,
+      wingThickness: BEE_WING_THICKNESS,
+      wingTransparency,
       wingLeftImageW: leftWingImageW,
       wingLeftImageH: leftWingImageH,
       wingRightImageW: rightWingImageW,
       wingRightImageH: rightWingImageH,
-      wingLeftAspect: leftWingAspect,
-      wingRightAspect: rightWingAspect,
       legVisibility: legVisibility.value,
       legPhasesAdvanced,
       renderMode,
       bodyTint: bodyTintUniform,
-      bodyTintStrength: butterflyUniformDefaults.bodyTintStrength,
+      bodyTintStrength: beeUniformDefaults.bodyTintStrength,
       shadowOffsetX: isSitting
-        ? ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_X
-        : ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_X,
+        ? BEE_SHADOW_OFFSET_SITTING_X
+        : BEE_SHADOW_OFFSET_FLYING_X,
       shadowOffsetY: isSitting
-        ? ROAMER_BUTTERFLY_SHADOW_OFFSET_SITTING_Y
-        : ROAMER_BUTTERFLY_SHADOW_OFFSET_FLYING_Y,
+        ? BEE_SHADOW_OFFSET_SITTING_Y
+        : BEE_SHADOW_OFFSET_FLYING_Y,
       shadowSize: isSitting
-        ? ROAMER_BUTTERFLY_SHADOW_SIZE_SITTING
-        : ROAMER_BUTTERFLY_SHADOW_SIZE_FLYING,
+        ? BEE_SHADOW_SIZE_SITTING
+        : BEE_SHADOW_SIZE_FLYING,
       shadowOpacity: isSitting
-        ? ROAMER_BUTTERFLY_SHADOW_OPACITY_SITTING
-        : ROAMER_BUTTERFLY_SHADOW_OPACITY_FLYING,
+        ? BEE_SHADOW_OPACITY_SITTING
+        : BEE_SHADOW_OPACITY_FLYING,
     };
   });
 
   return (
     <Rect rect={rect}>
-      <Shader source={butterflyEffect} uniforms={uniforms}>
+      <Shader source={beeEffect} uniforms={uniforms}>
         <ImageShader
           image={bodyImage}
           x={0}

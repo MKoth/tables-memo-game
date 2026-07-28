@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { ThemeDecorativeRoamerLayerProps } from '../../../themeContract';
-import { RoamerButterflyLayer } from './butterfly/RoamerButterflyLayer';
+import { RoamerLayer } from './RoamerLayer';
 import { ROAMER_BUTTERFLY_DECORATIVE_COUNT } from './butterfly/config/butterflySettings';
 
 export function FlowerGardenDecorativeRoamerLayer({
@@ -18,7 +18,7 @@ export function FlowerGardenDecorativeRoamerLayer({
       style={[styles.container, zIndex != null && { zIndex }]}
       pointerEvents="none"
     >
-      <RoamerButterflyLayer
+      <RoamerLayer
         words={words}
         interactive={false}
         sessionId={`decorative`}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { ThemeRoamerMotionZoneProps } from '../../../themeContract';
-import { RoamerButterflyLayer } from './butterfly/RoamerButterflyLayer';
+import { RoamerLayer } from './RoamerLayer';
 
 export function FlowerGardenRoamerMotionZone({
   words,
@@ -9,7 +9,7 @@ export function FlowerGardenRoamerMotionZone({
 }: ThemeRoamerMotionZoneProps) {
   return (
     <View style={styles.container} pointerEvents="box-none">
-      <RoamerButterflyLayer
+      <RoamerLayer
         words={words}
         interactive={interactive}
       />
