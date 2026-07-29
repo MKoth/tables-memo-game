@@ -4,7 +4,7 @@ import { Canvas, Group, type SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { useExerciseLayout } from '../../../core';
 import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAssetsProvider';
-import { useRoamerSimulation } from './core/useRoamerSimulation';
+import { useRoamerSimulation, type RoamerSimulation } from './core/useRoamerSimulation';
 import { ButterflyInstance } from './butterfly/ButterflyInstance';
 import { BeeInstance } from './bee/BeeInstance';
 import { BumblebeeInstance } from './bumblebee/BumblebeeInstance';
@@ -15,40 +15,26 @@ export type RoamerLayerProps = {
   words: string[];
   interactive?: boolean;
   sessionId?: string;
+  sim?: RoamerSimulation;
 };
 
-export function RoamerLayer({
-  words,
-  interactive = false,
-  sessionId = 'default',
-}: RoamerLayerProps) {
-  const layout = useExerciseLayout();
-  const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
-  const { images } = useFlowerGardenAssetsContext();
+type RoamerLayerContentProps = {
+  sim: RoamerSimulation;
+  interactive: boolean;
+  images: {
+    lycaenidaeBodyImage: SkImage | null;
+    lycaenidaeWingLeftImages: SkImage[] | null;
+    lycaenidaeWingRightImages: SkImage[] | null;
+    beeBodyImage: SkImage | null;
+    beeLeftWingImage: SkImage | null;
+    beeRightWingImage: SkImage | null;
+    bumblebeeBodyImage: SkImage | null;
+    bumblebeeLeftWingImage: SkImage | null;
+    bumblebeeRightWingImage: SkImage | null;
+  };
+};
 
-  const sim = useRoamerSimulation({
-    words,
-    width: screenWidth,
-    height: screenHeight,
-    roamerRect,
-    layoutKey,
-    sessionId,
-  });
-
-  if (
-    images.lycaenidaeBodyImage == null ||
-    images.lycaenidaeWingLeftImages == null ||
-    images.lycaenidaeWingRightImages == null ||
-    images.beeBodyImage == null ||
-    images.beeLeftWingImage == null ||
-    images.beeRightWingImage == null ||
-    images.bumblebeeBodyImage == null ||
-    images.bumblebeeLeftWingImage == null ||
-    images.bumblebeeRightWingImage == null
-  ) {
-    return null;
-  }
-
+function RoamerLayerContent({ sim, interactive, images }: RoamerLayerContentProps) {
   if (sim.runtimeEntries.length === 0) {
     return null;
   }
@@ -125,6 +111,68 @@ export function RoamerLayer({
         })}
       </Group>
     </Canvas>
+  );
+}
+
+function RoamerLayerWithSim({
+  words,
+  interactive,
+  sessionId,
+  images,
+}: {
+  words: string[];
+  interactive: boolean;
+  sessionId: string;
+  images: RoamerLayerContentProps['images'];
+}) {
+  const layout = useExerciseLayout();
+  const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
+
+  const sim = useRoamerSimulation({
+    words,
+    width: screenWidth,
+    height: screenHeight,
+    roamerRect,
+    layoutKey,
+    sessionId,
+  });
+
+  return <RoamerLayerContent sim={sim} interactive={interactive} images={images} />;
+}
+
+export function RoamerLayer({
+  words,
+  interactive = false,
+  sessionId = 'default',
+  sim: externalSim,
+}: RoamerLayerProps) {
+  const { images } = useFlowerGardenAssetsContext();
+
+  if (
+    images.lycaenidaeBodyImage == null ||
+    images.lycaenidaeWingLeftImages == null ||
+    images.lycaenidaeWingRightImages == null ||
+    images.beeBodyImage == null ||
+    images.beeLeftWingImage == null ||
+    images.beeRightWingImage == null ||
+    images.bumblebeeBodyImage == null ||
+    images.bumblebeeLeftWingImage == null ||
+    images.bumblebeeRightWingImage == null
+  ) {
+    return null;
+  }
+
+  if (externalSim != null) {
+    return <RoamerLayerContent sim={externalSim} interactive={interactive} images={images} />;
+  }
+
+  return (
+    <RoamerLayerWithSim
+      words={words}
+      interactive={interactive}
+      sessionId={sessionId}
+      images={images}
+    />
   );
 }
 

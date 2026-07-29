@@ -1,17 +1,20 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { ThemeRoamerMotionZoneProps } from '../../../themeContract';
+import type { RoamerSimulation } from './core/useRoamerSimulation';
 import { RoamerLayer } from './RoamerLayer';
 
 export function FlowerGardenRoamerMotionZone({
   words,
   interactive = false,
-}: ThemeRoamerMotionZoneProps) {
+  sim,
+}: ThemeRoamerMotionZoneProps & { sim?: RoamerSimulation }) {
   return (
     <View style={styles.container} pointerEvents="box-none">
       <RoamerLayer
         words={words}
         interactive={interactive}
+        sim={sim}
       />
     </View>
   );
