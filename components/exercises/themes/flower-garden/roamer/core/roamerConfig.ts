@@ -18,6 +18,7 @@ export type RoamerConfig = {
   idleNoiseFrequency: number;
   idleDriftSpeed: number;
 
+  boundaryMargin: number;
   boundaryTurnOffset: number;
   boundaryMarginRatio: number;
   separationRadius: number;
@@ -45,6 +46,7 @@ export type RoamerConfig = {
   sitWingFreqMax: number;
   sitWingPauseDurationMinMs: number;
   sitWingPauseDurationMaxMs: number;
+  sitWingPreTakeoffDurationMs: number;
 
   landAmplitudeBoost: number;
   takeoffAmplitudeBoost: number;

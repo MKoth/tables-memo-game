@@ -4,10 +4,6 @@ import type { SharedValue } from 'react-native-reanimated';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { useExerciseClockQuantized } from '../../../../core';
 import { FlightState, type RoamerRuntimeEntry, type SwimZone } from './types';
-import type { RoamerConfig } from './roamerConfig';
-import {
-  ROAMER_BUTTERFLY_BOUNDARY_MARGIN,
-} from '../butterfly/config/butterflySimConfig';
 import { lerpAngle } from './roamerSimHelpers';
 import { updateRoamer } from './updateRoamer';
 
@@ -23,25 +19,10 @@ export function useRoamerSimFrameLoop(
   flowerSwingPhases: number[],
   flowerSwingAngles: number[],
   flowerSwingBoosts: SharedValue<number[]> | undefined,
-  config: RoamerConfig,
 ): void {
   const lastTimestamp = useSharedValue(-1);
   const exerciseClock = useExerciseClockQuantized(20);
   const roamerCount = runtimes.length;
-
-  const steerMinX = swimZone.x + swimZone.w * config.boundaryMarginRatio;
-  const steerMaxX = swimZone.x + swimZone.w * (1 - config.boundaryMarginRatio);
-  const steerMinY = swimZone.y + swimZone.h * config.boundaryMarginRatio;
-  const steerMaxY = swimZone.y + swimZone.h * (1 - config.boundaryMarginRatio);
-  const hardMinX = swimZone.x + ROAMER_BUTTERFLY_BOUNDARY_MARGIN;
-  const hardMaxX = swimZone.x + swimZone.w - ROAMER_BUTTERFLY_BOUNDARY_MARGIN;
-  const hardMinY = swimZone.y + ROAMER_BUTTERFLY_BOUNDARY_MARGIN;
-  const hardMaxY = swimZone.y + swimZone.h - ROAMER_BUTTERFLY_BOUNDARY_MARGIN;
-  const centerX = swimZone.x + swimZone.w * 0.5;
-  const centerY = swimZone.y + swimZone.h * 0.5;
-
-  const SEPARATION_RADIUS_SQ = config.separationRadius * config.separationRadius;
-  const SEPARATION_MIN_DIST_SQ = 0.25;
 
   const onSimFrame = useCallback(
     (frameInfo: { timestamp: number }) => {
@@ -52,7 +33,8 @@ export function useRoamerSimFrameLoop(
       }
 
       const elapsed = frameInfo.timestamp - lastTimestamp.value;
-      if (elapsed < config.simStepMs) {
+      const firstConfig = runtimes[0]?.runtime.config;
+      if (firstConfig != null && elapsed < firstConfig.simStepMs) {
         return;
       }
       const dt = Math.min(elapsed / 1000, 0.05);
@@ -62,9 +44,10 @@ export function useRoamerSimFrameLoop(
       const pos = sharedPositions.value;
       const occSlots = occupantSlots.value.slice();
       const boosts = flowerSwingBoosts != null ? flowerSwingBoosts.value.slice() : [];
+      const decayRate = firstConfig?.flowerSwingBoostDecayRate ?? 2.5;
       for (let i = 0; i < boosts.length; i++) {
         if (boosts[i] > 0) {
-          boosts[i] = Math.max(0, boosts[i] - config.flowerSwingBoostDecayRate * dt);
+          boosts[i] = Math.max(0, boosts[i] - decayRate * dt);
         }
       }
 
@@ -73,18 +56,8 @@ export function useRoamerSimFrameLoop(
 
         updateRoamer(
           runtime,
-          config,
           dt,
-          steerMinX,
-          steerMaxX,
-          steerMinY,
-          steerMaxY,
-          hardMinX,
-          hardMaxX,
-          hardMinY,
-          hardMaxY,
-          centerX,
-          centerY,
+          swimZone,
           fieldFlowerAnchorsX,
           fieldFlowerAnchorsY,
           occSlots,
@@ -101,6 +74,8 @@ export function useRoamerSimFrameLoop(
           runtime.state.value === FlightState.FLYING_CRUISE ||
           runtime.state.value === FlightState.APPROACH_FLOWER
         ) {
+          const rc = runtime.config;
+          const sepRadiusSq = rc.separationRadius * rc.separationRadius;
           const fx = runtime.x.value;
           const fy = runtime.y.value;
 
@@ -112,11 +87,11 @@ export function useRoamerSimFrameLoop(
             const dx = fx - other.x.value;
             const dy = fy - other.y.value;
             const distSq = dx * dx + dy * dy;
-            if (distSq < SEPARATION_RADIUS_SQ && distSq > SEPARATION_MIN_DIST_SQ) {
+            if (distSq < sepRadiusSq && distSq > 0.25) {
               const dist = Math.sqrt(distSq);
-              const overlap = 1 - dist / config.separationRadius;
+              const overlap = 1 - dist / rc.separationRadius;
               const awayAngle = Math.atan2(dy, dx) + Math.PI / 2;
-              const str = Math.min(1, overlap * config.separationSteer * dt);
+              const str = Math.min(1, overlap * rc.separationSteer * dt);
               runtime.angle.value = lerpAngle(runtime.angle.value, awayAngle, str);
               runtime.wanderAngle.value = lerpAngle(runtime.wanderAngle.value, awayAngle, str);
             }
@@ -139,16 +114,7 @@ export function useRoamerSimFrameLoop(
       occupantSlots,
       roamerCount,
       runtimes,
-      steerMinX,
-      steerMaxX,
-      steerMinY,
-      steerMaxY,
-      hardMinX,
-      hardMaxX,
-      hardMinY,
-      hardMaxY,
-      centerX,
-      centerY,
+      swimZone,
       fieldFlowerAnchorsX,
       fieldFlowerAnchorsY,
       flowerSwingAmplitudes,
@@ -157,9 +123,6 @@ export function useRoamerSimFrameLoop(
       flowerSwingAngles,
       exerciseClock,
       flowerSwingBoosts,
-      config,
-      SEPARATION_RADIUS_SQ,
-      SEPARATION_MIN_DIST_SQ,
     ],
   );
 

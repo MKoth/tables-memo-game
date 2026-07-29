@@ -145,6 +145,7 @@ type PassProps = {
     rightWingImage: SkImage;
     legPhases: RoamerSharedRuntime['legPhases'];
     legVisibility: RoamerSharedRuntime['legVisibility'];
+    isPreTakeoff: RoamerSharedRuntime['isPreTakeoff'];
     spawnLegPhaseOffsets: number[];
   }>;
 };
@@ -175,6 +176,7 @@ function SittingPass({
         rightWingImage={rightWingImage}
         legPhases={runtime.legPhases}
         legVisibility={runtime.legVisibility}
+        isPreTakeoff={runtime.isPreTakeoff}
         spawnLegPhaseOffsets={runtime.spawn.legPhaseOffsets}
       />
     </Group>
@@ -207,6 +209,7 @@ function FlyingPass({
         rightWingImage={rightWingImage}
         legPhases={runtime.legPhases}
         legVisibility={runtime.legVisibility}
+        isPreTakeoff={runtime.isPreTakeoff}
         spawnLegPhaseOffsets={runtime.spawn.legPhaseOffsets}
       />
     </Group>

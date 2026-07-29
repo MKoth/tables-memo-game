@@ -14,6 +14,7 @@ function sv(v: number) {
 function createMockRuntime(overrides?: { [key: string]: number }): any {
   const o = overrides ?? {};
   return {
+    config: butterflyRoamerConfig,
     spawn: {
       phase: o.phase ?? 0,
       xRatio: 0.5,
@@ -50,20 +51,16 @@ function createMockRuntime(overrides?: { [key: string]: number }): any {
     sitActionTimer: sv(o.sitActionTimer ?? 0),
     legPhases: [sv(0), sv(0), sv(0), sv(0), sv(0), sv(0)],
     legVisibility: sv(0),
+    isPreTakeoff: { value: 0 },
   };
 }
 
-const STEER_MIN = 50;
-const STEER_MAX = 400;
-const HARD_MIN = 10;
-const HARD_MAX = 590;
-const CENTER = 300;
+const SWIM_ZONE = { x: 10, y: 10, w: 580, h: 580 };
 const EMPTY_ANCHORS_X: number[] = [];
 const EMPTY_ANCHORS_Y: number[] = [];
 const EMPTY_SLOTS: number[] = [];
 const EMPTY_SWING: number[] = [];
 const ROAMER_IDX = 0;
-const config = butterflyRoamerConfig;
 
 describe('wing-phase model', () => {
   it('wingPhase advances at rate derived from pathCoeff', () => {
@@ -72,7 +69,7 @@ describe('wing-phase model', () => {
     const expectedFreq = ROAMER_BUTTERFLY_WING_FREQ_MIN;
     const expectedPhase = expectedFreq * dt;
 
-    updateRoamer(rt, config, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
+    updateRoamer(rt, dt, SWIM_ZONE, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
 
     expect(rt.wingPhase.value).toBeCloseTo(expectedPhase, 5);
   });
@@ -82,7 +79,7 @@ describe('wing-phase model', () => {
     const dt = 0.1;
     const expectedSpeed = ROAMER_BUTTERFLY_BASE_SPEED_MAX;
 
-    updateRoamer(rt, config, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
+    updateRoamer(rt, dt, SWIM_ZONE, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
 
     expect(rt.speed.value).toBeGreaterThan(0);
     expect(rt.speed.value).toBeLessThanOrEqual(expectedSpeed);
@@ -98,7 +95,7 @@ describe('wing-phase model', () => {
     const initialCoeff = rt.pathCoeff.value;
     const dt = 0.02;
 
-    updateRoamer(rt, config, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
+    updateRoamer(rt, dt, SWIM_ZONE, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
 
     expect(rt.state.value).toBe(FlightState.FLYING_CRUISE);
     expect(rt.pathCoeff.value).not.toBeCloseTo(initialCoeff, 5);
@@ -117,7 +114,7 @@ describe('wing-phase model', () => {
     const dt = 0.016;
     const initialX = rt.x.value;
 
-    updateRoamer(rt, config, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
+    updateRoamer(rt, dt, SWIM_ZONE, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
 
     expect(rt.x.value).not.toBeCloseTo(initialX, 3);
   });
@@ -135,7 +132,7 @@ describe('wing-phase model', () => {
       });
       const dt = 0.02;
 
-    updateRoamer(rt, config, dt, STEER_MIN, STEER_MAX, STEER_MIN, STEER_MAX, HARD_MIN, HARD_MAX, HARD_MIN, HARD_MAX, CENTER, CENTER, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
+      updateRoamer(rt, dt, SWIM_ZONE, EMPTY_ANCHORS_X, EMPTY_ANCHORS_Y, EMPTY_SLOTS, ROAMER_IDX, 0, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING, EMPTY_SWING);
 
       if (rt.state.value === FlightState.FLYING_CRUISE) {
         expect(rt.pathCoeff.value).toBeGreaterThanOrEqual(0);

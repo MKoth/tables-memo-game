@@ -1,16 +1,18 @@
-export const BEE_BODY_LENGTH = 50;
-export const BEE_BODY_THICKNESS = 40;
+export const BEE_BODY_LENGTH = 30;
+export const BEE_BODY_THICKNESS = 30;
 export const BEE_BODY_SCALE = 1;
 
 export const BEE_RENDER_BOUNDS_MARGIN = 10;
-export const BEE_HIT_RADIUS = 35;
+export const BEE_HIT_RADIUS = 15;
 
-export const BEE_WING_LENGTH = 60;
-export const BEE_WING_THICKNESS = 18;
-export const BEE_WING_PHASE1_ANGLE = 0.15;
-export const BEE_WING_PHASE2_ANGLE = 1.4;
-export const BEE_SIT_WING_FOLD_ANGLE = 0;
+export const BEE_WING_LENGTH = 12;
+export const BEE_WING_THICKNESS = 10;
+export const BEE_WING_PHASE1_ANGLE = 0.1;
+export const BEE_WING_PHASE2_ANGLE = -1.5;
+export const BEE_SIT_WING_FOLD_ANGLE = -2.0;
 export const BEE_WING_TRANSPARENCY = 0.7;
+export const BEE_WING_OVERLAP = 12;
+export const BEE_WING_PIVOT_Y = 0;
 
 export const BEE_SHADOW_OFFSET_SITTING_X = 3;
 export const BEE_SHADOW_OFFSET_SITTING_Y = 5;

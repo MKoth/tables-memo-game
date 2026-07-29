@@ -1,13 +1,5 @@
 import { useMemo, useRef } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
-import { butterflyRoamerConfig } from '../butterfly/config/butterflySimConfig';
-import {
-  ROAMER_BUTTERFLY_HIT_RADIUS,
-} from '../butterfly/config/butterflySimConfig';
-import {
-  ROAMER_BUTTERFLY_BODY_LENGTH,
-  ROAMER_BUTTERFLY_BODY_THICKNESS,
-} from '../butterfly/config/butterflySettings';
 import { createRng, hashSeedString } from '../../scenery/BushShaderLayer/helpers/seededRandom';
 import type { ZoneRect } from '../../../../core/layout/computeExerciseLayout';
 import {
@@ -27,11 +19,6 @@ export type RoamerSimulation = {
   swimZoneHeight: number;
   swimZoneLeft: number;
   swimZoneWidth: number;
-  hitRadius: number;
-  renderProps: {
-    bodyLength: number;
-    bodyThickness: number;
-  };
   fieldFlowerAnchorsX: number[];
   fieldFlowerAnchorsY: number[];
   occupantSlots: ReturnType<typeof useSharedValue<number[]>>;
@@ -109,13 +96,7 @@ export function useRoamerSimulation({
     flowerSwingPhases,
     flowerSwingAngles,
     flowerSwingBoosts,
-    butterflyRoamerConfig,
   );
-
-  const renderProps = {
-    bodyLength: ROAMER_BUTTERFLY_BODY_LENGTH,
-    bodyThickness: ROAMER_BUTTERFLY_BODY_THICKNESS,
-  };
 
   return {
     runtimeEntries,
@@ -125,8 +106,6 @@ export function useRoamerSimulation({
     swimZoneHeight: swimZone.h,
     swimZoneLeft: swimZone.x,
     swimZoneWidth: swimZone.w,
-    hitRadius: ROAMER_BUTTERFLY_HIT_RADIUS,
-    renderProps,
     fieldFlowerAnchorsX,
     fieldFlowerAnchorsY,
     occupantSlots,

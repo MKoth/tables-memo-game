@@ -20,6 +20,8 @@ uniform float wingRightAngle;
 uniform float wingLength;
 uniform float wingThickness;
 uniform float wingTransparency;
+uniform float wingOverlap;
+uniform float wingPivotY;
 uniform float wingLeftImageW;
 uniform float wingLeftImageH;
 uniform float wingRightImageW;
@@ -37,7 +39,7 @@ uniform shader bodyTexture;
 uniform shader leftWingTexture;
 uniform shader rightWingTexture;
 
-const float LEG_BEND_AMOUNT = 1.0;
+const float LEG_BEND_AMOUNT = 0.7;
 const int LEG_COUNT = 6;
 
 half4 sampleBody(vec2 localPos, float halfW, float halfH) {
@@ -49,32 +51,20 @@ half4 sampleBody(vec2 localPos, float halfW, float halfH) {
   return bodyTexture.eval(texCoord);
 }
 
-bool pointInRotatedRect(vec2 pt, vec2 center, vec2 dir, vec2 perp, float len, float thick) {
-  vec2 rel = pt - center;
-  float along = dot(rel, dir);
-  float across = dot(rel, perp);
-  float halfThick = thick * 0.5;
-  return along >= 0.0 && along <= len && across >= -halfThick && across <= halfThick;
-}
-
 half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float angle) {
-  vec2 attach = vec2(-halfW, 0.0);
+  vec2 attach = vec2(-halfW + wingOverlap * bodyScale, wingPivotY * bodyScale);
   vec2 dir = vec2(-cos(angle), -sin(angle));
   vec2 perp = vec2(-sin(angle), cos(angle));
-
-  if (!pointInRotatedRect(localPos, attach, dir, perp, wingLength, wingThickness)) {
-    return half4(0.0);
-  }
 
   vec2 rel = localPos - attach;
   float along = dot(rel, dir);
   float across = dot(rel, perp);
-  float u = along / wingLength;
-  float v = across / wingThickness + 0.5;
-
-  if (v < 0.0 || v > 1.0) {
+  if (along < 0.0 || along > wingLength || across < -wingThickness || across > 0.0) {
     return half4(0.0);
   }
+
+  float u = 1.0 - (along / wingLength);
+  float v = across / wingThickness + 1.0;
 
   vec2 texCoord = vec2(u * wingLeftImageW, v * wingLeftImageH);
   half4 color = leftWingTexture.eval(texCoord);
@@ -83,23 +73,19 @@ half4 sampleLeftWing(vec2 localPos, float halfW, float halfH, float angle) {
 }
 
 half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float angle) {
-  vec2 attach = vec2(halfW, 0.0);
+  vec2 attach = vec2(halfW - wingOverlap * bodyScale, wingPivotY * bodyScale);
   vec2 dir = vec2(cos(angle), -sin(angle));
   vec2 perp = vec2(sin(angle), cos(angle));
-
-  if (!pointInRotatedRect(localPos, attach, dir, perp, wingLength, wingThickness)) {
-    return half4(0.0);
-  }
 
   vec2 rel = localPos - attach;
   float along = dot(rel, dir);
   float across = dot(rel, perp);
-  float u = along / wingLength;
-  float v = across / wingThickness + 0.5;
-
-  if (v < 0.0 || v > 1.0) {
+  if (along < 0.0 || along > wingLength || across < -wingThickness || across > 0.0) {
     return half4(0.0);
   }
+
+  float u = along / wingLength;
+  float v = across / wingThickness + 1.0;
 
   vec2 texCoord = vec2(u * wingRightImageW, v * wingRightImageH);
   half4 color = rightWingTexture.eval(texCoord);
@@ -108,12 +94,12 @@ half4 sampleRightWing(vec2 localPos, float halfW, float halfH, float angle) {
 }
 
 void setLegRects(inout vec4 lrs[LEG_COUNT]) {
-  lrs[0] = vec4(0.230, 0.320, 0.140, 0.150);
-  lrs[1] = vec4(0.620, 0.320, 0.150, 0.150);
-  lrs[2] = vec4(0.190, 0.480, 0.170, 0.130);
-  lrs[3] = vec4(0.640, 0.470, 0.180, 0.140);
-  lrs[4] = vec4(0.250, 0.580, 0.140, 0.210);
-  lrs[5] = vec4(0.600, 0.580, 0.140, 0.210);
+  lrs[0] = vec4(0.125, 0.086, 0.205, 0.185);
+  lrs[1] = vec4(0.663, 0.079, 0.195, 0.190);
+  lrs[2] = vec4(0.000, 0.339, 0.280, 0.145);
+  lrs[3] = vec4(0.720, 0.345, 0.280, 0.130);
+  lrs[4] = vec4(0.014, 0.513, 0.265, 0.480);
+  lrs[5] = vec4(0.717, 0.502, 0.220, 0.500);
 }
 
 bool isInsideAnyLeg(vec2 uv, vec4 lrs[LEG_COUNT]) {
@@ -141,6 +127,9 @@ half4 main(float2 fragCoord) {
     return color;
   }
 
+  vec4 legRects[LEG_COUNT];
+  setLegRects(legRects);
+
   vec2 shadowRel = fragCoord - vec2(bodyCenterX + shadowOffsetX, bodyCenterY + shadowOffsetY);
   vec2 shadowLocal = vec2(ca * shadowRel.x - sa * shadowRel.y, sa * shadowRel.x + ca * shadowRel.y);
   float shadowScale = 1.0 / max(shadowSize, 0.001);
@@ -148,10 +137,16 @@ half4 main(float2 fragCoord) {
 
   half4 shadowComposite = half4(0.0);
 
-  half4 bodyShadow = sampleBody(scaledShadowLocal, halfW, halfH);
-  if (bodyShadow.a > 0.01) {
-    float a = bodyShadow.a;
-    shadowComposite = bodyShadow * a + shadowComposite * (1.0 - a);
+  vec2 shadowUV = vec2(
+    scaledShadowLocal.x / (halfW * 2.0) + 0.5,
+    scaledShadowLocal.y / (halfH * 2.0) + 0.5
+  );
+  if (!isInsideAnyLeg(shadowUV, legRects)) {
+    half4 bodyShadow = sampleBody(scaledShadowLocal, halfW, halfH);
+    if (bodyShadow.a > 0.01) {
+      float a = bodyShadow.a;
+      shadowComposite = bodyShadow * a + shadowComposite * (1.0 - a);
+    }
   }
 
   half4 leftWingShadow = sampleLeftWing(scaledShadowLocal, halfW, halfH, wingLeftAngle);
@@ -171,8 +166,6 @@ half4 main(float2 fragCoord) {
     color = s + color * (1.0 - s.a);
   }
 
-  vec4 legRects[LEG_COUNT];
-  setLegRects(legRects);
   bool sittingPass = renderMode > 0.5 && renderMode < 1.5;
 
   if (abs(local.x) < halfW && abs(local.y) < halfH) {
@@ -266,6 +259,8 @@ export const bumblebeeUniformDefaults = {
   wingLength: BUMBLEBEE_WING_LENGTH,
   wingThickness: BUMBLEBEE_WING_THICKNESS,
   wingTransparency: 1,
+  wingOverlap: 0,
+  wingPivotY: 0,
   wingLeftImageW: 1,
   wingLeftImageH: 1,
   wingRightImageW: 1,

@@ -6,6 +6,7 @@ import {
   idleDurationForPhase,
   lerp,
   lerpAngle,
+  normalizeAngle,
   pickErraticWanderAngle,
 } from './roamerSimHelpers';
 import { pickFieldFlowerTarget } from './pickFieldFlowerTarget';
@@ -436,12 +437,21 @@ export function stepFlightStateMachine(
       const sitWingFreq = config.sitWingFreqMin + pc * (config.sitWingFreqMax - config.sitWingFreqMin);
       const nextTimer = initial.stateTimer - ctx.dt;
 
+      const preTakeoffThreshold = config.sitWingPreTakeoffDurationMs / 1000;
+      const isPreTakeoff = nextTimer > 0 && nextTimer <= preTakeoffThreshold;
+
       let wingL = state.wingPhaseLeft;
       let wingR = state.wingPhaseRight;
       let pauseTimer = initial.sitWingPauseTimer;
       let pauseTriggered = initial.sitWingPauseTriggered;
 
-      if (pauseTimer > 0) {
+      if (isPreTakeoff) {
+        const preTakeoffWingFreq = config.wingFreqMin + pc * (config.wingFreqMax - config.wingFreqMin);
+        wingL = state.wingPhaseLeft + preTakeoffWingFreq * ctx.dt;
+        wingR = state.wingPhaseLeft + preTakeoffWingFreq * ctx.dt;
+        pauseTimer = 0;
+        pauseTriggered = 0;
+      } else if (pauseTimer > 0) {
         pauseTimer = Math.max(0, pauseTimer - ctx.dt);
       } else {
         wingL = state.wingPhaseLeft + sitWingFreq * ctx.dt;
@@ -494,12 +504,6 @@ export function stepFlightStateMachine(
           const clampedStep = Math.min(step, dist);
           nextOffsetX += (dx / dist) * clampedStep;
           nextOffsetY += (dy / dist) * clampedStep;
-        }
-      }
-
-      if (isMoving) {
-        for (let i = 0; i < 6; i++) {
-          legPhases[i] = initial.legPhases[i]! + config.legFrequency * ctx.dt;
         }
       }
 
@@ -565,6 +569,12 @@ export function stepFlightStateMachine(
       const moveDist = Math.sqrt(moveDx * moveDx + moveDy * moveDy);
       const desiredAngle = moveDist > 0.5 ? Math.atan2(moveDy, moveDx) : initial.angle;
       const angle = lerpAngle(initial.angle, desiredAngle, Math.min(1, config.sitMoveTurnSpeed * ctx.dt));
+
+      if (isMoving || Math.abs(normalizeAngle(desiredAngle - initial.angle)) > 0.01) {
+        for (let i = 0; i < 6; i++) {
+          legPhases[i] = initial.legPhases[i]! + config.legFrequency * ctx.dt;
+        }
+      }
 
       return {
         ...state,

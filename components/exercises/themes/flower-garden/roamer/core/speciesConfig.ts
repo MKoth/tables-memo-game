@@ -1,5 +1,5 @@
 export const ROAMER_SPECIES_WEIGHTS = {
-  butterfly: 1,
-  bee: 1,
-  bumblebee: 1,
+  butterfly: 4,
+  bee: 4,
+  bumblebee: 3,
 } as const;

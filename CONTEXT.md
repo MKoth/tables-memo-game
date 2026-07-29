@@ -11,8 +11,12 @@ The generic floating word-display role in the exercise framework. A WordSprite c
 _Avoid_: jellyfish (use only when describing the undersea realisation specifically)
 
 **Roamer**:
-The generic roaming capturable-creature role in the exercise framework. A Roamer free-roams the screen on a simulation layer, can be tapped or captured, and carries a word (typically in the translation-match exercise). The undersea theme realises this role as a koi fish; the flower-garden theme realises it as a butterfly.
-_Avoid_: koi, fish, butterfly (use only when describing a theme's realisation specifically)
+The generic roaming capturable-creature role in the exercise framework. A Roamer free-roams the screen on a simulation layer, can be tapped or captured, and carries a word (typically in the translation-match exercise). The undersea theme realises this role as a koi fish; the flower-garden theme realises it as butterflies, bees, and bumblebees.
+_Avoid_: koi, fish, butterfly, bee, bumblebee (use only when describing a theme's realisation specifically)
+
+**Roamer variant**:
+One of the specific insect types a roamer can be in the flower-garden theme: butterfly, bee, or bumblebee. Each variant has its own shader, configs, wing model, and image assets, while sharing the same flight state machine, flower-occupancy tracking, and scene-level simulation loop. Assigned at spawn time per-roamer via a ratio config.
+_Avoid_: species, creature type, roamer type
 
 **Scenery**:
 The generic scene-background role in the exercise framework. Scenery fills the visual background behind the exercises. The undersea theme realises this as a seafloor with stones and seaweed; another theme could use a garden, a sky, or any other scene.
@@ -57,8 +61,16 @@ Whether a rose leaf sits on the outer or inner arc of its stem's quadratic bezie
 _Avoid_: leaf front/behind, leaf z
 
 **Butterfly**:
-The flower-garden realisation of a Roamer — the visual creature that free-roams the roamer zone in the flower-garden theme. A butterfly is composed of one body image and two wing images (left and right) drawn from a fixed 9-variant wing-pair set. The undersea theme's koi is the equivalent realisation; the two are interchangeable at the `Roamer` contract level.
+A flower-garden roamer variant — the visual creature that free-roams the roamer zone. A butterfly is composed of one body image and two wing images (left and right) drawn from a fixed 9-variant wing-pair set. Its wings flap via UV-thin/thick stretch driven by `sin(wingPhase)`, with wing-phase asymmetry providing steering. The undersea theme's koi is the equivalent realisation at the Roamer contract level.
 _Avoid_: lycaenidae (reserved for the asset family / folder name), moth, pollinator
+
+**Bee**:
+A flower-garden roamer variant. A bee is composed of one body image and two wing images (left and right). Its wings are rigid rectangles on a hinge at the body attachment point, rotating between two configurable phases (e.g. 90° perpendicular, 45° angled) with parametric thickness and speed. Shares the flower-garden roamer simulation with butterfly and bumblebee.
+_Avoid_: honeybee
+
+**Bumblebee**:
+A flower-garden roamer variant. Same wing model as Bee (rigid hinge rectangles), different body and wing image assets, different config parameters (speeds, durations, amplitudes). Shares the flower-garden roamer simulation with butterfly and bee.
+_Avoid_: bumble bee
 
 **Wing pair**:
 A single index in `1..9` that selects the matching `lycaenidae_left_wing{i}.png` and `lycaenidae_right_wing{i}.png` images. Each butterfly is assigned one wing pair at spawn time. The assignment policy is: shuffle the 9 pairs, deal one each to the first 9 butterflies in spawn order, then for any overflow use `(startOffset + i) % 9` where `startOffset` is a random integer in `0..8` rolled once per session. Wings never change after spawn.
@@ -85,11 +97,11 @@ One of seven named states a butterfly occupies at a time: `FLYING_IDLE` (flappin
 _Avoid_: mode, phase (reserved for wave/fin/flap phase), status
 
 **Sitting draw pass**:
-The render pass that draws a roamer whose state is in the sitting cluster (`WAIT_AT_TAKEN_FLOWER`, `SITTING`, `LIFTING_OFF`). The sitting pass and the flying pass read from the same roamer runtime and the same shared `positions` array — they are two Skia draw calls selecting the same instance, gated by the runtime's current `flight state`. Position and angle are the same world coordinates across passes; switching which pass renders is a one-frame toggle with no coordinate hand-off. This is the layer-flip pattern that avoids the flicker seen when a koi moves between pool and bubble (where the position would otherwise re-anchor at the wrong coord for one frame).
+The render pass that draws a roamer whose state is in the sitting cluster (`WAIT_AT_TAKEN_FLOWER`, `SITTING`, `LIFTING_OFF`). Applies to all roamer variants (butterfly, bee, bumblebee). The sitting pass and the flying pass read from the same roamer runtime and the same shared `positions` array — they are two Skia draw calls selecting the same instance, gated by the runtime's `flight state`. Position and angle are the same world coordinates across passes; switching which pass renders is a one-frame toggle with no coordinate hand-off. This is the layer-flip pattern that avoids the flicker seen when a koi moves between pool and bubble (where the position would otherwise re-anchor at the wrong coord for one frame).
 _Avoid_: lower layer, sit pass, ground pass
 
 **Leg phase**:
-A per-leg accumulated phase, advanced each frame as `phase += legFrequency * dt`. Each butterfly carries six leg phases (3 per side). The body image is one PNG with all six legs baked in; the shader reveals each leg by a per-leg region mask whose bend amount is `sin(legPhase + legPhaseOffset)`. Leg phases advance only when the roamer is in `SITTING` and either arc-moving or on-place-turning; leg phases are held at zero (legs hidden) outside the sitting cluster and during the approach. The 6 legs step with a half-phase offset between the leg and its diagonal pair, producing a tripod gait.
+A per-leg accumulated phase, advanced each frame as `phase += legFrequency * dt`. Shared by all roamer variants with 6 legs. The body image is one PNG with all six legs baked in; the shader reveals each leg by a per-leg region mask whose bend amount is `sin(legPhase + legPhaseOffset)`. Leg phases advance only when the roamer is in `SITTING` and either arc-moving or on-place-turning; leg phases are held at zero (legs hidden) outside the sitting cluster and during the approach. The 6 legs step with a half-phase offset between the leg and its diagonal pair, producing a tripod gait.
 _Avoid_: leg cycle, walk phase, stride
 
 ### Domain terms

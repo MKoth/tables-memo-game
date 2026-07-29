@@ -11,12 +11,12 @@ export const BEE_SIT_MOVE_SPEED = 10;
 export const BEE_SIT_MOVE_VERTICAL_SQUASH = 0.5;
 export const BEE_SIT_PAUSE_DURATION_MS = 4000;
 export const BEE_SIT_MOVE_TURN_SPEED = 1.0;
-export const BEE_SIT_BODY_SCALE = 0.9;
+export const BEE_SIT_BODY_SCALE = 0.8;
 export const BEE_SIT_DURATION_MIN_MS = 6000;
 export const BEE_SIT_DURATION_MAX_MS = 15000;
 export const BEE_WAIT_AT_TAKEN_FLOWER_PATIENCE_MS = 3000;
 export const BEE_LIFT_OFF_DURATION_MS = 500;
-export const BEE_FLIGHT_PICK_FLOWER_PROBABILITY = 0.2;
+export const BEE_FLIGHT_PICK_FLOWER_PROBABILITY = 0.6;
 export const BEE_SIT_LEG_FREQUENCY = 3;
 export const BEE_LEG_FREQUENCY = 10;
 export const BEE_LEG_BEND_AMOUNT = 0.3;
@@ -33,21 +33,22 @@ export const BEE_LEG_TRIPOD_OFFSETS: readonly number[] = [
 ];
 
 export const BEE_APPROACH_DISTANCE_THRESHOLD = 3;
-export const BEE_WING_FREQ_MIN = 12;
-export const BEE_WING_FREQ_MAX = 18;
+export const BEE_WING_FREQ_MIN = 20;
+export const BEE_WING_FREQ_MAX = 35;
 export const BEE_SIT_WING_FREQ_MIN = 1;
-export const BEE_SIT_WING_FREQ_MAX = 3;
+export const BEE_SIT_WING_FREQ_MAX = 1;
 export const BEE_APPROACH_ORBIT_DURATION_MIN = 3.0;
-export const BEE_APPROACH_ORBIT_DURATION_MAX = 8.0;
+export const BEE_APPROACH_ORBIT_DURATION_MAX = 5.0;
 export const BEE_SIT_WING_PAUSE_DURATION_MIN_MS = 200;
 export const BEE_SIT_WING_PAUSE_DURATION_MAX_MS = 1000;
+export const BEE_SIT_WING_PRE_TAKEOFF_DURATION_MS = 1000;
 
 export const BEE_NOISE_AMPLITUDE_MIN = 25;
-export const BEE_NOISE_AMPLITUDE_MAX = 180;
+export const BEE_NOISE_AMPLITUDE_MAX = 50;
 export const BEE_NOISE_FREQ_MIN = 4;
-export const BEE_NOISE_FREQ_MAX = 16;
+export const BEE_NOISE_FREQ_MAX = 12;
 
-export const BEE_DEFAULT_SPEED = 60;
+export const BEE_DEFAULT_SPEED = 30;
 export const BEE_BOUNDARY_MARGIN = 50;
 export const BEE_SEPARATION_RADIUS = 60;
 export const BEE_SEPARATION_STEER = 5;
@@ -55,13 +56,13 @@ export const BEE_BOUNDARY_TURN_OFFSET = 0.5;
 export const BEE_SWIM_ZONE_TOP_RATIO = 0.5;
 export const BEE_HIT_RADIUS = 35;
 
-export const BEE_BASE_SPEED_MIN = 30;
-export const BEE_BASE_SPEED_MAX = 180;
+export const BEE_BASE_SPEED_MIN = 70;
+export const BEE_BASE_SPEED_MAX = 130;
 export const BEE_CRUISE_DURATION_MIN = 1.0;
 export const BEE_CRUISE_DURATION_MAX = 4.0;
 export const BEE_CRUISE_DURATION_JITTER = 1.0;
 
-export const BEE_IDLE_DURATION_BASE = 1.2;
+export const BEE_IDLE_DURATION_BASE = 2.2;
 export const BEE_IDLE_DURATION_JITTER = 0.6;
 
 export const BEE_ANGLE_LERP = 2.5;
@@ -85,6 +86,7 @@ export const BEE_TAKEOFF_AMPLITUDE_BOOST = 8;
 export const BEE_FLOWER_SWING_BOOST_DECAY_RATE = 2.5;
 
 export const beeRoamerConfig: RoamerConfig = {
+  boundaryMargin: BEE_BOUNDARY_MARGIN,
   baseSpeedMin: BEE_BASE_SPEED_MIN,
   baseSpeedMax: BEE_BASE_SPEED_MAX,
   cruiseDurationMin: BEE_CRUISE_DURATION_MIN,
@@ -131,6 +133,7 @@ export const beeRoamerConfig: RoamerConfig = {
   sitWingFreqMax: BEE_SIT_WING_FREQ_MAX,
   sitWingPauseDurationMinMs: BEE_SIT_WING_PAUSE_DURATION_MIN_MS,
   sitWingPauseDurationMaxMs: BEE_SIT_WING_PAUSE_DURATION_MAX_MS,
+  sitWingPreTakeoffDurationMs: BEE_SIT_WING_PRE_TAKEOFF_DURATION_MS,
 
   landAmplitudeBoost: BEE_LAND_AMPLITUDE_BOOST,
   takeoffAmplitudeBoost: BEE_TAKEOFF_AMPLITUDE_BOOST,

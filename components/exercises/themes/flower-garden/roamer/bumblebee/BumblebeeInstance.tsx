@@ -22,6 +22,8 @@ import {
   BUMBLEBEE_WING_TRANSPARENCY,
   BUMBLEBEE_WING_LENGTH,
   BUMBLEBEE_WING_THICKNESS,
+  BUMBLEBEE_WING_OVERLAP,
+  BUMBLEBEE_WING_PIVOT_Y,
   BUMBLEBEE_SHADOW_OFFSET_SITTING_X,
   BUMBLEBEE_SHADOW_OFFSET_SITTING_Y,
   BUMBLEBEE_SHADOW_OFFSET_FLYING_X,
@@ -56,6 +58,7 @@ export type BumblebeeInstanceProps = {
   rightWingImage: SkImage;
   legPhases: SharedValue<number>[];
   legVisibility: SharedValue<number>;
+  isPreTakeoff: SharedValue<number>;
   spawnLegPhaseOffsets: number[];
 };
 
@@ -71,6 +74,7 @@ export function BumblebeeInstance({
   rightWingImage,
   legPhases,
   legVisibility,
+  isPreTakeoff,
   spawnLegPhaseOffsets,
 }: BumblebeeInstanceProps) {
   const bodyImageW = bodyImage.width();
@@ -122,10 +126,10 @@ export function BumblebeeInstance({
   const uniforms = useDerivedValue(() => {
     const isSitting = renderMode > 0.5;
     const normalizedPhase = Math.abs(Math.sin(wingPhase.value));
-    const wingAngle = isSitting
+    const wingAngle = isSitting && !isPreTakeoff.value
       ? BUMBLEBEE_SIT_WING_FOLD_ANGLE
       : BUMBLEBEE_WING_PHASE1_ANGLE + normalizedPhase * (BUMBLEBEE_WING_PHASE2_ANGLE - BUMBLEBEE_WING_PHASE1_ANGLE);
-    const wingTransparency = isSitting ? 1 : BUMBLEBEE_WING_TRANSPARENCY;
+    const wingTransparency = BUMBLEBEE_WING_TRANSPARENCY;
 
     const legPhasesAdvanced = legPhases.map((sv, i) =>
       Math.sin(sv.value + spawnLegPhaseOffsets[i]!),
@@ -144,6 +148,8 @@ export function BumblebeeInstance({
       wingLength: BUMBLEBEE_WING_LENGTH,
       wingThickness: BUMBLEBEE_WING_THICKNESS,
       wingTransparency,
+      wingOverlap: BUMBLEBEE_WING_OVERLAP,
+      wingPivotY: BUMBLEBEE_WING_PIVOT_Y,
       wingLeftImageW: leftWingImageW,
       wingLeftImageH: leftWingImageH,
       wingRightImageW: rightWingImageW,

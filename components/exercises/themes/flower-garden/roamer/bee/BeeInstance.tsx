@@ -22,6 +22,8 @@ import {
   BEE_WING_TRANSPARENCY,
   BEE_WING_LENGTH,
   BEE_WING_THICKNESS,
+  BEE_WING_OVERLAP,
+  BEE_WING_PIVOT_Y,
   BEE_SHADOW_OFFSET_SITTING_X,
   BEE_SHADOW_OFFSET_SITTING_Y,
   BEE_SHADOW_OFFSET_FLYING_X,
@@ -56,6 +58,7 @@ export type BeeInstanceProps = {
   rightWingImage: SkImage;
   legPhases: SharedValue<number>[];
   legVisibility: SharedValue<number>;
+  isPreTakeoff: SharedValue<number>;
   spawnLegPhaseOffsets: number[];
 };
 
@@ -71,6 +74,7 @@ export function BeeInstance({
   rightWingImage,
   legPhases,
   legVisibility,
+  isPreTakeoff,
   spawnLegPhaseOffsets,
 }: BeeInstanceProps) {
   const bodyImageW = bodyImage.width();
@@ -122,10 +126,10 @@ export function BeeInstance({
   const uniforms = useDerivedValue(() => {
     const isSitting = renderMode > 0.5;
     const normalizedPhase = Math.abs(Math.sin(wingPhase.value));
-    const wingAngle = isSitting
+    const wingAngle = isSitting && !isPreTakeoff.value
       ? BEE_SIT_WING_FOLD_ANGLE
       : BEE_WING_PHASE1_ANGLE + normalizedPhase * (BEE_WING_PHASE2_ANGLE - BEE_WING_PHASE1_ANGLE);
-    const wingTransparency = isSitting ? 1 : BEE_WING_TRANSPARENCY;
+    const wingTransparency = BEE_WING_TRANSPARENCY;
 
     const legPhasesAdvanced = legPhases.map((sv, i) =>
       Math.sin(sv.value + spawnLegPhaseOffsets[i]!),
@@ -144,6 +148,8 @@ export function BeeInstance({
       wingLength: BEE_WING_LENGTH,
       wingThickness: BEE_WING_THICKNESS,
       wingTransparency,
+      wingOverlap: BEE_WING_OVERLAP,
+      wingPivotY: BEE_WING_PIVOT_Y,
       wingLeftImageW: leftWingImageW,
       wingLeftImageH: leftWingImageH,
       wingRightImageW: rightWingImageW,

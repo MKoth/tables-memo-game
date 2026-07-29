@@ -1,4 +1,4 @@
-import { FlightState, type RoamerSharedRuntime } from './types';
+import { FlightState, type RoamerSharedRuntime, type SwimZone } from './types';
 import type { RoamerConfig } from './roamerConfig';
 import { stepFlightStateMachine, type FlightContext } from './stepFlightStateMachine';
 
@@ -130,18 +130,8 @@ export function writeRoamerState(
 
 export function updateRoamer(
   roamer: RoamerSharedRuntime,
-  config: RoamerConfig,
   dt: number,
-  steerMinX: number,
-  steerMaxX: number,
-  steerMinY: number,
-  steerMaxY: number,
-  hardMinX: number,
-  hardMaxX: number,
-  hardMinY: number,
-  hardMaxY: number,
-  centerX: number,
-  centerY: number,
+  swimZone: SwimZone,
   fieldFlowerAnchorsX: number[],
   fieldFlowerAnchorsY: number[],
   occupantSlots: number[],
@@ -154,7 +144,19 @@ export function updateRoamer(
   boostsMutable: number[],
 ): void {
   'worklet';
+  const config: RoamerConfig = roamer.config;
   const state = readRoamerState(roamer);
+
+  const steerMinX = swimZone.x + swimZone.w * config.boundaryMarginRatio;
+  const steerMaxX = swimZone.x + swimZone.w * (1 - config.boundaryMarginRatio);
+  const steerMinY = swimZone.y + swimZone.h * config.boundaryMarginRatio;
+  const steerMaxY = swimZone.y + swimZone.h * (1 - config.boundaryMarginRatio);
+  const hardMinX = swimZone.x + config.boundaryMargin;
+  const hardMaxX = swimZone.x + swimZone.w - config.boundaryMargin;
+  const hardMinY = swimZone.y + config.boundaryMargin;
+  const hardMaxY = swimZone.y + swimZone.h - config.boundaryMargin;
+  const centerX = swimZone.x + swimZone.w * 0.5;
+  const centerY = swimZone.y + swimZone.h * 0.5;
 
   const ctx: FlightContext = {
     dt,
@@ -206,6 +208,13 @@ export function updateRoamer(
   };
 
   const next = stepFlightStateMachine(initialState, ctx, config);
+
+  roamer.isPreTakeoff.value =
+    (next.flightState === FlightState.SITTING || next.flightState === FlightState.LIFTING_OFF)
+    && next.stateTimer > 0
+    && next.stateTimer <= config.sitWingPreTakeoffDurationMs / 1000
+      ? 1
+      : 0;
 
   writeRoamerState(roamer, {
     flightState: next.flightState,

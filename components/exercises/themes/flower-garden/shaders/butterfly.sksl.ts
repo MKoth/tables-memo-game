@@ -138,6 +138,9 @@ half4 main(float2 fragCoord) {
     return color;
   }
 
+  vec4 legRects[LEG_COUNT];
+  setLegRects(legRects);
+
   vec2 shadowRel = fragCoord - vec2(bodyCenterX + shadowOffsetX, bodyCenterY + shadowOffsetY);
   vec2 shadowLocal = vec2(ca * shadowRel.x - sa * shadowRel.y, sa * shadowRel.x + ca * shadowRel.y);
   float shadowScale = 1.0 / max(shadowSize, 0.001);
@@ -145,10 +148,16 @@ half4 main(float2 fragCoord) {
 
   half4 shadowComposite = half4(0.0);
 
-  half4 bodyShadow = sampleBody(scaledShadowLocal, halfW, halfH);
-  if (bodyShadow.a > 0.01) {
-    float a = bodyShadow.a;
-    shadowComposite = bodyShadow * a + shadowComposite * (1.0 - a);
+  vec2 shadowUV = vec2(
+    scaledShadowLocal.x / (halfW * 2.0) + 0.5,
+    scaledShadowLocal.y / (halfH * 2.0) + 0.5
+  );
+  if (!isInsideAnyLeg(shadowUV, legRects)) {
+    half4 bodyShadow = sampleBody(scaledShadowLocal, halfW, halfH);
+    if (bodyShadow.a > 0.01) {
+      float a = bodyShadow.a;
+      shadowComposite = bodyShadow * a + shadowComposite * (1.0 - a);
+    }
   }
 
   half4 leftWingShadow = sampleLeftWing(scaledShadowLocal, halfW, halfH, wingLeftFlap);
@@ -168,8 +177,6 @@ half4 main(float2 fragCoord) {
     color = s + color * (1.0 - s.a);
   }
 
-  vec4 legRects[LEG_COUNT];
-  setLegRects(legRects);
   bool sittingPass = renderMode > 0.5 && renderMode < 1.5;
 
   if (abs(local.x) < halfW && abs(local.y) < halfH) {

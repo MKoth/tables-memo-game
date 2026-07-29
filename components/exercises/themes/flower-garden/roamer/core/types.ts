@@ -1,4 +1,5 @@
 import type { SharedValue } from 'react-native-reanimated';
+import type { RoamerConfig } from './roamerConfig';
 
 export enum FlightState {
   FLYING_IDLE = 0,
@@ -60,6 +61,7 @@ export type RoamerState = {
 
 export type RoamerSharedRuntime = {
   spawn: RoamerSpawn;
+  config: RoamerConfig;
   x: SharedValue<number>;
   y: SharedValue<number>;
   angle: SharedValue<number>;
@@ -85,6 +87,7 @@ export type RoamerSharedRuntime = {
   sitTargetOffsetX: SharedValue<number>;
   sitTargetOffsetY: SharedValue<number>;
   sitActionTimer: SharedValue<number>;
+  isPreTakeoff: SharedValue<number>;
   legPhases: SharedValue<number>[];
   legVisibility: SharedValue<number>;
 };
