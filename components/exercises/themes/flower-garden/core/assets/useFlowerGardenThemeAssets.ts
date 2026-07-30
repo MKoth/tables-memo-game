@@ -24,6 +24,7 @@ import {
   LYCAENIDAE_BODY_SOURCE,
   LYCAENIDAE_LEFT_WING_SOURCES,
   LYCAENIDAE_RIGHT_WING_SOURCES,
+  ORB_PETAL_SOURCES,
   PETAL_SOURCES,
   POPPY_FLOWER_SOURCES,
   POPPY_LEAF_SOURCES,
@@ -37,6 +38,7 @@ import {
   type FlowerGardenBushKey,
   type FlowerGardenChamomileKey,
   type FlowerGardenDandelionKey,
+  type FlowerGardenOrbKey,
   type FlowerGardenPetalKey,
   type FlowerGardenPoppyKey,
   type FlowerGardenLycaenidaeKey,
@@ -155,6 +157,15 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
         for (let i = 0; i < bumblebeeEntries.length; i++) {
           bumblebeeEntries[i]!;
+          trackSource();
+        }
+
+        const orbEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.orb,
+        ) as Array<[FlowerGardenOrbKey, number]>;
+
+        for (let i = 0; i < orbEntries.length; i++) {
+          orbEntries[i]!;
           trackSource();
         }
 
@@ -683,6 +694,28 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        const orbPetalLoadResults = await Promise.allSettled(
+          ORB_PETAL_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode orb petal image');
+            }
+            return img;
+          }),
+        );
+        const orbPetalImages: SkImage[] = [];
+        for (const result of orbPetalLoadResults) {
+          if (result.status === 'fulfilled') {
+            orbPetalImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load an orb petal image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -716,6 +749,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             bumblebeeBodyImage,
             bumblebeeLeftWingImage,
             bumblebeeRightWingImage,
+            orbPetalImages: orbPetalImages.length === ORB_PETAL_SOURCES.length ? orbPetalImages : null,
           },
         });
       } catch (error) {

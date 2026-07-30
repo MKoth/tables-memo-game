@@ -104,7 +104,21 @@ _Avoid_: lower layer, sit pass, ground pass
 A per-leg accumulated phase, advanced each frame as `phase += legFrequency * dt`. Shared by all roamer variants with 6 legs. The body image is one PNG with all six legs baked in; the shader reveals each leg by a per-leg region mask whose bend amount is `sin(legPhase + legPhaseOffset)`. Leg phases advance only when the roamer is in `SITTING` and either arc-moving or on-place-turning; leg phases are held at zero (legs hidden) outside the sitting cluster and during the approach. The 6 legs step with a half-phase offset between the leg and its diagonal pair, producing a tripod gait.
 _Avoid_: leg cycle, walk phase, stride
 
-### Domain terms
+**Capture orb**:
+The flower-garden realisation of the capture-bubble role in the table exercise. A tappable Skia overlay rendered when a roamer is captured (enter → idle → burst lifecycle). Composed of 3 concentric petal rings (inner, middle, outer) that fly in as spiral-clusters from the roamer's tap position and assemble around the creature. The roamer sits behind all rings, visible through the gaps between petals. No word label (added later). The undersea theme's capture bubble is the equivalent at the capture-bubble contract level.
+_Avoid_: bubble, flower bubble
+
+**Petal ring**:
+One of three concentric structural tiers in the capture orb: inner, middle, outer. A ring is invisible — it defines a radial band (center radius + thickness) and a set of petals distributed evenly around its circumference. Each ring rotates independently (configurable angular speed + direction). The ring's thickness is the radial boundary within which its petals can Brownian-drift. Z-order: inner ring on top of middle, middle on top of outer, all rings in front of the captured roamer.
+_Avoid_: tier, layer, ring band, circle
+
+**Orb petal**:
+A single petal image (`pettel{i}.png`) drawn at a position on a petal ring's circumference. 21 unique PNG assets; petals are assigned per-slot at orb spawn with replacement (images repeat). Each petal has a per-instance random rotation phase that drives a thin↔thick UV stretch oscillation (same `sin(phase) * stretchGain` pattern as the butterfly wing). Petals drift radially within their ring's thickness band via Brownian motion. On burst, all petals scatter outward in random directions and fade; the orb diameter is a configurable fraction of the screen zone dimension. Petal displayed width is a configurable fraction of the ring's circumference (inner: smaller span, outer: larger).
+_Avoid_: pettel (typo), leaf, rose petal, wing
+
+**Orb lifecycle**:
+Three-phase animation sequence matching the undersea capture bubble's phase machine: Enter (spiral-in cluster arrival → assembly), Idle (continuous ring rotation + petal self-spin + radial drift), Burst (petals scatter outward and fade). The captured roamer is visible through all phases. Control flow is identical to `useBubbleAnimation`: a shared-value driven compute function maps phase + normalized progress to per-petal positions, with ring-rotation and petal-drift parameters computed from an `OrbAnimationConfig`.
+_Avoid_: bubble lifecycle, capture phase sequence
 
 **Table**:
 A conjugation grid: row headers (pronouns), column headers (infinitives), and body cells (conjugated forms).
@@ -215,7 +229,7 @@ The WordSprite movement model in the translation match exercise: a WordSprite pi
 _Avoid_: jellyfish wander, jellyfish idle swim, drifting jelly
 
 **Capture bubble**:
-The bubble that encloses a captured Roamer in the translation match exercise, showing the Roamer's English word as its label. Inflates at the Roamer's tap position, then travels with the creature inside to the screen center where it settles into idle. On a correct WordSprite match it pops (Escape burst) releasing the creature; on a tap of the bubble itself it pops (Release burst) releasing the creature back to the field. Inverts the table-exercise bubble, which shows the Spanish conjugated form. Renders above WordSprites (high z) so a tap on a spot where the bubble is always pops the bubble, even if a WordSprite is visually under it — the bubble keep-out disk exists to make that case rare.
+The undersea realisation of the capture-enclosure role in the translation match exercise (the flower-garden realisation is the capture orb). A bubble that encloses a captured Roamer, showing the Roamer's English word as its label. Inflates at the Roamer's tap position, then travels with the creature inside to the screen center where it settles into idle. On a correct WordSprite match it pops (Escape burst) releasing the creature; on a tap of the bubble itself it pops (Release burst) releasing the creature back to the field. Inverts the table-exercise bubble, which shows the Spanish conjugated form. Renders above WordSprites (high z) so a tap on a spot where the bubble is always pops the bubble, even if a WordSprite is visually under it — the bubble keep-out disk exists to make that case rare.
 _Avoid_: koi bubble, word bubble (reserved for round resolution), selection bubble
 
 **Bubble keep-out disk**:

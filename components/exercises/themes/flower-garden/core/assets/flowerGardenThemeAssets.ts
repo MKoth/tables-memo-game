@@ -110,6 +110,29 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     leftWing: require('../../../../../../assets/images/flower_garden_theme/bumblebee/bumblebee_left_wing.png'),
     rightWing: require('../../../../../../assets/images/flower_garden_theme/bumblebee/bumblebee_right_wing.png'),
   },
+  orb: {
+    petal1: require('../../../../../../assets/images/flower_garden_theme/orb/pettel1.png'),
+    petal2: require('../../../../../../assets/images/flower_garden_theme/orb/pettel2.png'),
+    petal3: require('../../../../../../assets/images/flower_garden_theme/orb/pettel3.png'),
+    petal4: require('../../../../../../assets/images/flower_garden_theme/orb/pettel4.png'),
+    petal5: require('../../../../../../assets/images/flower_garden_theme/orb/pettel5.png'),
+    petal6: require('../../../../../../assets/images/flower_garden_theme/orb/pettel6.png'),
+    petal7: require('../../../../../../assets/images/flower_garden_theme/orb/pettel7.png'),
+    petal8: require('../../../../../../assets/images/flower_garden_theme/orb/pettel8.png'),
+    petal9: require('../../../../../../assets/images/flower_garden_theme/orb/pettel9.png'),
+    petal10: require('../../../../../../assets/images/flower_garden_theme/orb/pettel10.png'),
+    petal11: require('../../../../../../assets/images/flower_garden_theme/orb/pettel11.png'),
+    petal12: require('../../../../../../assets/images/flower_garden_theme/orb/pettel12.png'),
+    petal13: require('../../../../../../assets/images/flower_garden_theme/orb/pettel13.png'),
+    petal14: require('../../../../../../assets/images/flower_garden_theme/orb/pettel14.png'),
+    petal15: require('../../../../../../assets/images/flower_garden_theme/orb/pettel15.png'),
+    petal16: require('../../../../../../assets/images/flower_garden_theme/orb/pettel16.png'),
+    petal17: require('../../../../../../assets/images/flower_garden_theme/orb/pettel17.png'),
+    petal18: require('../../../../../../assets/images/flower_garden_theme/orb/pettel18.png'),
+    petal19: require('../../../../../../assets/images/flower_garden_theme/orb/pettel19.png'),
+    petal20: require('../../../../../../assets/images/flower_garden_theme/orb/pettel20.png'),
+    petal21: require('../../../../../../assets/images/flower_garden_theme/orb/pettel21.png'),
+  },
 } as const;
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
@@ -344,9 +367,56 @@ export const BUMBLEBEE_BODY_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.body;
 export const BUMBLEBEE_LEFT_WING_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.leftWing;
 export const BUMBLEBEE_RIGHT_WING_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.rightWing;
 
+export const ORB_PETAL1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal1;
+export const ORB_PETAL2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal2;
+export const ORB_PETAL3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal3;
+export const ORB_PETAL4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal4;
+export const ORB_PETAL5_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal5;
+export const ORB_PETAL6_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal6;
+export const ORB_PETAL7_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal7;
+export const ORB_PETAL8_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal8;
+export const ORB_PETAL9_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal9;
+export const ORB_PETAL10_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal10;
+export const ORB_PETAL11_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal11;
+export const ORB_PETAL12_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal12;
+export const ORB_PETAL13_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal13;
+export const ORB_PETAL14_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal14;
+export const ORB_PETAL15_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal15;
+export const ORB_PETAL16_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal16;
+export const ORB_PETAL17_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal17;
+export const ORB_PETAL18_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal18;
+export const ORB_PETAL19_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal19;
+export const ORB_PETAL20_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal20;
+export const ORB_PETAL21_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal21;
+
+export const ORB_PETAL_SOURCES = [
+  ORB_PETAL1_SOURCE,
+  ORB_PETAL2_SOURCE,
+  ORB_PETAL3_SOURCE,
+  ORB_PETAL4_SOURCE,
+  ORB_PETAL5_SOURCE,
+  ORB_PETAL6_SOURCE,
+  ORB_PETAL7_SOURCE,
+  ORB_PETAL8_SOURCE,
+  ORB_PETAL9_SOURCE,
+  ORB_PETAL10_SOURCE,
+  ORB_PETAL11_SOURCE,
+  ORB_PETAL12_SOURCE,
+  ORB_PETAL13_SOURCE,
+  ORB_PETAL14_SOURCE,
+  ORB_PETAL15_SOURCE,
+  ORB_PETAL16_SOURCE,
+  ORB_PETAL17_SOURCE,
+  ORB_PETAL18_SOURCE,
+  ORB_PETAL19_SOURCE,
+  ORB_PETAL20_SOURCE,
+  ORB_PETAL21_SOURCE,
+] as const;
+
 export type FlowerGardenLycaenidaeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae;
 export type FlowerGardenBeeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bee;
 export type FlowerGardenBumblebeeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bumblebee;
+export type FlowerGardenOrbKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.orb;
 
 export type FlowerGardenThemeImages = {
   roses: Record<FlowerGardenPetalKey, unknown>;
@@ -379,6 +449,7 @@ export type FlowerGardenThemeImages = {
   bumblebeeBodyImage: SkImage | null;
   bumblebeeLeftWingImage: SkImage | null;
   bumblebeeRightWingImage: SkImage | null;
+  orbPetalImages: SkImage[] | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT =
@@ -391,7 +462,8 @@ export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.wild_violet).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bee).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bumblebee).length;
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bumblebee).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.orb).length;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;
 
