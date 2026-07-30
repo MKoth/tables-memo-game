@@ -51,6 +51,7 @@ export function useParticleFrameLoop(
         roamerStates.push({
           x: entry.runtime.x.value,
           y: entry.runtime.y.value,
+          angle: entry.runtime.angle.value,
           flightState: entry.runtime.state.value as FlightState,
           species: entry.spawn.species,
         });
@@ -66,8 +67,8 @@ export function useParticleFrameLoop(
         Math.random,
       );
 
-      pool.value = pool.value;
-      lastEmitTimestamps.value = lastEmitTimestamps.value;
+      pool.value = pool.value.slice();
+      lastEmitTimestamps.value = lastEmitTimestamps.value.slice();
     },
     [lastTimestamp, pool, lastEmitTimestamps, runtimeEntries, config],
   );

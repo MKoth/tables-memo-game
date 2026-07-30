@@ -15,7 +15,16 @@ function makeSpeciesConfig(
     emitIntervalMs: 250,
     ttlMin: 1200,
     ttlMax: 2400,
-    color: [1.0, 0.894, 0.71],
+    startDiameterMin: 3,
+    startDiameterMax: 5,
+    endDiameterMin: 1,
+    endDiameterMax: 2,
+    fadeInFraction: 0.5,
+    fadeOutFraction: 0.3,
+    colors: [[1.0, 0.894, 0.71]],
+    colorChangeIntervalMs: 0,
+    driftSpeed: 0,
+    deviationRad: 0,
     ...overrides,
   };
 }
@@ -44,11 +53,7 @@ function allSpecies(overrides?: Partial<SpeciesParticleConfig>): Record<RoamerSp
 
 function makeConfig(): RoamerParticleConfig {
   return {
-    diameterMin: 3,
-    diameterMax: 7,
-    fallSpeed: 40,
-    fadeInFraction: 0.2,
-    fadeOutFraction: 0.3,
+    fallSpeed: FALL_SPEED,
     species: allSpecies(),
   };
 }
@@ -57,6 +62,7 @@ function roamerState(
   overrides?: Partial<{
     x: number;
     y: number;
+    angle: number;
     flightState: FlightState;
     species: RoamerSpecies;
   }>,
@@ -64,6 +70,7 @@ function roamerState(
   return {
     x: 200,
     y: 300,
+    angle: 0,
     flightState: FlightState.FLYING_CRUISE,
     species: 'butterfly' as RoamerSpecies,
     ...overrides,
@@ -187,7 +194,7 @@ describe('updateParticlePool', () => {
       expect(p.y).toBeCloseTo(250 + FALL_SPEED * 0.016, 2);
     });
 
-    it('particle colour matches species colour from config', () => {
+    it('particle colour matches the first species colour from config', () => {
       const pool = createEmptyParticlePool();
       const states = [
         roamerState({ species: 'bee' }),
@@ -199,27 +206,91 @@ describe('updateParticlePool', () => {
       updateParticlePool(pool, states, config, 0.016, 100, timestamps, makeSeededRng());
 
       const bee = pool[0]!;
-      expect(bee.r).toBe(1.0);
-      expect(bee.g).toBe(0.843);
-      expect(bee.b).toBe(0.0);
+      const beeCfg = config.species.bee;
+      expect(bee.r).toBe(beeCfg.colors[0]![0]);
+      expect(bee.g).toBe(beeCfg.colors[0]![1]);
+      expect(bee.b).toBe(beeCfg.colors[0]![2]);
 
       const bumble = pool[1]!;
-      expect(bumble.r).toBe(0.871);
-      expect(bumble.g).toBe(0.718);
-      expect(bumble.b).toBe(0.529);
+      const bumbleCfg = config.species.bumblebee;
+      expect(bumble.r).toBe(bumbleCfg.colors[0]![0]);
+      expect(bumble.g).toBe(bumbleCfg.colors[0]![1]);
+      expect(bumble.b).toBe(bumbleCfg.colors[0]![2]);
     });
 
-    it('particle radius is within configured range', () => {
+    it('particle start radius is within configured start range', () => {
       const pool = createEmptyParticlePool();
       const states = [roamerState()];
       const timestamps: number[] = [0];
       const config = makeConfig();
+      const bfCfg = config.species.butterfly;
 
       updateParticlePool(pool, states, config, 0.016, 100, timestamps, makeSeededRng(42));
 
       const p = pool[0]!;
-      expect(p.radius).toBeGreaterThanOrEqual(1.5);
-      expect(p.radius).toBeLessThanOrEqual(3.5);
+      expect(p.startRadius).toBeGreaterThanOrEqual(bfCfg.startDiameterMin / 2);
+      expect(p.startRadius).toBeLessThanOrEqual(bfCfg.startDiameterMax / 2);
+    });
+
+    it('particle end radius is within configured end range', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState()];
+      const timestamps: number[] = [0];
+      const config = makeConfig();
+      const bfCfg = config.species.butterfly;
+
+      updateParticlePool(pool, states, config, 0.016, 100, timestamps, makeSeededRng(42));
+
+      const p = pool[0]!;
+      expect(p.endRadius).toBeGreaterThanOrEqual(bfCfg.endDiameterMin / 2);
+      expect(p.endRadius).toBeLessThanOrEqual(bfCfg.endDiameterMax / 2);
+    });
+
+    it('radius lerps from start to end over particle lifetime', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState()];
+      const timestamps: number[] = [0];
+      const config = makeConfig();
+      const rng = makeSeededRng(42);
+
+      updateParticlePool(pool, states, config, 0.3, 100, timestamps, rng);
+      const p = pool[0]!;
+      const midT = p.age / p.ttl;
+      const expectedMid = p.startRadius + (p.endRadius - p.startRadius) * midT;
+      expect(p.radius).toBeCloseTo(expectedMid, 5);
+
+      updateParticlePool(pool, states, config, 2.0, 3000, timestamps, rng);
+      expect(p.active).toBe(false);
+    });
+
+    it('particle cycles through colors at colorChangeIntervalMs', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState()];
+      const timestamps: number[] = [0];
+      const config = withButterflyOverride(
+        makeConfig(),
+        {
+          colors: [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]],
+          colorChangeIntervalMs: 100,
+        },
+      );
+
+      updateParticlePool(pool, states, config, 0.01, 0, timestamps, makeSeededRng(42));
+      expect(pool[0]!.r).toBe(1.0);
+      expect(pool[0]!.colorIndex).toBe(0);
+
+      updateParticlePool(pool, states, config, 0.01, 150, timestamps, makeSeededRng(42));
+      expect(pool[0]!.colorIndex).toBe(1);
+      expect(pool[0]!.r).toBe(0);
+      expect(pool[0]!.g).toBe(1.0);
+
+      updateParticlePool(pool, states, config, 0.01, 250, timestamps, makeSeededRng(42));
+      expect(pool[0]!.colorIndex).toBe(2);
+      expect(pool[0]!.b).toBe(1.0);
+
+      updateParticlePool(pool, states, config, 0.01, 350, timestamps, makeSeededRng(42));
+      expect(pool[0]!.colorIndex).toBe(0);
+      expect(pool[0]!.r).toBe(1.0);
     });
 
     it('particle TTL is within configured range', () => {
@@ -257,12 +328,21 @@ describe('updateParticlePool', () => {
       const pool = createEmptyParticlePool();
       const states = [roamerState()];
       const timestamps: number[] = [0];
-      const config = makeConfig();
+      const config = withButterflyOverride(
+        makeConfig(),
+        { ttlMin: 3000, ttlMax: 3000 },
+      );
 
-      updateParticlePool(pool, states, config, 0.5, 100, timestamps, makeSeededRng(42));
+      updateParticlePool(pool, states, config, 1.0, 100, timestamps, makeSeededRng(42));
 
       const p = pool[0]!;
-      expect(p.opacity).toBeGreaterThanOrEqual(0.99);
+      const t = p.age / p.ttl;
+      if (t >= p.fadeInFraction && t <= 1 - p.fadeOutFraction) {
+        expect(p.opacity).toBe(1);
+      } else {
+        expect(p.opacity).toBeGreaterThan(0);
+        expect(p.opacity).toBeLessThan(1);
+      }
     });
 
     it('particle Y advances by fall speed × dt', () => {
@@ -338,6 +418,64 @@ describe('updateParticlePool', () => {
       updateParticlePool(pool, states, config, 0.016, 100, timestamps, makeSeededRng());
 
       expect(countActive(pool)).toBe(3);
+    });
+  });
+
+  describe('drift', () => {
+    it('particle drifts opposite to insect angle when driftSpeed > 0', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState({ x: 200, y: 300, angle: 0 })];
+      const timestamps: number[] = [0];
+      const config = withButterflyOverride(makeConfig(), { driftSpeed: 50 });
+
+      updateParticlePool(pool, states, config, 0.1, 100, timestamps, makeSeededRng(42));
+
+      const p = pool[0]!;
+      expect(p.vx).toBeCloseTo(-50 * Math.cos(0), 5);
+      expect(p.vy).toBeCloseTo(-50 * Math.sin(0), 5);
+      expect(p.x).toBeCloseTo(200 + p.vx * 0.1, 2);
+    });
+
+    it('insect facing left drifts particles to the right', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState({ x: 200, y: 300, angle: Math.PI })];
+      const timestamps: number[] = [0];
+      const config = withButterflyOverride(makeConfig(), { driftSpeed: 50 });
+
+      updateParticlePool(pool, states, config, 0.1, 100, timestamps, makeSeededRng(42));
+
+      const p = pool[0]!;
+      expect(p.vx).toBeCloseTo(-50 * Math.cos(Math.PI), 5);
+      expect(p.vx).toBeGreaterThan(0);
+    });
+
+    it('zero driftSpeed produces no horizontal motion', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState({ x: 200, y: 300, angle: Math.PI / 4 })];
+      const timestamps: number[] = [0];
+      const config = makeConfig();
+
+      updateParticlePool(pool, states, config, 0.5, 100, timestamps, makeSeededRng(42));
+
+      const p = pool[0]!;
+      expect(p.vx).toBeCloseTo(0, 5);
+      expect(p.vy).toBeCloseTo(0, 5);
+      expect(p.x).toBe(200);
+    });
+
+    it('deviationRad spreads particle velocities around angle', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState({ x: 200, y: 300, angle: 0 })];
+      const timestamps: number[] = [0];
+      const config = withButterflyOverride(makeConfig(), { driftSpeed: 50, deviationRad: 1.0 });
+
+      updateParticlePool(pool, states, config, 0.1, 100, timestamps, makeSeededRng(42));
+
+      const p = pool[0]!;
+      const expectedDir = Math.atan2(p.vy, p.vx);
+      expect(expectedDir).not.toBeCloseTo(Math.PI, 5);
+      const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+      expect(speed).toBeCloseTo(50, 0);
     });
   });
 

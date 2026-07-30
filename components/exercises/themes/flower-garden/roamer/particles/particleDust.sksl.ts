@@ -1,16 +1,15 @@
 import { Skia, type SkRuntimeEffect } from '@shopify/react-native-skia';
-
-export const MAX_PARTICLES_SKSL = 200;
+import { MAX_PARTICLES } from './particleConfig';
 
 export const PARTICLE_DUST_SKSL = `
 uniform float2 iResolution;
 uniform float uActiveCount;
-uniform float4 uParticleData[${MAX_PARTICLES_SKSL}];
-uniform float4 uParticleColor[${MAX_PARTICLES_SKSL}];
+uniform float4 uParticleData[${MAX_PARTICLES}];
+uniform float4 uParticleColor[${MAX_PARTICLES}];
 
 half4 main(float2 fragCoord) {
   half4 color = half4(0);
-  for (int i = 0; i < ${MAX_PARTICLES_SKSL}; i++) {
+  for (int i = 0; i < ${MAX_PARTICLES}; i++) {
     if (float(i) >= uActiveCount) break;
     float4 d = uParticleData[i];
     float2 delta = fragCoord - d.xy;
