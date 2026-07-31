@@ -33,6 +33,7 @@ export type OrbAnimState = {
   diameter: number;
   overallOpacity: number;
   petals: PetalAnimState[];
+  captureVisualT: number;
 };
 
 export type OrbAnimationConfig = {

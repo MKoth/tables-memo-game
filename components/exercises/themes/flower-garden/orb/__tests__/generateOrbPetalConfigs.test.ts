@@ -7,9 +7,13 @@ import {
   ORB_PETAL_COUNT,
   ORB_PETAL_PHASE_SPEED_MAX,
   ORB_PETAL_PHASE_SPEED_MIN,
+  ORB_RING_CONFIGS,
   ORB_RING_PETAL_COUNTS,
 } from '../orbAnimPresets';
 import { generateOrbPetalConfigs } from '../generateOrbPetalConfigs';
+
+const RING_CENTERS = ORB_RING_CONFIGS.map(r => r.centerRadius);
+const RING_THICKNESSES = ORB_RING_CONFIGS.map(r => r.thickness);
 
 describe('generateOrbPetalConfigs', () => {
   it('produces 78 petals total (18 + 24 + 36)', () => {
@@ -99,8 +103,8 @@ describe('generateOrbPetalConfigs', () => {
     const petals = generateOrbPetalConfigs({ rng: createRng(9) });
     for (const p of petals) {
       const ring = p.ringIndex;
-      const center = [0.15, 0.35, 0.6][ring]!;
-      const thickness = [0.08, 0.14, 0.18][ring]!;
+      const center = RING_CENTERS[ring]!;
+      const thickness = RING_THICKNESSES[ring]!;
       const min = center - thickness * 0.5;
       const max = center + thickness * 0.5;
       expect(p.startRadius).toBeGreaterThanOrEqual(min - 1e-9);

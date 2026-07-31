@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect } from 'react';
 import {
   cancelAnimation,
   Easing,
@@ -27,14 +27,16 @@ export function useOrbAnimation(
   petals: ReadonlyArray<PetalSpawnConfig>,
   onDismiss: () => void,
   enabled = true,
+  onBurstCompleteWorklet?: (burstIdleTimeMs: number) => void,
 ): UseOrbAnimationResult {
   const enterProgress = useSharedValue(0);
   const burstProgress = useSharedValue(0);
   const idleElapsedMs = useSharedValue(0);
   const burstIdleTimeMs = useSharedValue(0);
+  const burstStartRealTimeMs = useSharedValue(0);
   const phase = useSharedValue<number>(enabled ? OrbPhase.Enter : OrbPhase.None);
   const configSv = useSharedValue(config);
-  const lastFrameMs = useRef<number | null>(null);
+  const lastFrameMs = useSharedValue(-1);
 
   useLayoutEffect(() => {
     configSv.value = config;
@@ -43,16 +45,16 @@ export function useOrbAnimation(
   useFrameCallback(frameInfo => {
     const phaseNow = phase.value;
     if (phaseNow !== OrbPhase.Idle) {
-      lastFrameMs.current = null;
+      lastFrameMs.value = -1;
       return;
     }
     const currentMs = frameInfo.timestamp;
-    if (lastFrameMs.current == null) {
-      lastFrameMs.current = currentMs;
+    if (lastFrameMs.value < 0) {
+      lastFrameMs.value = currentMs;
       return;
     }
-    const delta = currentMs - lastFrameMs.current;
-    lastFrameMs.current = currentMs;
+    const delta = currentMs - lastFrameMs.value;
+    lastFrameMs.value = currentMs;
     if (delta > 0) {
       idleElapsedMs.value = idleElapsedMs.value + delta;
     }
@@ -79,7 +81,7 @@ export function useOrbAnimation(
       burstProgress.value = 0;
       idleElapsedMs.value = 0;
       burstIdleTimeMs.value = 0;
-      lastFrameMs.current = null;
+      lastFrameMs.value = -1;
       phase.value = OrbPhase.None;
       return;
     }
@@ -87,7 +89,7 @@ export function useOrbAnimation(
     enterProgress.value = 0;
     burstProgress.value = 0;
     idleElapsedMs.value = 0;
-    lastFrameMs.current = null;
+    lastFrameMs.value = -1;
     phase.value = OrbPhase.Enter;
 
     enterProgress.value = withTiming(
@@ -97,7 +99,6 @@ export function useOrbAnimation(
         'worklet';
         if (finished) {
           idleElapsedMs.value = 0;
-          lastFrameMs.current = null;
           phase.value = OrbPhase.Idle;
         }
       },
@@ -109,24 +110,31 @@ export function useOrbAnimation(
     };
   }, [enabled, enterProgress, burstProgress, idleElapsedMs, phase, burstIdleTimeMs]);
 
-  const startBurst = useCallback(() => {
-    if (phase.value !== OrbPhase.Idle) {
-      return;
-    }
-    burstIdleTimeMs.value = idleElapsedMs.value;
-    phase.value = OrbPhase.Burst;
-    burstProgress.value = 0;
-    burstProgress.value = withTiming(
-      1,
-      { duration: ORB_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },
-      finished => {
-        'worklet';
-        if (finished) {
-          scheduleOnRN(onDismiss);
-        }
-      },
-    );
-  }, [burstIdleTimeMs, burstProgress, idleElapsedMs, onDismiss, phase]);
+  const startBurst = useCallback(
+    () => {
+      if (phase.value !== OrbPhase.Idle) {
+        return;
+      }
+      burstIdleTimeMs.value = idleElapsedMs.value;
+      burstStartRealTimeMs.value = Date.now();
+      phase.value = OrbPhase.Burst;
+      burstProgress.value = 0;
+      burstProgress.value = withTiming(
+        1,
+        { duration: ORB_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },
+        finished => {
+          'worklet';
+          if (finished) {
+            if (onBurstCompleteWorklet) {
+              onBurstCompleteWorklet(burstStartRealTimeMs.value);
+            }
+            scheduleOnRN(onDismiss);
+          }
+        },
+      );
+    },
+    [burstIdleTimeMs, burstProgress, idleElapsedMs, onDismiss, onBurstCompleteWorklet, phase, burstStartRealTimeMs],
+  );
 
   return { anim, phase, startBurst };
 }

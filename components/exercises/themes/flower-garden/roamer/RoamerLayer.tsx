@@ -16,11 +16,13 @@ export type RoamerLayerProps = {
   interactive?: boolean;
   sessionId?: string;
   sim?: RoamerSimulation;
+  hiddenIndices?: number[];
 };
 
 type RoamerLayerContentProps = {
   sim: RoamerSimulation;
   interactive: boolean;
+  hiddenIndices: number[];
   images: {
     lycaenidaeBodyImage: SkImage | null;
     lycaenidaeWingLeftImages: SkImage[] | null;
@@ -34,10 +36,12 @@ type RoamerLayerContentProps = {
   };
 };
 
-function RoamerLayerContent({ sim, interactive, images }: RoamerLayerContentProps) {
+function RoamerLayerContent({ sim, interactive, images, hiddenIndices }: RoamerLayerContentProps) {
   if (sim.runtimeEntries.length === 0) {
     return null;
   }
+
+  const isHidden = (index: number) => hiddenIndices.includes(index);
 
   const getInstanceProps = (spawn: RoamerSpawn): {
     Instance: typeof ButterflyInstance | typeof BeeInstance | typeof BumblebeeInstance;
@@ -78,6 +82,9 @@ function RoamerLayerContent({ sim, interactive, images }: RoamerLayerContentProp
     <Canvas style={styles.canvas} pointerEvents={interactive ? 'auto' : 'none'}>
       <Group>
         {sim.runtimeEntries.map(({ spawn, runtime }, index) => {
+          if (isHidden(index)) {
+            return null;
+          }
           const props = getInstanceProps(spawn);
           if (props == null) return null;
           const { Instance, bodyImage, leftWingImage, rightWingImage } = props;
@@ -95,6 +102,9 @@ function RoamerLayerContent({ sim, interactive, images }: RoamerLayerContentProp
       </Group>
       <Group>
         {sim.runtimeEntries.map(({ spawn, runtime }, index) => {
+          if (isHidden(index)) {
+            return null;
+          }
           const props = getInstanceProps(spawn);
           if (props == null) return null;
           const { Instance, bodyImage, leftWingImage, rightWingImage } = props;
@@ -118,11 +128,13 @@ function RoamerLayerWithSim({
   words,
   interactive,
   sessionId,
+  hiddenIndices,
   images,
 }: {
   words: string[];
   interactive: boolean;
   sessionId: string;
+  hiddenIndices: number[];
   images: RoamerLayerContentProps['images'];
 }) {
   const layout = useExerciseLayout();
@@ -137,7 +149,14 @@ function RoamerLayerWithSim({
     sessionId,
   });
 
-  return <RoamerLayerContent sim={sim} interactive={interactive} images={images} />;
+  return (
+    <RoamerLayerContent
+      sim={sim}
+      interactive={interactive}
+      hiddenIndices={hiddenIndices}
+      images={images}
+    />
+  );
 }
 
 export function RoamerLayer({
@@ -145,6 +164,7 @@ export function RoamerLayer({
   interactive = false,
   sessionId = 'default',
   sim: externalSim,
+  hiddenIndices = [],
 }: RoamerLayerProps) {
   const { images } = useFlowerGardenAssetsContext();
 
@@ -163,7 +183,14 @@ export function RoamerLayer({
   }
 
   if (externalSim != null) {
-    return <RoamerLayerContent sim={externalSim} interactive={interactive} images={images} />;
+    return (
+      <RoamerLayerContent
+        sim={externalSim}
+        interactive={interactive}
+        hiddenIndices={hiddenIndices}
+        images={images}
+      />
+    );
   }
 
   return (
@@ -171,6 +198,7 @@ export function RoamerLayer({
       words={words}
       interactive={interactive}
       sessionId={sessionId}
+      hiddenIndices={hiddenIndices}
       images={images}
     />
   );

@@ -19,6 +19,10 @@ export function useRoamerSimFrameLoop(
   flowerSwingPhases: number[],
   flowerSwingAngles: number[],
   flowerSwingBoosts: SharedValue<number[]> | undefined,
+  capturedRoamerIndex: SharedValue<number>,
+  orbCaptureCenterX: number,
+  orbCaptureCenterY: number,
+  orbCaptureRadius: number,
 ): void {
   const lastTimestamp = useSharedValue(-1);
   const exerciseClock = useExerciseClockQuantized(20);
@@ -53,6 +57,7 @@ export function useRoamerSimFrameLoop(
 
       for (let i = 0; i < roamerCount; i++) {
         const runtime = runtimes[i]!.runtime;
+        const isCaptured = i === capturedRoamerIndex.value;
 
         updateRoamer(
           runtime,
@@ -70,9 +75,21 @@ export function useRoamerSimFrameLoop(
           boosts,
         );
 
+        if (isCaptured) {
+          const dx = runtime.x.value - orbCaptureCenterX;
+          const dy = runtime.y.value - orbCaptureCenterY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > orbCaptureRadius && dist > 0) {
+            const scale = orbCaptureRadius / dist;
+            runtime.x.value = orbCaptureCenterX + dx * scale;
+            runtime.y.value = orbCaptureCenterY + dy * scale;
+          }
+        }
+
         if (
-          runtime.state.value === FlightState.FLYING_CRUISE ||
-          runtime.state.value === FlightState.APPROACH_FLOWER
+          !isCaptured &&
+          (runtime.state.value === FlightState.FLYING_CRUISE ||
+            runtime.state.value === FlightState.APPROACH_FLOWER)
         ) {
           const rc = runtime.config;
           const sepRadiusSq = rc.separationRadius * rc.separationRadius;
@@ -123,6 +140,10 @@ export function useRoamerSimFrameLoop(
       flowerSwingAngles,
       exerciseClock,
       flowerSwingBoosts,
+      capturedRoamerIndex,
+      orbCaptureCenterX,
+      orbCaptureCenterY,
+      orbCaptureRadius,
     ],
   );
 

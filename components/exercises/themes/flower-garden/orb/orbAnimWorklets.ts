@@ -3,7 +3,6 @@ import {
   ORB_BURST_DISTANCE,
   ORB_PETAL_FADE_END,
   ORB_PETAL_FADE_START,
-  ORB_PETAL_STRETCH_GAIN,
   ORB_RING_CONFIGS,
   ORB_SPAWN_DIAMETER_RATIO,
 } from './orbAnimPresets';
@@ -31,16 +30,6 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function ringBandMin(ring: PetalRingConfig): number {
-  'worklet';
-  return ring.centerRadius - ring.thickness * 0.5;
-}
-
-function ringBandMax(ring: PetalRingConfig): number {
-  'worklet';
-  return ring.centerRadius + ring.thickness * 0.5;
-}
-
 function idlePetal(
   ring: PetalRingConfig,
   spawn: PetalSpawnConfig,
@@ -51,16 +40,11 @@ function idlePetal(
   const tSec = idleElapsedMs / 1000;
   const ringAngleOffset = ring.rotationSpeed * ring.direction * tSec;
   const angle = spawn.initialAngle + ringAngleOffset;
-  const drift = spawn.brownianStep * 100 * tSec * Math.cos(spawn.driftPhase + idleElapsedMs * 0.001);
-  const rawRadius = spawn.startRadius + drift;
-  const radius = clamp(rawRadius, ringBandMin(ring), ringBandMax(ring));
-  const scaledRadius = radius * ringRadiusScale;
-  const selfSpin = Math.sin(spawn.phase + spawn.phaseSpeed * tSec);
-  const scaleX = 1 - Math.abs(selfSpin) * ORB_PETAL_STRETCH_GAIN;
+  const radius = spawn.startRadius * ringRadiusScale;
   return {
-    x: Math.cos(angle) * scaledRadius,
-    y: Math.sin(angle) * scaledRadius,
-    scaleX,
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+    scaleX: 1,
   };
 }
 
@@ -162,6 +146,7 @@ export function computeOrbAnimState(
       diameter: 0,
       overallOpacity: 0,
       petals: zeroPetals,
+      captureVisualT: 0,
     };
   }
 
@@ -197,6 +182,7 @@ export function computeOrbAnimState(
       diameter: targetDiameter,
       overallOpacity: minOpacity,
       petals: outPetals,
+      captureVisualT: 1 - clamp01(burstProgress / 0.4),
     };
   }
 
@@ -219,6 +205,7 @@ export function computeOrbAnimState(
       diameter: targetDiameter,
       overallOpacity: 1,
       petals: outPetals,
+      captureVisualT: 1,
     };
   }
 
@@ -252,6 +239,7 @@ export function computeOrbAnimState(
     diameter,
     overallOpacity: t,
     petals: outPetals,
+    captureVisualT: 1,
   };
 }
 

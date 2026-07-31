@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
 import { createRng, hashSeedString } from '../../scenery/BushShaderLayer/helpers/seededRandom';
 import type { ZoneRect } from '../../../../core/layout/computeExerciseLayout';
@@ -31,6 +32,10 @@ export type UseRoamerSimulationParams = {
   roamerRect: ZoneRect;
   layoutKey: string;
   sessionId?: string;
+  capturedRoamerIndex?: SharedValue<number>;
+  orbCaptureCenterX?: number;
+  orbCaptureCenterY?: number;
+  orbCaptureRadius?: number;
 };
 
 export function useRoamerSimulation({
@@ -40,7 +45,12 @@ export function useRoamerSimulation({
   roamerRect,
   layoutKey,
   sessionId = 'default',
+  capturedRoamerIndex,
+  orbCaptureCenterX = 0,
+  orbCaptureCenterY = 0,
+  orbCaptureRadius = 0,
 }: UseRoamerSimulationParams): RoamerSimulation {
+  const capturedIdx = capturedRoamerIndex ?? useSharedValue(-1);
   const wordsKey = words.join('\0');
   const seed = useMemo(() => hashSeedString(`roamer-${sessionId}`), [sessionId]);
   const rng = useMemo(() => createRng(seed), [seed]);
@@ -96,6 +106,10 @@ export function useRoamerSimulation({
     flowerSwingPhases,
     flowerSwingAngles,
     flowerSwingBoosts,
+    capturedIdx,
+    orbCaptureCenterX,
+    orbCaptureCenterY,
+    orbCaptureRadius,
   );
 
   return {

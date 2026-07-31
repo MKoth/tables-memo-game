@@ -8,13 +8,15 @@ export function FlowerGardenRoamerMotionZone({
   words,
   interactive = false,
   sim,
-}: ThemeRoamerMotionZoneProps & { sim?: RoamerSimulation }) {
+  hiddenIndices = [],
+}: ThemeRoamerMotionZoneProps & { sim?: RoamerSimulation; hiddenIndices?: number[] }) {
   return (
     <View style={styles.container} pointerEvents="box-none">
       <RoamerLayer
         words={words}
         interactive={interactive}
         sim={sim}
+        hiddenIndices={hiddenIndices}
       />
     </View>
   );

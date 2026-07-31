@@ -110,12 +110,12 @@ export function CaptureOrb({
     >
       <CapturedRoamerCanvas
         entry={capturedEntry}
+        anim={anim}
         bodyImage={speciesImages.body}
         leftWingImage={speciesImages.leftWing}
         rightWingImage={speciesImages.rightWing}
         centerX={centerX}
         centerY={centerY}
-        angle={capturedEntry.spawn.initialAngle}
       />
       {reversedRings.map(ring => (
         <PetalRingLayer

@@ -3,7 +3,6 @@ import { generateOrbPetalConfigs } from '../generateOrbPetalConfigs';
 import {
   ORB_PETAL_FADE_END,
   ORB_PETAL_FADE_START,
-  ORB_PETAL_STRETCH_GAIN,
   ORB_RING_CONFIGS,
   ORB_SPAWN_DIAMETER_RATIO,
 } from '../orbAnimPresets';
@@ -18,8 +17,8 @@ const CONFIG: OrbAnimationConfig = {
   targetDiameter: 300,
 };
 
-const RING_CENTERS = [0.15, 0.35, 0.6];
-const RING_THICKNESSES = [0.08, 0.14, 0.18];
+const RING_CENTERS = ORB_RING_CONFIGS.map(r => r.centerRadius);
+const RING_THICKNESSES = ORB_RING_CONFIGS.map(r => r.thickness);
 
 function makePetals(seed = 1) {
   return generateOrbPetalConfigs({ rng: createRng(seed) });
@@ -241,8 +240,7 @@ describe('computeOrbAnimState', () => {
         petals,
       );
       for (const p of state.petals) {
-        expect(p.scaleX).toBeGreaterThanOrEqual(1 - ORB_PETAL_STRETCH_GAIN - 1e-6);
-        expect(p.scaleX).toBeLessThanOrEqual(1 + 1e-6);
+        expect(p.scaleX).toBeCloseTo(1, 5);
         expect(p.opacity).toBeCloseTo(1, 5);
       }
     }

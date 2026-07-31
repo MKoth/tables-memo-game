@@ -10,9 +10,9 @@ export const ORB_RING_RADII_FRACTIONS: ReadonlyArray<{
   thickness: number;
   widthFraction: number;
 }> = [
-  { center: 0.15, thickness: 0.08, widthFraction: 0.7 },
-  { center: 0.35, thickness: 0.14, widthFraction: 0.8 },
-  { center: 0.6, thickness: 0.18, widthFraction: 0.9 },
+  { center: 0.5, thickness: 0.08, widthFraction: 0.4 },
+  { center: 0.55, thickness: 0.14, widthFraction: 0.5 },
+  { center: 0.6, thickness: 0.18, widthFraction: 0.6 },
 ];
 
 export const ORB_RING_PETAL_COUNTS: ReadonlyArray<number> = [18, 24, 36];
@@ -21,7 +21,7 @@ export const ORB_RING_ROTATION_SPEEDS: ReadonlyArray<number> = [0.32, -0.22, 0.1
 
 export const ORB_PETAL_STRETCH_GAIN = 0.55;
 export const ORB_PETAL_PHASE_SPEED_MIN = 0.9;
-export const ORB_PETAL_PHASE_SPEED_MAX = 1.8;
+export const ORB_PETAL_PHASE_SPEED_MAX = 2.8;
 export const ORB_PETAL_BROWNIAN_STEP_MIN = 0.0008;
 export const ORB_PETAL_BROWNIAN_STEP_MAX = 0.0035;
 
@@ -41,6 +41,13 @@ export const ORB_BURST_SPEED_MAX = 1.25;
 export const ORB_DIAMETER_RATIO = 0.65;
 export const ORB_ROAMER_SCALE = 1.22;
 export const ORB_ROAMER_TAP_HIT_RADIUS = 36;
+export const ORB_CAPTIVE_DRIFT_RATIO = 0.42;
+export const ORB_CAPTIVE_DRIFT_SPEED_X = 0.7;
+export const ORB_CAPTIVE_DRIFT_SPEED_Y = 0.55;
+export const ORB_CAPTIVE_DRIFT_Y_RATIO = 0.8;
+export const ORB_CAPTIVE_ANGLE_SWAY_SPEED = 0.4;
+export const ORB_CAPTIVE_ANGLE_SWAY_AMP = 0.3;
+export const ORB_CAPTIVE_WING_RATE = 16;
 
 export const ORB_PETAL_FADE_START = 0.5;
 export const ORB_PETAL_FADE_END = 1.0;
