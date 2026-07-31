@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
 import { useAnimatedReaction } from 'react-native-reanimated';
 import { useExerciseLayout } from '../../../../../../core';
 import { useFlowerGardenAssetsContext } from '../../../../core/providers/FlowerGardenAssetsProvider';
@@ -9,7 +10,12 @@ import { generateOrbPetalConfigs } from '../../../../orb/generateOrbPetalConfigs
 import { createRng, hashSeedString } from '../../../../scenery/BushShaderLayer/helpers/seededRandom';
 import { CaptureOrb } from '../../../../orb/CaptureOrb';
 import { OrbPhase, useOrbAnimation } from '../../../../orb/useOrbAnimation';
-import { ORB_DIAMETER_RATIO, ORB_RING_CONFIGS } from '../../../../orb/orbAnimPresets';
+import {
+  ORB_DIAMETER_RATIO,
+  ORB_RING_CONFIGS,
+  ORB_ROAMER_TAP_HIT_RADIUS,
+} from '../../../../orb/orbAnimPresets';
+import { useFlowerGardenRoamerTapGesture } from '../../../../orb/useFlowerGardenRoamerTapGesture';
 import type { ThemeMatchRoamerLayerProps } from '../../../../../../themeContract';
 import type { RoamerRuntimeEntry } from '../../../../roamer/core/types';
 import type { KeepOutDisk } from '../../../../../../wordLearning/translationMatch/domain/wordSpriteRoaming';
@@ -121,6 +127,13 @@ export function FlowerGardenMatchRoamerLayer({
     [],
   );
 
+  const roamerTapGesture = useFlowerGardenRoamerTapGesture({
+    sharedPositions: sim.sharedPositions,
+    roamerCount: sim.runtimeEntries.length,
+    hitRadius: ORB_ROAMER_TAP_HIT_RADIUS,
+    onRoamerTap: armCapture,
+  });
+
   useEffect(() => {
     if (!triggerEscapeRef) {
       return;
@@ -166,11 +179,15 @@ export function FlowerGardenMatchRoamerLayer({
         style={[styles.container, { zIndex: MATCH_ROAMER_Z }]}
         pointerEvents={interactive ? 'box-none' : 'none'}
       >
-        <RoamerLayer
-          words={words}
-          interactive={interactive}
-          sim={sim}
-        />
+        <GestureDetector gesture={roamerTapGesture}>
+          <View style={StyleSheet.absoluteFill}>
+            <RoamerLayer
+              words={words}
+              interactive={interactive}
+              sim={sim}
+            />
+          </View>
+        </GestureDetector>
       </View>
       {capturedEntry != null && orbPetalImagesReady && (
         <View

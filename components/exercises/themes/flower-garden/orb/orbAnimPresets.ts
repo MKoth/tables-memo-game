@@ -40,6 +40,7 @@ export const ORB_BURST_SPEED_MAX = 1.25;
 
 export const ORB_DIAMETER_RATIO = 0.65;
 export const ORB_ROAMER_SCALE = 1.22;
+export const ORB_ROAMER_TAP_HIT_RADIUS = 36;
 
 export const ORB_PETAL_FADE_START = 0.5;
 export const ORB_PETAL_FADE_END = 1.0;
