@@ -121,7 +121,7 @@ echo ""
 echo ""
 echo "=== Roses (resize to on-screen geometry + 64-colour palette, preserves alpha) ==="
 echo "--- Rose head (200x200, was ~900x1000) ---"
-for name in rose_bud.png rose_center.png rose_base.png; do
+for name in rose_bud.png rose_center.png rose_base.png substrate.png; do
   process_rose "$ROSES_DIR/$name" "200x200"
 done
 echo "--- Petals (200x200, was ~350x380) ---"

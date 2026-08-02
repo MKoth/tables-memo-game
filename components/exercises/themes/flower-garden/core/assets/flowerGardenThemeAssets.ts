@@ -10,6 +10,7 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     petal6: require('../../../../../../assets/images/flower_garden_theme/roses/pettel6.png'),
     bud: require('../../../../../../assets/images/flower_garden_theme/roses/rose_bud.png'),
     center: require('../../../../../../assets/images/flower_garden_theme/roses/rose_center.png'),
+    substrate: require('../../../../../../assets/images/flower_garden_theme/roses/substrate.png'),
   },
   bush: {
     stem: require('../../../../../../assets/images/flower_garden_theme/roses/stem.png'),
@@ -137,6 +138,7 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
 export const ROSE_CENTER_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.center;
+export const ROSE_SUBSTRATE_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.substrate;
 export const PETAL1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.petal1;
 export const PETAL2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.petal2;
 export const PETAL3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.petal3;
@@ -422,6 +424,7 @@ export type FlowerGardenThemeImages = {
   roses: Record<FlowerGardenPetalKey, unknown>;
   roseBudImage: SkImage | null;
   roseCenterImage: SkImage | null;
+  substrateImage: SkImage | null;
   petalImages: SkImage[] | null;
   calyxImage: SkImage | null;
   stemImage: SkImage | null;

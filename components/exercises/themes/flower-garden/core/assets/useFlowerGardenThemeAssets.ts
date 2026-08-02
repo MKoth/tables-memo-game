@@ -31,6 +31,7 @@ import {
   POPPY_STEM_SOURCES,
   ROSE_BUD_SOURCE,
   ROSE_CENTER_SOURCE,
+  ROSE_SUBSTRATE_SOURCE,
   STEM_SOURCE,
   WILD_VIOLET_FLOWER_SOURCES,
   WILD_VIOLET_LEAF_SOURCES,
@@ -192,6 +193,19 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         } catch {
           if (__DEV__) {
             console.warn('[useFlowerGardenThemeAssets] Failed to load rose center SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        let substrateImage: SkImage | null = null;
+        try {
+          substrateImage = await loadSkiaImage(ROSE_SUBSTRATE_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load rose substrate SkImage');
           }
         }
 
@@ -722,6 +736,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             roses: roses as FlowerGardenThemeImages['roses'],
             roseBudImage,
             roseCenterImage,
+            substrateImage,
             petalImages: petalImages.length === PETAL_SOURCES.length ? petalImages : null,
             calyxImage,
             stemImage,

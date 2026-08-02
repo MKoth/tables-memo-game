@@ -5,6 +5,7 @@ import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAsse
 import { useFlowerGardenTableContext } from './flowerGardenTableContext';
 import { useBushConfigs } from './BushShaderLayer/useBushConfigs';
 import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
+import { RoseSubstrateLayer } from './RoseSubstrateLayer/RoseSubstrateLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
 import { FlowerGardenGrassCanvas } from './FlowerGardenGrassCanvas';
@@ -46,16 +47,17 @@ function FlowerGardenSceneryContent() {
   const stemImage = images.stemImage;
   const calyxImage = images.calyxImage;
   const leafImages = images.leafImages;
+  const substrateImage = images.substrateImage;
 
   const bushReady =
     stemImage != null &&
     calyxImage != null &&
     leafImages != null &&
     leafImages.length >= 4 &&
+    substrateImage != null &&
     bushConfigs.length > 0 &&
     roseBellSizes.length > 0 &&
     wordSpriteBridge != null;
-
   const dandelionStemImages = images.dandelionStemImages;
   const dandelionLeafImages = images.dandelionLeafImages;
   const dandelionFlowerImages = images.dandelionFlowerImages;
@@ -111,6 +113,14 @@ function FlowerGardenSceneryContent() {
             stemImage={stemImage}
             calyxImage={calyxImage}
             leafImages={leafImages}
+          />
+          <RoseSubstrateLayer
+            bushConfigs={bushConfigs}
+            layoutX={wordSpriteBridge.layoutX}
+            layoutY={wordSpriteBridge.layoutY}
+            layoutScale={wordSpriteBridge.layoutScale}
+            roseBellSizes={roseBellSizes}
+            substrateImage={substrateImage!}
           />
         </>
       )}
