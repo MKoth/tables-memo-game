@@ -57,6 +57,18 @@ export type RoamerConfig = {
   legVisibilityFadeInMs: number;
   legVisibilityFadeOutMs: number;
 
+  exitSpeedMultiplier: number;
+  exitTurnSpeed: number;
+  exitArriveRadius: number;
+  /** Max angular deviation (radians) of the exit-flight meander from the direct line. */
+  exitWanderDeviation: number;
+  /** Scale of the cruise perpendicular noise applied to the exit flight. */
+  exitNoiseScale: number;
+  /** Distance from the current waypoint at which the exit flight starts decelerating. */
+  exitDecelDistance: number;
+  /** Fraction of the exit speed kept while touching the waypoint. */
+  exitMinSpeedRatio: number;
+
   simFps: number;
   simStepMs: number;
 };

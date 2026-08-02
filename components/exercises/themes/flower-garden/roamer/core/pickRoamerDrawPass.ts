@@ -9,6 +9,7 @@ export function pickRoamerDrawPass(flightState: FlightState): RoamerDrawPass {
     case FlightState.FLYING_CRUISE:
     case FlightState.FLYING_TURN:
     case FlightState.APPROACH_FLOWER:
+    case FlightState.ESCAPING:
       return 'flying';
     case FlightState.WAIT_AT_TAKEN_FLOWER:
     case FlightState.SITTING:

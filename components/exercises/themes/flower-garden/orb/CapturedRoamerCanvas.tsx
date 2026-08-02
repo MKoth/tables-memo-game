@@ -27,6 +27,8 @@ export type CapturedRoamerCanvasProps = {
   rightWingImage: SkImage;
   centerX: number;
   centerY: number;
+  /** Escape mode: render at the raw runtime position at full scale (no orb clamp/shrink). */
+  escapeMode?: boolean;
 };
 
 type InstanceProps = React.ComponentType<{
@@ -81,10 +83,14 @@ export function CapturedRoamerCanvas({
   rightWingImage,
   centerX,
   centerY,
+  escapeMode = false,
 }: CapturedRoamerCanvasProps) {
   const Instance = useMemo(() => pickInstance(entry.spawn), [entry.spawn]);
 
   const visualX = useDerivedValue(() => {
+    if (escapeMode) {
+      return entry.runtime.x.value;
+    }
     const maxRadius = anim.value.diameter * 0.5 * (1 - ORB_CAPTIVE_DRIFT_RATIO);
     const clamped = clampToOrb(
       entry.runtime.x.value,
@@ -97,6 +103,9 @@ export function CapturedRoamerCanvas({
   });
 
   const visualY = useDerivedValue(() => {
+    if (escapeMode) {
+      return entry.runtime.y.value;
+    }
     const maxRadius = anim.value.diameter * 0.5 * (1 - ORB_CAPTIVE_DRIFT_RATIO);
     const clamped = clampToOrb(
       entry.runtime.x.value,
@@ -109,6 +118,9 @@ export function CapturedRoamerCanvas({
   });
 
   const visualBodyScale = useDerivedValue(() => {
+    if (escapeMode) {
+      return 1;
+    }
     return lerp(1.0, ORB_ROAMER_SCALE, clamp01(anim.value.captureVisualT));
   });
 

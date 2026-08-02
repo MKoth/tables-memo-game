@@ -24,6 +24,14 @@ uniform float brightnessMin;
 uniform float brightnessMax;
 uniform float3 tintA;
 uniform float tintStrength;
+uniform float flashActive;
+uniform float3 flashColor;
+uniform float3 flashCrestColor;
+uniform float flashWave;
+uniform float flashBaseStrength;
+uniform float flashWaveStrength;
+uniform float flashWaveRadiusPeriods;
+uniform float flashBrightnessBoost;
 uniform float ringsCount;
 uniform float petalsCount[${MAX_RINGS}];
 uniform float ringRadiusMin[${MAX_RINGS}];
@@ -200,6 +208,15 @@ half4 main(float2 fragCoord) {
   color.rgb *= brightnessL;
   half lum = max(max(color.r, color.g), color.b);
   color.rgb = mix(color.rgb, half3(tintA) * lum, half(tintStrength));
+
+  if (flashActive > 0.5) {
+    half3 baseShade = half3(flashColor) * lum * flashBrightnessBoost;
+    color.rgb = mix(color.rgb, baseShade, half(flashBaseStrength));
+    float rNorm = min(r, 1.0);
+    float wave = 0.5 + 0.5 * cos(6.2831853 * (flashWave - rNorm * flashWaveRadiusPeriods));
+    half3 crest = half3(flashCrestColor) * lum * flashBrightnessBoost;
+    color.rgb = mix(color.rgb, crest, half(wave * flashWaveStrength));
+  }
   return color;
 }
 `;

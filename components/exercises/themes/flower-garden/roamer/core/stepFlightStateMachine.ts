@@ -33,6 +33,9 @@ export type FlightContext = {
   flowerSwingPhases: number[];
   flowerSwingAngles: number[];
   boostsMutable: number[];
+  /** Exit-flight waypoints in screen coords; empty when not escaping. */
+  exitLegsX: number[];
+  exitLegsY: number[];
 };
 
 function pickRandomBetween(rngPhase: number, min: number, max: number): number {
@@ -654,6 +657,89 @@ export function stepFlightStateMachine(
         legVisibility,
       };
     }
+
+    case FlightState.ESCAPING: {
+      const targetX = ctx.exitLegsX[initial.exitLegIndex] ?? initial.positionX;
+      const targetY = ctx.exitLegsY[initial.exitLegIndex] ?? initial.positionY;
+      const directAngle = Math.atan2(targetY - initial.positionY, targetX - initial.positionX) + Math.PI / 2;
+
+      const dxToTarget = targetX - initial.positionX;
+      const dyToTarget = targetY - initial.positionY;
+      const distToTarget = Math.sqrt(dxToTarget * dxToTarget + dyToTarget * dyToTarget);
+      const decelT = clamp(distToTarget / config.exitDecelDistance, 0, 1);
+
+      const meander = Math.sin(initial.noisePhase * 0.9 + state.phase * 7.3) * config.exitWanderDeviation * decelT;
+      const angle = lerpAngle(initial.angle, directAngle + meander, Math.min(1, config.exitTurnSpeed * ctx.dt));
+
+      const exitSpeed = config.baseSpeedMax * config.exitSpeedMultiplier;
+      const minSpeed = exitSpeed * config.exitMinSpeedRatio;
+      const accelSpeed = lerp(initial.speed, exitSpeed, Math.min(1, config.speedLerpFactor * ctx.dt));
+      const decelSpeed = lerp(minSpeed, exitSpeed, decelT);
+      const speed = Math.min(accelSpeed, decelSpeed);
+
+      const noiseFreq = config.noiseFreqMin + initial.pathCoeff * (config.noiseFreqMax - config.noiseFreqMin);
+      const nextNoisePhase = initial.noisePhase + noiseFreq * ctx.dt;
+      const noiseAmp =
+        (config.noiseAmplitudeMin +
+          initial.pathCoeff * (config.noiseAmplitudeMax - config.noiseAmplitudeMin)) *
+        config.exitNoiseScale *
+        decelT;
+      const noiseOffset = Math.sin(nextNoisePhase) * noiseAmp * ctx.dt;
+      const noisePerpX = Math.cos(angle);
+      const noisePerpY = Math.sin(angle);
+
+      const moveAngle = angle - Math.PI / 2;
+      const x = initial.positionX + Math.cos(moveAngle) * speed * ctx.dt + noisePerpX * noiseOffset;
+      const y = initial.positionY + Math.sin(moveAngle) * speed * ctx.dt + noisePerpY * noiseOffset;
+
+      const dx = targetX - x;
+      const dy = targetY - y;
+      const distSq = dx * dx + dy * dy;
+      const arriveRadiusSq = config.exitArriveRadius * config.exitArriveRadius;
+      const lastLeg = Math.max(0, ctx.exitLegsX.length - 1);
+      if (distSq <= arriveRadiusSq && initial.exitLegIndex >= lastLeg) {
+        return {
+          ...initial,
+          flightState: FlightState.ESCAPED,
+          positionX: targetX,
+          positionY: targetY,
+          angle,
+          speed,
+          noisePhase: nextNoisePhase,
+          legPhases: initial.legPhases,
+          legVisibility: 0,
+        };
+      }
+      if (distSq <= arriveRadiusSq) {
+        return {
+          ...initial,
+          flightState: FlightState.ESCAPING,
+          exitLegIndex: initial.exitLegIndex + 1,
+          positionX: x,
+          positionY: y,
+          angle,
+          speed,
+          noisePhase: nextNoisePhase,
+          legPhases: initial.legPhases,
+          legVisibility: 0,
+        };
+      }
+
+      return {
+        ...initial,
+        flightState: FlightState.ESCAPING,
+        positionX: x,
+        positionY: y,
+        angle,
+        speed,
+        noisePhase: nextNoisePhase,
+        legPhases: initial.legPhases,
+        legVisibility: 0,
+      };
+    }
+
+    case FlightState.ESCAPED:
+      return initial;
 
     default:
       return initial;

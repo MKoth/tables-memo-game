@@ -10,6 +10,8 @@ type UseFlowerGardenRoamerTapGestureParams = {
   roamerCount: number;
   hitRadius: number;
   onRoamerTap: (roamerIndex: number, originX: number, originY: number) => void;
+  /** Roamer indices that cannot be tapped (e.g. mid-escape creatures). */
+  excludedIndices?: number[];
 };
 
 export function useFlowerGardenRoamerTapGesture({
@@ -17,6 +19,7 @@ export function useFlowerGardenRoamerTapGesture({
   roamerCount,
   hitRadius,
   onRoamerTap,
+  excludedIndices = [],
 }: UseFlowerGardenRoamerTapGestureParams) {
   return useTapGesture({
     maxDistance: TAP_MAX_DISTANCE_PX,
@@ -34,6 +37,9 @@ export function useFlowerGardenRoamerTapGesture({
         hitRadius,
       );
       if (hitIdx < 0) {
+        return;
+      }
+      if (excludedIndices.includes(hitIdx)) {
         return;
       }
       scheduleOnRN(

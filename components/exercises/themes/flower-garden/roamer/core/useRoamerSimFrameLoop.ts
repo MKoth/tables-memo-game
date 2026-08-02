@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useExerciseClockQuantized } from '../../../../core';
 import { FlightState, type RoamerRuntimeEntry, type SwimZone } from './types';
 import { lerpAngle } from './roamerSimHelpers';
@@ -23,10 +24,12 @@ export function useRoamerSimFrameLoop(
   orbCaptureCenterX: number,
   orbCaptureCenterY: number,
   orbCaptureRadius: number,
+  onRoamerEscaped?: (roamerIndex: number) => void,
 ): void {
   const lastTimestamp = useSharedValue(-1);
   const exerciseClock = useExerciseClockQuantized(20);
   const roamerCount = runtimes.length;
+  const reportedEscapes = useSharedValue<number[]>([]);
 
   const onSimFrame = useCallback(
     (frameInfo: { timestamp: number }) => {
@@ -57,6 +60,18 @@ export function useRoamerSimFrameLoop(
 
       for (let i = 0; i < roamerCount; i++) {
         const runtime = runtimes[i]!.runtime;
+        const stateNow = runtime.state.value as FlightState;
+
+        if (stateNow === FlightState.ESCAPED) {
+          if (!reportedEscapes.value.includes(i)) {
+            reportedEscapes.value = [...reportedEscapes.value, i];
+            if (onRoamerEscaped != null) {
+              scheduleOnRN(onRoamerEscaped, i);
+            }
+          }
+          continue;
+        }
+
         const isCaptured = i === capturedRoamerIndex.value;
 
         updateRoamer(
@@ -127,6 +142,7 @@ export function useRoamerSimFrameLoop(
     },
     [
       lastTimestamp,
+      reportedEscapes,
       sharedPositions,
       occupantSlots,
       roamerCount,
@@ -144,6 +160,7 @@ export function useRoamerSimFrameLoop(
       orbCaptureCenterX,
       orbCaptureCenterY,
       orbCaptureRadius,
+      onRoamerEscaped,
     ],
   );
 

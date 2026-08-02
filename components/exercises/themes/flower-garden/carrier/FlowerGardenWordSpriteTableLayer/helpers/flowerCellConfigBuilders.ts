@@ -7,39 +7,46 @@ export function createFlowerCellConfigs(
   sizing: WordSpriteSizing,
 ): FlowerCellConfig[] {
   const configs: FlowerCellConfig[] = [];
-  const { rowHeaders, colHeaders, body } = table;
+  const { rowHeaders, colHeaders, body, rowHeaderTranslations, colHeaderTranslations, bodyTranslations } =
+    table;
   const { bodyBellSize, headerBellSize } = sizing;
 
-  colHeaders.forEach((_verb, c) => {
+  colHeaders.forEach((verb, c) => {
     configs.push({
       key: `hcol-${c}`,
       index: configs.length,
       gridCol: c + 1,
       gridRow: 0,
       isHeader: true,
+      label: verb,
+      translation: colHeaderTranslations[c] ?? '',
       bellSize: headerBellSize,
     });
   });
 
-  rowHeaders.forEach((_pronoun, r) => {
+  rowHeaders.forEach((pronoun, r) => {
     configs.push({
       key: `hrow-${r}`,
       index: configs.length,
       gridCol: 0,
       gridRow: r + 1,
       isHeader: true,
+      label: pronoun,
+      translation: rowHeaderTranslations[r] ?? '',
       bellSize: headerBellSize,
     });
   });
 
   body.forEach((row, r) => {
-    row.forEach((_cell, c) => {
+    row.forEach((cell, c) => {
       configs.push({
         key: `body-${r}-${c}`,
         index: configs.length,
         gridCol: c + 1,
         gridRow: r + 1,
         isHeader: false,
+        label: cell,
+        translation: bodyTranslations[r]?.[c] ?? '',
         bellSize: bodyBellSize,
       });
     });

@@ -32,6 +32,7 @@ export function readRoamerState(
   sitActionTimer: number;
   legPhases: number[];
   legVisibility: number;
+  exitLegIndex: number;
 } {
   'worklet';
   return {
@@ -62,6 +63,7 @@ export function readRoamerState(
     sitActionTimer: roamer.sitActionTimer.value,
     legPhases: roamer.legPhases.map(sv => sv.value),
     legVisibility: roamer.legVisibility.value,
+    exitLegIndex: roamer.exitLegIndex.value,
   };
 }
 
@@ -95,6 +97,7 @@ export function writeRoamerState(
     sitActionTimer: number;
     legPhases: number[];
     legVisibility: number;
+    exitLegIndex: number;
   },
 ): void {
   'worklet';
@@ -122,6 +125,7 @@ export function writeRoamerState(
   roamer.sitTargetOffsetX.value = next.sitTargetOffsetX;
   roamer.sitTargetOffsetY.value = next.sitTargetOffsetY;
   roamer.sitActionTimer.value = next.sitActionTimer;
+  roamer.exitLegIndex.value = next.exitLegIndex;
   for (let i = 0; i < next.legPhases.length; i++) {
     roamer.legPhases[i]!.value = next.legPhases[i]!;
   }
@@ -180,6 +184,8 @@ export function updateRoamer(
     flowerSwingPhases,
     flowerSwingAngles,
     boostsMutable,
+    exitLegsX: roamer.exitLegsX.value,
+    exitLegsY: roamer.exitLegsY.value,
   };
 
   const initialState = {
@@ -242,6 +248,7 @@ export function updateRoamer(
     sitTargetOffsetX: next.sitTargetOffsetX,
     sitTargetOffsetY: next.sitTargetOffsetY,
     sitActionTimer: next.sitActionTimer,
+    exitLegIndex: next.exitLegIndex,
     legPhases: next.legPhases,
     legVisibility: next.legVisibility,
   });

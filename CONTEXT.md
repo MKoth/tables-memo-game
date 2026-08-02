@@ -105,8 +105,12 @@ A per-leg accumulated phase, advanced each frame as `phase += legFrequency * dt`
 _Avoid_: leg cycle, walk phase, stride
 
 **Capture orb**:
-The flower-garden realisation of the capture-bubble role in the table exercise. A tappable Skia overlay rendered when a roamer is captured (enter → idle → burst lifecycle). Composed of 3 concentric petal rings (inner, middle, outer) that fly in as spiral-clusters from the roamer's tap position and assemble around the creature. The roamer sits behind all rings, visible through the gaps between petals. No word label (added later). The undersea theme's capture bubble is the equivalent at the capture-bubble contract level.
+The flower-garden realisation of the capture-bubble role in the table exercise. A tappable Skia overlay rendered when a roamer is captured (enter → idle → burst lifecycle). Composed of 3 concentric petal rings (inner, middle, outer) that fly in as spiral-clusters from the roamer's tap position and assemble around the creature. The roamer sits behind all rings, visible through the gaps between petals. Carries the captured roamer's word as a label at the orb center (white fill, dark stroke), fading with the orb's enter and burst progress. The burst carries an intent: on **Release** (user taps the orb) the roamer returns to cruise flight; on **Escape** (correct WordSprite match) the roamer starts its exit flight. The undersea theme's capture bubble is the equivalent at the capture-bubble contract level.
 _Avoid_: bubble, flower bubble
+
+**Exit flight**:
+The flower-garden table exercise's match-success departure: after an Escape burst the captured roamer flies from the orb center through the matched rose's position (a constant-speed waypoint, not a landing) and continues to an off-screen point beyond the screen edge nearest that rose, where it is permanently eliminated (hidden for the rest of the exercise). Drives the `ESCAPING` and `ESCAPED` flight states in the roamer state machine. The undersea analogue is the koi's straight off-screen swim after its bubble pops.
+_Avoid_: escape animation, farewell flight, exit animation
 
 **Petal ring**:
 One of three concentric structural tiers in the capture orb: inner, middle, outer. A ring is invisible — it defines a radial band (center radius + thickness) and a set of petals distributed evenly around its circumference. Each ring rotates independently (configurable angular speed + direction). The ring's thickness is the radial boundary within which its petals can Brownian-drift. Z-order: inner ring on top of middle, middle on top of outer, all rings in front of the captured roamer.

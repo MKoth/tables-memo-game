@@ -36,6 +36,7 @@ export type UseRoamerSimulationParams = {
   orbCaptureCenterX?: number;
   orbCaptureCenterY?: number;
   orbCaptureRadius?: number;
+  onRoamerEscaped?: (roamerIndex: number) => void;
 };
 
 export function useRoamerSimulation({
@@ -49,6 +50,7 @@ export function useRoamerSimulation({
   orbCaptureCenterX = 0,
   orbCaptureCenterY = 0,
   orbCaptureRadius = 0,
+  onRoamerEscaped,
 }: UseRoamerSimulationParams): RoamerSimulation {
   const capturedIdx = capturedRoamerIndex ?? useSharedValue(-1);
   const wordsKey = words.join('\0');
@@ -110,6 +112,7 @@ export function useRoamerSimulation({
     orbCaptureCenterX,
     orbCaptureCenterY,
     orbCaptureRadius,
+    onRoamerEscaped,
   );
 
   return {

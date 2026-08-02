@@ -42,6 +42,7 @@ function makeState(overrides?: Partial<RoamerState>): RoamerState {
     sitTargetOffsetX: 0,
     sitTargetOffsetY: 0,
     sitActionTimer: 0,
+    exitLegIndex: 0,
     ...overrides,
   };
 }
@@ -69,6 +70,8 @@ function makeContext(overrides?: Partial<FlightContext>): FlightContext {
     flowerSwingPhases: [0, 0],
     flowerSwingAngles: [0, 0],
     boostsMutable: [0, 0],
+    exitLegsX: [200, 300],
+    exitLegsY: [100, -180],
     ...overrides,
   };
 }

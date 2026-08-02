@@ -14,7 +14,9 @@ import {
 } from './orbAnimPresets';
 import { computeOrbAnimState } from './orbAnimWorklets';
 import {
+  BurstIntent,
   OrbPhase,
+  type BurstIntentValue,
   type OrbAnimationConfig,
   type PetalRingConfig,
   type PetalSpawnConfig,
@@ -27,13 +29,14 @@ export function useOrbAnimation(
   petals: ReadonlyArray<PetalSpawnConfig>,
   onDismiss: () => void,
   enabled = true,
-  onBurstCompleteWorklet?: (burstIdleTimeMs: number) => void,
+  onBurstCompleteWorklet?: (burstIdleTimeMs: number, intent: BurstIntentValue) => void,
 ): UseOrbAnimationResult {
   const enterProgress = useSharedValue(0);
   const burstProgress = useSharedValue(0);
   const idleElapsedMs = useSharedValue(0);
   const burstIdleTimeMs = useSharedValue(0);
   const burstStartRealTimeMs = useSharedValue(0);
+  const burstIntent = useSharedValue<BurstIntentValue>(BurstIntent.Release);
   const phase = useSharedValue<number>(enabled ? OrbPhase.Enter : OrbPhase.None);
   const configSv = useSharedValue(config);
   const lastFrameMs = useSharedValue(-1);
@@ -111,10 +114,11 @@ export function useOrbAnimation(
   }, [enabled, enterProgress, burstProgress, idleElapsedMs, phase, burstIdleTimeMs]);
 
   const startBurst = useCallback(
-    () => {
+    (intent: BurstIntentValue = BurstIntent.Release) => {
       if (phase.value !== OrbPhase.Idle) {
         return;
       }
+      burstIntent.value = intent;
       burstIdleTimeMs.value = idleElapsedMs.value;
       burstStartRealTimeMs.value = Date.now();
       phase.value = OrbPhase.Burst;
@@ -126,21 +130,23 @@ export function useOrbAnimation(
           'worklet';
           if (finished) {
             if (onBurstCompleteWorklet) {
-              onBurstCompleteWorklet(burstStartRealTimeMs.value);
+              onBurstCompleteWorklet(burstStartRealTimeMs.value, burstIntent.value);
             }
             scheduleOnRN(onDismiss);
           }
         },
       );
     },
-    [burstIdleTimeMs, burstProgress, idleElapsedMs, onDismiss, onBurstCompleteWorklet, phase, burstStartRealTimeMs],
+    [burstIdleTimeMs, burstIntent, burstProgress, idleElapsedMs, onDismiss, onBurstCompleteWorklet, phase, burstStartRealTimeMs],
   );
 
   return { anim, phase, startBurst };
 }
 
 export {
+  BurstIntent,
   OrbPhase,
+  type BurstIntentValue,
   type OrbAnimState,
   type OrbAnimationConfig,
   type PetalAnimState,

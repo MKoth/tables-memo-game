@@ -3,6 +3,8 @@ import { FilterMode, ImageShader, MipmapMode, Rect, Shader, Skia, type SkImage, 
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { MAX_RINGS, ROSE_BUD_SKSL, roseBudUniformDefaults } from '../../../shaders/roseBudDeform.sksl';
+import { computeRoseFlashUniforms } from '../presets/roseFlashPresets';
+import { TINT_FLASH_MS } from '../config/flowerTableLayerConfig';
 import type { RoseTintRgb } from '../presets/roseTintPresets';
 import type { FlowerCellConfig } from '../types';
 
@@ -48,6 +50,8 @@ export type CellRoseBudProps = {
   layoutScaleMin: SharedValue<number[]>;
   layoutScaleMax: SharedValue<number[]>;
   clock: SharedValue<number>;
+  tintFlashPreset: SharedValue<number[]>;
+  tintFlashUntil: SharedValue<number[]>;
   roseBudImage: SkImage;
   roseCenterImage: SkImage;
   petalImages: readonly SkImage[];
@@ -62,6 +66,8 @@ export function CellRoseBud({
   layoutScaleMin,
   layoutScaleMax,
   clock,
+  tintFlashPreset,
+  tintFlashUntil,
   roseBudImage,
   roseCenterImage,
   petalImages,
@@ -80,6 +86,13 @@ export function CellRoseBud({
     const cellRange = cellMax - cellMin;
     const rawCoef = cellRange > 1e-6 ? (scale - cellMin) / cellRange : 0;
     const coefficient = rawCoef < 0 ? 0 : rawCoef > 1 ? 1 : rawCoef;
+
+    const flash = computeRoseFlashUniforms(
+      clock.value,
+      tintFlashUntil.value[idx] ?? 0,
+      tintFlashPreset.value[idx] ?? -1,
+      TINT_FLASH_MS,
+    );
 
     return {
       roseX: cx - halfSize,
@@ -104,6 +117,14 @@ export function CellRoseBud({
       brightnessMax: roseBudUniformDefaults.brightness.max,
       tintA: tintVariant,
       tintStrength: 1.0,
+      flashActive: flash.flashActive,
+      flashColor: flash.flashColor,
+      flashCrestColor: flash.flashCrestColor,
+      flashWave: flash.flashWave,
+      flashBaseStrength: flash.flashBaseStrength,
+      flashWaveStrength: flash.flashWaveStrength,
+      flashWaveRadiusPeriods: flash.flashWaveRadiusPeriods,
+      flashBrightnessBoost: flash.flashBrightnessBoost,
       ringsCount: roseBudUniformDefaults.ringsCount,
       petalsCount: PADDED_PETALS_COUNT,
       ringRadiusMin: PADDED_RING_RADIUS_MIN,

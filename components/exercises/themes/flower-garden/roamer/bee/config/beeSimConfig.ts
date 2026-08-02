@@ -84,6 +84,13 @@ export const BEE_SIM_STEP_MS = 1000 / BEE_SIM_FPS;
 export const BEE_LAND_AMPLITUDE_BOOST = 12;
 export const BEE_TAKEOFF_AMPLITUDE_BOOST = 8;
 export const BEE_FLOWER_SWING_BOOST_DECAY_RATE = 2.5;
+export const BEE_EXIT_SPEED_MULTIPLIER = 1.5;
+export const BEE_EXIT_TURN_SPEED = 4.0;
+export const BEE_EXIT_ARRIVE_RADIUS = 24;
+export const BEE_EXIT_WANDER_DEVIATION = 0.45;
+export const BEE_EXIT_NOISE_SCALE = 0.6;
+export const BEE_EXIT_DECEL_DISTANCE = 140;
+export const BEE_EXIT_MIN_SPEED_RATIO = 0.35;
 
 export const beeRoamerConfig: RoamerConfig = {
   boundaryMargin: BEE_BOUNDARY_MARGIN,
@@ -143,6 +150,14 @@ export const beeRoamerConfig: RoamerConfig = {
   legBendAmount: BEE_LEG_BEND_AMOUNT,
   legVisibilityFadeInMs: BEE_LEG_VISIBILITY_FADE_IN_MS,
   legVisibilityFadeOutMs: BEE_LEG_VISIBILITY_FADE_OUT_MS,
+
+  exitSpeedMultiplier: BEE_EXIT_SPEED_MULTIPLIER,
+  exitTurnSpeed: BEE_EXIT_TURN_SPEED,
+  exitArriveRadius: BEE_EXIT_ARRIVE_RADIUS,
+  exitWanderDeviation: BEE_EXIT_WANDER_DEVIATION,
+  exitNoiseScale: BEE_EXIT_NOISE_SCALE,
+  exitDecelDistance: BEE_EXIT_DECEL_DISTANCE,
+  exitMinSpeedRatio: BEE_EXIT_MIN_SPEED_RATIO,
 
   simFps: BEE_SIM_FPS,
   simStepMs: BEE_SIM_STEP_MS,

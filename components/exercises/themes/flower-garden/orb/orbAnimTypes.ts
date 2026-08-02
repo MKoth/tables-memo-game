@@ -9,6 +9,13 @@ export const OrbPhase = {
 
 export type OrbPhaseValue = (typeof OrbPhase)[keyof typeof OrbPhase];
 
+export const BurstIntent = {
+  Release: 0,
+  Escape: 1,
+} as const;
+
+export type BurstIntentValue = (typeof BurstIntent)[keyof typeof BurstIntent];
+
 export type PetalRingConfig = {
   ringIndex: number;
   centerRadius: number;
@@ -64,5 +71,5 @@ export type PetalSpawnConfig = {
 export type UseOrbAnimationResult = {
   anim: SharedValue<OrbAnimState>;
   phase: SharedValue<number>;
-  startBurst: () => void;
+  startBurst: (intent?: BurstIntentValue) => void;
 };

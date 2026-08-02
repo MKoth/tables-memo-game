@@ -52,6 +52,9 @@ function createMockRuntime(overrides?: { [key: string]: number }): any {
     legPhases: [sv(0), sv(0), sv(0), sv(0), sv(0), sv(0)],
     legVisibility: sv(0),
     isPreTakeoff: { value: 0 },
+    exitLegsX: { value: [] },
+    exitLegsY: { value: [] },
+    exitLegIndex: { value: 0 },
   };
 }
 

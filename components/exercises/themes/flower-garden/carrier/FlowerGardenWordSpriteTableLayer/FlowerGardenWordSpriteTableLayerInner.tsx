@@ -1,13 +1,18 @@
-import React, { useEffect, useLayoutEffect, useMemo } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Canvas } from '@shopify/react-native-skia';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useSharedValue } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { useExerciseLayout } from '../../../../core';
 import { useExerciseRuntime } from '../../../../core';
 import { useExerciseClockQuantized } from '../../../../core';
-import { WORD_SPRITE_CLOCK_FPS } from './config/flowerTableLayerConfig';
+import {
+  ROSE_HEADER_FONT_SIZE,
+  ROSE_LABEL_FONT_SIZE,
+  WORD_SPRITE_CLOCK_FPS,
+} from './config/flowerTableLayerConfig';
 import { CellRoseBud } from './components/CellRoseBud';
+import { FlowerRoseLabel } from './components/FlowerRoseLabel';
 import {
   buildFlowerLayoutParticles,
   createFlowerCellConfigs,
@@ -23,17 +28,28 @@ import {
   type LayoutParticle,
 } from '../../../undersea/carrier/WordSpriteTableLayer/layout/computeWordSpriteLayout';
 import { useBushConfigs } from '../../scenery/BushShaderLayer/useBushConfigs';
+import { OrbPhase } from '../../orb/orbAnimTypes';
 import { ROSE_TINT_PRESETS, type RoseTintRgb } from './presets/roseTintPresets';
-import type { FlowerWordSpriteTableLayerInnerProps } from './types';
+import { rollRoseLabelColors } from './presets/roseLabelPalette';
+import type {
+  FlowerWordSpriteSoundKind,
+  FlowerWordSpriteTableLayerController,
+  FlowerWordSpriteTableLayerInnerProps,
+} from './types';
 
 export function FlowerGardenWordSpriteTableLayerInner({
   table,
   roseBudImage,
   roseCenterImage,
   petalImages,
+  capturedWord,
+  orbPhase,
+  onMatchSuccess,
+  onWordSpriteSound,
   interactive,
+  translationDisplayMs,
   highlightedCellIndex: _highlightedCellIndex,
-  controllerRef: _controllerRef,
+  controllerRef,
 }: FlowerWordSpriteTableLayerInnerProps) {
   const { publishWordSpriteBridge } = useExerciseRuntime();
   const { height } = useWindowDimensions();
@@ -54,6 +70,28 @@ export function FlowerGardenWordSpriteTableLayerInner({
     [spriteRect.w, spriteRect.h, nGridCols, nGridRows],
   );
 
+  const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
+
+  const bodyFont = useMemo(
+    () =>
+      matchFont({
+        fontFamily,
+        fontSize: ROSE_LABEL_FONT_SIZE * sizing.fontScale,
+        fontWeight: '500',
+      }),
+    [fontFamily, sizing.fontScale],
+  );
+
+  const headerFont = useMemo(
+    () =>
+      matchFont({
+        fontFamily,
+        fontSize: ROSE_HEADER_FONT_SIZE * sizing.fontScale,
+        fontWeight: 'bold',
+      }),
+    [fontFamily, sizing.fontScale],
+  );
+
   const cellConfigs = useMemo(() => createFlowerCellConfigs(table, sizing), [table, sizing]);
 
   const bodyCellIndices = useMemo(
@@ -67,6 +105,93 @@ export function FlowerGardenWordSpriteTableLayerInner({
   const drawOrder = useMemo(() => sortFlowerDrawOrder(cellConfigs), [cellConfigs]);
   const layoutParticles = useMemo(() => buildFlowerLayoutParticles(cellConfigs), [cellConfigs]);
 
+  const [revealedBodyIndices, setRevealedBodyIndices] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
+  const [translatedIndices, setTranslatedIndices] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
+  const cellLabelsSv = useSharedValue<string[]>([]);
+  const capturedWordSv = useSharedValue('');
+  const fallbackOrbPhase = useSharedValue<number>(OrbPhase.Idle);
+  const effectiveOrbPhase = orbPhase ?? fallbackOrbPhase;
+  const onWordSpriteSoundRef = useRef(onWordSpriteSound);
+
+  useEffect(() => {
+    onWordSpriteSoundRef.current = onWordSpriteSound;
+  }, [onWordSpriteSound]);
+
+  useEffect(() => {
+    setRevealedBodyIndices(new Set());
+    setTranslatedIndices(new Set());
+  }, [table]);
+
+  useEffect(() => {
+    cellLabelsSv.value = cellConfigs.map(c => c.label);
+  }, [cellConfigs, cellLabelsSv]);
+
+  useEffect(() => {
+    capturedWordSv.value = capturedWord ?? '';
+  }, [capturedWord, capturedWordSv]);
+
+  const revealBodyLabel = useCallback((hitIdx: number) => {
+    setRevealedBodyIndices(prev => {
+      if (prev.has(hitIdx)) {
+        return prev;
+      }
+      return new Set(prev).add(hitIdx);
+    });
+  }, []);
+
+  const controller = useMemo<FlowerWordSpriteTableLayerController>(
+    () => ({
+      revealBodyLabel,
+    }),
+    [revealBodyLabel],
+  );
+
+  useLayoutEffect(() => {
+    if (controllerRef != null) {
+      controllerRef.current = controller;
+    }
+  }, [controller, controllerRef]);
+
+  const flashTranslationJs = useCallback(
+    (hitIdx: number) => {
+      const config = cellConfigs[hitIdx];
+      if (config == null || config.translation.length === 0) {
+        return;
+      }
+      if (!config.isHeader && !revealedBodyIndices.has(hitIdx)) {
+        return;
+      }
+      setTranslatedIndices(prev => new Set(prev).add(hitIdx));
+      setTimeout(() => {
+        setTranslatedIndices(prev => {
+          if (!prev.has(hitIdx)) {
+            return prev;
+          }
+          const next = new Set(prev);
+          next.delete(hitIdx);
+          return next;
+        });
+      }, translationDisplayMs);
+    },
+    [cellConfigs, revealedBodyIndices, translationDisplayMs],
+  );
+
+  const handleMatchSuccessJs = useCallback(
+    (targetX: number, targetY: number, hitIdx: number) => {
+      revealBodyLabel(hitIdx);
+      onMatchSuccess?.(targetX, targetY, hitIdx);
+    },
+    [revealBodyLabel, onMatchSuccess],
+  );
+
+  const handleWordSpriteSoundJs = useCallback((kind: FlowerWordSpriteSoundKind) => {
+    onWordSpriteSoundRef.current?.(kind);
+  }, []);
+
   const bushConfigs = useBushConfigs(table);
   const cellTints = useMemo<RoseTintRgb[]>(() => {
     const tints: RoseTintRgb[] = new Array(cellConfigs.length);
@@ -77,6 +202,11 @@ export function FlowerGardenWordSpriteTableLayerInner({
     }
     return tints;
   }, [bushConfigs, cellConfigs.length]);
+
+  const labelColorsByCell = useMemo(
+    () => cellConfigs.map(c => rollRoseLabelColors(cellTints[c.index] ?? ROSE_TINT_PRESETS.scarlet)),
+    [cellConfigs, cellTints],
+  );
 
   const layoutBounds: LayoutBounds = useMemo(
     () => ({
@@ -99,6 +229,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
   const biasY = useSharedValue(0);
   const motionAngle = useSharedValue(0);
   const motionAmp = useSharedValue(0);
+  const retainedLabelRotation = useSharedValue(0);
   const isDragging = useSharedValue(0);
   const prevBiasX = useSharedValue(0);
   const prevBiasY = useSharedValue(0);
@@ -117,6 +248,8 @@ export function FlowerGardenWordSpriteTableLayerInner({
   const lastLayoutTs = useSharedValue(-1);
   const biasCoastPending = useSharedValue(0);
   const isBiasCoasting = useSharedValue(0);
+  const tintFlashPreset = useSharedValue<number[]>([]);
+  const tintFlashUntil = useSharedValue<number[]>([]);
 
   useEffect(() => {
     layoutBoundsSv.value = layoutBounds;
@@ -131,6 +264,8 @@ export function FlowerGardenWordSpriteTableLayerInner({
     const ranges = computeFlowerCellScaleRanges(layoutParticles, layoutBounds);
     layoutScaleMin.value = ranges.minScales;
     layoutScaleMax.value = ranges.maxScales;
+    tintFlashPreset.value = cellConfigs.map(() => -1);
+    tintFlashUntil.value = cellConfigs.map(() => 0);
     appliedBiasX.value = 0;
     appliedBiasY.value = 0;
     prevBiasX.value = 0;
@@ -150,6 +285,8 @@ export function FlowerGardenWordSpriteTableLayerInner({
     layoutScale,
     layoutScaleMin,
     layoutScaleMax,
+    tintFlashPreset,
+    tintFlashUntil,
     appliedBiasX,
     appliedBiasY,
     prevBiasX,
@@ -193,7 +330,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
     isBiasCoasting,
     motionAngle,
     motionAmp,
-    retainedLabelRotation: motionAmp,
+    retainedLabelRotation,
   });
 
   const tableGesture = useFlowerTableGestures({
@@ -214,11 +351,21 @@ export function FlowerGardenWordSpriteTableLayerInner({
     isDragging,
     motionAngle,
     motionAmp,
+    retainedLabelRotation,
     motionLoopEngaged,
     cellBellSizesSv,
     cellGridColsSv,
     cellGridRowsSv,
+    cellLabelsSv,
+    capturedWordSv,
+    orbPhase: effectiveOrbPhase,
+    tintFlashPreset,
+    tintFlashUntil,
+    clock,
     activateMotionLoop,
+    handleWordSpriteSoundJs,
+    handleMatchSuccessJs,
+    flashTranslationJs,
   });
 
   return (
@@ -228,18 +375,47 @@ export function FlowerGardenWordSpriteTableLayerInner({
           <CellRoseBud
             key={config.key}
             config={config}
-            tint={cellTints[config.index] ?? ROSE_TINT_PRESETS.red}
+            tint={cellTints[config.index] ?? ROSE_TINT_PRESETS.scarlet}
             layoutX={layoutX}
             layoutY={layoutY}
             layoutScale={layoutScale}
             layoutScaleMin={layoutScaleMin}
             layoutScaleMax={layoutScaleMax}
             clock={clock}
+            tintFlashPreset={tintFlashPreset}
+            tintFlashUntil={tintFlashUntil}
             roseBudImage={roseBudImage}
             roseCenterImage={roseCenterImage}
             petalImages={petalImages}
           />
         ))}
+        {drawOrder.map(config => {
+          if (!config.isHeader && !revealedBodyIndices.has(config.index)) {
+            return null;
+          }
+          const colors = labelColorsByCell[config.index]!;
+          return (
+            <FlowerRoseLabel
+              key={`${config.key}-label`}
+              config={config}
+              displayLabel={
+                translatedIndices.has(config.index) ? config.translation : undefined
+              }
+              font={config.isHeader ? headerFont : bodyFont}
+              layoutX={layoutX}
+              layoutY={layoutY}
+              layoutScale={layoutScale}
+              motionAngle={motionAngle}
+              motionAmp={motionAmp}
+              retainedLabelRotation={retainedLabelRotation}
+              tintFlashPreset={tintFlashPreset}
+              tintFlashUntil={tintFlashUntil}
+              clock={clock}
+              fillColor={colors.fillColor}
+              strokeColor={colors.strokeColor}
+            />
+          );
+        })}
       </Canvas>
 
       {interactive && (

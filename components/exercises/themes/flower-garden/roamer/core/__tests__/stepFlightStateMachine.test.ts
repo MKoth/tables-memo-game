@@ -46,6 +46,7 @@ function makeState(overrides?: Partial<RoamerState>): RoamerState {
     sitTargetOffsetX: 0,
     sitTargetOffsetY: 0,
     sitActionTimer: 0,
+    exitLegIndex: 0,
     ...overrides,
   };
 }
@@ -73,6 +74,8 @@ function makeContext(overrides?: Partial<FlightContext>): FlightContext {
     flowerSwingPhases: [0, 0],
     flowerSwingAngles: [0, 0],
     boostsMutable: [0, 0],
+    exitLegsX: [200, 300],
+    exitLegsY: [100, -180],
     ...overrides,
   };
 }
@@ -338,6 +341,135 @@ describe('stepFlightStateMachine', () => {
       const next = stepFlightStateMachine(state, ctx, config);
       expect(next.flightState).toBe(FlightState.FLYING_CRUISE);
       expect(next.bodyScale).toBe(1);
+    });
+  });
+
+  describe('ESCAPING state', () => {
+    it('flies toward the rose leg and keeps the state', () => {
+      const state = makeState({
+        flightState: FlightState.ESCAPING,
+        positionX: 100,
+        positionY: 400,
+        exitLegIndex: 0,
+      });
+      const ctx = makeContext({
+        exitLegsX: [200, 300],
+        exitLegsY: [100, -180],
+      });
+      const next = stepFlightStateMachine(state, ctx, config);
+      expect(next.flightState).toBe(FlightState.ESCAPING);
+      expect(next.exitLegIndex).toBe(0);
+      expect(next.positionX).toBeGreaterThan(100);
+      expect(next.positionY).toBeLessThan(400);
+    });
+
+    it('advances to the off-screen leg when the rose is reached', () => {
+      const state = makeState({
+        flightState: FlightState.ESCAPING,
+        positionX: 200,
+        positionY: 100,
+        exitLegIndex: 0,
+      });
+      const ctx = makeContext({
+        exitLegsX: [200, 300],
+        exitLegsY: [100, -180],
+      });
+      const next = stepFlightStateMachine(state, ctx, config);
+      expect(next.flightState).toBe(FlightState.ESCAPING);
+      expect(next.exitLegIndex).toBe(1);
+    });
+
+    it('transitions to ESCAPED on arrival at the final leg', () => {
+      const state = makeState({
+        flightState: FlightState.ESCAPING,
+        positionX: 300,
+        positionY: -180,
+        exitLegIndex: 1,
+      });
+      const ctx = makeContext({
+        exitLegsX: [200, 300],
+        exitLegsY: [100, -180],
+      });
+      const next = stepFlightStateMachine(state, ctx, config);
+      expect(next.flightState).toBe(FlightState.ESCAPED);
+      expect(next.positionX).toBe(300);
+      expect(next.positionY).toBe(-180);
+    });
+
+    it('flights faster than cruise when fully accelerated', () => {
+      const state = makeState({
+        flightState: FlightState.ESCAPING,
+        positionX: 100,
+        positionY: 400,
+        speed: config.baseSpeedMax,
+      });
+      const ctx = makeContext({
+        exitLegsX: [200, 300],
+        exitLegsY: [100, -180],
+        dt: 1.0,
+      });
+      const next = stepFlightStateMachine(state, ctx, config);
+      expect(next.speed).toBeCloseTo(
+        config.baseSpeedMax * config.exitSpeedMultiplier,
+        5,
+      );
+    });
+
+    it('advances the noise phase while escaping', () => {
+      const state = makeState({
+        flightState: FlightState.ESCAPING,
+        positionX: 100,
+        positionY: 400,
+        noisePhase: 0,
+      });
+      const next = stepFlightStateMachine(state, makeContext(), config);
+      expect(next.noisePhase).toBeGreaterThan(0);
+    });
+
+    it('weaves perpendicular to the flight line instead of flying straight', () => {
+      const noiseFreq =
+        config.noiseFreqMin + 0.5 * (config.noiseFreqMax - config.noiseFreqMin);
+      const noisePhase = Math.PI / 2 - noiseFreq * 0.016;
+      const state = makeState({
+        flightState: FlightState.ESCAPING,
+        positionX: 100,
+        positionY: 400,
+        noisePhase,
+      });
+      const next = stepFlightStateMachine(state, makeContext(), config);
+      const perpendicularOffset =
+        (config.noiseAmplitudeMin +
+          0.5 * (config.noiseAmplitudeMax - config.noiseAmplitudeMin)) *
+        config.exitNoiseScale *
+        0.016;
+      expect(next.positionX).toBeGreaterThan(100 + perpendicularOffset * 0.9);
+    });
+
+    it('decelerates when close to the waypoint so it can converge', () => {
+      const exitSpeed = config.baseSpeedMax * config.exitSpeedMultiplier;
+      const state = makeState({
+        flightState: FlightState.ESCAPING,
+        positionX: 200,
+        positionY: 125,
+        speed: exitSpeed,
+      });
+      const next = stepFlightStateMachine(state, makeContext(), config);
+      expect(next.speed).toBeLessThan(exitSpeed);
+      expect(next.speed).toBeGreaterThan(exitSpeed * config.exitMinSpeedRatio * 0.5);
+    });
+  });
+
+  describe('ESCAPED state', () => {
+    it('stays put and keeps the terminal state', () => {
+      const state = makeState({
+        flightState: FlightState.ESCAPED,
+        positionX: 300,
+        positionY: -180,
+      });
+      const next = stepFlightStateMachine(state, makeContext(), config);
+      expect(next.flightState).toBe(FlightState.ESCAPED);
+      expect(next.positionX).toBe(300);
+      expect(next.positionY).toBe(-180);
     });
   });
 });

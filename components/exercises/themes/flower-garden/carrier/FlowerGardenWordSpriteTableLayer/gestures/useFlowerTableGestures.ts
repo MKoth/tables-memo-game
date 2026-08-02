@@ -2,6 +2,8 @@ import type { SharedValue } from 'react-native-reanimated';
 import { cancelAnimation, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useExclusiveGestures, usePanGesture, useTapGesture } from 'react-native-gesture-handler';
+import { OrbPhase } from '../../../orb/orbAnimTypes';
+import { ROSE_FLASH_PRESETS } from '../presets/roseFlashPresets';
 import {
   BIAS_DRAG_SENS,
   BIAS_FLING_SENS,
@@ -17,7 +19,10 @@ import {
   focusWordSpriteCell,
   scheduleBiasAutoAnim,
   updateMotionFromDrag,
+  updateRetainedLabelRotation,
 } from '../../../../undersea/carrier/WordSpriteTableLayer/worklets/wordSpriteTableWorklets';
+import { triggerRoseTintFlash } from '../worklets/roseTableWorklets';
+import type { FlowerWordSpriteSoundKind } from '../types';
 
 type UseFlowerTableGesturesParams = {
   biasX: SharedValue<number>;
@@ -37,11 +42,21 @@ type UseFlowerTableGesturesParams = {
   isDragging: SharedValue<number>;
   motionAngle: SharedValue<number>;
   motionAmp: SharedValue<number>;
+  retainedLabelRotation: SharedValue<number>;
   motionLoopEngaged: SharedValue<number>;
   cellBellSizesSv: SharedValue<number[]>;
   cellGridColsSv: SharedValue<number[]>;
   cellGridRowsSv: SharedValue<number[]>;
+  cellLabelsSv: SharedValue<string[]>;
+  capturedWordSv: SharedValue<string>;
+  orbPhase: SharedValue<number>;
+  tintFlashPreset: SharedValue<number[]>;
+  tintFlashUntil: SharedValue<number[]>;
+  clock: SharedValue<number>;
   activateMotionLoop: () => void;
+  handleWordSpriteSoundJs: (kind: FlowerWordSpriteSoundKind) => void;
+  handleMatchSuccessJs: (jx: number, jy: number, hitIdx: number) => void;
+  flashTranslationJs: (hitIdx: number) => void;
 };
 
 export function useFlowerTableGestures({
@@ -62,15 +77,24 @@ export function useFlowerTableGestures({
   isDragging,
   motionAngle,
   motionAmp,
+  retainedLabelRotation,
   motionLoopEngaged,
   cellBellSizesSv,
   cellGridColsSv,
   cellGridRowsSv,
+  cellLabelsSv,
+  capturedWordSv,
+  orbPhase,
+  tintFlashPreset,
+  tintFlashUntil,
+  clock,
   activateMotionLoop,
+  handleWordSpriteSoundJs,
+  handleMatchSuccessJs,
+  flashTranslationJs,
 }: UseFlowerTableGesturesParams) {
   const prevTX = useSharedValue(0);
   const prevTY = useSharedValue(0);
-  const retainedLabelRotation = useSharedValue(0);
 
   const panGesture = usePanGesture({
     minDistance: PAN_MIN_DISTANCE_PX,
@@ -100,6 +124,11 @@ export function useFlowerTableGestures({
       biasX.value = clampW(biasX.value - dX * BIAS_DRAG_SENS, -1, 1);
       biasY.value = clampW(biasY.value - dY * BIAS_DRAG_SENS, -1, 1);
       updateMotionFromDrag(motionAngle, motionAmp, e.velocityX, e.velocityY, dX, dY);
+      updateRetainedLabelRotation(
+        retainedLabelRotation,
+        motionAngle.value,
+        motionAmp.value,
+      );
     },
     onDeactivate: (e) => {
       'worklet';
@@ -161,6 +190,67 @@ export function useFlowerTableGestures({
         return;
       }
 
+      const captured = capturedWordSv.value;
+      const hasCaptured = captured.length > 0;
+
+      if (hasCaptured) {
+        if (orbPhase.value !== OrbPhase.Idle) {
+          return;
+        }
+        const label = cellLabelsSv.value[hitIdx] ?? '';
+        const isMatch = label === captured;
+        triggerRoseTintFlash(
+          hitIdx,
+          isMatch
+            ? ROSE_FLASH_PRESETS.success
+            : ROSE_FLASH_PRESETS.error,
+          tintFlashPreset,
+          tintFlashUntil,
+          clock,
+        );
+        scheduleOnRN(handleWordSpriteSoundJs, isMatch ? 'success' : 'error');
+        focusWordSpriteCell(
+          hitIdx,
+          cellGridColsSv,
+          cellGridRowsSv,
+          biasX,
+          biasY,
+          appliedBiasX,
+          appliedBiasY,
+          prevBiasX,
+          prevBiasY,
+          layoutParticlesSv,
+          layoutBoundsSv,
+          layoutX,
+          layoutY,
+          layoutScale,
+          lastLayoutTs,
+          isBiasCoasting,
+          biasCoastPending,
+          motionAngle,
+          motionAmp,
+          retainedLabelRotation,
+          motionLoopEngaged,
+          activateMotionLoop,
+        );
+        if (isMatch) {
+          const jx = layoutX.value[hitIdx] ?? 0;
+          const jy = layoutY.value[hitIdx] ?? 0;
+          scheduleOnRN(handleMatchSuccessJs, jx, jy, hitIdx);
+        }
+        return;
+      }
+
+      scheduleOnRN(flashTranslationJs, hitIdx);
+
+      triggerRoseTintFlash(
+        hitIdx,
+        ROSE_FLASH_PRESETS.primary,
+        tintFlashPreset,
+        tintFlashUntil,
+        clock,
+      );
+      scheduleOnRN(handleWordSpriteSoundJs, 'primary');
       focusWordSpriteCell(
         hitIdx,
         cellGridColsSv,

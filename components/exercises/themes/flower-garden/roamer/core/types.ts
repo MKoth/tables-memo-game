@@ -9,6 +9,8 @@ export enum FlightState {
   WAIT_AT_TAKEN_FLOWER = 4,
   SITTING = 5,
   LIFTING_OFF = 6,
+  ESCAPING = 7,
+  ESCAPED = 8,
 }
 
 export type RoamerSpecies = 'butterfly' | 'bee' | 'bumblebee';
@@ -57,6 +59,8 @@ export type RoamerState = {
   sitTargetOffsetX: number;
   sitTargetOffsetY: number;
   sitActionTimer: number;
+  /** Index of the exit-flight leg currently being flown (0 = rose, 1 = off-screen). */
+  exitLegIndex: number;
 };
 
 export type RoamerSharedRuntime = {
@@ -90,6 +94,10 @@ export type RoamerSharedRuntime = {
   isPreTakeoff: SharedValue<number>;
   legPhases: SharedValue<number>[];
   legVisibility: SharedValue<number>;
+  /** Exit-flight waypoints in screen coords: [0] = matched rose, [1] = off-screen. */
+  exitLegsX: SharedValue<number[]>;
+  exitLegsY: SharedValue<number[]>;
+  exitLegIndex: SharedValue<number>;
 };
 
 export type RoamerRuntimeEntry = {

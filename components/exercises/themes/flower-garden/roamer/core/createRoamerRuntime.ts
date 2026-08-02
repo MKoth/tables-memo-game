@@ -90,5 +90,8 @@ export function createRoamerRuntime(
     legPhases: Array.from({ length: legCount }, () => makeMutable(0)),
     legVisibility: makeMutable(0),
     isPreTakeoff: makeMutable(0),
+    exitLegsX: makeMutable<number[]>([]),
+    exitLegsY: makeMutable<number[]>([]),
+    exitLegIndex: makeMutable(0),
   };
 }
