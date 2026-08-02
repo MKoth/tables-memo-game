@@ -163,6 +163,37 @@ describe('computeOrbAnimState', () => {
     }
   });
 
+  it('phase Idle at t=0 places petals at ring initial angle plus phase offset', () => {
+    const petals = makePetals();
+    const state = computeOrbAnimState(
+      OrbPhase.Idle,
+      1,
+      0,
+      0,
+      CONFIG,
+      ORB_RING_CONFIGS,
+      petals,
+    );
+    for (let i = 0; i < state.petals.length; i++) {
+      const p = state.petals[i]!;
+      const spawn = petals[i]!;
+      const ring = ORB_RING_CONFIGS[spawn.ringIndex]!;
+      const angle = Math.atan2(p.y - CONFIG.targetCenterY, p.x - CONFIG.targetCenterX);
+      const expected = spawn.initialAngle + ring.phaseOffset;
+      const diff = Math.atan2(Math.sin(angle - expected), Math.cos(angle - expected));
+      expect(diff).toBeCloseTo(0, 4);
+    }
+  });
+
+  it('rings start at distinct phase offsets', () => {
+    const offsets = ORB_RING_CONFIGS.map(r => r.phaseOffset);
+    expect(new Set(offsets).size).toBe(offsets.length);
+    for (const offset of offsets) {
+      expect(offset).toBeGreaterThanOrEqual(0);
+      expect(offset).toBeLessThan(Math.PI * 2);
+    }
+  });
+
   it('phase Idle ring rotation advances petal angle linearly with time', () => {
     const petals = makePetals(7);
     const a = computeOrbAnimState(

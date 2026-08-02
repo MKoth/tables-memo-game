@@ -17,6 +17,7 @@ export type PetalRingConfig = {
   rotationSpeed: number;
   direction: 1 | -1;
   widthFraction: number;
+  phaseOffset: number;
 };
 
 export type PetalAnimState = {

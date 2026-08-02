@@ -19,6 +19,8 @@ export const ORB_RING_PETAL_COUNTS: ReadonlyArray<number> = [12, 12, 12];
 
 export const ORB_RING_ROTATION_SPEEDS: ReadonlyArray<number> = [0.32, -0.22, 0.14];
 
+export const ORB_RING_PHASE_OFFSETS: ReadonlyArray<number> = [0.4, 2.3, 4.1];
+
 export const ORB_PETAL_STRETCH_GAIN = 0.55;
 export const ORB_PETAL_PHASE_SPEED_MIN = 0.9;
 export const ORB_PETAL_PHASE_SPEED_MAX = 2.8;
@@ -60,6 +62,7 @@ export const ORB_RING_CONFIGS: ReadonlyArray<PetalRingConfig> = ORB_RING_RADII_F
     petalCount: ORB_RING_PETAL_COUNTS[ringIndex]!,
     rotationSpeed: ORB_RING_ROTATION_SPEEDS[ringIndex]!,
     direction: ORB_RING_ROTATION_SPEEDS[ringIndex]! >= 0 ? 1 : -1,
+    phaseOffset: ORB_RING_PHASE_OFFSETS[ringIndex] ?? 0,
     widthFraction: radius.widthFraction,
   }),
 );

@@ -38,7 +38,7 @@ function idlePetal(
 ): { x: number; y: number; scaleX: number } {
   'worklet';
   const tSec = idleElapsedMs / 1000;
-  const ringAngleOffset = ring.rotationSpeed * ring.direction * tSec;
+  const ringAngleOffset = ring.phaseOffset + ring.rotationSpeed * ring.direction * tSec;
   const angle = spawn.initialAngle + ringAngleOffset;
   const radius = spawn.startRadius * ringRadiusScale;
   return {
@@ -61,7 +61,7 @@ function enterPetal(
 ): { x: number; y: number; scaleX: number } {
   'worklet';
   const t = clamp01(enterProgress);
-  const endAngle = spawn.initialAngle;
+  const endAngle = spawn.initialAngle + ring.phaseOffset;
   const endRadius = spawn.startRadius * ringRadiusScale;
   const endX = targetCenterX + Math.cos(endAngle) * endRadius;
   const endY = targetCenterY + Math.sin(endAngle) * endRadius;
