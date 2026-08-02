@@ -13,6 +13,7 @@ import {
   CHAMOMILE_FLOWER_SOURCES,
   CHAMOMILE_LEAF_SOURCES,
   CHAMOMILE_STEM_SOURCES,
+  CLOVER_SOURCES,
   DANDELION_FLOWER_SOURCES,
   DANDELION_LEAF_SOURCES,
   DANDELION_STEM_SOURCES,
@@ -24,6 +25,7 @@ import {
   LYCAENIDAE_BODY_SOURCE,
   LYCAENIDAE_LEFT_WING_SOURCES,
   LYCAENIDAE_RIGHT_WING_SOURCES,
+  MOSS_STONE_SOURCES,
   ORB_PETAL_SOURCES,
   PETAL_SOURCES,
   POPPY_FLOWER_SOURCES,
@@ -302,6 +304,50 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         } catch {
           if (__DEV__) {
             console.warn('[useFlowerGardenThemeAssets] Failed to load grass SkImage');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const cloverLoadResults = await Promise.allSettled(
+          CLOVER_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode clover image');
+            }
+            return img;
+          }),
+        );
+        const cloverImages: SkImage[] = [];
+        for (const result of cloverLoadResults) {
+          if (result.status === 'fulfilled') {
+            cloverImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a clover image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const mossStoneLoadResults = await Promise.allSettled(
+          MOSS_STONE_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode moss stone image');
+            }
+            return img;
+          }),
+        );
+        const mossStoneImages: SkImage[] = [];
+        for (const result of mossStoneLoadResults) {
+          if (result.status === 'fulfilled') {
+            mossStoneImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a moss stone image');
           }
         }
 
@@ -743,6 +789,8 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             leafImages: leafImages.length === LEAF_SOURCES.length ? leafImages : null,
             earthImage,
             grassImage,
+            cloverImages: cloverImages.length === CLOVER_SOURCES.length ? cloverImages : null,
+            mossStoneImages: mossStoneImages.length === MOSS_STONE_SOURCES.length ? mossStoneImages : null,
             dandelionStemImages: dandelionStemImages.length === DANDELION_STEM_SOURCES.length ? dandelionStemImages : null,
             dandelionLeafImages: dandelionLeafImages.length === DANDELION_LEAF_SOURCES.length ? dandelionLeafImages : null,
             dandelionFlowerImages: dandelionFlowerImages.length === DANDELION_FLOWER_SOURCES.length ? dandelionFlowerImages : null,

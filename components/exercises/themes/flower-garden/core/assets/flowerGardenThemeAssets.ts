@@ -23,6 +23,16 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
   soil: {
     earth: require('../../../../../../assets/images/flower_garden_theme/soil/earth.png'),
     grassTilable: require('../../../../../../assets/images/flower_garden_theme/soil/grass-tilable.png'),
+    clover1: require('../../../../../../assets/images/flower_garden_theme/soil/clower1.png'),
+    clover2: require('../../../../../../assets/images/flower_garden_theme/soil/clower2.png'),
+    clover3: require('../../../../../../assets/images/flower_garden_theme/soil/clower3.png'),
+    clover4: require('../../../../../../assets/images/flower_garden_theme/soil/clower4.png'),
+    mossStone1: require('../../../../../../assets/images/flower_garden_theme/soil/moss_stone1.png'),
+    mossStone2: require('../../../../../../assets/images/flower_garden_theme/soil/moss_stone2.png'),
+    mossStone3: require('../../../../../../assets/images/flower_garden_theme/soil/moss_stone3.png'),
+    mossStone4: require('../../../../../../assets/images/flower_garden_theme/soil/moss_stone4.png'),
+    mossStone5: require('../../../../../../assets/images/flower_garden_theme/soil/moss_stone5.png'),
+    mossStone6: require('../../../../../../assets/images/flower_garden_theme/soil/moss_stone6.png'),
   },
   dandelion: {
     stem1: require('../../../../../../assets/images/flower_garden_theme/dandelion/dandelion_stem1.png'),
@@ -171,6 +181,34 @@ export const LEAF_SOURCES = [
 
 export const EARTH_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.earth;
 export const GRASS_TILABLE_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.grassTilable;
+
+export const CLOVER1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.clover1;
+export const CLOVER2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.clover2;
+export const CLOVER3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.clover3;
+export const CLOVER4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.clover4;
+
+export const CLOVER_SOURCES = [
+  CLOVER1_SOURCE,
+  CLOVER2_SOURCE,
+  CLOVER3_SOURCE,
+  CLOVER4_SOURCE,
+] as const;
+
+export const MOSS_STONE1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.mossStone1;
+export const MOSS_STONE2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.mossStone2;
+export const MOSS_STONE3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.mossStone3;
+export const MOSS_STONE4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.mossStone4;
+export const MOSS_STONE5_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.mossStone5;
+export const MOSS_STONE6_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.soil.mossStone6;
+
+export const MOSS_STONE_SOURCES = [
+  MOSS_STONE1_SOURCE,
+  MOSS_STONE2_SOURCE,
+  MOSS_STONE3_SOURCE,
+  MOSS_STONE4_SOURCE,
+  MOSS_STONE5_SOURCE,
+  MOSS_STONE6_SOURCE,
+] as const;
 
 export const DANDELION_STEM1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.dandelion.stem1;
 export const DANDELION_STEM2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.dandelion.stem2;
@@ -431,6 +469,8 @@ export type FlowerGardenThemeImages = {
   leafImages: SkImage[] | null;
   earthImage: SkImage | null;
   grassImage: SkImage | null;
+  cloverImages: SkImage[] | null;
+  mossStoneImages: SkImage[] | null;
   dandelionStemImages: SkImage[] | null;
   dandelionLeafImages: SkImage[] | null;
   dandelionFlowerImages: SkImage[] | null;

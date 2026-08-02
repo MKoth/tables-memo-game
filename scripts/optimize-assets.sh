@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Optimizes stone, starfish, seashell + seaweed PNGs for the undersea background,
-# and rose PNGs (bud, center, calyx, petals, leaves, stem) for the flower-garden theme:
+# and rose PNGs (bud, center, calyx, petals, leaves, stem) plus clovers and
+# moss stones for the flower-garden theme:
 #   Undersea
 #     1. Downscales stones to ≤400px wide  (they display at ~100-160px on screen)
 #     2. Downscales seaweed to ≤250px wide (they display at ~96px on screen)
@@ -138,6 +139,17 @@ process_rose "$ROSES_DIR/stem.png" "64x768"
 echo ""
 echo "=== Soil (grass-tilable: 300x300 palette-optimised tile, was 1254x1254) ==="
 process_rose "$SOIL_DIR/grass-tilable.png" "300x300"
+
+echo ""
+echo "=== Ground decor (clovers ≤96px, moss stones ≤128px, 64-colour palette) ==="
+echo "--- Clovers (display at 20-38px on screen, were ~160px) ---"
+for i in 1 2 3 4; do
+  process_rose "$SOIL_DIR/clower${i}.png" "96x96"
+done
+echo "--- Moss stones (display at 20-70px on screen, were 247-415px tall) ---"
+for i in 1 2 3 4 5 6; do
+  process_rose "$SOIL_DIR/moss_stone${i}.png" "128x128"
+done
 
 echo ""
 echo "=== Lycaenidae butterflies (resize 128x128 body, 64x96 wings, 64-colour palette) ==="

@@ -10,6 +10,8 @@ import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
 import { FlowerGardenGrassCanvas } from './FlowerGardenGrassCanvas';
 import { FieldFlowerShaderLayer } from './FieldFlowerShaderLayer/FieldFlowerShaderLayer';
+import { GroundScatterShaderLayer } from './GroundScatterLayer/GroundScatterShaderLayer';
+import { useGroundScatterConfigs } from './GroundScatterLayer/useGroundScatterConfigs';
 import type { GrassHoleMaskConfig } from '../shaders/grassHoleMask.sksl';
 
 const grassHoleMaskConfig: GrassHoleMaskConfig = {
@@ -48,6 +50,30 @@ function FlowerGardenSceneryContent() {
   const calyxImage = images.calyxImage;
   const leafImages = images.leafImages;
   const substrateImage = images.substrateImage;
+  const cloverImages = images.cloverImages;
+  const mossStoneImages = images.mossStoneImages;
+  const petalImages = images.petalImages;
+
+  const stoneConfigs = useGroundScatterConfigs({
+    kind: 'even',
+    variantCount: mossStoneImages?.length ?? 6,
+  });
+  const cloverConfigs = useGroundScatterConfigs({
+    kind: 'edge',
+    variantCount: cloverImages?.length ?? 4,
+  });
+  const petalConfigs = useGroundScatterConfigs({
+    kind: 'band',
+    variantCount: petalImages?.length ?? 6,
+  });
+
+  const groundDecorReady =
+    cloverImages != null &&
+    cloverImages.length >= 4 &&
+    mossStoneImages != null &&
+    mossStoneImages.length >= 6 &&
+    petalImages != null &&
+    petalImages.length >= 6;
 
   const bushReady =
     stemImage != null &&
@@ -95,6 +121,13 @@ function FlowerGardenSceneryContent() {
           scale={1.2}
           maskConfig={grassHoleMaskConfig}
         />
+      )}
+      {groundDecorReady && (
+        <>
+          <GroundScatterShaderLayer configs={stoneConfigs} images={mossStoneImages!} />
+          <GroundScatterShaderLayer configs={petalConfigs} images={petalImages!} />
+          <GroundScatterShaderLayer configs={cloverConfigs} images={cloverImages!} />
+        </>
       )}
       {bushReady && (
         <>
