@@ -9,7 +9,7 @@ import type { FieldFlowerConfig } from './types';
 
 const FIELD_FLOWER_SEED = 'field-flower-scenery-v1';
 
-export const DEFAULT_FIELD_FLOWER_COUNT = 12;
+export const DEFAULT_FIELD_FLOWER_COUNT = 10;
 export const DEFAULT_MIN_LEAVES = 3;
 export const DEFAULT_MAX_LEAVES = 7;
 export const DEFAULT_MIN_DISTANCE = 190;

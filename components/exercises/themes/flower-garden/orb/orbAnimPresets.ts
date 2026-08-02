@@ -10,12 +10,12 @@ export const ORB_RING_RADII_FRACTIONS: ReadonlyArray<{
   thickness: number;
   widthFraction: number;
 }> = [
-  { center: 0.5, thickness: 0.08, widthFraction: 0.4 },
-  { center: 0.55, thickness: 0.14, widthFraction: 0.5 },
-  { center: 0.6, thickness: 0.18, widthFraction: 0.6 },
+  { center: 0.4, thickness: 0.08, widthFraction: 0.4 },
+  { center: 0.5, thickness: 0.14, widthFraction: 0.5 },
+  { center: 0.55, thickness: 0.18, widthFraction: 0.6 },
 ];
 
-export const ORB_RING_PETAL_COUNTS: ReadonlyArray<number> = [18, 24, 36];
+export const ORB_RING_PETAL_COUNTS: ReadonlyArray<number> = [12, 12, 12];
 
 export const ORB_RING_ROTATION_SPEEDS: ReadonlyArray<number> = [0.32, -0.22, 0.14];
 
@@ -30,7 +30,7 @@ export const ORB_SPAWN_ANGLE_JITTER = Math.PI * 2;
 export const ORB_SPAWN_DIAMETER_RATIO = 0.18;
 
 export const ORB_PETAL_BASE_SIZE_PX = 28;
-export const ORB_PETAL_SIZE_FACTOR_BY_RING: ReadonlyArray<number> = [0.9, 1.15, 1.4];
+export const ORB_PETAL_SIZE_FACTOR_BY_RING: ReadonlyArray<number> = [0.9, 1.15, 1.1];
 export const ORB_PETAL_WIDTH_FRACTION_BOOST = 6;
 
 export const ORB_BURST_DISTANCE = 0.85;
