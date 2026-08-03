@@ -3,7 +3,10 @@ import { FilterMode, ImageShader, MipmapMode, Rect, Shader, Skia, type SkImage, 
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { MAX_RINGS, ROSE_BUD_SKSL, roseBudUniformDefaults } from '../../../shaders/roseBudDeform.sksl';
-import { computeRoseFlashUniforms } from '../presets/roseFlashPresets';
+import {
+  computeRoseFlashUniforms,
+  computeRoseHighlightUniforms,
+} from '../presets/roseFlashPresets';
 import { TINT_FLASH_MS } from '../config/flowerTableLayerConfig';
 import type { RoseTintRgb } from '../presets/roseTintPresets';
 import type { FlowerCellConfig } from '../types';
@@ -44,6 +47,7 @@ const PADDED_RING_OPACITY_MAX = padRingArray(roseBudUniformDefaults.ringOpacity.
 export type CellRoseBudProps = {
   config: FlowerCellConfig;
   tint: RoseTintRgb;
+  highlightTint?: RoseTintRgb | null;
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
@@ -60,6 +64,7 @@ export type CellRoseBudProps = {
 export function CellRoseBud({
   config,
   tint,
+  highlightTint = null,
   layoutX,
   layoutY,
   layoutScale,
@@ -73,7 +78,7 @@ export function CellRoseBud({
   petalImages,
 }: CellRoseBudProps) {
   const idx = config.index;
-  const tintVariant = tint;
+  const tintVariant = highlightTint ?? tint;
 
   const uniforms = useDerivedValue(() => {
     const scale = layoutScale.value[idx] ?? 1;
@@ -87,12 +92,18 @@ export function CellRoseBud({
     const rawCoef = cellRange > 1e-6 ? (scale - cellMin) / cellRange : 0;
     const coefficient = rawCoef < 0 ? 0 : rawCoef > 1 ? 1 : rawCoef;
 
-    const flash = computeRoseFlashUniforms(
+    const clickFlash = computeRoseFlashUniforms(
       clock.value,
       tintFlashUntil.value[idx] ?? 0,
       tintFlashPreset.value[idx] ?? -1,
       TINT_FLASH_MS,
     );
+    const flash =
+      clickFlash.flashActive === 1
+        ? clickFlash
+        : highlightTint != null
+          ? computeRoseHighlightUniforms(clock.value, highlightTint, TINT_FLASH_MS)
+          : clickFlash;
 
     return {
       roseX: cx - halfSize,

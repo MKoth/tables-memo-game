@@ -1,8 +1,14 @@
-import type { CellConfig } from './cellConfigBuilders';
 import type { PersistentHighlightKind } from '../presets/wordSpriteTintPresets';
 
+export type HighlightCell = {
+  index: number;
+  isHeader: boolean;
+  gridCol: number;
+  gridRow: number;
+};
+
 export function resolvePersistentHighlights(
-  cellConfigs: readonly CellConfig[],
+  cellConfigs: readonly HighlightCell[],
   highlightedCellIndex: number,
 ): ReadonlyMap<number, PersistentHighlightKind> {
   const map = new Map<number, PersistentHighlightKind>();

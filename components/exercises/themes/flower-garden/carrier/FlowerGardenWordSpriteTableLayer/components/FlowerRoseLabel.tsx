@@ -21,6 +21,8 @@ export type FlowerRoseLabelProps = {
   clock: SharedValue<number>;
   fillColor: string;
   strokeColor: string;
+  highlightFillColor?: string;
+  highlightStrokeColor?: string;
 };
 
 export function FlowerRoseLabel({
@@ -38,6 +40,8 @@ export function FlowerRoseLabel({
   clock,
   fillColor,
   strokeColor,
+  highlightFillColor,
+  highlightStrokeColor,
 }: FlowerRoseLabelProps) {
   const idx = config.index;
   const text = displayLabel ?? config.label;
@@ -86,7 +90,7 @@ export function FlowerRoseLabel({
     if (clock.value < until && presetIdx >= 0) {
       return ROSE_LABEL_FLASH_FILL_COLOR;
     }
-    return fillColor;
+    return highlightFillColor ?? fillColor;
   });
 
   const labelStrokeColor = useDerivedValue(() => {
@@ -95,7 +99,7 @@ export function FlowerRoseLabel({
     if (clock.value < until && presetIdx >= 0) {
       return ROSE_LABEL_FLASH_STROKE_COLOR;
     }
-    return strokeColor;
+    return highlightStrokeColor ?? strokeColor;
   });
 
   return (

@@ -87,3 +87,32 @@ export function computeRoseFlashUniforms(
     flashBrightnessBoost: 1,
   };
 }
+
+/**
+ * Persistent highlight uniforms — the same outward wave sweep as the click
+ * flash, but looping forever so highlighted roses keep the moving gradient.
+ */
+export function computeRoseHighlightUniforms(
+  clockMs: number,
+  color: RoseTintRgb,
+  sweepPeriodMs: number,
+): RoseFlashUniforms {
+  'worklet';
+  const t = (clockMs % sweepPeriodMs) / sweepPeriodMs;
+  const wave = (t * ROSE_FLASH_WAVE_COUNT) % 1;
+
+  return {
+    flashActive: 1,
+    flashColor: color,
+    flashCrestColor: [
+      Math.min(1.6, color[0] * ROSE_FLASH_CREST_BOOST),
+      Math.min(1.6, color[1] * ROSE_FLASH_CREST_BOOST),
+      Math.min(1.6, color[2] * ROSE_FLASH_CREST_BOOST),
+    ],
+    flashWave: wave,
+    flashBaseStrength: ROSE_FLASH_BASE_STRENGTH * 0.6,
+    flashWaveStrength: ROSE_FLASH_WAVE_STRENGTH,
+    flashWaveRadiusPeriods: ROSE_FLASH_WAVE_RADIUS_PERIODS,
+    flashBrightnessBoost: 0.7,
+  };
+}

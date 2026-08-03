@@ -1,5 +1,17 @@
+import type { PersistentHighlightKind } from '../../../../undersea/carrier/WordSpriteTableLayer/presets/wordSpriteTintPresets';
+
 export type RoseTintRgb = readonly [number, number, number];
 export type Rng = () => number;
+
+/** Persistent table highlight tints for the active guess cell and its headers. */
+export const FLOWER_PERSISTENT_HIGHLIGHT_TINTS: Record<
+  PersistentHighlightKind,
+  RoseTintRgb
+> = {
+  target: [0.6, 1.3, 1.8],
+  rowHeader: [0.5, 1.15, 0.6],
+  colHeader: [0.75, 1.1, 1.45],
+};
 
 export const ROSE_TINT_PRESETS = {
   // red:         [0.95, 0.18, 0.22], // classic crimson
