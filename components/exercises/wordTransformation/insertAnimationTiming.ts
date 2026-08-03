@@ -16,6 +16,8 @@ export const BUBBLE_BURST_DURATION_MS = 400;
  */
 export const POP_CASCADE_STAGGER_MS = 320;
 export const VARIANT_POP_STAGGER_MS = POP_CASCADE_STAGGER_MS;
+/** Beat after the last wrong-variant pop ends before the picker resets. */
+export const VARIANT_POP_SETTLE_MS = 200;
 
 /** Finished word: delay between each letter pop (exit). */
 export const WORD_LETTER_EXIT_STAGGER_MS = POP_CASCADE_STAGGER_MS;

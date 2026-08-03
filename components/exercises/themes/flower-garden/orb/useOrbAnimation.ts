@@ -151,8 +151,12 @@ export function useOrbAnimation(
 
   const startBurst = useCallback(
     (intent: BurstIntentValue = BurstIntent.Release) => {
-      if (phase.value !== OrbPhase.Idle) {
+      if (phase.value === OrbPhase.None || phase.value === OrbPhase.Burst) {
         return;
+      }
+      if (phase.value === OrbPhase.Enter) {
+        cancelAnimation(enterProgress);
+        enterProgress.value = 1;
       }
       burstIntent.value = intent;
       burstIdleTimeMs.value = idleElapsedMs.value;
@@ -176,7 +180,18 @@ export function useOrbAnimation(
         ),
       );
     },
-    [burstIdleTimeMs, burstIntent, burstProgress, configSv, idleElapsedMs, onDismiss, onBurstCompleteWorklet, phase, burstStartRealTimeMs],
+    [
+      burstIdleTimeMs,
+      burstIntent,
+      burstProgress,
+      configSv,
+      enterProgress,
+      idleElapsedMs,
+      onDismiss,
+      onBurstCompleteWorklet,
+      phase,
+      burstStartRealTimeMs,
+    ],
   );
 
   return { anim, phase, startBurst };

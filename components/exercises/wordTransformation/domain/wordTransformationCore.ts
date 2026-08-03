@@ -3,6 +3,7 @@ import {
   INSERT_FLY_MS,
   INSERT_LAND_HANDOFF_MS,
   INSERT_RESERVE_MS,
+  VARIANT_POP_SETTLE_MS,
   VARIANT_POP_STAGGER_MS,
 } from '../insertAnimationTiming';
 import { generateSequentialLetterChoices, type LetterChoice } from './generateOperations';
@@ -268,7 +269,11 @@ export function createWordTransformationCore(
     const lastPopStartMs =
       wrongIds.length > 0 ? (wrongIds.length - 1) * VARIANT_POP_STAGGER_MS : 0;
     const finalizeDelay =
-      INSERT_RESERVE_MS + INSERT_FLY_MS + lastPopStartMs + BUBBLE_BURST_DURATION_MS;
+      INSERT_RESERVE_MS +
+      INSERT_FLY_MS +
+      lastPopStartMs +
+      BUBBLE_BURST_DURATION_MS +
+      VARIANT_POP_SETTLE_MS;
 
     scheduleInsertTimer(() => {
       if (sequential) {

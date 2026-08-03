@@ -3,6 +3,7 @@ import {
   INSERT_FLY_MS,
   INSERT_LAND_HANDOFF_MS,
   INSERT_RESERVE_MS,
+  VARIANT_POP_SETTLE_MS,
   VARIANT_POP_STAGGER_MS,
 } from '../../insertAnimationTiming';
 import {
@@ -166,9 +167,39 @@ describe('wordTransformationCore', () => {
       INSERT_RESERVE_MS +
       INSERT_FLY_MS +
       3 * VARIANT_POP_STAGGER_MS +
-      BUBBLE_BURST_DURATION_MS;
+      BUBBLE_BURST_DURATION_MS +
+      VARIANT_POP_SETTLE_MS;
     jest.advanceTimersByTime(finalizeDelay);
 
+    expect(onSequenceComplete).toHaveBeenCalledWith(INSERT_SEQUENCE, 'hablo');
+  });
+
+  it('staggers wrong-variant pops at dismiss and holds until the settle beat', () => {
+    const { core, onSequenceComplete } = createTestCore(INSERT_SEQUENCE);
+
+    core.handleVariantPress(
+      { id: 'o', label: 'o' },
+      { centerX: 10, centerY: 20, diameter: 30 },
+    );
+    const dismissAt = INSERT_RESERVE_MS + INSERT_FLY_MS;
+    jest.advanceTimersByTime(dismissAt);
+
+    const items = core.getSnapshot().variantPickerItems;
+    const wrong = items.filter((item) => item.id !== 'o');
+    expect(wrong.length).toBe(3);
+    expect(wrong.every((item) => item.popping === true)).toBe(true);
+    expect(wrong.map((item) => item.popDelayMs).sort((a, b) => (a ?? 0) - (b ?? 0))).toEqual([
+      0,
+      VARIANT_POP_STAGGER_MS,
+      2 * VARIANT_POP_STAGGER_MS,
+    ]);
+
+    const lastPopEndMs =
+      dismissAt + 2 * VARIANT_POP_STAGGER_MS + BUBBLE_BURST_DURATION_MS;
+    jest.advanceTimersByTime(lastPopEndMs - dismissAt);
+    expect(onSequenceComplete).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(VARIANT_POP_SETTLE_MS);
     expect(onSequenceComplete).toHaveBeenCalledWith(INSERT_SEQUENCE, 'hablo');
   });
 
@@ -209,7 +240,8 @@ describe('wordTransformationCore', () => {
       INSERT_RESERVE_MS +
       INSERT_FLY_MS +
       3 * VARIANT_POP_STAGGER_MS +
-      BUBBLE_BURST_DURATION_MS;
+      BUBBLE_BURST_DURATION_MS +
+      VARIANT_POP_SETTLE_MS;
     jest.advanceTimersByTime(finalizeDelay);
 
     expect(onSequenceComplete).toHaveBeenCalledWith(TWO_STEP_SEQUENCE, 'hablo');
@@ -252,7 +284,8 @@ describe('wordTransformationCore', () => {
       INSERT_RESERVE_MS +
       INSERT_FLY_MS +
       Math.max(0, remainingWrongCount - 1) * VARIANT_POP_STAGGER_MS +
-      BUBBLE_BURST_DURATION_MS;
+      BUBBLE_BURST_DURATION_MS +
+      VARIANT_POP_SETTLE_MS;
     jest.advanceTimersByTime(finalizeDelay);
 
     expect(onSequenceComplete).toHaveBeenCalledWith(SEQUENTIAL_INSERT_SEQUENCE, 'hablar');
