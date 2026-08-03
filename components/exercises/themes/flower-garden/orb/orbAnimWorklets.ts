@@ -142,7 +142,10 @@ export function computeOrbAnimState(
   wrong: OrbWrongStateInput = NO_WRONG,
 ): OrbAnimState {
   'worklet';
-  const { originX, originY, targetCenterX, targetCenterY, targetDiameter } = config;
+  const { originX, originY } = config;
+  const targetCenterX = config.moveCenterX?.value ?? config.targetCenterX;
+  const targetCenterY = config.moveCenterY?.value ?? config.targetCenterY;
+  const targetDiameter = config.moveDiameter?.value ?? config.targetDiameter;
   const ringRadiusScale = targetDiameter;
   const startDiameter =
     config.initialDiameter != null && config.initialDiameter > 0

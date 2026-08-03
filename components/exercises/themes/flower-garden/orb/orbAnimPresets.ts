@@ -9,6 +9,8 @@ export const ORB_RING_COUNT_DEFAULT = 3;
 
 export const ORB_ENTER_DURATION_MS = 500;
 export const ORB_BURST_DURATION_MS = 400;
+/** Tween duration (ms) for relayout moves and insert flights. */
+export const ORB_MOVE_DURATION_MS = 320;
 
 export const ORB_RING_RADII_FRACTIONS: ReadonlyArray<{
   center: number;

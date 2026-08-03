@@ -436,6 +436,55 @@ describe('computeOrbAnimState', () => {
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
+  it('move* shared values override raw targets in phase Idle', () => {
+    const petals = makePetals(31);
+    const moved = 520;
+    const state = computeOrbAnimState(
+      OrbPhase.Idle,
+      1,
+      0,
+      0,
+      {
+        ...CONFIG,
+        moveCenterX: { value: moved },
+        moveCenterY: { value: moved },
+        moveDiameter: { value: 200 },
+      } as OrbAnimationConfig,
+      ORB_RING_CONFIGS,
+      petals,
+    );
+    expect(state.centerX).toBeCloseTo(moved, 5);
+    expect(state.centerY).toBeCloseTo(moved, 5);
+    expect(state.diameter).toBeCloseTo(200, 5);
+    for (let i = 0; i < state.petals.length; i++) {
+      const p = state.petals[i]!;
+      const spawn = petals[i]!;
+      const center = RING_CENTERS[spawn.ringIndex]!;
+      const thickness = RING_THICKNESSES[spawn.ringIndex]!;
+      const minR = (center - thickness * 0.5) * 200;
+      const maxR = (center + thickness * 0.5) * 200;
+      const r = Math.hypot(p.x - moved, p.y - moved);
+      expect(r).toBeGreaterThanOrEqual(minR - 1e-3);
+      expect(r).toBeLessThanOrEqual(maxR + 1e-3);
+    }
+  });
+
+  it('move* shared values apply when moveDiameter is the only override', () => {
+    const petals = makePetals(31);
+    const state = computeOrbAnimState(
+      OrbPhase.Idle,
+      1,
+      0,
+      0,
+      { ...CONFIG, moveDiameter: { value: 150 } } as OrbAnimationConfig,
+      ORB_RING_CONFIGS,
+      petals,
+    );
+    expect(state.diameter).toBeCloseTo(150, 5);
+    expect(state.centerX).toBeCloseTo(CONFIG.targetCenterX, 5);
+    expect(state.centerY).toBeCloseTo(CONFIG.targetCenterY, 5);
+  });
+
   it('inner ring rotates in opposite direction to middle ring at different speed', () => {
     expect(ORB_RING_CONFIGS[0]!.direction).toBe(1);
     expect(ORB_RING_CONFIGS[1]!.direction).toBe(-1);

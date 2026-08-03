@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   Glyphs,
   Group,
   vec,
+  type SkImage,
 } from '@shopify/react-native-skia';
 import {
+  cancelAnimation,
   Easing,
   useDerivedValue,
   useSharedValue,
@@ -14,13 +16,13 @@ import {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { ThemeLetterOrbProps } from '../../../../../themeContract';
-import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
 import { generateOrbPetalConfigs, sliceOrbRings } from '../../../orb/generateOrbPetalConfigs';
 import {
   LETTER_ORB_PETAL_SIZE_FACTOR,
   LETTER_ORB_RING_CONFIGS,
   LETTER_ORB_RING_COUNT,
   ORB_ENTER_DURATION_MS,
+  ORB_MOVE_DURATION_MS,
   ORB_WRONG_FEEDBACK_MS,
   ORB_WRONG_RAMP_MS,
 } from '../../../orb/orbAnimPresets';
@@ -64,13 +66,14 @@ function FlowerGardenLetterOrbComponent({
   diameter,
   status,
   image: _image,
+  orbPetalImages: orbPetalImagesProp,
   font,
   clock,
   initialCenterX,
   initialCenterY,
   initialDiameter,
   skipEnter = false,
-  moveDurationMs: _moveDurationMs,
+  moveDurationMs = ORB_MOVE_DURATION_MS,
   wrongTintColor = LABEL_WRONG_COLOR,
   popDelayMs,
   enterDelayMs,
@@ -82,9 +85,8 @@ function FlowerGardenLetterOrbComponent({
   labelFixed = false,
   letterSpacing = 0,
   wobbleBoostT: _wobbleBoostT,
-}: ThemeLetterOrbProps) {
-  const { images } = useFlowerGardenAssetsContext();
-  const orbPetalImages = images.orbPetalImages;
+}: ThemeLetterOrbProps & { orbPetalImages?: ReadonlyArray<SkImage> | null }) {
+  const orbPetalImages = orbPetalImagesProp ?? null;
 
   const petalSeed = useMemo(() => hashSeedString(`flower-garden-letter-orb-${char}`), [char]);
   const rings = useMemo(
@@ -105,6 +107,29 @@ function FlowerGardenLetterOrbComponent({
     [petals],
   );
 
+  const posX = useSharedValue(initialCenterX ?? centerX);
+  const posY = useSharedValue(initialCenterY ?? centerY);
+  const dia = useSharedValue(initialDiameter ?? diameter);
+
+  // useLayoutEffect so relayout moves + insert flights start before first paint.
+  useLayoutEffect(() => {
+    cancelAnimation(posX);
+    cancelAnimation(posY);
+    cancelAnimation(dia);
+    posX.value = withTiming(centerX, {
+      duration: moveDurationMs,
+      easing: Easing.inOut(Easing.cubic),
+    });
+    posY.value = withTiming(centerY, {
+      duration: moveDurationMs,
+      easing: Easing.inOut(Easing.cubic),
+    });
+    dia.value = withTiming(diameter, {
+      duration: moveDurationMs,
+      easing: Easing.inOut(Easing.cubic),
+    });
+  }, [centerX, centerY, diameter, dia, moveDurationMs, posX, posY]);
+
   const orbConfig = useMemo(
     () => ({
       originX: skipEnter ? centerX : (initialCenterX ?? centerX),
@@ -112,6 +137,9 @@ function FlowerGardenLetterOrbComponent({
       targetCenterX: centerX,
       targetCenterY: centerY,
       targetDiameter: diameter,
+      moveCenterX: posX,
+      moveCenterY: posY,
+      moveDiameter: dia,
       initialDiameter,
       skipEnter,
       enterDelayMs,
@@ -121,11 +149,14 @@ function FlowerGardenLetterOrbComponent({
       centerX,
       centerY,
       diameter,
+      dia,
       enterDelayMs,
       initialCenterX,
       initialCenterY,
       initialDiameter,
       popDelayMs,
+      posX,
+      posY,
       skipEnter,
     ],
   );

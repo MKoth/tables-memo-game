@@ -57,6 +57,10 @@ export type OrbAnimationConfig = {
   targetCenterX: number;
   targetCenterY: number;
   targetDiameter: number;
+  /** When set, the anim resolves position/size from these animated values instead of the raw targets. */
+  moveCenterX?: SharedValue<number>;
+  moveCenterY?: SharedValue<number>;
+  moveDiameter?: SharedValue<number>;
   /** When set, the enter spiral starts here instead of the shared origin. */
   initialCenterX?: number;
   initialCenterY?: number;

@@ -58,10 +58,11 @@ export function FlowerGardenTransformationInsertFlight({
           initialCenterX={landed ? flight.toCenterX : flight.fromCenterX}
           initialCenterY={landed ? flight.toCenterY : flight.fromCenterY}
           initialDiameter={landed ? flight.toDiameter : flight.fromDiameter}
-          skipEnter={landed}
+          skipEnter
           moveDurationMs={landed ? 0 : flight.flyDurationMs}
           status="idle"
           image={orbPetalImages[0]!}
+          orbPetalImages={orbPetalImages}
           font={font}
           clock={clock}
         />
