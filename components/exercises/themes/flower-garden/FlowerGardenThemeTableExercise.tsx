@@ -26,6 +26,7 @@ import { generateOrbPetalConfigs } from './orb/generateOrbPetalConfigs';
 import { createRng, hashSeedString } from './scenery/BushShaderLayer/helpers/seededRandom';
 import { CaptureOrb, getSpeciesImages } from './orb/CaptureOrb';
 import { CapturedRoamerCanvas } from './orb/CapturedRoamerCanvas';
+import { CaptureOrbCloudLayer } from './orb/CaptureOrbCloudLayer';
 import { useOrbAnimation } from './orb/useOrbAnimation';
 import {
   ORB_CAPTIVE_DRIFT_RATIO,
@@ -44,6 +45,7 @@ const WORD_SPRITE_LAYER_Z = 5;
 const SCENERY_Z = 1;
 const ROAMER_Z = 2;
 const ROAMER_GESTURE_Z = 3;
+const ORB_CLOUD_Z = 4;
 const ORB_Z = 6;
 const ORB_TAP_Z = 7;
 const ESCAPE_Z = 8;
@@ -311,6 +313,17 @@ function RoamerOrbLayer({
       )}
       {capturedEntry != null && orbPetalImagesReady && (
         <>
+          {images.cloudPatchImages != null && (
+            <View style={[styles.fullLayer, { zIndex: ORB_CLOUD_Z }]} pointerEvents="none">
+              <CaptureOrbCloudLayer
+                centerX={targetCenterX}
+                centerY={targetCenterY}
+                diameter={targetDiameter}
+                phase={phase}
+                images={images.cloudPatchImages}
+              />
+            </View>
+          )}
           <View style={[styles.fullLayer, { zIndex: ORB_Z }]} pointerEvents="none">
             <CaptureOrb
               anim={anim}

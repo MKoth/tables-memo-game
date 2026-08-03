@@ -13,6 +13,7 @@ import {
   CHAMOMILE_FLOWER_SOURCES,
   CHAMOMILE_LEAF_SOURCES,
   CHAMOMILE_STEM_SOURCES,
+  CLOUD_PATCH_SOURCES,
   CLOVER_SOURCES,
   DANDELION_FLOWER_SOURCES,
   DANDELION_LEAF_SOURCES,
@@ -47,6 +48,7 @@ import {
   type FlowerGardenLycaenidaeKey,
   type FlowerGardenBeeKey,
   type FlowerGardenBumblebeeKey,
+  type FlowerGardenCloudKey,
   type FlowerGardenThemeImages,
   type FlowerGardenWildVioletKey,
 } from './flowerGardenThemeAssets';
@@ -169,6 +171,15 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
         for (let i = 0; i < orbEntries.length; i++) {
           orbEntries[i]!;
+          trackSource();
+        }
+
+        const cloudEntries = Object.entries(
+          FLOWER_GARDEN_IMAGE_ASSETS.cloud,
+        ) as Array<[FlowerGardenCloudKey, number]>;
+
+        for (let i = 0; i < cloudEntries.length; i++) {
+          cloudEntries[i]!;
           trackSource();
         }
 
@@ -776,6 +787,28 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        const cloudPatchLoadResults = await Promise.allSettled(
+          CLOUD_PATCH_SOURCES.map(async (source) => {
+            const img = await loadSkiaImage(source);
+            if (img == null) {
+              throw new Error('Failed to decode cloud patch image');
+            }
+            return img;
+          }),
+        );
+        const cloudPatchImages: SkImage[] = [];
+        for (const result of cloudPatchLoadResults) {
+          if (result.status === 'fulfilled') {
+            cloudPatchImages.push(result.value);
+          } else if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load a cloud patch image');
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -812,6 +845,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             bumblebeeBodyImage,
             bumblebeeLeftWingImage,
             bumblebeeRightWingImage,
+            cloudPatchImages: cloudPatchImages.length === CLOUD_PATCH_SOURCES.length ? cloudPatchImages : null,
             orbPetalImages: orbPetalImages.length === ORB_PETAL_SOURCES.length ? orbPetalImages : null,
           },
         });

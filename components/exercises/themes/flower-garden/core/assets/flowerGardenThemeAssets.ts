@@ -121,6 +121,29 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     leftWing: require('../../../../../../assets/images/flower_garden_theme/bumblebee/bumblebee_left_wing.png'),
     rightWing: require('../../../../../../assets/images/flower_garden_theme/bumblebee/bumblebee_right_wing.png'),
   },
+  cloud: {
+    yellow1: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-yellow1.png'),
+    yellow2: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-yellow2.png'),
+    yellow3: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-yellow3.png'),
+    orange4: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-orange4.png'),
+    orange5: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-orange5.png'),
+    rosy6: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-rosy6.png'),
+    rosy7: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-rosy7.png'),
+    rosy8: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-rosy8.png'),
+    rosy9: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-rosy9.png'),
+    rosy10: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-rosy10.png'),
+    violet11: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-violet11.png'),
+    violet12: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-violet12.png'),
+    violet13: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-violet13.png'),
+    violet14: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-violet14.png'),
+    violet15: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-violet15.png'),
+    blue16: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-blue16.png'),
+    blue17: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-blue17.png'),
+    blue18: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-blue18.png'),
+    blue19: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-blue19.png'),
+    lightBlue20: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-light-blue20.png'),
+    lightBlue21: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-light-blue21.png'),
+  },
   orb: {
     petal1: require('../../../../../../assets/images/flower_garden_theme/orb/pettel1.png'),
     petal2: require('../../../../../../assets/images/flower_garden_theme/orb/pettel2.png'),
@@ -429,6 +452,52 @@ export const ORB_PETAL19_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal19;
 export const ORB_PETAL20_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal20;
 export const ORB_PETAL21_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal21;
 
+export const CLOUD_PATCH1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.yellow1;
+export const CLOUD_PATCH2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.yellow2;
+export const CLOUD_PATCH3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.yellow3;
+export const CLOUD_PATCH4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.orange4;
+export const CLOUD_PATCH5_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.orange5;
+export const CLOUD_PATCH6_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.rosy6;
+export const CLOUD_PATCH7_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.rosy7;
+export const CLOUD_PATCH8_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.rosy8;
+export const CLOUD_PATCH9_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.rosy9;
+export const CLOUD_PATCH10_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.rosy10;
+export const CLOUD_PATCH11_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.violet11;
+export const CLOUD_PATCH12_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.violet12;
+export const CLOUD_PATCH13_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.violet13;
+export const CLOUD_PATCH14_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.violet14;
+export const CLOUD_PATCH15_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.violet15;
+export const CLOUD_PATCH16_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.blue16;
+export const CLOUD_PATCH17_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.blue17;
+export const CLOUD_PATCH18_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.blue18;
+export const CLOUD_PATCH19_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.blue19;
+export const CLOUD_PATCH20_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.lightBlue20;
+export const CLOUD_PATCH21_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.lightBlue21;
+
+export const CLOUD_PATCH_SOURCES = [
+  CLOUD_PATCH1_SOURCE,
+  CLOUD_PATCH2_SOURCE,
+  CLOUD_PATCH3_SOURCE,
+  CLOUD_PATCH4_SOURCE,
+  CLOUD_PATCH5_SOURCE,
+  CLOUD_PATCH6_SOURCE,
+  CLOUD_PATCH7_SOURCE,
+  CLOUD_PATCH8_SOURCE,
+  CLOUD_PATCH9_SOURCE,
+  CLOUD_PATCH10_SOURCE,
+  CLOUD_PATCH11_SOURCE,
+  CLOUD_PATCH12_SOURCE,
+  CLOUD_PATCH13_SOURCE,
+  CLOUD_PATCH14_SOURCE,
+  CLOUD_PATCH15_SOURCE,
+  CLOUD_PATCH16_SOURCE,
+  CLOUD_PATCH17_SOURCE,
+  CLOUD_PATCH18_SOURCE,
+  CLOUD_PATCH19_SOURCE,
+  CLOUD_PATCH20_SOURCE,
+  CLOUD_PATCH21_SOURCE,
+] as const;
+
 export const ORB_PETAL_SOURCES = [
   ORB_PETAL1_SOURCE,
   ORB_PETAL2_SOURCE,
@@ -456,6 +525,7 @@ export const ORB_PETAL_SOURCES = [
 export type FlowerGardenLycaenidaeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae;
 export type FlowerGardenBeeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bee;
 export type FlowerGardenBumblebeeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.bumblebee;
+export type FlowerGardenCloudKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.cloud;
 export type FlowerGardenOrbKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.orb;
 
 export type FlowerGardenThemeImages = {
@@ -492,6 +562,7 @@ export type FlowerGardenThemeImages = {
   bumblebeeBodyImage: SkImage | null;
   bumblebeeLeftWingImage: SkImage | null;
   bumblebeeRightWingImage: SkImage | null;
+  cloudPatchImages: SkImage[] | null;
   orbPetalImages: SkImage[] | null;
 };
 
@@ -506,6 +577,7 @@ export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bee).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bumblebee).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.cloud).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.orb).length;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;

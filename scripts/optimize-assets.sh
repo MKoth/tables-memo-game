@@ -162,5 +162,14 @@ for f in "$LYCAENIDAE_DIR"/lycaenidae_left_wing*.png "$LYCAENIDAE_DIR"/lycaenida
 done
 
 echo ""
+echo "=== Cloud patches (resize ≤256px wide, 64-colour palette, was 149-465px) ==="
+# Orb clouds display at up to 0.75 × orb diameter (≈190px on phones, ≈250px on
+# tablets), so 256px wide covers the largest display without detail loss.
+CLOUD_DIR="$ASSETS_DIR/images/flower_garden_theme/cloud"
+for f in "$CLOUD_DIR"/cloud-*.png; do
+  process_rose "$f" "256x256"
+done
+
+echo ""
 echo "All done. Clear Metro cache to pick up new assets:"
 echo "  npx expo start --clear   (or: npx react-native start --reset-cache)"
