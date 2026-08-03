@@ -7,6 +7,9 @@ import {
   ORB_PETAL_PHASE_SPEED_MAX,
   ORB_PETAL_PHASE_SPEED_MIN,
   ORB_RING_CONFIGS,
+  ORB_RING_COUNT_DEFAULT,
+  ORB_RING_COUNT_MAX,
+  ORB_RING_COUNT_MIN,
   ORB_SPAWN_ANGLE_JITTER,
   ORB_SPAWN_RADIUS_RATIO,
 } from './orbAnimPresets';
@@ -17,9 +20,28 @@ export type { Rng };
 
 export type OrbConfigInput = {
   rings?: ReadonlyArray<PetalRingConfig>;
+  /** Number of petal rings to use, clamped to [1, 3]. Defaults to 3. */
+  ringCount?: number;
   petalImageCount?: number;
   rng: Rng;
 };
+
+/**
+ * Selects the first `ringCount` ring configs so petal spawn generation and
+ * ring rotation always operate on the same sliced ring set. Clamps to
+ * [ORB_RING_COUNT_MIN, ORB_RING_COUNT_MAX]; an invalid value degrades to the
+ * nearest valid orb rather than throwing.
+ */
+export function sliceOrbRings(
+  rings: ReadonlyArray<PetalRingConfig>,
+  ringCount: number,
+): ReadonlyArray<PetalRingConfig> {
+  const clamped = Math.max(
+    ORB_RING_COUNT_MIN,
+    Math.min(ORB_RING_COUNT_MAX, ringCount),
+  );
+  return rings.slice(0, clamped);
+}
 
 function randomInRange(rng: Rng, min: number, max: number): number {
   return min + (max - min) * rng();
@@ -41,7 +63,10 @@ function clampSpawnOffset(
 }
 
 export function generateOrbPetalConfigs(input: OrbConfigInput): PetalSpawnConfig[] {
-  const rings = input.rings ?? ORB_RING_CONFIGS;
+  const rings = sliceOrbRings(
+    input.rings ?? ORB_RING_CONFIGS,
+    input.ringCount ?? ORB_RING_COUNT_DEFAULT,
+  );
   const petalImageCount = input.petalImageCount ?? ORB_PETAL_COUNT;
   const { rng } = input;
 

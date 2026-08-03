@@ -5,6 +5,8 @@ import {
   ORB_PETAL_FADE_START,
   ORB_RING_CONFIGS,
   ORB_SPAWN_DIAMETER_RATIO,
+  ORB_WRONG_SHAKE_HZ,
+  ORB_WRONG_TINT_STRENGTH,
 } from './orbAnimPresets';
 import {
   OrbPhase,
@@ -58,6 +60,7 @@ function enterPetal(
   originY: number,
   ringRadiusScale: number,
   targetDiameter: number,
+  startScale: number,
 ): { x: number; y: number; scaleX: number } {
   'worklet';
   const t = clamp01(enterProgress);
@@ -77,14 +80,11 @@ function enterPetal(
   const perpY = len > 0 ? dx / len : 0;
   const spiralAmplitude = len * 0.18;
   const spiralOffset = Math.sin(t * Math.PI) * spiralAmplitude;
-  const baseDiameter = targetDiameter * ORB_SPAWN_DIAMETER_RATIO;
-  const diameter = lerp(baseDiameter, targetDiameter, t);
-  const diameterScale = diameter / targetDiameter;
   const fadeInT = clamp01(t / 0.12);
   return {
     x: lerpX + perpX * spiralOffset,
     y: lerpY + perpY * spiralOffset,
-    scaleX: fadeInT * diameterScale,
+    scaleX: fadeInT * lerp(startScale, 1, t),
   };
 }
 
@@ -118,6 +118,19 @@ function burstPetal(
   };
 }
 
+export type OrbWrongStateInput = {
+  /** Wrong-feedback progress in [0, 1]; 0 = no feedback. */
+  progress: number;
+  /** Monotonic clock (ms) driving the shake oscillation. */
+  clockMs: number;
+  /** Tint color channels (0–1) shown while wrong. */
+  r: number;
+  g: number;
+  b: number;
+};
+
+const NO_WRONG: OrbWrongStateInput = { progress: 0, clockMs: 0, r: 1, g: 0.35, b: 0.35 };
+
 export function computeOrbAnimState(
   phase: number,
   enterProgress: number,
@@ -126,27 +139,49 @@ export function computeOrbAnimState(
   config: OrbAnimationConfig,
   rings: ReadonlyArray<PetalRingConfig>,
   petals: ReadonlyArray<PetalSpawnConfig>,
+  wrong: OrbWrongStateInput = NO_WRONG,
 ): OrbAnimState {
   'worklet';
   const { originX, originY, targetCenterX, targetCenterY, targetDiameter } = config;
   const ringRadiusScale = targetDiameter;
-  const startDiameter = targetDiameter * ORB_SPAWN_DIAMETER_RATIO;
+  const startDiameter =
+    config.initialDiameter != null && config.initialDiameter > 0
+      ? config.initialDiameter
+      : targetDiameter * ORB_SPAWN_DIAMETER_RATIO;
+  const startScale = startDiameter / targetDiameter;
+
+  const tintStrength = wrong.progress * ORB_WRONG_TINT_STRENGTH;
+  const shakeAmp = wrong.progress * Math.max(2, targetDiameter * 0.05);
+  const shakeT = wrong.clockMs / 1000;
+  const shakeX = shakeAmp * Math.sin(shakeT * ORB_WRONG_SHAKE_HZ * Math.PI * 2);
+  const shakeY = shakeAmp * Math.cos(shakeT * ORB_WRONG_SHAKE_HZ * Math.PI * 2 * 1.17);
+  const centerX = targetCenterX + shakeX;
+  const centerY = targetCenterY + shakeY;
+
+  const tinted = {
+    tintR: wrong.r,
+    tintG: wrong.g,
+    tintB: wrong.b,
+    tintStrength,
+  };
 
   if (phase === OrbPhase.None) {
     const zeroPetals: PetalAnimState[] = petals.map(p => ({
-      x: originX,
-      y: originY,
+      x: originX + shakeX,
+      y: originY + shakeY,
       angle: p.initialAngle,
       scaleX: 0,
       opacity: 0,
+      tintStrength,
     }));
     return {
-      centerX: targetCenterX,
-      centerY: targetCenterY,
+      centerX,
+      centerY,
       diameter: 0,
       overallOpacity: 0,
       petals: zeroPetals,
       captureVisualT: 0,
+      ...tinted,
     };
   }
 
@@ -160,8 +195,8 @@ export function computeOrbAnimState(
         petals[i]!,
         burstProgress,
         idleElapsedMs,
-        targetCenterX,
-        targetCenterY,
+        centerX,
+        centerY,
         ringRadiusScale,
         targetDiameter,
       );
@@ -174,15 +209,17 @@ export function computeOrbAnimState(
         angle: petals[i]!.initialAngle,
         scaleX: burst.scaleX,
         opacity: burst.opacity,
+        tintStrength,
       });
     }
     return {
-      centerX: targetCenterX,
-      centerY: targetCenterY,
+      centerX,
+      centerY,
       diameter: targetDiameter,
       overallOpacity: minOpacity,
       petals: outPetals,
       captureVisualT: 1 - clamp01(burstProgress / 0.4),
+      ...tinted,
     };
   }
 
@@ -192,20 +229,22 @@ export function computeOrbAnimState(
       const ring = rings[petals[i]!.ringIndex]!;
       const idle = idlePetal(ring, petals[i]!, idleElapsedMs, ringRadiusScale);
       outPetals.push({
-        x: targetCenterX + idle.x,
-        y: targetCenterY + idle.y,
+        x: centerX + idle.x,
+        y: centerY + idle.y,
         angle: petals[i]!.initialAngle,
         scaleX: idle.scaleX,
         opacity: 1,
+        tintStrength,
       });
     }
     return {
-      centerX: targetCenterX,
-      centerY: targetCenterY,
+      centerX,
+      centerY,
       diameter: targetDiameter,
       overallOpacity: 1,
       petals: outPetals,
       captureVisualT: 1,
+      ...tinted,
     };
   }
 
@@ -218,12 +257,13 @@ export function computeOrbAnimState(
       ring,
       petals[i]!,
       t,
-      targetCenterX,
-      targetCenterY,
+      centerX,
+      centerY,
       originX,
       originY,
       ringRadiusScale,
       targetDiameter,
+      startScale,
     );
     outPetals.push({
       x: enter.x,
@@ -231,15 +271,17 @@ export function computeOrbAnimState(
       angle: petals[i]!.initialAngle,
       scaleX: enter.scaleX,
       opacity: t,
+      tintStrength,
     });
   }
   return {
-    centerX: targetCenterX,
-    centerY: targetCenterY,
+    centerX,
+    centerY,
     diameter,
     overallOpacity: t,
     petals: outPetals,
     captureVisualT: 1,
+    ...tinted,
   };
 }
 

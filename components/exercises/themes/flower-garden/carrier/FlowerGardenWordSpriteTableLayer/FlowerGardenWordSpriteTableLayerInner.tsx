@@ -49,6 +49,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
   interactive,
   translationDisplayMs,
   highlightedCellIndex: _highlightedCellIndex,
+  extraRevealedBodyIndices,
   controllerRef,
 }: FlowerWordSpriteTableLayerInnerProps) {
   const { publishWordSpriteBridge } = useExerciseRuntime();
@@ -143,6 +144,18 @@ export function FlowerGardenWordSpriteTableLayerInner({
     });
   }, []);
 
+  const effectiveRevealedBodyIndices = useMemo(() => {
+    if (extraRevealedBodyIndices == null) {
+      return revealedBodyIndices;
+    }
+
+    const extra =
+      extraRevealedBodyIndices instanceof Set
+        ? extraRevealedBodyIndices
+        : new Set(extraRevealedBodyIndices);
+    return new Set([...revealedBodyIndices, ...extra]);
+  }, [extraRevealedBodyIndices, revealedBodyIndices]);
+
   const controller = useMemo<FlowerWordSpriteTableLayerController>(
     () => ({
       revealBodyLabel,
@@ -162,7 +175,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
       if (config == null || config.translation.length === 0) {
         return;
       }
-      if (!config.isHeader && !revealedBodyIndices.has(hitIdx)) {
+      if (!config.isHeader && !effectiveRevealedBodyIndices.has(hitIdx)) {
         return;
       }
       setTranslatedIndices(prev => new Set(prev).add(hitIdx));
@@ -177,7 +190,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
         });
       }, translationDisplayMs);
     },
-    [cellConfigs, revealedBodyIndices, translationDisplayMs],
+    [cellConfigs, effectiveRevealedBodyIndices, translationDisplayMs],
   );
 
   const handleMatchSuccessJs = useCallback(
@@ -390,7 +403,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
           />
         ))}
         {drawOrder.map(config => {
-          if (!config.isHeader && !revealedBodyIndices.has(config.index)) {
+          if (!config.isHeader && !effectiveRevealedBodyIndices.has(config.index)) {
             return null;
           }
           const colors = labelColorsByCell[config.index]!;

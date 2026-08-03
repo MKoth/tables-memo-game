@@ -11,6 +11,7 @@ export function FlowerGardenWordSpriteTableLayer({
   interactive = true,
   translationDisplayMs = DEFAULT_TRANSLATION_DISPLAY_MS,
   highlightedCellIndex = -1,
+  extraRevealedBodyIndices,
   controllerRef,
 }: FlowerWordSpriteTableLayerProps) {
   const { images } = useFlowerGardenAssetsContext();
@@ -41,6 +42,7 @@ export function FlowerGardenWordSpriteTableLayer({
       interactive={interactive}
       translationDisplayMs={translationDisplayMs}
       highlightedCellIndex={highlightedCellIndex}
+      extraRevealedBodyIndices={extraRevealedBodyIndices}
       controllerRef={controllerRef}
     />
   );

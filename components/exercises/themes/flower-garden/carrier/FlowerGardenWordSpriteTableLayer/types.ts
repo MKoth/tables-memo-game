@@ -14,6 +14,8 @@ export type FlowerWordSpriteTableLayerProps = {
   /** How long (ms) a tapped visible label shows its translation before reverting. */
   translationDisplayMs?: number;
   highlightedCellIndex?: number;
+  /** Additional body labels to show without requiring a roamer match first. */
+  extraRevealedBodyIndices?: ReadonlySet<number> | readonly number[];
   controllerRef?: RefObject<FlowerWordSpriteTableLayerController | null>;
 };
 
@@ -40,5 +42,6 @@ export type FlowerWordSpriteTableLayerInnerProps = {
   interactive: boolean;
   translationDisplayMs: number;
   highlightedCellIndex: number;
+  extraRevealedBodyIndices?: ReadonlySet<number> | readonly number[];
   controllerRef?: RefObject<FlowerWordSpriteTableLayerController | null>;
 };

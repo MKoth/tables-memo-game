@@ -1,5 +1,5 @@
 import React from 'react';
-import { Group, Image, type SkImage } from '@shopify/react-native-skia';
+import { ColorMatrix, Group, Image, type SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { ORB_PETAL_BASE_SIZE_PX } from './orbAnimPresets';
@@ -36,6 +36,20 @@ function Petal({ spawnIndex, sizeFactor, image, anim }: PetalProps) {
     return petal == null ? 0 : petal.opacity;
   });
 
+  // Blend each channel toward the wrong-tint color by the petal's tint strength
+  // (identity matrix when the strength is zero).
+  const tintMatrix = useDerivedValue(() => {
+    const petal = anim.value.petals[spawnIndex];
+    const s = petal?.tintStrength ?? 0;
+    const { tintR, tintG, tintB } = anim.value;
+    return [
+      1 - s, 0, 0, 0, tintR * s,
+      0, 1 - s, 0, 0, tintG * s,
+      0, 0, 1 - s, 0, tintB * s,
+      0, 0, 0, 1, 0,
+    ];
+  });
+
   if (image == null) {
     return null;
   }
@@ -44,6 +58,7 @@ function Petal({ spawnIndex, sizeFactor, image, anim }: PetalProps) {
 
   return (
     <Group transform={transform} opacity={opacity}>
+      <ColorMatrix matrix={tintMatrix} />
       <Image
         image={image}
         x={0}

@@ -1,5 +1,7 @@
 import { createRng } from '../../scenery/BushShaderLayer/helpers/seededRandom';
 import {
+  LETTER_ORB_PETAL_COUNT,
+  LETTER_ORB_RING_CONFIGS,
   ORB_BURST_SPEED_MAX,
   ORB_BURST_SPEED_MIN,
   ORB_PETAL_BROWNIAN_STEP_MAX,
@@ -10,7 +12,10 @@ import {
   ORB_RING_CONFIGS,
   ORB_RING_PETAL_COUNTS,
 } from '../orbAnimPresets';
-import { generateOrbPetalConfigs } from '../generateOrbPetalConfigs';
+import {
+  generateOrbPetalConfigs,
+  sliceOrbRings,
+} from '../generateOrbPetalConfigs';
 
 const RING_CENTERS = ORB_RING_CONFIGS.map(r => r.centerRadius);
 const RING_THICKNESSES = ORB_RING_CONFIGS.map(r => r.thickness);
@@ -126,5 +131,74 @@ describe('generateOrbPetalConfigs', () => {
       expect(p.burstSpeed).toBeGreaterThanOrEqual(ORB_BURST_SPEED_MIN);
       expect(p.burstSpeed).toBeLessThanOrEqual(ORB_BURST_SPEED_MAX);
     }
+  });
+
+  describe('ringCount', () => {
+    it('ringCount 1 produces petals for exactly the first ring', () => {
+      const petals = generateOrbPetalConfigs({ rng: createRng(20), ringCount: 1 });
+      expect(petals.length).toBe(ORB_RING_CONFIGS[0]!.petalCount);
+      for (const p of petals) {
+        expect(p.ringIndex).toBe(0);
+      }
+    });
+
+    it('ringCount 3 (default) produces the full capture ring set unchanged', () => {
+      const a = generateOrbPetalConfigs({ rng: createRng(21) });
+      const b = generateOrbPetalConfigs({ rng: createRng(21), ringCount: 3 });
+      expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    });
+
+    it('clamps ringCount 0 up to a single ring', () => {
+      const petals = generateOrbPetalConfigs({ rng: createRng(22), ringCount: 0 });
+      expect(petals.length).toBe(ORB_RING_CONFIGS[0]!.petalCount);
+      for (const p of petals) {
+        expect(p.ringIndex).toBe(0);
+      }
+    });
+
+    it('clamps ringCount 4 down to the full ring set', () => {
+      const petals = generateOrbPetalConfigs({ rng: createRng(23), ringCount: 4 });
+      expect(petals.length).toBe(ORB_RING_PETAL_COUNTS.reduce((a, b) => a + b, 0));
+    });
+
+    it('letter preset produces exactly 7 petals on a single ring with valid image indices', () => {
+      const petals = generateOrbPetalConfigs({
+        rng: createRng(24),
+        rings: LETTER_ORB_RING_CONFIGS,
+      });
+      expect(petals.length).toBe(LETTER_ORB_PETAL_COUNT);
+      for (const p of petals) {
+        expect(p.ringIndex).toBe(0);
+        expect(p.imageIndex).toBeGreaterThanOrEqual(0);
+        expect(p.imageIndex).toBeLessThan(ORB_PETAL_COUNT);
+      }
+    });
+
+    it('same seed + same letter preset produces identical output', () => {
+      const a = generateOrbPetalConfigs({
+        rng: createRng(25),
+        rings: LETTER_ORB_RING_CONFIGS,
+      });
+      const b = generateOrbPetalConfigs({
+        rng: createRng(25),
+        rings: LETTER_ORB_RING_CONFIGS,
+      });
+      expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    });
+  });
+
+  describe('sliceOrbRings', () => {
+    it('selects the first N ring configs in order', () => {
+      const sliced = sliceOrbRings(ORB_RING_CONFIGS, 2);
+      expect(sliced).toHaveLength(2);
+      expect(sliced[0]).toBe(ORB_RING_CONFIGS[0]);
+      expect(sliced[1]).toBe(ORB_RING_CONFIGS[1]);
+    });
+
+    it('clamps out-of-range counts to [1, 3]', () => {
+      expect(sliceOrbRings(ORB_RING_CONFIGS, 0)).toHaveLength(1);
+      expect(sliceOrbRings(ORB_RING_CONFIGS, 9)).toHaveLength(3);
+      expect(sliceOrbRings(ORB_RING_CONFIGS, -2)).toHaveLength(1);
+    });
   });
 });

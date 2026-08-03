@@ -33,6 +33,8 @@ export type PetalAnimState = {
   angle: number;
   scaleX: number;
   opacity: number;
+  /** Wrong-feedback tint strength carried per petal (0 = untinted). */
+  tintStrength: number;
 };
 
 export type OrbAnimState = {
@@ -42,6 +44,11 @@ export type OrbAnimState = {
   overallOpacity: number;
   petals: PetalAnimState[];
   captureVisualT: number;
+  /** Wrong-feedback tint color carried for the petal draw (0–1 channels). */
+  tintR: number;
+  tintG: number;
+  tintB: number;
+  tintStrength: number;
 };
 
 export type OrbAnimationConfig = {
@@ -50,6 +57,17 @@ export type OrbAnimationConfig = {
   targetCenterX: number;
   targetCenterY: number;
   targetDiameter: number;
+  /** When set, the enter spiral starts here instead of the shared origin. */
+  initialCenterX?: number;
+  initialCenterY?: number;
+  /** When set, the enter spiral starts at this diameter instead of the spawn size. */
+  initialDiameter?: number;
+  /** When true, the orb renders assembled at the target without an enter spiral. */
+  skipEnter?: boolean;
+  /** Delay (ms) before the enter spiral starts. */
+  enterDelayMs?: number;
+  /** Delay (ms) before the burst starts once `startBurst` fires. */
+  popDelayMs?: number;
 };
 
 export type PetalSpawnConfig = {

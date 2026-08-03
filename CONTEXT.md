@@ -109,7 +109,7 @@ The flower-garden realisation of the capture-bubble role in the table exercise. 
 _Avoid_: bubble, flower bubble
 
 **Exit flight**:
-The flower-garden table exercise's match-success departure: after an Escape burst the captured roamer flies from the orb center through the matched rose's position (a constant-speed waypoint, not a landing) and continues to an off-screen point beyond the screen edge nearest that rose, where it is permanently eliminated (hidden for the rest of the exercise). Drives the `ESCAPING` and `ESCAPED` flight states in the roamer state machine. The undersea analogue is the koi's straight off-screen swim after its bubble pops.
+The flower-garden table exercise's match-success departure: after an Escape burst the captured roamer flies from the orb center through the matched rose's position (a constant-speed waypoint, not a landing) and continues to an off-screen point beyond the screen edge nearest that rose, where it is permanently eliminated (hidden for the rest of the exercise). Drives the `ESCAPING` and `ESCAPED` flight states in the roamer state machine. The word transformation exercise uses the same departure: on sequence solved the roamer carrying the solved conjugated form flies through that cell's rose position and off-screen. The undersea analogue is the koi's straight off-screen swim after its bubble pops.
 _Avoid_: escape animation, farewell flight, exit animation
 
 **Petal ring**:
@@ -123,6 +123,10 @@ _Avoid_: pettel (typo), leaf, rose petal, wing
 **Orb lifecycle**:
 Three-phase animation sequence matching the undersea capture bubble's phase machine: Enter (spiral-in cluster arrival → assembly), Idle (continuous ring rotation + petal self-spin + radial drift), Burst (petals scatter outward and fade). The captured roamer is visible through all phases. Control flow is identical to `useBubbleAnimation`: a shared-value driven compute function maps phase + normalized progress to per-petal positions, with ring-rotation and petal-drift parameters computed from an `OrbAnimationConfig`.
 _Avoid_: bubble lifecycle, capture phase sequence
+
+**Letter orb**:
+The generic single-letter display role in the word-transformation mechanic: a small circle that carries one letter, inflates on appear (enter), holds while the learner interacts, and bursts on pop (delete). Wrong taps tint it red and shake it briefly (~1 s) before it reverts. The undersea theme realises this role as a bubble; the flower-garden theme realises it as a mini petal circle — a capture orb reduced by config (1 petal ring, 7 petals, smaller petals, letter-slot diameter) sharing the capture orb's animation machinery, enter/idle/burst lifecycle, and wrong-feedback.
+_Avoid_: letter bubble (use only when describing the undersea realisation specifically), petal circle (use only when describing the flower-garden realisation specifically)
 
 **Table**:
 A conjugation grid: row headers (pronouns), column headers (infinitives), and body cells (conjugated forms).

@@ -2,6 +2,11 @@ import type { PetalRingConfig } from './orbAnimTypes';
 
 export const ORB_PETAL_COUNT = 21;
 
+/** Ring-count knob bounds for exercises that want fewer petal rings (e.g. letter orbs). */
+export const ORB_RING_COUNT_MIN = 1;
+export const ORB_RING_COUNT_MAX = 3;
+export const ORB_RING_COUNT_DEFAULT = 3;
+
 export const ORB_ENTER_DURATION_MS = 500;
 export const ORB_BURST_DURATION_MS = 400;
 
@@ -66,3 +71,32 @@ export const ORB_RING_CONFIGS: ReadonlyArray<PetalRingConfig> = ORB_RING_RADII_F
     widthFraction: radius.widthFraction,
   }),
 );
+
+/** Letter-orb preset: a single small petal ring for word-transformation letters. */
+export const LETTER_ORB_RING_COUNT = 1;
+export const LETTER_ORB_PETAL_COUNT = 7;
+
+export const LETTER_ORB_RING_CONFIGS: ReadonlyArray<PetalRingConfig> = [
+  {
+    ringIndex: 0,
+    centerRadius: 0.4,
+    thickness: 0.14,
+    petalCount: LETTER_ORB_PETAL_COUNT,
+    rotationSpeed: 0.35,
+    direction: 1,
+    widthFraction: 0.5,
+    phaseOffset: 0,
+  },
+];
+
+/** Petal size factor for letter orbs (capture orb inner ring ≈ 0.9). */
+export const LETTER_ORB_PETAL_SIZE_FACTOR = 0.6;
+
+/** Wrong-feedback tint strength applied to petals while a letter orb flashes wrong. */
+export const ORB_WRONG_TINT_STRENGTH = 0.82;
+/** Whole-orb shake frequency (Hz) while wrong feedback is active. */
+export const ORB_WRONG_SHAKE_HZ = 11;
+/** Total wrong-feedback duration (ms), matching the undersea bubble. */
+export const ORB_WRONG_FEEDBACK_MS = 1000;
+/** Ramp-up / ramp-down duration (ms) of the wrong tint + shake envelope. */
+export const ORB_WRONG_RAMP_MS = 180;

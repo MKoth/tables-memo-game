@@ -1,13 +1,331 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  Glyphs,
+  Group,
+  vec,
+} from '@shopify/react-native-skia';
+import {
+  Easing,
+  useDerivedValue,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import type { ThemeLetterOrbProps } from '../../../../../themeContract';
+import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
+import { generateOrbPetalConfigs, sliceOrbRings } from '../../../orb/generateOrbPetalConfigs';
+import {
+  LETTER_ORB_PETAL_SIZE_FACTOR,
+  LETTER_ORB_RING_CONFIGS,
+  LETTER_ORB_RING_COUNT,
+  ORB_ENTER_DURATION_MS,
+  ORB_WRONG_FEEDBACK_MS,
+  ORB_WRONG_RAMP_MS,
+} from '../../../orb/orbAnimPresets';
+import { PetalRingLayer, type PetalSlot } from '../../../orb/PetalRingLayer';
+import { BurstIntent } from '../../../orb/orbAnimTypes';
+import {
+  useOrbAnimation,
+  type OrbWrongState,
+} from '../../../orb/useOrbAnimation';
+import { createRng, hashSeedString } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
 
-export function FlowerGardenLetterOrb(_props: ThemeLetterOrbProps) {
-  return <View style={styles.container} pointerEvents="none" />;
+const LABEL_STROKE_WIDTH = 2;
+const LABEL_FILL_COLOR = '#ffffff';
+const LABEL_STROKE_COLOR = '#0a2840';
+const LABEL_WRONG_COLOR = '#ff5a5a';
+
+function parseHexColor(hex: string): { r: number; g: number; b: number } {
+  const normalized = hex.replace('#', '').trim();
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map(c => c + c)
+          .join('')
+      : normalized.slice(0, 6);
+  const n = Number.parseInt(value, 16);
+  if (Number.isNaN(n)) {
+    return { r: 1, g: 0.35, b: 0.35 };
+  }
+  return {
+    r: ((n >> 16) & 255) / 255,
+    g: ((n >> 8) & 255) / 255,
+    b: (n & 255) / 255,
+  };
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
+function FlowerGardenLetterOrbComponent({
+  char,
+  centerX,
+  centerY,
+  diameter,
+  status,
+  image: _image,
+  font,
+  clock,
+  initialCenterX,
+  initialCenterY,
+  initialDiameter,
+  skipEnter = false,
+  moveDurationMs: _moveDurationMs,
+  wrongTintColor = LABEL_WRONG_COLOR,
+  popDelayMs,
+  enterDelayMs,
+  onPopSound,
+  onEnterSound,
+  onEnterComplete,
+  onMoveComplete: _onMoveComplete,
+  onPopComplete,
+  labelFixed = false,
+  letterSpacing = 0,
+  wobbleBoostT: _wobbleBoostT,
+}: ThemeLetterOrbProps) {
+  const { images } = useFlowerGardenAssetsContext();
+  const orbPetalImages = images.orbPetalImages;
+
+  const petalSeed = useMemo(() => hashSeedString(`flower-garden-letter-orb-${char}`), [char]);
+  const rings = useMemo(
+    () => sliceOrbRings(LETTER_ORB_RING_CONFIGS, LETTER_ORB_RING_COUNT),
+    [],
+  );
+  const petals = useMemo(
+    () =>
+      generateOrbPetalConfigs({
+        rng: createRng(petalSeed),
+        rings,
+      }),
+    [petalSeed, rings],
+  );
+
+  const slots = useMemo<PetalSlot[]>(
+    () => petals.map((petal, index) => ({ spawnIndex: index, imageIndex: petal.imageIndex })),
+    [petals],
+  );
+
+  const orbConfig = useMemo(
+    () => ({
+      originX: skipEnter ? centerX : (initialCenterX ?? centerX),
+      originY: skipEnter ? centerY : (initialCenterY ?? centerY),
+      targetCenterX: centerX,
+      targetCenterY: centerY,
+      targetDiameter: diameter,
+      initialDiameter,
+      skipEnter,
+      enterDelayMs,
+      popDelayMs,
+    }),
+    [
+      centerX,
+      centerY,
+      diameter,
+      enterDelayMs,
+      initialCenterX,
+      initialCenterY,
+      initialDiameter,
+      popDelayMs,
+      skipEnter,
+    ],
+  );
+
+  const wrongT = useSharedValue(0);
+  const wrongTint = useMemo(() => parseHexColor(wrongTintColor), [wrongTintColor]);
+
+  const wrongState = useMemo<OrbWrongState>(
+    () => ({
+      wrongProgress: wrongT,
+      clock,
+      tintR: wrongTint.r,
+      tintG: wrongTint.g,
+      tintB: wrongTint.b,
+    }),
+    [clock, wrongT, wrongTint],
+  );
+
+  useEffect(() => {
+    if (status !== 'wrong') {
+      wrongT.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
+      return;
+    }
+    const rampMs = ORB_WRONG_RAMP_MS;
+    const holdMs = Math.max(0, ORB_WRONG_FEEDBACK_MS - rampMs * 2);
+    wrongT.value = withSequence(
+      withTiming(1, { duration: rampMs, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: holdMs }),
+      withTiming(0, { duration: rampMs, easing: Easing.inOut(Easing.cubic) }),
+    );
+  }, [status, wrongT]);
+
+  const onPopCompleteRef = useRef(onPopComplete);
+  onPopCompleteRef.current = onPopComplete;
+  const onEnterCompleteRef = useRef(onEnterComplete);
+  onEnterCompleteRef.current = onEnterComplete;
+  const onPopSoundRef = useRef(onPopSound);
+  onPopSoundRef.current = onPopSound;
+  const onEnterSoundRef = useRef(onEnterSound);
+  onEnterSoundRef.current = onEnterSound;
+
+  const handleBurstCompleteWorklet = useCallback((_burstIdleTimeMs: number, _intent: number) => {
+    'worklet';
+    const onComplete = onPopCompleteRef.current;
+    if (onComplete != null) {
+      scheduleOnRN(onComplete);
+    }
+  }, []);
+
+  const { anim, startBurst } = useOrbAnimation(
+    orbConfig,
+    rings,
+    petals,
+    () => {},
+    true,
+    handleBurstCompleteWorklet,
+    wrongState,
+  );
+
+  const statusRef = useRef<ThemeLetterOrbProps['status'] | null>(null);
+  const startBurstRef = useRef(startBurst);
+  startBurstRef.current = startBurst;
+
+  useEffect(() => {
+    const previous = statusRef.current;
+    statusRef.current = status;
+    if (status === 'popped' && previous !== 'popped') {
+      startBurstRef.current(BurstIntent.Release);
+    }
+  }, [status]);
+
+  const popSoundTrigger = useSharedValue(0);
+  const enterSoundTrigger = useSharedValue(0);
+  const enterCompleteTrigger = useSharedValue(0);
+
+  useEffect(() => {
+    if (status !== 'popped') {
+      return;
+    }
+    const delay = popDelayMs ?? 0;
+    const sound = onPopSoundRef.current;
+    if (sound != null) {
+      popSoundTrigger.value = 0;
+      popSoundTrigger.value = withDelay(
+        delay,
+        withTiming(1, { duration: 0 }, finished => {
+          'worklet';
+          if (finished) {
+            scheduleOnRN(sound);
+          }
+        }),
+      );
+    }
+    // Delay + sound are read from refs so this only fires on the popped transition.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, popSoundTrigger]);
+
+  useEffect(() => {
+    if (skipEnter) {
+      return;
+    }
+    const delay = enterDelayMs ?? 0;
+    const sound = onEnterSoundRef.current;
+    if (sound != null) {
+      enterSoundTrigger.value = 0;
+      enterSoundTrigger.value = withDelay(
+        delay,
+        withTiming(1, { duration: 0 }, finished => {
+          'worklet';
+          if (finished) {
+            scheduleOnRN(sound);
+          }
+        }),
+      );
+    }
+    const onEnterCompleteCallback = onEnterCompleteRef.current;
+    if (onEnterCompleteCallback != null) {
+      enterCompleteTrigger.value = 0;
+      enterCompleteTrigger.value = withDelay(
+        delay + ORB_ENTER_DURATION_MS,
+        withTiming(1, { duration: 0 }, finished => {
+          'worklet';
+          if (finished) {
+            scheduleOnRN(onEnterCompleteCallback);
+          }
+        }),
+      );
+    }
+    // Enter delay is read from the config at mount; the sound refs stay current.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enterSoundTrigger, enterCompleteTrigger, skipEnter]);
+
+  const glyphs = useMemo(() => {
+    const ids = font.getGlyphIDs(char);
+    const textWidth = font.getTextWidth(char);
+    const metrics = font.getMetrics();
+    const offsetX = diameter * 0.5 - textWidth * 0.5;
+    const offsetY = diameter * 0.5 - (metrics.ascent + metrics.descent) * 0.5;
+    let curX = offsetX;
+    return ids.map((id, i) => {
+      const pos = vec(curX, offsetY);
+      if (i < char.length) {
+        curX += font.getTextWidth(char[i]) + letterSpacing;
+      }
+      return { id, pos };
+    });
+  }, [char, diameter, font, letterSpacing]);
+
+  const labelTransform = useDerivedValue(() => {
+    const { centerX: cx, centerY: cy, diameter: d } = anim.value;
+    const ox = diameter * 0.5;
+    const oy = diameter * 0.5;
+    const scale = labelFixed ? 1 : d > 0 ? d / diameter : 1;
+    return [
+      { translateX: cx - d * 0.5 },
+      { translateY: cy - d * 0.5 },
+      { translateX: ox },
+      { translateY: oy },
+      { scale },
+      { translateX: -ox },
+      { translateY: -oy },
+    ];
+  });
+
+  const labelOpacity = useDerivedValue(() => {
+    const { overallOpacity, captureVisualT } = anim.value;
+    return overallOpacity * captureVisualT;
+  });
+
+  const fillColor = status === 'wrong' ? LABEL_WRONG_COLOR : LABEL_FILL_COLOR;
+
+  if (orbPetalImages == null) {
+    return null;
+  }
+
+  return (
+    <Group>
+      <PetalRingLayer
+        sizeFactor={LETTER_ORB_PETAL_SIZE_FACTOR}
+        slots={slots}
+        anim={anim}
+        images={orbPetalImages}
+      />
+      <Group transform={labelTransform} opacity={labelOpacity}>
+        <Group
+          style="stroke"
+          strokeWidth={LABEL_STROKE_WIDTH}
+          strokeJoin="round"
+          strokeCap="round"
+          color={LABEL_STROKE_COLOR}>
+          <Glyphs font={font} glyphs={glyphs} />
+        </Group>
+        <Glyphs font={font} glyphs={glyphs} color={fillColor} />
+      </Group>
+    </Group>
+  );
+}
+
+/**
+ * Memoized so a single popped/inflating orb does not force React-Native-Skia
+ * to reconcile every other orb in the canvas on each game-state change.
+ */
+export const FlowerGardenLetterOrb = React.memo(FlowerGardenLetterOrbComponent);

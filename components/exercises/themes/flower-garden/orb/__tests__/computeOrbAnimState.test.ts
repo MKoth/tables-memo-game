@@ -5,9 +5,10 @@ import {
   ORB_PETAL_FADE_START,
   ORB_RING_CONFIGS,
   ORB_SPAWN_DIAMETER_RATIO,
+  ORB_WRONG_TINT_STRENGTH,
 } from '../orbAnimPresets';
 import { OrbPhase, type OrbAnimationConfig } from '../orbAnimTypes';
-import { computeOrbAnimState } from '../orbAnimWorklets';
+import { computeOrbAnimState, type OrbWrongStateInput } from '../orbAnimWorklets';
 
 const CONFIG: OrbAnimationConfig = {
   originX: 100,
@@ -440,4 +441,98 @@ describe('computeOrbAnimState', () => {
     expect(ORB_RING_CONFIGS[1]!.direction).toBe(-1);
     expect(ORB_RING_CONFIGS[0]!.rotationSpeed).not.toBe(ORB_RING_CONFIGS[1]!.rotationSpeed);
   });
+
+  describe('wrong feedback (tint + shake)', () => {
+    const wrong: OrbWrongStateInput = { progress: 0.5, clockMs: 0, r: 1, g: 0.35, b: 0.35 };
+
+    it('wrongProgress 0 produces zero tint strength and no shake', () => {
+      const petals = makePetals(33);
+      const state = computeOrbAnimState(
+        OrbPhase.Idle,
+        1,
+        0,
+        1000,
+        CONFIG,
+        ORB_RING_CONFIGS,
+        petals,
+        { ...wrong, progress: 0 },
+      );
+      expect(state.tintStrength).toBe(0);
+      expect(state.centerX).toBeCloseTo(CONFIG.targetCenterX, 5);
+      expect(state.centerY).toBeCloseTo(CONFIG.targetCenterY, 5);
+      for (const p of state.petals) {
+        expect(p.tintStrength).toBe(0);
+      }
+    });
+
+    it('wrongProgress 1 carries full tint strength through per-petal state', () => {
+      const petals = makePetals(35);
+      const state = computeOrbAnimState(
+        OrbPhase.Idle,
+        1,
+        0,
+        1000,
+        CONFIG,
+        ORB_RING_CONFIGS,
+        petals,
+        { ...wrong, progress: 1 },
+      );
+      expect(state.tintStrength).toBeCloseTo(ORB_WRONG_TINT_STRENGTH, 5);
+      expect(state.tintR).toBe(wrong.r);
+      expect(state.tintG).toBe(wrong.g);
+      expect(state.tintB).toBe(wrong.b);
+      for (const p of state.petals) {
+        expect(p.tintStrength).toBeCloseTo(ORB_WRONG_TINT_STRENGTH, 5);
+      }
+    });
+
+    it('wrongProgress 1 shakes the orb center at the wrong-shake amplitude', () => {
+      const petals = makePetals(37);
+      const state = computeOrbAnimState(
+        OrbPhase.Idle,
+        1,
+        0,
+        0,
+        CONFIG,
+        ORB_RING_CONFIGS,
+        petals,
+        { ...wrong, progress: 1 },
+      );
+      const amplitude = Math.max(2, CONFIG.targetDiameter * 0.05);
+      const dx = Math.abs(state.centerX - CONFIG.targetCenterX);
+      const dy = Math.abs(state.centerY - CONFIG.targetCenterY);
+      expect(dx).toBeLessThanOrEqual(amplitude + 1e-6);
+      expect(dy).toBeLessThanOrEqual(amplitude + 1e-6);
+      expect(dx + dy).toBeGreaterThan(0);
+    });
+
+    it('wrong tint fields do not disturb idle ring-radius invariants', () => {
+      const petals = makePetals(39);
+      const state = computeOrbAnimState(
+        OrbPhase.Idle,
+        1,
+        0,
+        1500,
+        CONFIG,
+        ORB_RING_CONFIGS,
+        petals,
+        { ...wrong, progress: 1 },
+      );
+      for (let i = 0; i < state.petals.length; i++) {
+        const p = state.petals[i]!;
+        const ringIndex = petals[i]!.ringIndex;
+        const center = RING_CENTERS[ringIndex]!;
+        const thickness = RING_THICKNESSES[ringIndex]!;
+        const minR = (center - thickness * 0.5) * CONFIG.targetDiameter;
+        const maxR = (center + thickness * 0.5) * CONFIG.targetDiameter;
+        const r = Math.hypot(p.x - CONFIG.targetCenterX, p.y - CONFIG.targetCenterY);
+        expect(r).toBeGreaterThanOrEqual(minR - amplitudeTolerance());
+        expect(r).toBeLessThanOrEqual(maxR + amplitudeTolerance());
+      }
+    });
+  });
 });
+
+function amplitudeTolerance(): number {
+  return Math.max(2, CONFIG.targetDiameter * 0.05) + 1e-3;
+}
