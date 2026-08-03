@@ -21,8 +21,6 @@ import { FlowerGardenScenery } from './scenery/FlowerGardenScenery';
 import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
 import { useFieldFlowerConfigs } from './scenery/FieldFlowerShaderLayer/useFieldFlowerConfigs';
 import { useRoamerSimulation, type RoamerSimulation } from './roamer/core/useRoamerSimulation';
-import { FlowerGardenParticleLayer } from './roamer/particles/FlowerGardenParticleLayer';
-import { PARTICLE_Z } from './roamer/particles/particleConfig';
 import { useFlowerGardenAssetsContext } from './core/providers/FlowerGardenAssetsProvider';
 import { generateOrbPetalConfigs } from './orb/generateOrbPetalConfigs';
 import { createRng, hashSeedString } from './scenery/BushShaderLayer/helpers/seededRandom';
@@ -404,13 +402,6 @@ function SimAndLayers({
 
   return (
     <>
-      <View style={[styles.fullLayer, { zIndex: PARTICLE_Z }]} pointerEvents="none">
-        <FlowerGardenParticleLayer
-          runtimeEntries={sim.runtimeEntries}
-          width={screenWidth}
-          height={screenHeight}
-        />
-      </View>
       <RoamerOrbLayer
         words={words}
         interactive={interactive}

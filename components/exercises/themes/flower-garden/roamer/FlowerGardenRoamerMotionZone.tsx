@@ -7,6 +7,7 @@ import type { RoamerSimulation } from './core/useRoamerSimulation';
 import { useRoamerSimulation } from './core/useRoamerSimulation';
 import { armRoamerExitFlight } from './core/exitFlightWorklets';
 import { resolveRoamerExitLegs } from './core/resolveRoamerExitPath';
+import { FlowerGardenParticleLayer } from './particles/FlowerGardenParticleLayer';
 import { RoamerLayer } from './RoamerLayer';
 
 export type FlowerGardenRoamerMotionZoneController = {
@@ -39,8 +40,16 @@ function PlainRoamerMotionZone({
   sim,
   hiddenIndices = [],
 }: FlowerGardenRoamerMotionZoneProps) {
+  const { screenWidth, screenHeight } = useExerciseLayout();
   return (
     <View style={styles.container} pointerEvents="box-none">
+      {sim != null && (
+        <FlowerGardenParticleLayer
+          runtimeEntries={sim.runtimeEntries}
+          width={screenWidth}
+          height={screenHeight}
+        />
+      )}
       <RoamerLayer
         words={words}
         interactive={interactive}
@@ -113,6 +122,11 @@ function EscapableRoamerMotionZone({
 
   return (
     <View style={styles.container} pointerEvents="box-none">
+      <FlowerGardenParticleLayer
+        runtimeEntries={sim.runtimeEntries}
+        width={screenWidth}
+        height={screenHeight}
+      />
       <RoamerLayer
         words={words}
         interactive={interactive}
