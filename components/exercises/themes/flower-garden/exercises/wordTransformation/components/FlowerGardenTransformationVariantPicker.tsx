@@ -104,6 +104,7 @@ export function FlowerGardenTransformationVariantPicker({
               onPopSound={item.popDelayMs != null ? playPop : undefined}
               image={orbPetalImages[0]!}
               orbPetalImages={orbPetalImages}
+              cloudPatchImages={images.cloudPatchImages}
               font={font}
               clock={clock}
             />

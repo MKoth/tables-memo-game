@@ -55,7 +55,58 @@ export function createOrbCloudLayerConfig(partial: {
     fadeOutMs: ORB_CLOUD_FADE_OUT_MS,
     minSizeFraction: ORB_CLOUD_MIN_SIZE_FRACTION,
     maxSizeFraction: ORB_CLOUD_MAX_SIZE_FRACTION,
+    spawnMarginFraction: ORB_CLOUD_SPAWN_MARGIN_FRACTION,
     initialDelayMaxMs: ORB_CLOUD_INITIAL_DELAY_MAX_MS,
+    dismissFadeMs: ORB_CLOUD_DISMISS_FADE_MS,
+    dismissing: 0,
+    imageCount: partial.imageCount,
+  };
+}
+
+export const LETTER_ORB_CLOUD_PATCH_COUNT = 2;
+
+export const LETTER_ORB_CLOUD_OPACITY = 0.55;
+export const LETTER_ORB_CLOUD_OPACITY_JITTER = 0.1;
+
+export const LETTER_ORB_CLOUD_EDGE_BIAS = 0.35;
+
+export const LETTER_ORB_CLOUD_LIFETIME_MIN_MS = 2000;
+export const LETTER_ORB_CLOUD_LIFETIME_MAX_MS = 5200;
+
+export const LETTER_ORB_CLOUD_FADE_IN_MS = 1200;
+export const LETTER_ORB_CLOUD_FADE_OUT_MS = 1200;
+
+/** Letter orbs are 34-74px, so patches stay proportionally small. */
+export const LETTER_ORB_CLOUD_MIN_SIZE_FRACTION = 0.9;
+export const LETTER_ORB_CLOUD_MAX_SIZE_FRACTION = 0.95;
+
+/** Letter orbs are small: patches hug the center more loosely. */
+export const LETTER_ORB_CLOUD_SPAWN_MARGIN_FRACTION = 0.4;
+
+export const LETTER_ORB_CLOUD_INITIAL_DELAY_MAX_MS = 250;
+
+export function createLetterOrbCloudLayerConfig(partial: {
+  centerX: number;
+  centerY: number;
+  diameter: number;
+  imageCount: number;
+}): OrbCloudLayerConfig {
+  return {
+    centerX: partial.centerX,
+    centerY: partial.centerY,
+    diameter: partial.diameter,
+    patchCount: LETTER_ORB_CLOUD_PATCH_COUNT,
+    peakOpacity: LETTER_ORB_CLOUD_OPACITY,
+    opacityJitter: LETTER_ORB_CLOUD_OPACITY_JITTER,
+    edgeBias: LETTER_ORB_CLOUD_EDGE_BIAS,
+    lifetimeMinMs: LETTER_ORB_CLOUD_LIFETIME_MIN_MS,
+    lifetimeMaxMs: LETTER_ORB_CLOUD_LIFETIME_MAX_MS,
+    fadeInMs: LETTER_ORB_CLOUD_FADE_IN_MS,
+    fadeOutMs: LETTER_ORB_CLOUD_FADE_OUT_MS,
+    minSizeFraction: LETTER_ORB_CLOUD_MIN_SIZE_FRACTION,
+    maxSizeFraction: LETTER_ORB_CLOUD_MAX_SIZE_FRACTION,
+    spawnMarginFraction: LETTER_ORB_CLOUD_SPAWN_MARGIN_FRACTION,
+    initialDelayMaxMs: LETTER_ORB_CLOUD_INITIAL_DELAY_MAX_MS,
     dismissFadeMs: ORB_CLOUD_DISMISS_FADE_MS,
     dismissing: 0,
     imageCount: partial.imageCount,

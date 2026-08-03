@@ -27,6 +27,7 @@ import {
   ORB_WRONG_RAMP_MS,
 } from '../../../orb/orbAnimPresets';
 import { PetalRingLayer, type PetalSlot } from '../../../orb/PetalRingLayer';
+import { LetterOrbCloudLayer } from '../../../orb/LetterOrbCloudLayer';
 import { BurstIntent } from '../../../orb/orbAnimTypes';
 import {
   useOrbAnimation,
@@ -85,8 +86,13 @@ function FlowerGardenLetterOrbComponent({
   labelFixed = false,
   letterSpacing = 0,
   wobbleBoostT: _wobbleBoostT,
-}: ThemeLetterOrbProps & { orbPetalImages?: ReadonlyArray<SkImage> | null }) {
+  cloudPatchImages: cloudPatchImagesProp,
+}: ThemeLetterOrbProps & {
+  orbPetalImages?: ReadonlyArray<SkImage> | null;
+  cloudPatchImages?: ReadonlyArray<SkImage> | null;
+}) {
   const orbPetalImages = orbPetalImagesProp ?? null;
+  const cloudPatchImages: ReadonlyArray<SkImage> | null = cloudPatchImagesProp ?? null;
 
   const petalSeed = useMemo(() => hashSeedString(`flower-garden-letter-orb-${char}`), [char]);
   const rings = useMemo(
@@ -334,6 +340,15 @@ function FlowerGardenLetterOrbComponent({
 
   return (
     <Group>
+      {cloudPatchImages != null && (
+        <LetterOrbCloudLayer
+          anim={anim}
+          centerX={centerX}
+          centerY={centerY}
+          diameter={diameter}
+          images={cloudPatchImages}
+        />
+      )}
       <PetalRingLayer
         sizeFactor={LETTER_ORB_PETAL_SIZE_FACTOR}
         slots={slots}

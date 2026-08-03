@@ -63,6 +63,7 @@ export function FlowerGardenTransformationInsertFlight({
           status="idle"
           image={orbPetalImages[0]!}
           orbPetalImages={orbPetalImages}
+          cloudPatchImages={images.cloudPatchImages}
           font={font}
           clock={clock}
         />

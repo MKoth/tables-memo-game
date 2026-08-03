@@ -24,15 +24,22 @@ export type UseOrbCloudLayerResult = {
   layerOpacity: SharedValue<number>;
 };
 
-export function useOrbCloudLayer(
+export type UseOrbCloudPoolLoopResult = {
+  pool: SharedValue<CloudPatchSlot[]>;
+  configSv: SharedValue<OrbCloudLayerConfig>;
+  pendingSpawns: SharedValue<number>;
+};
+
+/**
+ * Owns the patch pool and its frame-driven simulation. Consumers attach their
+ * own visibility (e.g. a follow transform + the orb's overall opacity).
+ */
+export function useOrbCloudPoolLoop(
   config: OrbCloudLayerConfig,
-  phase: SharedValue<number>,
-): UseOrbCloudLayerResult {
+): UseOrbCloudPoolLoopResult {
   const pool = useSharedValue<CloudPatchSlot[]>(createEmptyOrbCloudPool(config.patchCount));
   const configSv = useSharedValue(config);
   const pendingSpawns = useSharedValue(0);
-  const fadeInT = useSharedValue(0);
-  const dismissT = useSharedValue(0);
   const lastTimestamp = useSharedValue(-1);
 
   useLayoutEffect(() => {
@@ -43,33 +50,7 @@ export function useOrbCloudLayer(
     pool.value = createEmptyOrbCloudPool(configSv.value.patchCount);
     pendingSpawns.value = 0;
     runOnUI(staggerOrbCloudPool)(pool.value, configSv.value.initialDelayMaxMs);
-    fadeInT.value = 0;
-    dismissT.value = 0;
-    fadeInT.value = withTiming(1, {
-      duration: ORB_CLOUD_GLOBAL_FADE_IN_MS,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [pool, pendingSpawns, configSv, fadeInT, dismissT]);
-
-  useAnimatedReaction(
-    () => phase.value,
-    (currentPhase, prevPhase) => {
-      if (currentPhase === OrbPhase.Burst && prevPhase !== OrbPhase.Burst) {
-        const current = configSv.value;
-        if (current.dismissing === 1) {
-          return;
-        }
-        configSv.value = { ...current, dismissing: 1 };
-        pendingSpawns.value = 0;
-        dismissT.value = 0;
-        dismissT.value = withTiming(1, {
-          duration: current.dismissFadeMs,
-          easing: Easing.out(Easing.cubic),
-        });
-      }
-    },
-    [phase, configSv, dismissT, pendingSpawns],
-  );
+  }, [pool, pendingSpawns, configSv]);
 
   const onCloudFrame = useCallback(
     (frameInfo: { timestamp: number }) => {
@@ -101,6 +82,46 @@ export function useOrbCloudLayer(
     const subscription = AppState.addEventListener('change', syncActive);
     return () => subscription.remove();
   }, [cloudLoop, lastTimestamp]);
+
+  return { pool, configSv, pendingSpawns };
+}
+
+export function useOrbCloudLayer(
+  config: OrbCloudLayerConfig,
+  phase: SharedValue<number>,
+): UseOrbCloudLayerResult {
+  const { pool, configSv, pendingSpawns } = useOrbCloudPoolLoop(config);
+  const fadeInT = useSharedValue(0);
+  const dismissT = useSharedValue(0);
+
+  useEffect(() => {
+    fadeInT.value = 0;
+    dismissT.value = 0;
+    fadeInT.value = withTiming(1, {
+      duration: ORB_CLOUD_GLOBAL_FADE_IN_MS,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [fadeInT, dismissT]);
+
+  useAnimatedReaction(
+    () => phase.value,
+    (currentPhase, prevPhase) => {
+      if (currentPhase === OrbPhase.Burst && prevPhase !== OrbPhase.Burst) {
+        const current = configSv.value;
+        if (current.dismissing === 1) {
+          return;
+        }
+        configSv.value = { ...current, dismissing: 1 };
+        pendingSpawns.value = 0;
+        dismissT.value = 0;
+        dismissT.value = withTiming(1, {
+          duration: current.dismissFadeMs,
+          easing: Easing.out(Easing.cubic),
+        });
+      }
+    },
+    [phase, configSv, dismissT, pendingSpawns],
+  );
 
   const layerOpacity = useDerivedValue(() => fadeInT.value * (1 - dismissT.value));
 

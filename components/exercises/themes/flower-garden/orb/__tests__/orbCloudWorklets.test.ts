@@ -22,6 +22,7 @@ function makeConfig(overrides?: Partial<OrbCloudLayerConfig>): OrbCloudLayerConf
     fadeOutMs: 500,
     minSizeFraction: 0.4,
     maxSizeFraction: 0.75,
+    spawnMarginFraction: 0.6,
     initialDelayMaxMs: 500,
     dismissFadeMs: 380,
     dismissing: 0,
@@ -166,7 +167,7 @@ describe('stepOrbCloudPool spawn', () => {
 
     const dx = slot.x - config.centerX;
     const dy = slot.y - config.centerY;
-    const maxRadius = Math.max(0, 200 - slot.size * 0.6);
+    const maxRadius = Math.max(0, 200 - slot.size * config.spawnMarginFraction);
     expect(Math.sqrt(dx * dx + dy * dy)).toBeLessThanOrEqual(maxRadius + 0.001);
   });
 

@@ -44,6 +44,8 @@ export type OrbCloudLayerConfig = {
   fadeOutMs: number;
   minSizeFraction: number;
   maxSizeFraction: number;
+  /** Spawn radius is capped so a patch stays inside the orb disk. */
+  spawnMarginFraction: number;
   initialDelayMaxMs: number;
   dismissFadeMs: number;
   /** 1 once the orb starts bursting; blocks respawns so the layer fades out. */

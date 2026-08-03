@@ -97,6 +97,7 @@ export function FlowerGardenTransformationWordOrbs({
               onEnterSound={letter.enterDelayMs != null ? playInflate : undefined}
               image={orbPetalImages[0]!}
               orbPetalImages={orbPetalImages}
+              cloudPatchImages={images.cloudPatchImages}
               font={font}
               clock={clock}
             />

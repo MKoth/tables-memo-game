@@ -1,6 +1,6 @@
 import type { CloudPatchSlot, OrbCloudLayerConfig } from './orbCloudTypes';
 import { CloudPatchStage } from './orbCloudTypes';
-import { ORB_CLOUD_ROTATION_RANGE_RAD, ORB_CLOUD_SPAWN_MARGIN_FRACTION } from './orbCloudPresets';
+import { ORB_CLOUD_ROTATION_RANGE_RAD } from './orbCloudPresets';
 
 function lerp(a: number, b: number, t: number): number {
   'worklet';
@@ -62,7 +62,7 @@ export function spawnOrbCloudPatch(
   const size = lerp(config.minSizeFraction, config.maxSizeFraction, rand()) * config.diameter;
   const maxRadius = Math.max(
     0,
-    config.diameter * 0.5 - size * ORB_CLOUD_SPAWN_MARGIN_FRACTION,
+    config.diameter * 0.5 - size * config.spawnMarginFraction,
   );
   const radius = maxRadius * sampleOrbCloudRadiusFraction(config.edgeBias, rand);
   const angle = rand() * Math.PI * 2;
