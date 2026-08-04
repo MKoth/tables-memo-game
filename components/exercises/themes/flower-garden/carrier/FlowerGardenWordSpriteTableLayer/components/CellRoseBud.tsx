@@ -7,6 +7,7 @@ import {
   computeRoseFlashUniforms,
   computeRoseHighlightUniforms,
 } from '../presets/roseFlashPresets';
+import { computeRoseBudRingHashes } from '../presets/roseBudRingHash';
 import { TINT_FLASH_MS } from '../config/flowerTableLayerConfig';
 import type { RoseTintRgb } from '../presets/roseTintPresets';
 import type { FlowerCellConfig } from '../types';
@@ -79,6 +80,7 @@ export function CellRoseBud({
 }: CellRoseBudProps) {
   const idx = config.index;
   const tintVariant = highlightTint ?? tint;
+  const ringHashes = computeRoseBudRingHashes(idx);
 
   const uniforms = useDerivedValue(() => {
     const scale = layoutScale.value[idx] ?? 1;
@@ -150,7 +152,8 @@ export function CellRoseBud({
       petalWidthDeviation: PADDED_PETAL_WIDTH_DEVIATION,
       ringOpacityMin: PADDED_RING_OPACITY_MIN,
       ringOpacityMax: PADDED_RING_OPACITY_MAX,
-      roseSeed: idx,
+      ringHashBorder: ringHashes.ringHashBorder,
+      ringHashWidth: ringHashes.ringHashWidth,
       coefficient,
       iTime: clock.value / 1000,
     };

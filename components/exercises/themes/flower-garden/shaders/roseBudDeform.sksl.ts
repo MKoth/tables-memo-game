@@ -1,5 +1,6 @@
 export const MAX_PETALS = 16;
 export const MAX_RINGS = 4;
+export const MAX_PETAL_SLOTS = MAX_RINGS * MAX_PETALS;
 
 export const ROSE_BUD_SKSL = `
 uniform float roseX;
@@ -46,7 +47,8 @@ uniform float ringBorderDeviation[${MAX_RINGS}];
 uniform float petalWidthDeviation[${MAX_RINGS}];
 uniform float ringOpacityMin[${MAX_RINGS}];
 uniform float ringOpacityMax[${MAX_RINGS}];
-uniform float roseSeed;
+uniform float ringHashBorder[${MAX_PETAL_SLOTS}];
+uniform float ringHashWidth[${MAX_PETAL_SLOTS}];
 uniform float coefficient;
 uniform float iTime;
 uniform shader budTexture;
@@ -67,10 +69,6 @@ half4 samplePetal(int variant, float2 coord) {
   else if (variant == 3) { return petalTexture4.eval(coord); }
   else if (variant == 4) { return petalTexture5.eval(coord); }
   else                   { return petalTexture6.eval(coord); }
-}
-
-float ringHash(int a, int b, int c, float seed) {
-  return fract(sin(float(a) * 12.9898 + float(b) * 78.233 + float(c) * 37.719 + seed * 51.137) * 43758.5453);
 }
 
 half4 main(float2 fragCoord) {
@@ -146,10 +144,10 @@ half4 main(float2 fragCoord) {
       int variant = i;
       if (variant >= 6) { variant -= 6; }
 
-      float borderRng = ringHash(ring, i, 0, roseSeed);
+      float borderRng = ringHashBorder[ring * ${MAX_PETALS} + i];
       float petalBorder = ringBorderL[ring] * (1.0 + (borderRng * 2.0 - 1.0) * borderDevFrac);
 
-      float widthRng = ringHash(ring, i, 1, roseSeed);
+      float widthRng = ringHashWidth[ring * ${MAX_PETALS} + i];
       float halfSpan = petalWidthL[ring] * (1.0 + (widthRng * 2.0 - 1.0) * widthDevFrac) * 3.14159265;
 
       float petalInner = ringRadiusL[ring] - petalBorder;
