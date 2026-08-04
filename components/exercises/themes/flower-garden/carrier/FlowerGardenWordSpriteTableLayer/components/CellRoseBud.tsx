@@ -3,6 +3,7 @@ import { FilterMode, ImageShader, MipmapMode, Rect, Shader, Skia, type SkImage, 
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { MAX_RINGS, ROSE_BUD_SKSL, roseBudUniformDefaults } from '../../../shaders/roseBudDeform.sksl';
+import { ROSE_PETAL_ATLAS_FLAT_REGIONS, ROSE_PETAL_ATLAS_WIDTH, ROSE_PETAL_ATLAS_HEIGHT } from '../../../core/assets/textureAtlas/rosePetalAtlasRegions';
 import {
   computeRoseFlashUniforms,
   computeRoseHighlightUniforms,
@@ -59,7 +60,7 @@ export type CellRoseBudProps = {
   tintFlashUntil: SharedValue<number[]>;
   roseBudImage: SkImage;
   roseCenterImage: SkImage;
-  petalImages: readonly SkImage[];
+  petalAtlas: SkImage | null;
 };
 
 export function CellRoseBud({
@@ -76,7 +77,7 @@ export function CellRoseBud({
   tintFlashUntil,
   roseBudImage,
   roseCenterImage,
-  petalImages,
+  petalAtlas,
 }: CellRoseBudProps) {
   const idx = config.index;
   const tintVariant = highlightTint ?? tint;
@@ -156,12 +157,17 @@ export function CellRoseBud({
       ringHashWidth: ringHashes.ringHashWidth,
       coefficient,
       iTime: clock.value / 1000,
+      petalRegions: ROSE_PETAL_ATLAS_FLAT_REGIONS,
     };
   });
 
   const rectX = useDerivedValue(() => uniforms.value.roseX);
   const rectY = useDerivedValue(() => uniforms.value.roseY);
   const rectSize = useDerivedValue(() => uniforms.value.roseW);
+
+  if (petalAtlas == null) {
+    return null;
+  }
 
   return (
     <Rect x={rectX} y={rectY} width={rectSize} height={rectSize}>
@@ -189,66 +195,11 @@ export function CellRoseBud({
           sampling={SPRITE_SAMPLING}
         />
         <ImageShader
-          image={petalImages[0]}
-          x={rectX}
-          y={rectY}
-          width={rectSize}
-          height={rectSize}
-          fit="fill"
-          tx="clamp"
-          ty="clamp"
-          sampling={SPRITE_SAMPLING}
-        />
-        <ImageShader
-          image={petalImages[1]}
-          x={rectX}
-          y={rectY}
-          width={rectSize}
-          height={rectSize}
-          fit="fill"
-          tx="clamp"
-          ty="clamp"
-          sampling={SPRITE_SAMPLING}
-        />
-        <ImageShader
-          image={petalImages[2]}
-          x={rectX}
-          y={rectY}
-          width={rectSize}
-          height={rectSize}
-          fit="fill"
-          tx="clamp"
-          ty="clamp"
-          sampling={SPRITE_SAMPLING}
-        />
-        <ImageShader
-          image={petalImages[3]}
-          x={rectX}
-          y={rectY}
-          width={rectSize}
-          height={rectSize}
-          fit="fill"
-          tx="clamp"
-          ty="clamp"
-          sampling={SPRITE_SAMPLING}
-        />
-        <ImageShader
-          image={petalImages[4]}
-          x={rectX}
-          y={rectY}
-          width={rectSize}
-          height={rectSize}
-          fit="fill"
-          tx="clamp"
-          ty="clamp"
-          sampling={SPRITE_SAMPLING}
-        />
-        <ImageShader
-          image={petalImages[5]}
-          x={rectX}
-          y={rectY}
-          width={rectSize}
-          height={rectSize}
+          image={petalAtlas}
+          x={0}
+          y={0}
+          width={ROSE_PETAL_ATLAS_WIDTH}
+          height={ROSE_PETAL_ATLAS_HEIGHT}
           fit="fill"
           tx="clamp"
           ty="clamp"

@@ -28,6 +28,8 @@ import {
   LYCAENIDAE_RIGHT_WING_SOURCES,
   MOSS_STONE_SOURCES,
   PETAL_ATLAS_SOURCE,
+  ROSE_PETAL_ATLAS_SOURCE,
+  ROSE_LEAF_ATLAS_SOURCE,
   PETAL_SOURCES,
   POPPY_FLOWER_SOURCES,
   POPPY_LEAF_SOURCES,
@@ -763,6 +765,28 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         trackSource();
         trackSource();
 
+        let rosePetalAtlas: SkImage | null = null;
+        try {
+          rosePetalAtlas = await loadSkiaImage(ROSE_PETAL_ATLAS_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load rose petal atlas');
+          }
+        }
+
+        trackSource();
+
+        let roseLeafAtlas: SkImage | null = null;
+        try {
+          roseLeafAtlas = await loadSkiaImage(ROSE_LEAF_ATLAS_SOURCE);
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load rose leaf atlas');
+          }
+        }
+
+        trackSource();
+
         if (cancelled) {
           return;
         }
@@ -804,6 +828,8 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             bumblebeeLeftWingImage,
             bumblebeeRightWingImage,
             cloudPetalAtlas,
+            rosePetalAtlas,
+            roseLeafAtlas,
           },
         });
       } catch (error) {

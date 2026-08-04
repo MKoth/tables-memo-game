@@ -9,13 +9,13 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     petal4: require('../../../../../../assets/images/flower_garden_theme/roses/pettel4.png'),
     petal5: require('../../../../../../assets/images/flower_garden_theme/roses/pettel5.png'),
     petal6: require('../../../../../../assets/images/flower_garden_theme/roses/pettel6.png'),
-    bud: require('../../../../../../assets/images/flower_garden_theme/roses/rose_bud.png'),
-    center: require('../../../../../../assets/images/flower_garden_theme/roses/rose_center.png'),
-    substrate: require('../../../../../../assets/images/flower_garden_theme/roses/substrate.png'),
+    bud: require('../../../../../../assets/images/flower_garden_theme/roses/rose_bud_3x.png'),
+    center: require('../../../../../../assets/images/flower_garden_theme/roses/rose_center_3x.png'),
+    substrate: require('../../../../../../assets/images/flower_garden_theme/roses/substrate_3x.png'),
   },
   bush: {
-    stem: require('../../../../../../assets/images/flower_garden_theme/roses/stem.png'),
-    calyx: require('../../../../../../assets/images/flower_garden_theme/roses/rose_base.png'),
+    stem: require('../../../../../../assets/images/flower_garden_theme/roses/stem_3x.png'),
+    calyx: require('../../../../../../assets/images/flower_garden_theme/roses/rose_base_3x.png'),
     leaf1: require('../../../../../../assets/images/flower_garden_theme/roses/leaf1.png'),
     leaf2: require('../../../../../../assets/images/flower_garden_theme/roses/leaf2.png'),
     leaf3: require('../../../../../../assets/images/flower_garden_theme/roses/leaf3.png'),
@@ -170,6 +170,8 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
   },
   cloudAtlas: require('../../../../../../assets/images/flower_garden_theme/cloud_atlas.png'),
   petalAtlas: require('../../../../../../assets/images/flower_garden_theme/petal_atlas.png'),
+  rosePetalAtlas: require('../../../../../../assets/images/flower_garden_theme/rose_petal_atlas.png'),
+  roseLeafAtlas: require('../../../../../../assets/images/flower_garden_theme/rose_leaf_atlas.png'),
 } as const;
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
@@ -503,6 +505,8 @@ export const CLOUD_PATCH_SOURCES = [
 
 export const CLOUD_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloudAtlas;
 export const PETAL_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.petalAtlas;
+export const ROSE_PETAL_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.rosePetalAtlas;
+export const ROSE_LEAF_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roseLeafAtlas;
 
 export const ORB_PETAL_SOURCES = [
   ORB_PETAL1_SOURCE,
@@ -569,6 +573,8 @@ export type FlowerGardenThemeImages = {
   bumblebeeLeftWingImage: SkImage | null;
   bumblebeeRightWingImage: SkImage | null;
   cloudPetalAtlas: CloudPetalAtlas | null;
+  rosePetalAtlas: SkImage | null;
+  roseLeafAtlas: SkImage | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT =
@@ -583,7 +589,9 @@ export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bee).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bumblebee).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.cloudAtlas).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.petalAtlas).length;
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.petalAtlas).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.rosePetalAtlas).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roseLeafAtlas).length;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;
 

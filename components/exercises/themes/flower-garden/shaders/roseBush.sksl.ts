@@ -35,10 +35,8 @@ uniform float leafRestX[${LEAF_SLOTS}];
 uniform float leafRestY[${LEAF_SLOTS}];
 uniform shader stemTexture;
 uniform shader calyxTexture;
-uniform shader leafTexture1;
-uniform shader leafTexture2;
-uniform shader leafTexture3;
-uniform shader leafTexture4;
+uniform shader leafAtlas;
+uniform float4 leafRegions[4];
 
 const float COVERING = ${COVERING_SIZE}.0;
 const float MAX_PARALLAX = ${MAX_PARALLAX_DELTA}.0;
@@ -54,10 +52,13 @@ float2 bezierTangent(float t, float2 p0, float2 p1, float2 p2) {
 }
 
 half4 sampleLeaf(int variant, float2 coord) {
-  if (variant == 0)      { return leafTexture1.eval(coord); }
-  else if (variant == 1) { return leafTexture2.eval(coord); }
-  else if (variant == 2) { return leafTexture3.eval(coord); }
-  else                   { return leafTexture4.eval(coord); }
+  float4 rgn;
+  if (variant == 0)      { rgn = leafRegions[0]; }
+  else if (variant == 1) { rgn = leafRegions[1]; }
+  else if (variant == 2) { rgn = leafRegions[2]; }
+  else                   { rgn = leafRegions[3]; }
+  float2 atlasCoord = float2(rgn.x + coord.x * rgn.z / COVERING, rgn.y + coord.y * rgn.w / COVERING);
+  return leafAtlas.eval(atlasCoord);
 }
 
 half4 blendLeaf(half4 base, float lT, float lSide, float lTilt, int lVariant, float lSize,

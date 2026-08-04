@@ -48,6 +48,7 @@ function FlowerGardenSceneryContent() {
   const stemImage = images.stemImage;
   const calyxImage = images.calyxImage;
   const leafImages = images.leafImages;
+  const roseLeafAtlas = images.roseLeafAtlas;
   const substrateImage = images.substrateImage;
   const cloverImages = images.cloverImages;
   const mossStoneImages = images.mossStoneImages;
@@ -80,6 +81,7 @@ function FlowerGardenSceneryContent() {
     leafImages != null &&
     leafImages.length >= 4 &&
     substrateImage != null &&
+    roseLeafAtlas != null &&
     bushConfigs.length > 0 &&
     roseBellSizes.length > 0 &&
     wordSpriteBridge != null;
@@ -138,7 +140,7 @@ function FlowerGardenSceneryContent() {
             roseBellSizes={roseBellSizes}
             stemImage={stemImage}
             calyxImage={calyxImage}
-            leafImages={leafImages}
+            leafAtlas={roseLeafAtlas}
           />
           <RoseSubstrateLayer
             bushConfigs={bushConfigs}

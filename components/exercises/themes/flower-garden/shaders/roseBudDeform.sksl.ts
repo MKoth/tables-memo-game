@@ -53,22 +53,23 @@ uniform float coefficient;
 uniform float iTime;
 uniform shader budTexture;
 uniform shader roseCenterTexture;
-uniform shader petalTexture1;
-uniform shader petalTexture2;
-uniform shader petalTexture3;
-uniform shader petalTexture4;
-uniform shader petalTexture5;
-uniform shader petalTexture6;
+uniform shader petalAtlas;
+uniform float4 petalRegions[6];
 
 const float petalBottomDarkness = 0.7;
 
-half4 samplePetal(int variant, float2 coord) {
-  if (variant == 0)      { return petalTexture1.eval(coord); }
-  else if (variant == 1) { return petalTexture2.eval(coord); }
-  else if (variant == 2) { return petalTexture3.eval(coord); }
-  else if (variant == 3) { return petalTexture4.eval(coord); }
-  else if (variant == 4) { return petalTexture5.eval(coord); }
-  else                   { return petalTexture6.eval(coord); }
+half4 samplePetal(int variant, float2 texCoord) {
+  float4 rgn;
+  if (variant == 0)      { rgn = petalRegions[0]; }
+  else if (variant == 1) { rgn = petalRegions[1]; }
+  else if (variant == 2) { rgn = petalRegions[2]; }
+  else if (variant == 3) { rgn = petalRegions[3]; }
+  else if (variant == 4) { rgn = petalRegions[4]; }
+  else                   { rgn = petalRegions[5]; }
+  float u = (texCoord.x - roseX) / roseW;
+  float v = (texCoord.y - roseY) / roseH;
+  float2 atlasCoord = float2(rgn.x + u * rgn.z, rgn.y + v * rgn.w);
+  return petalAtlas.eval(atlasCoord);
 }
 
 half4 main(float2 fragCoord) {

@@ -22,6 +22,7 @@ import {
   MAX_PARALLAX_DELTA,
   ROSE_BUSH_SKSL,
 } from '../../shaders/roseBush.sksl';
+import { ROSE_LEAF_ATLAS_FLAT_REGIONS, ROSE_LEAF_ATLAS_WIDTH, ROSE_LEAF_ATLAS_HEIGHT } from '../../core/assets/textureAtlas/roseLeafAtlasRegions';
 
 function compileRoseBushEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(ROSE_BUSH_SKSL);
@@ -85,7 +86,7 @@ type BushShaderBushRectProps = {
   roseBellSizes: readonly number[];
   stemImage: SkImage;
   calyxImage: SkImage;
-  leafImages: readonly SkImage[];
+  leafAtlas: SkImage;
 };
 
 function BushShaderBushRect({
@@ -96,16 +97,14 @@ function BushShaderBushRect({
   roseBellSizes,
   stemImage,
   calyxImage,
-  leafImages,
+  leafAtlas,
 }: BushShaderBushRectProps) {
-  const readyLeafImages = useMemo(
-    () => (leafImages.length >= 4 ? leafImages.slice(0, 4) : null),
-    [leafImages],
-  );
-
   const { staticUniforms, bushRect } = useMemo(() => {
     return {
-      staticUniforms: pickBushStaticUniforms(bush, roseBellSizes),
+      staticUniforms: {
+        ...pickBushStaticUniforms(bush, roseBellSizes),
+        leafRegions: ROSE_LEAF_ATLAS_FLAT_REGIONS,
+      },
       bushRect: computeBushRect(bush, BUSH_RECT_MARGIN),
     };
   }, [bush, roseBellSizes]);
@@ -132,8 +131,6 @@ function BushShaderBushRect({
     };
   });
 
-  if (readyLeafImages == null) return null;
-
   return (
     <Rect x={bushRect.x} y={bushRect.y} width={bushRect.w} height={bushRect.h}>
       <Shader source={roseBushEffect} uniforms={uniforms}>
@@ -157,19 +154,16 @@ function BushShaderBushRect({
           tx="clamp"
           ty="clamp"
         />
-        {readyLeafImages.map((img, i) => (
-          <ImageShader
-            key={`leaf-${i}`}
-            image={img}
-            x={0}
-            y={0}
-            width={COVERING_SIZE}
-            height={COVERING_SIZE}
-            fit="fill"
-            tx="clamp"
-            ty="clamp"
-          />
-        ))}
+        <ImageShader
+          image={leafAtlas}
+          x={0}
+          y={0}
+          width={ROSE_LEAF_ATLAS_WIDTH}
+          height={ROSE_LEAF_ATLAS_HEIGHT}
+          fit="fill"
+          tx="clamp"
+          ty="clamp"
+        />
       </Shader>
     </Rect>
   );
@@ -183,7 +177,7 @@ export type BushShaderLayerProps = {
   roseBellSizes: readonly number[];
   stemImage: SkImage;
   calyxImage: SkImage;
-  leafImages: readonly SkImage[];
+  leafAtlas: SkImage;
 };
 
 function BushShaderLayerImpl({
@@ -194,7 +188,7 @@ function BushShaderLayerImpl({
   roseBellSizes,
   stemImage,
   calyxImage,
-  leafImages,
+  leafAtlas,
 }: BushShaderLayerProps) {
   const { width, height } = useWindowDimensions();
 
@@ -220,7 +214,7 @@ function BushShaderLayerImpl({
           roseBellSizes={roseBellSizes}
           stemImage={stemImage}
           calyxImage={calyxImage}
-          leafImages={leafImages}
+          leafAtlas={leafAtlas}
         />
       ))}
     </Canvas>
