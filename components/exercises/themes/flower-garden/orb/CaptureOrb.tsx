@@ -131,7 +131,7 @@ export function CaptureOrb({
           sizeFactor={ORB_PETAL_SIZE_FACTOR_BY_RING[ring.ringIndex] ?? 1}
           slots={slotsByRing[ring.ringIndex] ?? []}
           anim={anim}
-          atlas={cloudPetalAtlas.image}
+          atlas={cloudPetalAtlas.petalImage}
           regions={cloudPetalAtlas.petalRegions}
         />
       ))}

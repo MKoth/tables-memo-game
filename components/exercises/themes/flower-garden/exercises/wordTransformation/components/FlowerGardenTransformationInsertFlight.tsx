@@ -61,7 +61,7 @@ export function FlowerGardenTransformationInsertFlight({
           skipEnter
           moveDurationMs={landed ? 0 : flight.flyDurationMs}
           status="idle"
-          image={cloudPetalAtlas.image}
+          image={cloudPetalAtlas.cloudImage}
           cloudPetalAtlas={cloudPetalAtlas}
           font={font}
           clock={clock}

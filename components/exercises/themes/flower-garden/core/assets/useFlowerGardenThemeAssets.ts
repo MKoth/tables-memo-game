@@ -13,7 +13,7 @@ import {
   CHAMOMILE_FLOWER_SOURCES,
   CHAMOMILE_LEAF_SOURCES,
   CHAMOMILE_STEM_SOURCES,
-  CLOUD_PATCH_SOURCES,
+  CLOUD_ATLAS_SOURCE,
   CLOVER_SOURCES,
   DANDELION_FLOWER_SOURCES,
   DANDELION_LEAF_SOURCES,
@@ -27,7 +27,7 @@ import {
   LYCAENIDAE_LEFT_WING_SOURCES,
   LYCAENIDAE_RIGHT_WING_SOURCES,
   MOSS_STONE_SOURCES,
-  ORB_PETAL_SOURCES,
+  PETAL_ATLAS_SOURCE,
   PETAL_SOURCES,
   POPPY_FLOWER_SOURCES,
   POPPY_LEAF_SOURCES,
@@ -42,20 +42,19 @@ import {
   type FlowerGardenBushKey,
   type FlowerGardenChamomileKey,
   type FlowerGardenDandelionKey,
-  type FlowerGardenOrbKey,
   type FlowerGardenPetalKey,
   type FlowerGardenPoppyKey,
   type FlowerGardenLycaenidaeKey,
   type FlowerGardenBeeKey,
   type FlowerGardenBumblebeeKey,
-  type FlowerGardenCloudKey,
   type FlowerGardenThemeImages,
   type FlowerGardenWildVioletKey,
 } from './flowerGardenThemeAssets';
 import {
   createFlowerGardenSoundController,
 } from './useFlowerGardenThemeSounds';
-import { buildCloudPetalAtlas } from './textureAtlas/buildCloudPetalAtlas';
+import { createCloudPetalAtlas } from './textureAtlas/buildCloudPetalAtlas';
+import type { CloudPetalAtlas } from './textureAtlas/buildCloudPetalAtlas';
 
 type FlowerGardenAssetsReady = {
   images: FlowerGardenThemeImages;
@@ -163,24 +162,6 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
         for (let i = 0; i < bumblebeeEntries.length; i++) {
           bumblebeeEntries[i]!;
-          trackSource();
-        }
-
-        const orbEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.orb,
-        ) as Array<[FlowerGardenOrbKey, number]>;
-
-        for (let i = 0; i < orbEntries.length; i++) {
-          orbEntries[i]!;
-          trackSource();
-        }
-
-        const cloudEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.cloud,
-        ) as Array<[FlowerGardenCloudKey, number]>;
-
-        for (let i = 0; i < cloudEntries.length; i++) {
-          cloudEntries[i]!;
           trackSource();
         }
 
@@ -766,51 +747,21 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
-        const orbPetalLoadResults = await Promise.allSettled(
-          ORB_PETAL_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode orb petal image');
-            }
-            return img;
-          }),
-        );
-        const orbPetalImages: SkImage[] = [];
-        for (const result of orbPetalLoadResults) {
-          if (result.status === 'fulfilled') {
-            orbPetalImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load an orb petal image');
+        let cloudPetalAtlas: CloudPetalAtlas | null = null;
+        try {
+          const cloudAtlasImage = await loadSkiaImage(CLOUD_ATLAS_SOURCE);
+          const petalAtlasImage = await loadSkiaImage(PETAL_ATLAS_SOURCE);
+          if (cloudAtlasImage != null && petalAtlasImage != null) {
+            cloudPetalAtlas = createCloudPetalAtlas(cloudAtlasImage, petalAtlasImage);
+          }
+        } catch {
+          if (__DEV__) {
+            console.warn('[useFlowerGardenThemeAssets] Failed to load cloud/petal atlas');
           }
         }
 
-        if (cancelled) {
-          return;
-        }
-
-        const cloudPatchLoadResults = await Promise.allSettled(
-          CLOUD_PATCH_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode cloud patch image');
-            }
-            return img;
-          }),
-        );
-        const cloudPatchImages: SkImage[] = [];
-        for (const result of cloudPatchLoadResults) {
-          if (result.status === 'fulfilled') {
-            cloudPatchImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a cloud patch image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const cloudPetalAtlas = buildCloudPetalAtlas(cloudPatchImages, orbPetalImages);
+        trackSource();
+        trackSource();
 
         if (cancelled) {
           return;
@@ -852,12 +803,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             bumblebeeBodyImage,
             bumblebeeLeftWingImage,
             bumblebeeRightWingImage,
-            cloudPetalAtlas:
-              cloudPetalAtlas != null &&
-              cloudPatchImages.length === CLOUD_PATCH_SOURCES.length &&
-              orbPetalImages.length === ORB_PETAL_SOURCES.length
-                ? cloudPetalAtlas
-                : null,
+            cloudPetalAtlas,
           },
         });
       } catch (error) {

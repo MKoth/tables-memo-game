@@ -341,14 +341,14 @@ function FlowerGardenLetterOrbComponent({
         centerX={centerX}
         centerY={centerY}
         diameter={diameter}
-        atlas={cloudPetalAtlas.image}
+        atlas={cloudPetalAtlas.cloudImage}
         regions={cloudPetalAtlas.cloudRegions}
       />
       <PetalRingLayer
         sizeFactor={LETTER_ORB_PETAL_SIZE_FACTOR}
         slots={slots}
         anim={anim}
-        atlas={cloudPetalAtlas.image}
+        atlas={cloudPetalAtlas.petalImage}
         regions={cloudPetalAtlas.petalRegions}
       />
       <Group transform={labelTransform} opacity={labelOpacity}>

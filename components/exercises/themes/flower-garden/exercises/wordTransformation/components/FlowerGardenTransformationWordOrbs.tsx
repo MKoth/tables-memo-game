@@ -95,7 +95,7 @@ export function FlowerGardenTransformationWordOrbs({
               enterDelayMs={letter.enterDelayMs}
               onPopSound={letter.popDelayMs != null ? playPop : undefined}
               onEnterSound={letter.enterDelayMs != null ? playInflate : undefined}
-              image={cloudPetalAtlas.image}
+              image={cloudPetalAtlas.cloudImage}
               cloudPetalAtlas={cloudPetalAtlas}
               font={font}
               clock={clock}

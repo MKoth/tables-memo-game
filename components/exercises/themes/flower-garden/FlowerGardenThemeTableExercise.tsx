@@ -320,7 +320,7 @@ function RoamerOrbLayer({
                 centerY={targetCenterY}
                 diameter={targetDiameter}
                 phase={phase}
-                atlas={images.cloudPetalAtlas.image}
+                atlas={images.cloudPetalAtlas.cloudImage}
                 regions={images.cloudPetalAtlas.cloudRegions}
               />
             </View>

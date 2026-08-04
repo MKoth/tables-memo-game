@@ -168,6 +168,8 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     petal20: require('../../../../../../assets/images/flower_garden_theme/orb/pettel20.png'),
     petal21: require('../../../../../../assets/images/flower_garden_theme/orb/pettel21.png'),
   },
+  cloudAtlas: require('../../../../../../assets/images/flower_garden_theme/cloud_atlas.png'),
+  petalAtlas: require('../../../../../../assets/images/flower_garden_theme/petal_atlas.png'),
 } as const;
 
 export const ROSE_BUD_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roses.bud;
@@ -499,6 +501,9 @@ export const CLOUD_PATCH_SOURCES = [
   CLOUD_PATCH21_SOURCE,
 ] as const;
 
+export const CLOUD_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloudAtlas;
+export const PETAL_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.petalAtlas;
+
 export const ORB_PETAL_SOURCES = [
   ORB_PETAL1_SOURCE,
   ORB_PETAL2_SOURCE,
@@ -577,8 +582,8 @@ export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bee).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bumblebee).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.cloud).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.orb).length;
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.cloudAtlas).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.petalAtlas).length;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;
 

@@ -102,7 +102,7 @@ export function FlowerGardenTransformationVariantPicker({
               status={statusFor(item, wrongItemId ?? null, poppedItemIds)}
               popDelayMs={item.popDelayMs}
               onPopSound={item.popDelayMs != null ? playPop : undefined}
-              image={cloudPetalAtlas.image}
+              image={cloudPetalAtlas.cloudImage}
               cloudPetalAtlas={cloudPetalAtlas}
               font={font}
               clock={clock}

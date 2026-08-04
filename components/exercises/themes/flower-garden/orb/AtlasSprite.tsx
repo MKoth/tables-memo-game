@@ -1,21 +1,7 @@
 import React from 'react';
-import { ImageShader, Rect, Shader, Skia, type SkImage, type SkRuntimeEffect } from '@shopify/react-native-skia';
+import { Group, Image, Skia, type SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
-import {
-  ATLAS_SPRITE_SAMPLING,
-  ATLAS_SPRITE_SKSL,
-} from '../shaders/atlasSprite.sksl';
-import { ATLAS_PADDING_PX, type AtlasRegion } from '../core/assets/textureAtlas/packTextureAtlas';
-
-function compileAtlasSpriteEffect(): SkRuntimeEffect {
-  const effect = Skia.RuntimeEffect.Make(ATLAS_SPRITE_SKSL);
-  if (!effect) {
-    throw new Error('Failed to compile atlas sprite shader');
-  }
-  return effect;
-}
-
-const atlasSpriteEffect = compileAtlasSpriteEffect();
+import type { AtlasRegion } from '../core/assets/textureAtlas/packTextureAtlas';
 
 export function AtlasSprite({
   atlas,
@@ -28,42 +14,47 @@ export function AtlasSprite({
   width: SharedValue<number>;
   height: SharedValue<number>;
 }) {
-  const uniforms = useDerivedValue(() => {
+  const transform = useDerivedValue(() => {
     const r = region.value;
     const w = width.value;
     const h = height.value;
-    if (r == null || w <= 0 || h <= 0) {
-      return { region: [0, 0, 0, 0], destSize: [0, 0], padding: ATLAS_PADDING_PX };
+    if (r == null || w <= 0 || h <= 0 || r.width <= 0 || r.height <= 0) {
+      return [];
     }
-    return {
-      region: [r.x, r.y, r.width, r.height],
-      destSize: [w, h],
-      padding: ATLAS_PADDING_PX,
-    };
+    const scale = Math.min(w / r.width, h / r.height);
+    const fittedW = r.width * scale;
+    const fittedH = r.height * scale;
+    const offsetX = (w - fittedW) * 0.5;
+    const offsetY = (h - fittedH) * 0.5;
+    return [
+      { translateX: offsetX },
+      { translateY: offsetY },
+      { scale },
+      { translateX: -r.x },
+      { translateY: -r.y },
+    ];
   }, [region, width, height]);
+
+  const clipRect = useDerivedValue(() => {
+    return Skia.XYWHRect(0, 0, width.value, height.value);
+  }, [width, height]);
 
   if (atlas == null) {
     return null;
   }
 
-  const atlasWidth = atlas.width();
-  const atlasHeight = atlas.height();
-
   return (
-    <Rect x={0} y={0} width={width} height={height}>
-      <Shader source={atlasSpriteEffect} uniforms={uniforms}>
-        <ImageShader
+    <Group clip={clipRect}>
+      <Group transform={transform}>
+        <Image
           image={atlas}
           x={0}
           y={0}
-          width={atlasWidth}
-          height={atlasHeight}
+          width={atlas.width()}
+          height={atlas.height()}
           fit="fill"
-          tx="clamp"
-          ty="clamp"
-          sampling={ATLAS_SPRITE_SAMPLING}
         />
-      </Shader>
-    </Rect>
+      </Group>
+    </Group>
   );
 }
