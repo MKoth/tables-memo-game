@@ -2,20 +2,19 @@ import React, { useMemo } from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import {
   Canvas,
+  Circle,
   type SkImage,
 } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
+import { useDerivedValue } from 'react-native-reanimated';
 import {
   BushShaderBushRect,
 } from './BushShaderLayer/BushShaderLayer';
 import type { BushConfig } from './BushShaderLayer/types';
 import {
-  pickRoseStaticUniforms,
   pickStemList,
   resolveSceneryShadowStyle,
 } from './SceneryShadowLayer/pickSceneryShadowUniforms';
-import { RoseShadowLayer } from './SceneryShadowLayer/RoseShadowLayer';
-import { StemShadowRect } from './SceneryShadowLayer/StemShadowRect';
 import type { SceneryShadowStyle } from './SceneryShadowLayer/types';
 
 export type BushAndShadowLayerProps = {
@@ -29,6 +28,41 @@ export type BushAndShadowLayerProps = {
   leafAtlas: SkImage;
   style?: SceneryShadowStyle;
 };
+
+// TEMP EXPERIMENT: flat circle shadows, no leaves, no blur
+const SIMPLE_BUD_SHADOW_RADIUS_FRACTION = 0.4;
+const SIMPLE_STEM_SHADOW_RADIUS_SCALE = 3;
+const SIMPLE_SHADOW_OFFSET_X = 3;
+const SIMPLE_SHADOW_OFFSET_Y_TOP = 90;
+const SIMPLE_SHADOW_OFFSET_Y_BOTTOM = 4;
+
+type SimpleBudShadowProps = {
+  index: number;
+  radius: number;
+  color: string;
+  height: number;
+  layoutX: SharedValue<number[]>;
+  layoutY: SharedValue<number[]>;
+};
+
+function SimpleBudShadow({
+  index,
+  radius,
+  color,
+  height,
+  layoutX,
+  layoutY,
+}: SimpleBudShadowProps) {
+  const cx = useDerivedValue(() => (layoutX.value[index] ?? 0) + SIMPLE_SHADOW_OFFSET_X);
+  const cy = useDerivedValue(() => {
+    const y = layoutY.value[index] ?? 0;
+    const t = Math.min(Math.max(height > 0 ? y / height : 0, 0), 1);
+    const offsetY =
+      SIMPLE_SHADOW_OFFSET_Y_TOP * (1 - t) + SIMPLE_SHADOW_OFFSET_Y_BOTTOM * t;
+    return y + offsetY;
+  });
+  return <Circle cx={cx} cy={cy} r={radius} color={color} />;
+}
 
 function BushAndShadowLayerImpl({
   bushConfigs,
@@ -48,10 +82,16 @@ function BushAndShadowLayerImpl({
     bushConfigs,
     style,
   ]);
-  const roseStatic = useMemo(
-    () => pickRoseStaticUniforms(style, bushConfigs, roseBellSizes.length),
-    [style, bushConfigs, roseBellSizes.length],
-  );
+  const budShadows = useMemo(() => {
+    return roseBellSizes.map((size, i) => ({
+      index: i,
+      radius: size * SIMPLE_BUD_SHADOW_RADIUS_FRACTION,
+    }));
+  }, [roseBellSizes]);
+  const shadowColor = useMemo(() => {
+    const [r, g, b] = resolved.shadowColor;
+    return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${resolved.shadowOpacity})`;
+  }, [resolved]);
 
   if (width === 0 || height === 0) return null;
   if (
@@ -66,23 +106,25 @@ function BushAndShadowLayerImpl({
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
       {stems.map((slot, i) => (
-        <StemShadowRect
+        <Circle
           key={`shadow-stem-${i}`}
-          slot={slot}
-          layoutX={layoutX}
-          layoutY={layoutY}
-          style={resolved}
+          cx={slot.baseX + SIMPLE_SHADOW_OFFSET_X}
+          cy={slot.baseY + SIMPLE_SHADOW_OFFSET_Y_BOTTOM}
+          r={slot.baseWidth * SIMPLE_STEM_SHADOW_RADIUS_SCALE}
+          color={shadowColor}
         />
       ))}
-      <RoseShadowLayer
-        staticUniforms={roseStatic}
-        roseRadiusFraction={resolved.roseRadiusFraction}
-        layoutX={layoutX}
-        layoutY={layoutY}
-        bodySizes={roseBellSizes}
-        width={width}
-        height={height}
-      />
+      {budShadows.map(bud => (
+        <SimpleBudShadow
+          key={`shadow-rose-${bud.index}`}
+          index={bud.index}
+          radius={bud.radius}
+          color={shadowColor}
+          height={height}
+          layoutX={layoutX}
+          layoutY={layoutY}
+        />
+      ))}
       {bushConfigs.map(bush => (
         <BushShaderBushRect
           key={`bush-${bush.bushId}`}

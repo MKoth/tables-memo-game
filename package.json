@@ -12,7 +12,7 @@
   "dependencies": {
     "@react-native-clipboard/clipboard": "^1.16.3",
     "@react-native/new-app-screen": "0.85.3",
-    "@shopify/react-native-skia": "^2.6.4",
+    "@shopify/react-native-skia": "^2.10.1",
     "diff-match-patch": "^1.0.5",
     "react": "19.2.3",
     "react-native": "0.85.3",
