@@ -4,7 +4,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { FlightState, type RoamerRuntimeEntry } from '../core/types';
 import type { ParticleInternal, RoamerParticleConfig, RoamerParticleState } from './particleTypes';
-import { anyLiveDustRect } from './particleBounds';
+import { anyLiveDustRect, smoothDustRectSpeed } from './particleBounds';
 import {
   anyRoamerEmitting,
   computeDustRectAlive,
@@ -17,6 +17,7 @@ export function useParticleFrameLoop(
   pool: SharedValue<ParticleInternal[]>,
   lastEmitTimestamps: SharedValue<number[]>,
   rectAlive: SharedValue<number[]>,
+  rectSpeeds: SharedValue<number[]>,
   config: RoamerParticleConfig,
 ): void {
   const lastTimestamp = useSharedValue(-1);
@@ -93,10 +94,19 @@ export function useParticleFrameLoop(
       }
       rectAlive.value = alive;
 
+      const nextSpeeds = new Array(runtimeEntries.length);
+      for (let i = 0; i < runtimeEntries.length; i++) {
+        nextSpeeds[i] = smoothDustRectSpeed(
+          rectSpeeds.value[i] ?? 0,
+          runtimeEntries[i]!.runtime.speed.value,
+        );
+      }
+      rectSpeeds.value = nextSpeeds;
+
       pool.value = pool.value.slice();
       lastEmitTimestamps.value = lastEmitTimestamps.value.slice();
     },
-    [lastTimestamp, pool, lastEmitTimestamps, rectAlive, runtimeEntries, config],
+    [lastTimestamp, pool, lastEmitTimestamps, rectAlive, rectSpeeds, runtimeEntries, config],
   );
 
   const particleLoop = useFrameCallback(onParticleFrame, true);

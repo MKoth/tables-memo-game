@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Canvas, Rect, Shader } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
@@ -7,8 +7,9 @@ import type { RoamerRuntimeEntry } from '../core/types';
 import { createEmptyParticlePool } from './updateParticlePool';
 import { useParticleFrameLoop } from './useParticleFrameLoop';
 import { particleDustEffect } from './particleDust.sksl';
-import { DUST_RECT_HALF_EXTENT } from './particleBounds';
+import { computeDustRectHalfExtent } from './particleBounds';
 import { DEFAULT_PARTICLE_CONFIG, type ParticleInternal } from './particleTypes';
+import type { SpeciesParticleConfig } from './particleConfig';
 import { MAX_PARTICLES } from './particleConfig';
 
 export type FlowerGardenParticleLayerProps = {
@@ -58,23 +59,28 @@ type DustRectProps = {
   x: SharedValue<number>;
   y: SharedValue<number>;
   alive: SharedValue<number[]>;
+  speed: SharedValue<number[]>;
   index: number;
-  halfExtent: number;
+  cfg: SpeciesParticleConfig;
   uniforms: SharedValue<DustUniforms>;
 };
 
-function DustRectImpl({ x, y, alive, index, halfExtent, uniforms }: DustRectProps) {
+function DustRectImpl({ x, y, alive, speed, index, cfg, uniforms }: DustRectProps) {
+  const halfExtent = useDerivedValue(() => {
+    if (alive.value[index] !== 1) return 0;
+    return computeDustRectHalfExtent(cfg, speed.value[index] ?? 0);
+  });
   const rectX = useDerivedValue(() => {
     if (alive.value[index] !== 1) return 0;
-    return x.value - halfExtent;
+    return x.value - halfExtent.value;
   });
   const rectY = useDerivedValue(() => {
     if (alive.value[index] !== 1) return 0;
-    return y.value - halfExtent;
+    return y.value - halfExtent.value;
   });
   const rectSize = useDerivedValue(() => {
     if (alive.value[index] !== 1) return 0;
-    return halfExtent * 2;
+    return halfExtent.value * 2;
   });
 
   return (
@@ -94,12 +100,14 @@ export function FlowerGardenParticleLayer({
   const pool = useSharedValue<ParticleInternal[]>(createEmptyParticlePool());
   const lastEmitTimestamps = useSharedValue<number[]>([]);
   const rectAlive = useSharedValue<number[]>(Array(runtimeEntries.length).fill(0));
+  const rectSpeeds = useSharedValue<number[]>(Array(runtimeEntries.length).fill(0));
 
   useParticleFrameLoop(
     runtimeEntries,
     pool,
     lastEmitTimestamps,
     rectAlive,
+    rectSpeeds,
     DEFAULT_PARTICLE_CONFIG,
   );
 
@@ -107,24 +115,20 @@ export function FlowerGardenParticleLayer({
     return buildUniforms(pool.value, width, height);
   });
 
-  const halfExtents = useMemo(
-    () => runtimeEntries.map(entry => DUST_RECT_HALF_EXTENT[entry.spawn.species]),
-    [runtimeEntries],
-  );
-
   if (width <= 0 || height <= 0) return null;
 
   return (
     <View pointerEvents="none" style={styles.wrapper}>
       <Canvas style={styles.canvas}>
-        {runtimeEntries.map(({ runtime }, index) => (
+        {runtimeEntries.map(({ runtime, spawn }, index) => (
           <DustRect
             key={index}
             x={runtime.x}
             y={runtime.y}
             alive={rectAlive}
+            speed={rectSpeeds}
             index={index}
-            halfExtent={halfExtents[index]!}
+            cfg={DEFAULT_PARTICLE_CONFIG.species[spawn.species]}
             uniforms={particleUniforms}
           />
         ))}

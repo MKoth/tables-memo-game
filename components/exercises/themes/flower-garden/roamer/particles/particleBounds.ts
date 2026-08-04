@@ -1,23 +1,29 @@
-import type { RoamerSpecies } from '../core/types';
 import type { SpeciesParticleConfig } from './particleConfig';
-import { SPECIES_PARTICLE_CONFIGS } from './particleConfig';
 
 export const DUST_RECT_MARGIN = 4;
 
+export const DUST_RECT_SPEED_SMOOTHING = 0.08;
+
 export function computeDustRectHalfExtent(
   cfg: SpeciesParticleConfig,
+  speed: number,
   margin: number = DUST_RECT_MARGIN,
 ): number {
+  'worklet';
+  const trailReach = speed * (cfg.ttlMax / 1000);
   const driftReach = cfg.driftSpeed * (cfg.ttlMax / 1000);
   const maxRadius = cfg.startDiameterMax / 2;
-  return driftReach + maxRadius + margin;
+  return trailReach + driftReach + maxRadius + margin;
 }
 
-export const DUST_RECT_HALF_EXTENT: Record<RoamerSpecies, number> = {
-  butterfly: computeDustRectHalfExtent(SPECIES_PARTICLE_CONFIGS.butterfly),
-  bee: computeDustRectHalfExtent(SPECIES_PARTICLE_CONFIGS.bee),
-  bumblebee: computeDustRectHalfExtent(SPECIES_PARTICLE_CONFIGS.bumblebee),
-};
+export function smoothDustRectSpeed(
+  previous: number,
+  current: number,
+  smoothing: number = DUST_RECT_SPEED_SMOOTHING,
+): number {
+  'worklet';
+  return previous + (current - previous) * smoothing;
+}
 
 export function anyLiveDustRect(alive: number[]): boolean {
   'worklet';
