@@ -36,6 +36,37 @@ export function startOrbIdleClock(idleElapsedMs: SharedValue<number>): void {
   });
 }
 
+function enterIdle(
+  phase: SharedValue<number>,
+  idleClock: SharedValue<number> | undefined,
+  idleClockStartMs: SharedValue<number>,
+  idleElapsedMs: SharedValue<number>,
+): void {
+  'worklet';
+  if (idleClock != null) {
+    idleClockStartMs.value = idleClock.value;
+  } else {
+    startOrbIdleClock(idleElapsedMs);
+  }
+  phase.value = OrbPhase.Idle;
+}
+
+export function currentIdleElapsedMs(
+  phase: number,
+  idleClock: SharedValue<number> | undefined,
+  idleClockStartMs: SharedValue<number>,
+  idleElapsedMs: SharedValue<number>,
+): number {
+  'worklet';
+  if (idleClock != null) {
+    if (phase === OrbPhase.Idle) {
+      return Math.max(0, idleClock.value - idleClockStartMs.value);
+    }
+    return 0;
+  }
+  return idleElapsedMs.value;
+}
+
 export type OrbWrongState = {
   /** Wrong-feedback progress (0–1) driven by the caller, e.g. a wrong tap. */
   wrongProgress: SharedValue<number>;
@@ -55,10 +86,12 @@ export function useOrbAnimation(
   enabled = true,
   onBurstCompleteWorklet?: (burstIdleTimeMs: number, intent: BurstIntentValue) => void,
   wrongState?: OrbWrongState,
+  idleClock?: SharedValue<number>,
 ): UseOrbAnimationResult {
   const enterProgress = useSharedValue(0);
   const burstProgress = useSharedValue(0);
   const idleElapsedMs = useSharedValue(0);
+  const idleClockStartMs = useSharedValue(0);
   const burstIdleTimeMs = useSharedValue(0);
   const burstStartRealTimeMs = useSharedValue(0);
   const burstIntent = useSharedValue<BurstIntentValue>(BurstIntent.Release);
@@ -80,12 +113,16 @@ export function useOrbAnimation(
     [wrongState],
   );
 
+  const resolvedIdleElapsedMs = useDerivedValue(() =>
+    currentIdleElapsedMs(phase.value, idleClock, idleClockStartMs, idleElapsedMs),
+  );
+
   const anim = useDerivedValue(() =>
     computeOrbAnimState(
       phase.value,
       enterProgress.value,
       burstProgress.value,
-      phase.value === OrbPhase.Burst ? burstIdleTimeMs.value : idleElapsedMs.value,
+      phase.value === OrbPhase.Burst ? burstIdleTimeMs.value : resolvedIdleElapsedMs.value,
       configSv.value,
       rings,
       petals,
@@ -102,6 +139,7 @@ export function useOrbAnimation(
       enterProgress.value = 0;
       burstProgress.value = 0;
       idleElapsedMs.value = 0;
+      idleClockStartMs.value = 0;
       burstIdleTimeMs.value = 0;
       phase.value = OrbPhase.None;
       return;
@@ -115,8 +153,7 @@ export function useOrbAnimation(
     const currentConfig = configSv.value;
     if (currentConfig.skipEnter === true) {
       enterProgress.value = 1;
-      startOrbIdleClock(idleElapsedMs);
-      phase.value = OrbPhase.Idle;
+      enterIdle(phase, idleClock, idleClockStartMs, idleElapsedMs);
     } else {
       enterProgress.value = withDelay(
         currentConfig.enterDelayMs ?? 0,
@@ -126,8 +163,7 @@ export function useOrbAnimation(
           finished => {
             'worklet';
             if (finished) {
-              startOrbIdleClock(idleElapsedMs);
-              phase.value = OrbPhase.Idle;
+              enterIdle(phase, idleClock, idleClockStartMs, idleElapsedMs);
             }
           },
         ),
@@ -139,7 +175,17 @@ export function useOrbAnimation(
       cancelAnimation(burstProgress);
       cancelAnimation(idleElapsedMs);
     };
-  }, [enabled, enterProgress, burstProgress, idleElapsedMs, phase, burstIdleTimeMs, configSv]);
+  }, [
+    enabled,
+    enterProgress,
+    burstProgress,
+    idleElapsedMs,
+    idleClockStartMs,
+    idleClock,
+    phase,
+    burstIdleTimeMs,
+    configSv,
+  ]);
 
   const startBurst = useCallback(
     (intent: BurstIntentValue = BurstIntent.Release) => {
@@ -151,7 +197,12 @@ export function useOrbAnimation(
         enterProgress.value = 1;
       }
       burstIntent.value = intent;
-      burstIdleTimeMs.value = idleElapsedMs.value;
+      burstIdleTimeMs.value = currentIdleElapsedMs(
+        phase.value,
+        idleClock,
+        idleClockStartMs,
+        idleElapsedMs,
+      );
       cancelAnimation(idleElapsedMs);
       burstStartRealTimeMs.value = Date.now();
       phase.value = OrbPhase.Burst;
@@ -180,6 +231,8 @@ export function useOrbAnimation(
       configSv,
       enterProgress,
       idleElapsedMs,
+      idleClockStartMs,
+      idleClock,
       onDismiss,
       onBurstCompleteWorklet,
       phase,

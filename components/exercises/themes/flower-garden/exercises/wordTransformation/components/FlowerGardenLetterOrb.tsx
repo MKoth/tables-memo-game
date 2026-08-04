@@ -216,6 +216,7 @@ function FlowerGardenLetterOrbComponent({
     true,
     handleBurstCompleteWorklet,
     wrongState,
+    clock,
   );
 
   const statusRef = useRef<ThemeLetterOrbProps['status'] | null>(null);

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
-import { useExerciseClock } from '../../../../../core';
+import { useExerciseClockQuantized } from '../../../../../core';
 import { useExerciseLayout } from '../../../../../core';
 import {
   computeLetterLayout,
@@ -9,6 +9,7 @@ import {
 } from '../../../../../core/layout/exerciseLayout';
 import type { ThemeTransformationWordOrbsProps } from '../../../../../themeContract';
 import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
+import { ORB_IDLE_CLOCK_FPS } from '../../../orb/orbAnimPresets';
 import type { LetterOrbModel } from '../../../../../wordTransformation/domain';
 import { FlowerGardenLetterOrb } from './FlowerGardenLetterOrb';
 
@@ -36,7 +37,7 @@ export function FlowerGardenTransformationWordOrbs({
   const { roamerRect } = useExerciseLayout();
   const zoneRect = zoneRectProp ?? roamerRect;
   const { images } = useFlowerGardenAssetsContext();
-  const clock = useExerciseClock();
+  const clock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
 
   const layout = useMemo(
     () => computeLetterLayout(zoneRect, letters.length),

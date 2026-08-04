@@ -9,7 +9,11 @@ jest.mock('react-native-reanimated', () => {
   };
   return {
     ReduceMotion: { System: -1, Always: 0, Never: 1 },
-    useDerivedValue: (fn: () => unknown) => ({ value: fn() }),
+    useDerivedValue: (fn: () => unknown) => ({
+      get value() {
+        return fn();
+      },
+    }),
     useSharedValue: (initial: number) => {
       const sv = { value: initial };
       mockSharedValues.push(sv);
@@ -50,7 +54,12 @@ import {
   type PetalRingConfig,
   type PetalSpawnConfig,
 } from '../orbAnimTypes';
-import { useOrbAnimation, startOrbIdleClock } from '../useOrbAnimation';
+import {
+  useOrbAnimation,
+  startOrbIdleClock,
+  currentIdleElapsedMs,
+} from '../useOrbAnimation';
+import { computeOrbAnimState } from '../orbAnimWorklets';
 
 const CONFIG: OrbAnimationConfig = {
   originX: 100,
@@ -70,10 +79,14 @@ const mockReduceMotion = require('react-native-reanimated').ReduceMotion as {
 };
 
 type Captured = {
-  anim: unknown;
+  anim: { value: unknown };
   phase: { value: number };
   startBurst: (intent?: BurstIntentValue) => void;
 };
+
+function makeClock(initial: number): SharedValue<number> {
+  return { value: initial } as unknown as SharedValue<number>;
+}
 
 let lastResult: Captured | null = null;
 let lastError: unknown = null;
@@ -84,16 +97,27 @@ function HookHost({
   petals,
   onDismiss,
   enabled,
+  idleClock,
 }: {
   config: OrbAnimationConfig;
   rings: ReadonlyArray<PetalRingConfig>;
   petals: ReadonlyArray<PetalSpawnConfig>;
   onDismiss: () => void;
   enabled: boolean;
+  idleClock?: SharedValue<number>;
 }) {
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    lastResult = useOrbAnimation(config, rings, petals, onDismiss, enabled);
+    lastResult = useOrbAnimation(
+      config,
+      rings,
+      petals,
+      onDismiss,
+      enabled,
+      undefined,
+      undefined,
+      idleClock,
+    );
   } catch (e) {
     lastError = e;
   }
@@ -108,6 +132,7 @@ function mount(
   config: OrbAnimationConfig,
   enabled: boolean,
   petals: PetalSpawnConfig[] = makePetals(),
+  idleClock?: SharedValue<number>,
 ) {
   const onDismiss = jest.fn();
   let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -119,6 +144,7 @@ function mount(
         petals={petals}
         onDismiss={onDismiss}
         enabled={enabled}
+        idleClock={idleClock}
       />,
     );
   });
@@ -227,5 +253,135 @@ describe('useOrbAnimation idle clock', () => {
     const cancelsBefore = mockCancelAnimation.mock.calls.length;
     unmount();
     expect(mockCancelAnimation.mock.calls.length).toBeGreaterThan(cancelsBefore);
+  });
+});
+
+describe('useOrbAnimation quantized idle clock', () => {
+  beforeEach(() => {
+    lastResult = null;
+    lastError = null;
+    mockSharedValues.length = 0;
+    mockWithTiming.mockClear();
+    mockCancelAnimation.mockClear();
+    mockUseFrameCallback.mockClear();
+  });
+
+  function petalAngle(state: { petals: Array<{ x: number; y: number }> }, index: number) {
+    const p = state.petals[index]!;
+    return Math.atan2(p.y - CONFIG.targetCenterY, p.x - CONFIG.targetCenterX);
+  }
+
+  it('drives idle motion from the clock instead of the continuous timing ramp', () => {
+    mount({ ...CONFIG, skipEnter: true }, true, makePetals(), makeClock(0));
+    expect(lastResult!.phase.value).toBe(OrbPhase.Idle);
+    expect(idleClockValueCount()).toBe(0);
+  });
+
+  it('advances idle ring rotation by the clock delta since idle start', () => {
+    const idleClock = makeClock(0);
+    mount({ ...CONFIG, skipEnter: true }, true, makePetals(7), idleClock);
+    const t0 = lastResult!.anim.value as { petals: Array<{ x: number; y: number }> };
+    idleClock.value = 1000;
+    const t1 = lastResult!.anim.value as { petals: Array<{ x: number; y: number }> };
+    const ring = ORB_RING_CONFIGS[0]!;
+    const expectedDelta = ring.rotationSpeed * ring.direction * 1.0;
+    const petals = makePetals(7);
+    for (let i = 0; i < petals.length; i++) {
+      if (petals[i]!.ringIndex !== 0) {
+        continue;
+      }
+      const a0 = petalAngle(t0, i);
+      const a1 = petalAngle(t1, i);
+      const diff = Math.atan2(Math.sin(a1 - a0), Math.cos(a1 - a0));
+      expect(diff).toBeCloseTo(expectedDelta, 4);
+    }
+  });
+
+  it('captures the clock at idle start so petals hold the enter-final position', () => {
+    const idleClock = makeClock(5000);
+    mount({ ...CONFIG, skipEnter: true }, true, makePetals(), idleClock);
+    const state = lastResult!.anim.value as { petals: Array<{ x: number; y: number }> };
+    const petals = makePetals();
+    for (let i = 0; i < state.petals.length; i++) {
+      const ring = ORB_RING_CONFIGS[petals[i]!.ringIndex]!;
+      const expected = petals[i]!.initialAngle + ring.phaseOffset;
+      const diff = Math.atan2(
+        Math.sin(petalAngle(state, i) - expected),
+        Math.cos(petalAngle(state, i) - expected),
+      );
+      expect(diff).toBeCloseTo(0, 4);
+    }
+  });
+
+  it('captures the clock when the enter tween completes', () => {
+    const idleClock = makeClock(2500);
+    mount(CONFIG, true, makePetals(9), idleClock);
+    expect(lastResult!.phase.value).toBe(OrbPhase.Idle);
+    const state = lastResult!.anim.value as { petals: Array<{ x: number; y: number }> };
+    const petals = makePetals(9);
+    for (let i = 0; i < state.petals.length; i++) {
+      const ring = ORB_RING_CONFIGS[petals[i]!.ringIndex]!;
+      const expected = petals[i]!.initialAngle + ring.phaseOffset;
+      const diff = Math.atan2(
+        Math.sin(petalAngle(state, i) - expected),
+        Math.cos(petalAngle(state, i) - expected),
+      );
+      expect(diff).toBeCloseTo(0, 4);
+    }
+  });
+
+  it('freezes zero idle elapsed when the burst starts during enter', () => {
+    const idleClock = makeClock(5000);
+    const clockStart = makeClock(0);
+    const fallback = makeClock(0);
+    expect(
+      currentIdleElapsedMs(OrbPhase.Enter, idleClock, clockStart, fallback),
+    ).toBe(0);
+    expect(
+      currentIdleElapsedMs(OrbPhase.None, idleClock, clockStart, fallback),
+    ).toBe(0);
+  });
+
+  it('freezes the clock delta while idle and the fallback ramp without a clock', () => {
+    const idleClock = makeClock(7000);
+    const clockStart = makeClock(2000);
+    const fallback = makeClock(1234);
+    expect(
+      currentIdleElapsedMs(OrbPhase.Idle, idleClock, clockStart, fallback),
+    ).toBe(5000);
+    expect(
+      currentIdleElapsedMs(OrbPhase.Idle, undefined, clockStart, fallback),
+    ).toBe(1234);
+  });
+
+  it('freezes the idle clock delta when the burst starts', () => {
+    const idleClock = makeClock(0);
+    const petals = makePetals(17);
+    mount({ ...CONFIG, skipEnter: true }, true, petals, idleClock);
+    idleClock.value = 2000;
+    ReactTestRenderer.act(() => {
+      lastResult!.startBurst();
+    });
+    expect(lastResult!.phase.value).toBe(OrbPhase.Burst);
+    const frozenBurst = lastResult!.anim.value as { petals: Array<{ x: number; y: number }> };
+    idleClock.value = 9000;
+    const afterClockAdvance = lastResult!.anim.value as {
+      petals: Array<{ x: number; y: number }>;
+    };
+    const expected = computeOrbAnimState(
+      OrbPhase.Burst,
+      1,
+      1,
+      2000,
+      CONFIG,
+      ORB_RING_CONFIGS,
+      petals,
+    );
+    for (let i = 0; i < frozenBurst.petals.length; i++) {
+      expect(frozenBurst.petals[i]!.x).toBeCloseTo(expected.petals[i]!.x, 1);
+      expect(frozenBurst.petals[i]!.y).toBeCloseTo(expected.petals[i]!.y, 1);
+      expect(afterClockAdvance.petals[i]!.x).toBeCloseTo(frozenBurst.petals[i]!.x, 1);
+      expect(afterClockAdvance.petals[i]!.y).toBeCloseTo(frozenBurst.petals[i]!.y, 1);
+    }
   });
 });

@@ -12,6 +12,8 @@ export const ORB_BURST_DURATION_MS = 400;
 export const ORB_IDLE_CLOCK_SPAN_MS = Number.MAX_SAFE_INTEGER;
 /** Tween duration (ms) for relayout moves and insert flights. */
 export const ORB_MOVE_DURATION_MS = 320;
+/** Rate (fps) at which idle orb motion steps from the shared exercise clock. */
+export const ORB_IDLE_CLOCK_FPS = 30;
 
 export const ORB_RING_RADII_FRACTIONS: ReadonlyArray<{
   center: number;

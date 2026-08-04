@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { useAnimatedReaction, useSharedValue } from 'react-native-reanimated';
-import { useExerciseLayout } from '../../../../../../core';
+import { useExerciseClockQuantized, useExerciseLayout } from '../../../../../../core';
 import { useFlowerGardenAssetsContext } from '../../../../core/providers/FlowerGardenAssetsProvider';
 import { RoamerLayer } from '../../../../roamer/RoamerLayer';
 import { useRoamerSimulation } from '../../../../roamer/core/useRoamerSimulation';
@@ -13,6 +13,7 @@ import { OrbPhase, useOrbAnimation } from '../../../../orb/useOrbAnimation';
 import {
   ORB_CAPTIVE_DRIFT_RATIO,
   ORB_DIAMETER_RATIO,
+  ORB_IDLE_CLOCK_FPS,
   ORB_RING_CONFIGS,
   ORB_ROAMER_TAP_HIT_RADIUS,
 } from '../../../../orb/orbAnimPresets';
@@ -37,6 +38,7 @@ export function FlowerGardenMatchRoamerLayer({
   const layout = useExerciseLayout();
   const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
   const { images } = useFlowerGardenAssetsContext();
+  const idleClock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
   const cloudPetalAtlasReady = images.cloudPetalAtlas != null;
 
   const capturedRoamerIndexSv = useSharedValue(-1);
@@ -151,6 +153,8 @@ export function FlowerGardenMatchRoamerLayer({
     handleDismiss,
     selection != null,
     releaseRoamerFromOrb,
+    undefined,
+    idleClock,
   );
 
   useAnimatedReaction(

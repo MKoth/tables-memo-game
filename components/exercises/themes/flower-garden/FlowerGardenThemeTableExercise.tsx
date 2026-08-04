@@ -9,6 +9,7 @@ import {
   ExerciseClockProvider,
   ExerciseRuntimeProvider,
   TABLE_EXERCISE_STORE_CONFIG,
+  useExerciseClockQuantized,
   useExerciseLayout,
   useExerciseRuntime,
   useExerciseStore,
@@ -31,6 +32,7 @@ import { useOrbAnimation } from './orb/useOrbAnimation';
 import {
   ORB_CAPTIVE_DRIFT_RATIO,
   ORB_DIAMETER_RATIO,
+  ORB_IDLE_CLOCK_FPS,
   ORB_RING_CONFIGS,
   ORB_ROAMER_TAP_HIT_RADIUS,
 } from './orb/orbAnimPresets';
@@ -66,6 +68,7 @@ function RoamerOrbLayer({
   const { sounds, images } = useFlowerGardenAssetsContext();
   const { publishCaptureBridge } = useExerciseRuntime();
   const { screenWidth, screenHeight } = useExerciseLayout();
+  const idleClock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
   const cloudPetalAtlasReady = images.cloudPetalAtlas != null;
 
   const [selection, setSelection] = useState<{
@@ -167,6 +170,8 @@ function RoamerOrbLayer({
     handleDismiss,
     selection != null,
     releaseRoamerFromOrb,
+    undefined,
+    idleClock,
   );
 
   const armCapture = useCallback(
