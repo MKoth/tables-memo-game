@@ -7,14 +7,13 @@ import { useBushConfigs } from './BushShaderLayer/useBushConfigs';
 import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
 import { RoseSubstrateLayer } from './RoseSubstrateLayer/RoseSubstrateLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
-import { FlowerGardenEarthCanvas } from './FlowerGardenEarthCanvas';
-import { FlowerGardenGrassCanvas } from './FlowerGardenGrassCanvas';
+import { FlowerGardenBackgroundCanvas } from './FlowerGardenBackgroundCanvas/FlowerGardenBackgroundCanvas';
 import { FieldFlowerShaderLayer } from './FieldFlowerShaderLayer/FieldFlowerShaderLayer';
 import { GroundScatterShaderLayer } from './GroundScatterLayer/GroundScatterShaderLayer';
 import { useGroundScatterConfigs } from './GroundScatterLayer/useGroundScatterConfigs';
-import type { GrassHoleMaskConfig } from '../shaders/grassHoleMask.sksl';
+import type { EarthGrassBackgroundConfig } from '../shaders/earthGrassBackground.sksl';
 
-const grassHoleMaskConfig: GrassHoleMaskConfig = {
+const backgroundMaskConfig: EarthGrassBackgroundConfig = {
   centerX: 0.5,
   centerY: 0.41,
   minDiameter: 400,
@@ -106,20 +105,14 @@ function FlowerGardenSceneryContent() {
 
   return (
     <>
-      {images.earthImage != null && (
-        <FlowerGardenEarthCanvas
-          image={images.earthImage}
+      {images.earthImage != null && images.grassImage != null && (
+        <FlowerGardenBackgroundCanvas
+          earthImage={images.earthImage}
+          grassImage={images.grassImage}
           width={width}
           height={height}
-        />
-      )}
-      {images.grassImage != null && (
-        <FlowerGardenGrassCanvas
-          image={images.grassImage}
-          width={width}
-          height={height}
-          scale={1.2}
-          maskConfig={grassHoleMaskConfig}
+          grassScale={1.2}
+          maskConfig={backgroundMaskConfig}
         />
       )}
       {groundDecorReady && (

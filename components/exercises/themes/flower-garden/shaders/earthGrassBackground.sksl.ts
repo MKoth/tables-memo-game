@@ -1,4 +1,6 @@
-export const GRASS_HOLE_MASK_SKSL = `
+export const EARTH_GRASS_BACKGROUND_SKSL = `
+uniform shader earthTexture;
+uniform shader grassTexture;
 uniform float2 center;
 uniform float2 radius;
 uniform float waveAmplitude;
@@ -6,6 +8,8 @@ uniform float waveFrequency;
 uniform float noiseAmount;
 uniform float noiseScale;
 uniform float resolutionScale;
+uniform float grassUvScale;
+uniform float brightness;
 
 float hash21(float2 p) {
   return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
@@ -35,11 +39,18 @@ half4 main(float2 fragCoord) {
 
   float mask = 1.0 - smoothstep(edgeR - 0.005, edgeR + 0.005, r);
 
-  return half4(0, 0, 0, mask);
+  half4 earth = earthTexture.eval(fragCoord);
+  half4 grass = grassTexture.eval(fragCoord * grassUvScale);
+  grass.rgb *= brightness;
+
+  half4 color;
+  color.rgb = grass.rgb * (1.0 - mask) + earth.rgb * (1.0 - grass.a * (1.0 - mask));
+  color.a = 1.0;
+  return color;
 }
 `;
 
-export type GrassHoleMaskConfig = {
+export type EarthGrassBackgroundConfig = {
   centerX?: number;
   centerY?: number;
   minDiameter?: number;
