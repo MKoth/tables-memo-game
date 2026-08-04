@@ -12,20 +12,18 @@ import {
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 import { useExerciseClockQuantized } from '../../../../core';
 import type { FieldFlowerConfig, FieldFlowerType } from './types';
-import { MAX_FIELD_FLOWERS, MAX_LEAVES_PER_FLOWER, COVERING_SIZE } from './types';
+import { COVERING_SIZE } from './types';
+import {
+  chunkFieldFlowerConfigs,
+  createFieldFlowerBatchUniforms,
+  fillFieldFlowerBatchUniforms,
+  type FieldFlowerBatch,
+  type FieldFlowerSwingFrame,
+} from './fieldFlowerBatch';
 import { DANDELION_SKSL } from '../../shaders/dandelion.sksl';
 import { CHAMOMILE_SKSL } from '../../shaders/chamomile.sksl';
 import { POPPY_SKSL } from '../../shaders/poppy.sksl';
 import { WILD_VIOLET_SKSL } from '../../shaders/wild_violet.sksl';
-
-type FlowerShaderMap = Record<FieldFlowerType, string>;
-
-const FLOWER_SKSL: FlowerShaderMap = {
-  dandelion: DANDELION_SKSL,
-  chamomile: CHAMOMILE_SKSL,
-  poppy: POPPY_SKSL,
-  wild_violet: WILD_VIOLET_SKSL,
-};
 
 function compileFlowerEffect(sksl: string, label: string): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(sksl);
@@ -76,8 +74,31 @@ function computeFlowerRect(
   };
 }
 
-type FieldFlowerRectProps = {
-  config: FieldFlowerConfig;
+function computeFlowerBatchRect(
+  configs: readonly FieldFlowerConfig[],
+  margin: number,
+): { x: number; y: number; w: number; h: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const config of configs) {
+    const rect = computeFlowerRect(config, margin);
+    minX = Math.min(minX, rect.x);
+    minY = Math.min(minY, rect.y);
+    maxX = Math.max(maxX, rect.x + rect.w);
+    maxY = Math.max(maxY, rect.y + rect.h);
+  }
+  return {
+    x: minX,
+    y: minY,
+    w: maxX - minX,
+    h: maxY - minY,
+  };
+}
+
+type FieldFlowerBatchRectProps = {
+  batch: FieldFlowerBatch;
   stemImages: readonly SkImage[];
   leafImages: readonly SkImage[];
   flowerImages: readonly SkImage[];
@@ -85,14 +106,14 @@ type FieldFlowerRectProps = {
   flowerSwingBoosts: SharedValue<number[]> | undefined;
 };
 
-function FieldFlowerRect({
-  config,
+function FieldFlowerBatchRect({
+  batch,
   stemImages,
   leafImages,
   flowerImages,
   clock,
   flowerSwingBoosts,
-}: FieldFlowerRectProps) {
+}: FieldFlowerBatchRectProps) {
   const { stemW, leafW, flowerW } = useMemo(() => {
     const stemImgW = stemImages.length >= 4 ? 1 : 0;
     const leafImgW = leafImages.length >= 4 ? 1 : 0;
@@ -100,71 +121,24 @@ function FieldFlowerRect({
     return { stemW: stemImgW, leafW: leafImgW, flowerW: flowerImgW };
   }, [stemImages, leafImages, flowerImages]);
 
+  const paddedUniforms = useMemo(() => createFieldFlowerBatchUniforms(), []);
+  const batchConfigs = batch.configs;
+
   const uniforms = useDerivedValue(() => {
-    const iTime = clock.value / 1000;
-    const boost = flowerSwingBoosts?.value[config.flowerId] ?? 0;
-    const effectiveAmp = config.swingAmplitude + boost;
-    const swing =
-      Math.sin(iTime * config.swingSpeed + config.swingPhase) *
-      effectiveAmp;
-    const cosA = Math.cos(config.swingAngle);
-    const sinA = Math.sin(config.swingAngle);
-    const swingX = swing * cosA;
-    const swingY = swing * sinA;
-    const leafSwingX = swingX * 0.4;
-    const leafSwingY = swingY * 0.4;
-
-    const n = MAX_FIELD_FLOWERS;
-    const leafVariant: number[] = [];
-    const leafLength: number[] = [];
-    const leafWidth: number[] = [];
-    for (let j = 0; j < config.leafVariants.length; j++) {
-      leafVariant.push(config.leafVariants[j] ?? 0);
-      leafLength.push(config.leafLengths[j] ?? 0);
-      leafWidth.push(config.leafWidths[j] ?? 0);
-    }
-    const padLen = MAX_LEAVES_PER_FLOWER * n;
-
-    function pad(arr: readonly number[], target: number): number[] {
-      const len = Math.min(arr.length, target);
-      const out: number[] = [];
-      for (let i = 0; i < len; i++) out.push(arr[i] ?? 0);
-      for (let i = len; i < target; i++) out.push(0);
-      return out;
-    }
-
-    return {
-      dandelionCount: 1,
-      headerX: pad([config.headerX], n),
-      headerY: pad([config.headerY], n),
-      offsetX: pad([config.offsetX + swingX], n),
-      offsetY: pad([config.offsetY + swingY], n),
-      offsetScale: pad([config.offsetScale], n),
-      stemBaseX: pad([config.stemBaseX], n),
-      stemBaseY: pad([config.stemBaseY], n),
-      stemBaseWidth: pad([config.stemBaseWidth], n),
-      stemTopWidth: pad([config.stemTopWidth], n),
-      stemVariant: pad([config.stemVariant], n),
-      flowerVariant: pad([config.flowerVariant], n),
-      leafCount: pad([config.leafCount], n),
-      leafVariant: pad(leafVariant, padLen),
-      perLeafLength: pad(leafLength, padLen),
-      perLeafWidth: pad(leafWidth, padLen),
-      flowerSize: pad([config.flowerSize], n),
-      ringRotation: pad([config.ringRotation], n),
-      clusterShadowOffsetX: pad([config.clusterShadowOffsetX + leafSwingX], n),
-      clusterShadowOffsetY: pad([config.clusterShadowOffsetY + leafSwingY], n),
-      flowerTopShadowOffsetX: pad([config.flowerTopShadowOffsetX], n),
-      flowerTopShadowOffsetY: pad([config.flowerTopShadowOffsetY], n),
+    const frame: FieldFlowerSwingFrame = {
+      iTime: clock.value / 1000,
+      boosts: flowerSwingBoosts?.value,
     };
+    fillFieldFlowerBatchUniforms(paddedUniforms, batchConfigs, frame);
+    return { ...paddedUniforms };
   });
 
   const flowerRect = useMemo(
-    () => computeFlowerRect(config, FLOWER_RECT_MARGIN),
-    [config],
+    () => computeFlowerBatchRect(batchConfigs, FLOWER_RECT_MARGIN),
+    [batchConfigs],
   );
 
-  const effect = flowerEffects[config.flowerType];
+  const effect = flowerEffects[batch.flowerType];
 
   const readyStemImages = useMemo(
     () => (stemImages.length >= 4 ? stemImages.slice(0, 4) : null),
@@ -278,6 +252,8 @@ function FieldFlowerShaderLayerImpl({
   const { width, height } = useWindowDimensions();
   const clock = useExerciseClockQuantized(20);
 
+  const batches = useMemo(() => chunkFieldFlowerConfigs(configs), [configs]);
+
   const imageSets: Record<FieldFlowerType, FlowerImageSet> = useMemo(
     () => ({
       dandelion: {
@@ -318,16 +294,16 @@ function FieldFlowerShaderLayerImpl({
   );
 
   if (width === 0 || height === 0) return null;
-  if (configs.length === 0) return null;
+  if (batches.length === 0) return null;
 
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
-      {configs.map(config => {
-        const set = imageSets[config.flowerType];
+      {batches.map((batch, batchIndex) => {
+        const set = imageSets[batch.flowerType];
         return (
-          <FieldFlowerRect
-            key={config.flowerId}
-            config={config}
+          <FieldFlowerBatchRect
+            key={`${batch.flowerType}-${batchIndex}`}
+            batch={batch}
             stemImages={set.stemImages}
             leafImages={set.leafImages}
             flowerImages={set.flowerImages}
