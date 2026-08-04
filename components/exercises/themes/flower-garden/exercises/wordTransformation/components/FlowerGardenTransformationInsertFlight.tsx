@@ -41,10 +41,10 @@ export function FlowerGardenTransformationInsertFlight({
 
   const landed = flight?.phase === 'dismiss';
 
-  if (images.orbPetalImages == null) {
+  if (images.cloudPetalAtlas == null) {
     return null;
   }
-  const orbPetalImages = images.orbPetalImages;
+  const cloudPetalAtlas = images.cloudPetalAtlas;
 
   return (
     <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -61,9 +61,8 @@ export function FlowerGardenTransformationInsertFlight({
           skipEnter
           moveDurationMs={landed ? 0 : flight.flyDurationMs}
           status="idle"
-          image={orbPetalImages[0]!}
-          orbPetalImages={orbPetalImages}
-          cloudPatchImages={images.cloudPatchImages}
+          image={cloudPetalAtlas.image}
+          cloudPetalAtlas={cloudPetalAtlas}
           font={font}
           clock={clock}
         />

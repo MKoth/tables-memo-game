@@ -66,7 +66,7 @@ function RoamerOrbLayer({
   const { sounds, images } = useFlowerGardenAssetsContext();
   const { publishCaptureBridge } = useExerciseRuntime();
   const { screenWidth, screenHeight } = useExerciseLayout();
-  const orbPetalImagesReady = images.orbPetalImages != null;
+  const cloudPetalAtlasReady = images.cloudPetalAtlas != null;
 
   const [selection, setSelection] = useState<{
     roamerIndex: number;
@@ -311,16 +311,17 @@ function RoamerOrbLayer({
           <View style={[styles.fullLayer, { zIndex: ROAMER_GESTURE_Z }]} />
         </GestureDetector>
       )}
-      {capturedEntry != null && orbPetalImagesReady && (
+      {capturedEntry != null && cloudPetalAtlasReady && (
         <>
-          {images.cloudPatchImages != null && (
+          {images.cloudPetalAtlas != null && (
             <View style={[styles.fullLayer, { zIndex: ORB_CLOUD_Z }]} pointerEvents="none">
               <CaptureOrbCloudLayer
                 centerX={targetCenterX}
                 centerY={targetCenterY}
                 diameter={targetDiameter}
                 phase={phase}
-                images={images.cloudPatchImages}
+                atlas={images.cloudPetalAtlas.image}
+                regions={images.cloudPetalAtlas.cloudRegions}
               />
             </View>
           )}

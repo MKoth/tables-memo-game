@@ -3,7 +3,6 @@ import {
   Glyphs,
   Group,
   vec,
-  type SkImage,
 } from '@shopify/react-native-skia';
 import {
   cancelAnimation,
@@ -16,6 +15,7 @@ import {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { ThemeLetterOrbProps } from '../../../../../themeContract';
+import type { CloudPetalAtlas } from '../../../core/assets/textureAtlas/buildCloudPetalAtlas';
 import { generateOrbPetalConfigs, sliceOrbRings } from '../../../orb/generateOrbPetalConfigs';
 import {
   LETTER_ORB_PETAL_SIZE_FACTOR,
@@ -67,7 +67,6 @@ function FlowerGardenLetterOrbComponent({
   diameter,
   status,
   image: _image,
-  orbPetalImages: orbPetalImagesProp,
   font,
   clock,
   initialCenterX,
@@ -86,13 +85,10 @@ function FlowerGardenLetterOrbComponent({
   labelFixed = false,
   letterSpacing = 0,
   wobbleBoostT: _wobbleBoostT,
-  cloudPatchImages: cloudPatchImagesProp,
+  cloudPetalAtlas,
 }: ThemeLetterOrbProps & {
-  orbPetalImages?: ReadonlyArray<SkImage> | null;
-  cloudPatchImages?: ReadonlyArray<SkImage> | null;
+  cloudPetalAtlas?: CloudPetalAtlas | null;
 }) {
-  const orbPetalImages = orbPetalImagesProp ?? null;
-  const cloudPatchImages: ReadonlyArray<SkImage> | null = cloudPatchImagesProp ?? null;
 
   const petalSeed = useMemo(() => hashSeedString(`flower-garden-letter-orb-${char}`), [char]);
   const rings = useMemo(
@@ -334,26 +330,26 @@ function FlowerGardenLetterOrbComponent({
 
   const fillColor = status === 'wrong' ? LABEL_WRONG_COLOR : LABEL_FILL_COLOR;
 
-  if (orbPetalImages == null) {
+  if (cloudPetalAtlas == null) {
     return null;
   }
 
   return (
     <Group>
-      {cloudPatchImages != null && (
-        <LetterOrbCloudLayer
-          anim={anim}
-          centerX={centerX}
-          centerY={centerY}
-          diameter={diameter}
-          images={cloudPatchImages}
-        />
-      )}
+      <LetterOrbCloudLayer
+        anim={anim}
+        centerX={centerX}
+        centerY={centerY}
+        diameter={diameter}
+        atlas={cloudPetalAtlas.image}
+        regions={cloudPetalAtlas.cloudRegions}
+      />
       <PetalRingLayer
         sizeFactor={LETTER_ORB_PETAL_SIZE_FACTOR}
         slots={slots}
         anim={anim}
-        images={orbPetalImages}
+        atlas={cloudPetalAtlas.image}
+        regions={cloudPetalAtlas.petalRegions}
       />
       <Group transform={labelTransform} opacity={labelOpacity}>
         <Group

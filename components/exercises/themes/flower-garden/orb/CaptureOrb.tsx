@@ -75,7 +75,7 @@ export function CaptureOrb({
 }: CaptureOrbProps) {
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
-  const orbPetalImages = images.orbPetalImages;
+  const cloudPetalAtlas = images.cloudPetalAtlas;
 
   const slotsByRing = useMemo(() => {
     const buckets: PetalSlot[][] = [[], [], []];
@@ -95,7 +95,7 @@ export function CaptureOrb({
   if (width === 0 || height === 0) {
     return null;
   }
-  if (orbPetalImages == null) {
+  if (cloudPetalAtlas == null) {
     return null;
   }
 
@@ -131,7 +131,8 @@ export function CaptureOrb({
           sizeFactor={ORB_PETAL_SIZE_FACTOR_BY_RING[ring.ringIndex] ?? 1}
           slots={slotsByRing[ring.ringIndex] ?? []}
           anim={anim}
-          images={orbPetalImages}
+          atlas={cloudPetalAtlas.image}
+          regions={cloudPetalAtlas.petalRegions}
         />
       ))}
     </Canvas>

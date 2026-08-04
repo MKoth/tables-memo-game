@@ -1,4 +1,5 @@
 import type { SkImage } from '@shopify/react-native-skia';
+import type { CloudPetalAtlas } from './textureAtlas/buildCloudPetalAtlas';
 
 const FLOWER_GARDEN_IMAGE_ASSETS = {
   roses: {
@@ -562,8 +563,7 @@ export type FlowerGardenThemeImages = {
   bumblebeeBodyImage: SkImage | null;
   bumblebeeLeftWingImage: SkImage | null;
   bumblebeeRightWingImage: SkImage | null;
-  cloudPatchImages: SkImage[] | null;
-  orbPetalImages: SkImage[] | null;
+  cloudPetalAtlas: CloudPetalAtlas | null;
 };
 
 export const FLOWER_GARDEN_IMAGE_COUNT =

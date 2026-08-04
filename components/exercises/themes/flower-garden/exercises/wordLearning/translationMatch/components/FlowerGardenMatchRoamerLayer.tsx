@@ -37,7 +37,7 @@ export function FlowerGardenMatchRoamerLayer({
   const layout = useExerciseLayout();
   const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
   const { images } = useFlowerGardenAssetsContext();
-  const orbPetalImagesReady = images.orbPetalImages != null;
+  const cloudPetalAtlasReady = images.cloudPetalAtlas != null;
 
   const capturedRoamerIndexSv = useSharedValue(-1);
 
@@ -264,7 +264,7 @@ export function FlowerGardenMatchRoamerLayer({
           </View>
         </GestureDetector>
       </View>
-      {capturedEntry != null && orbPetalImagesReady && (
+      {capturedEntry != null && cloudPetalAtlasReady && (
         <View
           style={[styles.container, { zIndex: MATCH_ORB_Z }]}
           pointerEvents="none"

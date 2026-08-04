@@ -55,6 +55,7 @@ import {
 import {
   createFlowerGardenSoundController,
 } from './useFlowerGardenThemeSounds';
+import { buildCloudPetalAtlas } from './textureAtlas/buildCloudPetalAtlas';
 
 type FlowerGardenAssetsReady = {
   images: FlowerGardenThemeImages;
@@ -809,6 +810,12 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           return;
         }
 
+        const cloudPetalAtlas = buildCloudPetalAtlas(cloudPatchImages, orbPetalImages);
+
+        if (cancelled) {
+          return;
+        }
+
         setProgress(100);
         setReadyAssets({
           images: {
@@ -845,8 +852,12 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             bumblebeeBodyImage,
             bumblebeeLeftWingImage,
             bumblebeeRightWingImage,
-            cloudPatchImages: cloudPatchImages.length === CLOUD_PATCH_SOURCES.length ? cloudPatchImages : null,
-            orbPetalImages: orbPetalImages.length === ORB_PETAL_SOURCES.length ? orbPetalImages : null,
+            cloudPetalAtlas:
+              cloudPetalAtlas != null &&
+              cloudPatchImages.length === CLOUD_PATCH_SOURCES.length &&
+              orbPetalImages.length === ORB_PETAL_SOURCES.length
+                ? cloudPetalAtlas
+                : null,
           },
         });
       } catch (error) {

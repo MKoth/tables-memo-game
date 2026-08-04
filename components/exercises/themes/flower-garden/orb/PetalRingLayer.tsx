@@ -1,18 +1,21 @@
 import React from 'react';
-import { ColorMatrix, Group, Image, type SkImage } from '@shopify/react-native-skia';
+import { ColorMatrix, Group, type SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
+import type { AtlasRegion } from '../core/assets/textureAtlas/packTextureAtlas';
+import { AtlasSprite } from './AtlasSprite';
 import { ORB_PETAL_BASE_SIZE_PX } from './orbAnimPresets';
 import type { OrbAnimState } from './orbAnimTypes';
 
 type PetalProps = {
   spawnIndex: number;
   sizeFactor: number;
-  image: SkImage | null;
+  atlas: SkImage;
+  region: AtlasRegion;
   anim: SharedValue<OrbAnimState>;
 };
 
-function Petal({ spawnIndex, sizeFactor, image, anim }: PetalProps) {
+function Petal({ spawnIndex, sizeFactor, atlas, region, anim }: PetalProps) {
   const transform = useDerivedValue(() => {
     const petal = anim.value.petals[spawnIndex];
     if (petal == null) {
@@ -50,23 +53,12 @@ function Petal({ spawnIndex, sizeFactor, image, anim }: PetalProps) {
     ];
   });
 
-  if (image == null) {
-    return null;
-  }
-
   const size = ORB_PETAL_BASE_SIZE_PX * sizeFactor;
 
   return (
     <Group transform={transform} opacity={opacity}>
       <ColorMatrix matrix={tintMatrix} />
-      <Image
-        image={image}
-        x={0}
-        y={0}
-        width={size}
-        height={size}
-        fit="contain"
-      />
+      <AtlasSprite atlas={atlas} region={region} width={size} height={size} />
     </Group>
   );
 }
@@ -80,23 +72,25 @@ export type PetalRingLayerProps = {
   sizeFactor: number;
   slots: ReadonlyArray<PetalSlot>;
   anim: SharedValue<OrbAnimState>;
-  images: ReadonlyArray<SkImage>;
+  atlas: SkImage | null;
+  regions: ReadonlyArray<AtlasRegion>;
 };
 
-export function PetalRingLayer({ sizeFactor, slots, anim, images }: PetalRingLayerProps) {
-  if (images.length === 0) {
+export function PetalRingLayer({ sizeFactor, slots, anim, atlas, regions }: PetalRingLayerProps) {
+  if (atlas == null || regions.length === 0) {
     return null;
   }
   return (
     <Group>
       {slots.map(slot => {
-        const image = images[Math.min(slot.imageIndex, images.length - 1)] ?? null;
+        const region = regions[Math.min(slot.imageIndex, regions.length - 1)] ?? regions[0]!;
         return (
           <Petal
             key={slot.spawnIndex}
             spawnIndex={slot.spawnIndex}
             sizeFactor={sizeFactor}
-            image={image}
+            atlas={atlas}
+            region={region}
             anim={anim}
           />
         );
