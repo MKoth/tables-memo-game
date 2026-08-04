@@ -45,9 +45,9 @@ function withButterflyOverride(
 function allSpecies(overrides?: Partial<SpeciesParticleConfig>): Record<RoamerSpecies, SpeciesParticleConfig> {
   const base = overrides ?? {};
   return {
-    butterfly: makeSpeciesConfig({ emitIntervalMs: 0, ttlMin: 1200, ttlMax: 2400, color: [1.0, 0.894, 0.71], ...base }),
-    bee: makeSpeciesConfig({ emitIntervalMs: 0, ttlMin: 1200, ttlMax: 2400, color: [1.0, 0.843, 0.0], ...base }),
-    bumblebee: makeSpeciesConfig({ emitIntervalMs: 0, ttlMin: 1200, ttlMax: 2400, color: [0.871, 0.718, 0.529], ...base }),
+    butterfly: makeSpeciesConfig({ emitIntervalMs: 0, ttlMin: 1200, ttlMax: 2400, colors: [[1.0, 0.894, 0.71]], ...base }),
+    bee: makeSpeciesConfig({ emitIntervalMs: 0, ttlMin: 1200, ttlMax: 2400, colors: [[1.0, 0.843, 0.0]], ...base }),
+    bumblebee: makeSpeciesConfig({ emitIntervalMs: 0, ttlMin: 1200, ttlMax: 2400, colors: [[0.871, 0.718, 0.529]], ...base }),
   };
 }
 

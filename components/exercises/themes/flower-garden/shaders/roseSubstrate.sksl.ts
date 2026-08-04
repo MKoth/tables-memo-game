@@ -1,4 +1,4 @@
-export const MAX_ROSE_DISCS = 40;
+export const MAX_ROSE_DISCS = 19;
 export const SUBSTRATE_COVERING_SIZE = 200;
 
 export const ROSE_SUBSTRATE_SKSL = `

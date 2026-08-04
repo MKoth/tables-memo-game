@@ -55,7 +55,7 @@ export type RoseSubstrateLayerProps = {
   substrateImage: SkImage;
 };
 
-export function RoseSubstrateLayer({
+export function RoseSubstrateLayerImpl({
   bushConfigs,
   layoutX,
   layoutY,
@@ -140,3 +140,5 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
 });
+
+export const RoseSubstrateLayer = React.memo(RoseSubstrateLayerImpl);

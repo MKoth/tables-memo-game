@@ -1,15 +1,9 @@
 import { MAX_LEAVES_PER_STEM, type BushConfig } from '../BushShaderLayer/types';
 import { singleStemShadowDefaults } from '../../shaders/singleStemShadow.sksl';
-import { roseShadowDefaults } from '../../shaders/roseShadows.sksl';
+import { roseShadowDefaults } from '../../shaders/singleRoseShadow.sksl';
 import type { SceneryShadowStyle } from './types';
 
 export const MAX_SHADOW_LEAVES_PER_STEM = MAX_LEAVES_PER_STEM;
-
-function padArray(arr: readonly number[], target: number, fill = 0): number[] {
-  return [...arr, ...Array(Math.max(0, target - arr.length)).fill(fill)];
-}
-
-const MAX_ROSE_SHADOWS = 64;
 
 export type ResolvedSceneryShadowStyle = {
   lightOffset: [number, number];
@@ -109,8 +103,7 @@ export function pickRoseShadowBasePositions(
   nRoses: number,
 ): number[] {
   const bases: number[] = [];
-  const slotCount = Math.min(nRoses, MAX_ROSE_SHADOWS);
-  for (let i = 0; i < slotCount; i++) {
+  for (let i = 0; i < nRoses; i++) {
     let baseX = 0;
     let baseY = 0;
     for (const bush of bushConfigs) {
@@ -123,7 +116,7 @@ export function pickRoseShadowBasePositions(
     }
     bases.push(baseX, baseY);
   }
-  return padArray(bases, MAX_ROSE_SHADOWS * 2);
+  return bases;
 }
 
 export function pickRoseStaticUniforms(
@@ -143,33 +136,39 @@ export function pickRoseStaticUniforms(
   };
 }
 
-export type RoseShadowMotionUniforms = {
-  roseShadowCount: number;
-  roseShadowCenter: number[];
-  roseShadowRadius: number[];
+export const ROSE_SHADOW_RECT_EPSILON = 2;
+
+export type RoseShadowRectGeometry = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
-export function pickRoseMotionUniforms(
-  layoutX: readonly number[],
-  layoutY: readonly number[],
-  bodySizes: readonly number[],
-  roseRadiusFraction: number,
-): RoseShadowMotionUniforms {
-  const count = Math.min(
-    layoutX.length,
-    layoutY.length,
-    bodySizes.length,
-    MAX_ROSE_SHADOWS,
-  );
-  const centers: number[] = [];
-  const radii: number[] = [];
-  for (let i = 0; i < count; i++) {
-    centers.push(layoutX[i] ?? 0, layoutY[i] ?? 0);
-    radii.push((bodySizes[i] ?? 0) * roseRadiusFraction);
-  }
+export type RoseShadowRectStyle = {
+  lightOffset: readonly [number, number];
+  stemShadowTopSkew: number;
+  shadowSquash: number;
+};
+
+export function pickRoseShadowRect(
+  centerX: number,
+  centerY: number,
+  baseX: number,
+  baseY: number,
+  radius: number,
+  style: RoseShadowRectStyle,
+): RoseShadowRectGeometry {
+  'worklet';
+  const skew = style.stemShadowTopSkew;
+  const cx = (centerX + style.lightOffset[0]) * (1 - skew) + baseX * skew;
+  const cy = (centerY + style.lightOffset[1]) * (1 - skew) + baseY * skew;
+  const rx = radius + ROSE_SHADOW_RECT_EPSILON;
+  const ry = radius * style.shadowSquash + ROSE_SHADOW_RECT_EPSILON;
   return {
-    roseShadowCount: count,
-    roseShadowCenter: padArray(centers, MAX_ROSE_SHADOWS * 2),
-    roseShadowRadius: padArray(radii, MAX_ROSE_SHADOWS),
+    x: cx - rx,
+    y: cy - ry,
+    width: rx * 2,
+    height: ry * 2,
   };
 }
