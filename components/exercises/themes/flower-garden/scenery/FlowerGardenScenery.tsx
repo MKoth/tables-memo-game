@@ -4,9 +4,8 @@ import { useExerciseRuntime } from '../../../core';
 import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAssetsProvider';
 import { useFlowerGardenTableContext } from './flowerGardenTableContext';
 import { useBushConfigs } from './BushShaderLayer/useBushConfigs';
-import { BushShaderLayer } from './BushShaderLayer/BushShaderLayer';
+import { BushAndShadowLayer } from './BushAndShadowLayer';
 import { RoseSubstrateLayer } from './RoseSubstrateLayer/RoseSubstrateLayer';
-import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenBackgroundCanvas } from './FlowerGardenBackgroundCanvas/FlowerGardenBackgroundCanvas';
 import { FieldFlowerShaderLayer } from './FieldFlowerShaderLayer/FieldFlowerShaderLayer';
 import {
@@ -134,13 +133,7 @@ function FlowerGardenSceneryContent() {
       )}
       {bushReady && (
         <>
-          <SceneryShadowLayer
-            bushConfigs={bushConfigs}
-            layoutX={wordSpriteBridge.layoutX}
-            layoutY={wordSpriteBridge.layoutY}
-            bodySizes={roseBellSizes}
-          />
-          <BushShaderLayer
+          <BushAndShadowLayer
             bushConfigs={bushConfigs}
             layoutX={wordSpriteBridge.layoutX}
             layoutY={wordSpriteBridge.layoutY}

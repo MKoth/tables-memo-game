@@ -24,7 +24,7 @@ import {
 } from '../../shaders/roseBush.sksl';
 import { ROSE_LEAF_ATLAS_FLAT_REGIONS, ROSE_LEAF_ATLAS_WIDTH, ROSE_LEAF_ATLAS_HEIGHT } from '../../core/assets/textureAtlas/roseLeafAtlasRegions';
 
-function compileRoseBushEffect(): SkRuntimeEffect {
+export function compileRoseBushEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(ROSE_BUSH_SKSL);
   if (!effect) {
     throw new Error('Failed to compile rose bush shader');
@@ -32,11 +32,11 @@ function compileRoseBushEffect(): SkRuntimeEffect {
   return effect;
 }
 
-const roseBushEffect = compileRoseBushEffect();
+export const roseBushEffect = compileRoseBushEffect();
 
-const BUSH_RECT_MARGIN = 40;
+export const BUSH_RECT_MARGIN = 40;
 
-function padLayoutArray(arr: readonly number[]): number[] {
+export function padLayoutArray(arr: readonly number[]): number[] {
   'worklet';
   return [
     ...arr,
@@ -44,7 +44,7 @@ function padLayoutArray(arr: readonly number[]): number[] {
   ];
 }
 
-function computeBushRect(
+export function computeBushRect(
   bush: BushConfig,
   margin: number,
 ): { x: number; y: number; w: number; h: number } {
@@ -78,7 +78,7 @@ function computeBushRect(
   };
 }
 
-type BushShaderBushRectProps = {
+export type BushShaderBushRectProps = {
   bush: BushConfig;
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
@@ -89,7 +89,7 @@ type BushShaderBushRectProps = {
   leafAtlas: SkImage;
 };
 
-function BushShaderBushRect({
+export function BushShaderBushRect({
   bush,
   layoutX,
   layoutY,
