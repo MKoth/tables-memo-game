@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Canvas, Rect, Shader } from '@shopify/react-native-skia';
+import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import type { RoamerRuntimeEntry } from '../core/types';
 import { createEmptyParticlePool } from './updateParticlePool';
 import { useParticleFrameLoop } from './useParticleFrameLoop';
 import { particleDustEffect } from './particleDust.sksl';
+import { DUST_RECT_HALF_EXTENT } from './particleBounds';
 import { DEFAULT_PARTICLE_CONFIG, type ParticleInternal } from './particleTypes';
 import { MAX_PARTICLES } from './particleConfig';
 
@@ -15,16 +17,18 @@ export type FlowerGardenParticleLayerProps = {
   height: number;
 };
 
-function buildUniforms(
-  pool: ParticleInternal[],
-  width: number,
-  height: number,
-): {
+type DustUniforms = {
   iResolution: [number, number];
   uActiveCount: number;
   uParticleData: number[];
   uParticleColor: number[];
-} {
+};
+
+function buildUniforms(
+  pool: ParticleInternal[],
+  width: number,
+  height: number,
+): DustUniforms {
   'worklet';
   let activeCount = 0;
   const posData: number[] = [];
@@ -50,6 +54,38 @@ function buildUniforms(
   };
 }
 
+type DustRectProps = {
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+  alive: SharedValue<number[]>;
+  index: number;
+  halfExtent: number;
+  uniforms: SharedValue<DustUniforms>;
+};
+
+function DustRectImpl({ x, y, alive, index, halfExtent, uniforms }: DustRectProps) {
+  const rectX = useDerivedValue(() => {
+    if (alive.value[index] !== 1) return 0;
+    return x.value - halfExtent;
+  });
+  const rectY = useDerivedValue(() => {
+    if (alive.value[index] !== 1) return 0;
+    return y.value - halfExtent;
+  });
+  const rectSize = useDerivedValue(() => {
+    if (alive.value[index] !== 1) return 0;
+    return halfExtent * 2;
+  });
+
+  return (
+    <Rect x={rectX} y={rectY} width={rectSize} height={rectSize}>
+      <Shader source={particleDustEffect} uniforms={uniforms} />
+    </Rect>
+  );
+}
+
+const DustRect = React.memo(DustRectImpl);
+
 export function FlowerGardenParticleLayer({
   runtimeEntries,
   width,
@@ -57,21 +93,41 @@ export function FlowerGardenParticleLayer({
 }: FlowerGardenParticleLayerProps) {
   const pool = useSharedValue<ParticleInternal[]>(createEmptyParticlePool());
   const lastEmitTimestamps = useSharedValue<number[]>([]);
+  const rectAlive = useSharedValue<number[]>(Array(runtimeEntries.length).fill(0));
 
-  useParticleFrameLoop(runtimeEntries, pool, lastEmitTimestamps, DEFAULT_PARTICLE_CONFIG);
+  useParticleFrameLoop(
+    runtimeEntries,
+    pool,
+    lastEmitTimestamps,
+    rectAlive,
+    DEFAULT_PARTICLE_CONFIG,
+  );
 
   const particleUniforms = useDerivedValue(() => {
     return buildUniforms(pool.value, width, height);
   });
+
+  const halfExtents = useMemo(
+    () => runtimeEntries.map(entry => DUST_RECT_HALF_EXTENT[entry.spawn.species]),
+    [runtimeEntries],
+  );
 
   if (width <= 0 || height <= 0) return null;
 
   return (
     <View pointerEvents="none" style={styles.wrapper}>
       <Canvas style={styles.canvas}>
-        <Rect x={0} y={0} width={width} height={height}>
-          <Shader source={particleDustEffect} uniforms={particleUniforms} />
-        </Rect>
+        {runtimeEntries.map(({ runtime }, index) => (
+          <DustRect
+            key={index}
+            x={runtime.x}
+            y={runtime.y}
+            alive={rectAlive}
+            index={index}
+            halfExtent={halfExtents[index]!}
+            uniforms={particleUniforms}
+          />
+        ))}
       </Canvas>
     </View>
   );

@@ -2,7 +2,7 @@ import type { RoamerSpecies } from '../core/types';
 
 export const PARTICLE_Z = 1.5;
 
-export const MAX_PARTICLES = 300;
+export const MAX_PARTICLES = 120;
 
 export const FALL_SPEED = 0;
 

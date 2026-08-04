@@ -4,12 +4,19 @@ import type { SharedValue } from 'react-native-reanimated';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { FlightState, type RoamerRuntimeEntry } from '../core/types';
 import type { ParticleInternal, RoamerParticleConfig, RoamerParticleState } from './particleTypes';
-import { updateParticlePool } from './updateParticlePool';
+import { anyLiveDustRect } from './particleBounds';
+import {
+  anyRoamerEmitting,
+  computeDustRectAlive,
+  hasActiveParticles,
+  updateParticlePool,
+} from './updateParticlePool';
 
 export function useParticleFrameLoop(
   runtimeEntries: RoamerRuntimeEntry[],
   pool: SharedValue<ParticleInternal[]>,
   lastEmitTimestamps: SharedValue<number[]>,
+  rectAlive: SharedValue<number[]>,
   config: RoamerParticleConfig,
 ): void {
   const lastTimestamp = useSharedValue(-1);
@@ -57,6 +64,13 @@ export function useParticleFrameLoop(
         });
       }
 
+      if (!anyRoamerEmitting(roamerStates) && !hasActiveParticles(pool.value)) {
+        if (anyLiveDustRect(rectAlive.value)) {
+          rectAlive.value = rectAlive.value.map(() => 0);
+        }
+        return;
+      }
+
       updateParticlePool(
         pool.value,
         roamerStates,
@@ -67,10 +81,22 @@ export function useParticleFrameLoop(
         Math.random,
       );
 
+      const alive = new Array(runtimeEntries.length);
+      for (let i = 0; i < runtimeEntries.length; i++) {
+        const rs = roamerStates[i]!;
+        alive[i] = computeDustRectAlive(
+          rs.flightState,
+          frameInfo.timestamp,
+          lastEmitTimestamps.value[i] ?? 0,
+          config.species[rs.species],
+        );
+      }
+      rectAlive.value = alive;
+
       pool.value = pool.value.slice();
       lastEmitTimestamps.value = lastEmitTimestamps.value.slice();
     },
-    [lastTimestamp, pool, lastEmitTimestamps, runtimeEntries, config],
+    [lastTimestamp, pool, lastEmitTimestamps, rectAlive, runtimeEntries, config],
   );
 
   const particleLoop = useFrameCallback(onParticleFrame, true);

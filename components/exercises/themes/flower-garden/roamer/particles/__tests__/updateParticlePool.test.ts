@@ -1,7 +1,11 @@
 import { FlightState } from '../../core/types';
 import type { RoamerSpecies } from '../../core/types';
 import {
+  anyRoamerEmitting,
+  computeDustRectAlive,
   createEmptyParticlePool,
+  hasActiveParticles,
+  isRoamerEmitting,
   updateParticlePool,
 } from '../updateParticlePool';
 import type { ParticleInternal, RoamerParticleConfig } from '../particleTypes';
@@ -93,6 +97,94 @@ function countActive(pool: ParticleInternal[]): number {
 }
 
 describe('updateParticlePool', () => {
+  describe('isRoamerEmitting', () => {
+    it('is true for FLYING_CRUISE and APPROACH_FLOWER', () => {
+      expect(isRoamerEmitting(FlightState.FLYING_CRUISE)).toBe(true);
+      expect(isRoamerEmitting(FlightState.APPROACH_FLOWER)).toBe(true);
+    });
+
+    it('is false for every non-emitting flight state', () => {
+      const nonEmitting = [
+        FlightState.FLYING_IDLE,
+        FlightState.FLYING_TURN,
+        FlightState.WAIT_AT_TAKEN_FLOWER,
+        FlightState.SITTING,
+        FlightState.LIFTING_OFF,
+        FlightState.ESCAPING,
+        FlightState.ESCAPED,
+      ];
+      for (const state of nonEmitting) {
+        expect(isRoamerEmitting(state)).toBe(false);
+      }
+    });
+  });
+
+  describe('anyRoamerEmitting', () => {
+    it('is true when at least one roamer emits', () => {
+      const states = [
+        roamerState({ flightState: FlightState.SITTING }),
+        roamerState({ flightState: FlightState.FLYING_CRUISE }),
+      ];
+      expect(anyRoamerEmitting(states)).toBe(true);
+    });
+
+    it('is false when no roamer emits', () => {
+      const states = [
+        roamerState({ flightState: FlightState.SITTING }),
+        roamerState({ flightState: FlightState.FLYING_IDLE }),
+      ];
+      expect(anyRoamerEmitting(states)).toBe(false);
+    });
+
+    it('is false for an empty list', () => {
+      expect(anyRoamerEmitting([])).toBe(false);
+    });
+  });
+
+  describe('hasActiveParticles', () => {
+    it('is false for a fresh pool', () => {
+      expect(hasActiveParticles(createEmptyParticlePool())).toBe(false);
+    });
+
+    it('is true when at least one particle is active', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState()];
+      const timestamps: number[] = [0];
+      const config = makeConfig();
+      updateParticlePool(pool, states, config, 0.016, 100, timestamps, makeSeededRng());
+      expect(hasActiveParticles(pool)).toBe(true);
+    });
+
+    it('is false once all particles have died', () => {
+      const pool = createEmptyParticlePool();
+      const states = [roamerState()];
+      const timestamps: number[] = [0];
+      const config = withButterflyOverride(makeConfig(), { ttlMin: 100, ttlMax: 100 });
+      updateParticlePool(pool, states, config, 0.016, 100, timestamps, makeSeededRng());
+      updateParticlePool(pool, states, config, 1.0, 2000, timestamps, makeSeededRng());
+      expect(hasActiveParticles(pool)).toBe(false);
+    });
+  });
+
+  describe('computeDustRectAlive', () => {
+    it('stays alive while the roamer emits, regardless of last emission age', () => {
+      const cfg = makeSpeciesConfig({ ttlMax: 1000 });
+      expect(computeDustRectAlive(FlightState.FLYING_CRUISE, 5000, 1000, cfg)).toBe(1);
+      expect(computeDustRectAlive(FlightState.APPROACH_FLOWER, 100000, 0, cfg)).toBe(1);
+    });
+
+    it('stays alive within ttlMax of the last emission (fade-out grace)', () => {
+      const cfg = makeSpeciesConfig({ ttlMax: 1000 });
+      expect(computeDustRectAlive(FlightState.SITTING, 1400, 500, cfg)).toBe(1);
+    });
+
+    it('dies once the last emission is ttlMax or older', () => {
+      const cfg = makeSpeciesConfig({ ttlMax: 1000 });
+      expect(computeDustRectAlive(FlightState.SITTING, 1500, 500, cfg)).toBe(0);
+      expect(computeDustRectAlive(FlightState.SITTING, 1501, 500, cfg)).toBe(0);
+    });
+  });
+
   describe('emission', () => {
     it('emits a particle from a FLYING_CRUISE roamer', () => {
       const pool = createEmptyParticlePool();

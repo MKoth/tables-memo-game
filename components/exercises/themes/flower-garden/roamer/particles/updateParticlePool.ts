@@ -1,9 +1,46 @@
 import { FlightState } from '../core/types';
 import type { RoamerSpecies } from '../core/types';
 import type { ParticleInternal, RoamerParticleConfig, RoamerParticleState } from './particleTypes';
+import type { SpeciesParticleConfig } from './particleConfig';
 import { MAX_PARTICLES } from './particleConfig';
 
 const SPECIES_KEYS: RoamerSpecies[] = ['butterfly', 'bee', 'bumblebee'];
+
+export function isRoamerEmitting(flightState: FlightState): boolean {
+  'worklet';
+  return flightState === FlightState.FLYING_CRUISE || flightState === FlightState.APPROACH_FLOWER;
+}
+
+export function computeDustRectAlive(
+  flightState: FlightState,
+  nowTs: number,
+  lastEmitTs: number,
+  cfg: SpeciesParticleConfig,
+): number {
+  'worklet';
+  if (isRoamerEmitting(flightState)) return 1;
+  return nowTs - lastEmitTs < cfg.ttlMax ? 1 : 0;
+}
+
+export function anyRoamerEmitting(roamerStates: RoamerParticleState[]): boolean {
+  'worklet';
+  for (let i = 0; i < roamerStates.length; i++) {
+    if (isRoamerEmitting(roamerStates[i]!.flightState)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function hasActiveParticles(pool: ParticleInternal[]): boolean {
+  'worklet';
+  for (let i = 0; i < pool.length; i++) {
+    if (pool[i]!.active) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export function createEmptyParticlePool(): ParticleInternal[] {
   const pool: ParticleInternal[] = [];
@@ -61,11 +98,8 @@ export function updateParticlePool(
   'worklet';
   for (let i = 0; i < roamerStates.length; i++) {
     const rs = roamerStates[i]!;
-    const isFlying =
-      rs.flightState === FlightState.FLYING_CRUISE ||
-      rs.flightState === FlightState.APPROACH_FLOWER;
 
-    if (isFlying) {
+    if (isRoamerEmitting(rs.flightState)) {
       const speciesCfg = config.species[rs.species];
       const lastEmit = lastEmitTimestamps[i] ?? 0;
       if (elapsedMs - lastEmit >= speciesCfg.emitIntervalMs) {
