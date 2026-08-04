@@ -577,6 +577,8 @@ export type FlowerGardenThemeImages = {
   roseLeafAtlas: SkImage | null;
 };
 
+export const FLOWER_GARDEN_ATLAS_IMAGE_COUNT = 4;
+
 export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roses).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bush).length +
@@ -588,10 +590,7 @@ export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bee).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bumblebee).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.cloudAtlas).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.petalAtlas).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.rosePetalAtlas).length +
-  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roseLeafAtlas).length;
+  FLOWER_GARDEN_ATLAS_IMAGE_COUNT;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SkImage } from '@shopify/react-native-skia';
 import type { ThemeAssets } from '../../../../themeContract';
 import { loadSkiaImage } from '../../../../core/assets/loadSkiaImage';
@@ -41,16 +41,8 @@ import {
   WILD_VIOLET_FLOWER_SOURCES,
   WILD_VIOLET_LEAF_SOURCES,
   WILD_VIOLET_STEM_SOURCES,
-  type FlowerGardenBushKey,
-  type FlowerGardenChamomileKey,
-  type FlowerGardenDandelionKey,
   type FlowerGardenPetalKey,
-  type FlowerGardenPoppyKey,
-  type FlowerGardenLycaenidaeKey,
-  type FlowerGardenBeeKey,
-  type FlowerGardenBumblebeeKey,
   type FlowerGardenThemeImages,
-  type FlowerGardenWildVioletKey,
 } from './flowerGardenThemeAssets';
 import {
   createFlowerGardenSoundController,
@@ -63,729 +55,192 @@ type FlowerGardenAssetsReady = {
 };
 
 export function useFlowerGardenThemeAssets(): ThemeAssets {
+  const [backgroundImage, setBackgroundImage] = useState<SkImage | null>(null);
+  const [decorationImages, setDecorationImages] = useState<Record<string, SkImage> | null>(null);
   const [progress, setProgress] = useState(0);
   const [readyAssets, setReadyAssets] = useState<FlowerGardenAssetsReady | null>(
     null,
+  );
+  const loadedCountRef = useRef(0);
+
+  const tickProgress = useCallback(() => {
+    loadedCountRef.current += 1;
+    const next = Math.min(
+      100,
+      Math.round((loadedCountRef.current / FLOWER_GARDEN_PRELOAD_TOTAL) * 100),
+    );
+    setProgress(next);
+  }, []);
+
+  const loadSingle = useCallback(
+    async (source: number, label: string): Promise<SkImage | null> => {
+      try {
+        const img = await loadSkiaImage(source);
+        tickProgress();
+        return img;
+      } catch {
+        tickProgress();
+        if (__DEV__) {
+          console.warn(`[useFlowerGardenThemeAssets] Failed to load ${label}`);
+        }
+        return null;
+      }
+    },
+    [tickProgress],
+  );
+
+  const loadAll = useCallback(
+    async (sources: readonly number[], label: string): Promise<SkImage[]> => {
+      const results = await Promise.allSettled(
+        sources.map(async source => {
+          try {
+            const img = await loadSkiaImage(source);
+            return img;
+          } finally {
+            tickProgress();
+          }
+        }),
+      );
+      const images: SkImage[] = [];
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          images.push(result.value);
+        } else if (__DEV__) {
+          console.warn(`[useFlowerGardenThemeAssets] Failed to load a ${label} image`);
+        }
+      }
+      return images;
+    },
+    [tickProgress],
   );
 
   useEffect(() => {
     let cancelled = false;
 
+    const loadCloudPetalAtlas = async (): Promise<CloudPetalAtlas | null> => {
+      const cloudResult = await loadSingle(CLOUD_ATLAS_SOURCE, 'cloud atlas');
+      if (cancelled) {
+        return null;
+      }
+      const petalResult = await loadSingle(PETAL_ATLAS_SOURCE, 'petal atlas');
+      if (cancelled) {
+        return null;
+      }
+      if (cloudResult != null && petalResult != null) {
+        return createCloudPetalAtlas(cloudResult, petalResult);
+      }
+      return null;
+    };
+
     const preload = async () => {
       try {
+        loadedCountRef.current = 0;
         setProgress(0);
 
+        const roses: Partial<Record<FlowerGardenPetalKey, unknown>> = {};
         const roseEntries = Object.entries(
           FLOWER_GARDEN_IMAGE_ASSETS.roses,
         ) as Array<[FlowerGardenPetalKey, number]>;
-
-        const bushEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.bush,
-        ) as Array<[FlowerGardenBushKey, number]>;
-
-        const dandelionEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.dandelion,
-        ) as Array<[FlowerGardenDandelionKey, number]>;
-
-        const chamomileEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.chamomile,
-        ) as Array<[FlowerGardenChamomileKey, number]>;
-
-        const poppyEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.poppy,
-        ) as Array<[FlowerGardenPoppyKey, number]>;
-
-        const wildVioletEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.wild_violet,
-        ) as Array<[FlowerGardenWildVioletKey, number]>;
-
-        const roses: Partial<Record<FlowerGardenPetalKey, unknown>> = {};
-
-        let tracked = 0;
-        const trackSource = () => {
-          tracked++;
-          if (!cancelled) {
-            setProgress(
-              Math.min(
-                100,
-                Math.round((tracked / FLOWER_GARDEN_PRELOAD_TOTAL) * 100),
-              ),
-            );
-          }
-        };
-
-        for (let i = 0; i < roseEntries.length; i++) {
-          const [key, source] = roseEntries[i]!;
+        for (const [key, source] of roseEntries) {
           roses[key] = source;
-          trackSource();
-        }
-        for (let i = 0; i < bushEntries.length; i++) {
-          bushEntries[i]!;
-          trackSource();
-        }
-        for (let i = 0; i < dandelionEntries.length; i++) {
-          dandelionEntries[i]!;
-          trackSource();
-        }
-        for (let i = 0; i < chamomileEntries.length; i++) {
-          chamomileEntries[i]!;
-          trackSource();
-        }
-        for (let i = 0; i < poppyEntries.length; i++) {
-          poppyEntries[i]!;
-          trackSource();
-        }
-        for (let i = 0; i < wildVioletEntries.length; i++) {
-          wildVioletEntries[i]!;
-          trackSource();
         }
 
-        const lycaenidaeEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae,
-        ) as Array<[FlowerGardenLycaenidaeKey, number]>;
-
-        for (let i = 0; i < lycaenidaeEntries.length; i++) {
-          lycaenidaeEntries[i]!;
-          trackSource();
-        }
-
-        const beeEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.bee,
-        ) as Array<[FlowerGardenBeeKey, number]>;
-
-        for (let i = 0; i < beeEntries.length; i++) {
-          beeEntries[i]!;
-          trackSource();
-        }
-
-        const bumblebeeEntries = Object.entries(
-          FLOWER_GARDEN_IMAGE_ASSETS.bumblebee,
-        ) as Array<[FlowerGardenBumblebeeKey, number]>;
-
-        for (let i = 0; i < bumblebeeEntries.length; i++) {
-          bumblebeeEntries[i]!;
-          trackSource();
-        }
+        const [
+          earthImage,
+          grassImage,
+          stemImage,
+          calyxImage,
+          leafImages,
+          substrateImage,
+          roseLeafAtlas,
+        ] = await Promise.all([
+          loadSingle(EARTH_SOURCE, 'earth'),
+          loadSingle(GRASS_TILABLE_SOURCE, 'grass'),
+          loadSingle(STEM_SOURCE, 'stem'),
+          loadSingle(CALYX_SOURCE, 'calyx'),
+          loadAll(LEAF_SOURCES, 'leaf'),
+          loadSingle(ROSE_SUBSTRATE_SOURCE, 'substrate'),
+          loadSingle(ROSE_LEAF_ATLAS_SOURCE, 'rose leaf atlas'),
+        ]);
 
         if (cancelled) {
           return;
         }
 
-        let roseBudImage: SkImage | null = null;
-        try {
-          roseBudImage = await loadSkiaImage(ROSE_BUD_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load rose bud SkImage');
-          }
+        if (earthImage != null) {
+          setBackgroundImage(earthImage);
         }
+        if (grassImage != null) {
+          setDecorationImages({ grass: grassImage });
+        }
+
+        const [
+          roseBudImage,
+          roseCenterImage,
+          rosePetalAtlas,
+          dandelionStemImages,
+          dandelionLeafImages,
+          dandelionFlowerImages,
+          chamomileStemImages,
+          chamomileLeafImages,
+          chamomileFlowerImages,
+          poppyStemImages,
+          poppyLeafImages,
+          poppyFlowerImages,
+          wildVioletStemImages,
+          wildVioletLeafImages,
+          wildVioletFlowerImages,
+        ] = await Promise.all([
+          loadSingle(ROSE_BUD_SOURCE, 'rose bud'),
+          loadSingle(ROSE_CENTER_SOURCE, 'rose center'),
+          loadSingle(ROSE_PETAL_ATLAS_SOURCE, 'rose petal atlas'),
+          loadAll(DANDELION_STEM_SOURCES, 'dandelion stem'),
+          loadAll(DANDELION_LEAF_SOURCES, 'dandelion leaf'),
+          loadAll(DANDELION_FLOWER_SOURCES, 'dandelion flower'),
+          loadAll(CHAMOMILE_STEM_SOURCES, 'chamomile stem'),
+          loadAll(CHAMOMILE_LEAF_SOURCES, 'chamomile leaf'),
+          loadAll(CHAMOMILE_FLOWER_SOURCES, 'chamomile flower'),
+          loadAll(POPPY_STEM_SOURCES, 'poppy stem'),
+          loadAll(POPPY_LEAF_SOURCES, 'poppy leaf'),
+          loadAll(POPPY_FLOWER_SOURCES, 'poppy flower'),
+          loadAll(WILD_VIOLET_STEM_SOURCES, 'wild violet stem'),
+          loadAll(WILD_VIOLET_LEAF_SOURCES, 'wild violet leaf'),
+          loadAll(WILD_VIOLET_FLOWER_SOURCES, 'wild violet flower'),
+        ]);
 
         if (cancelled) {
           return;
         }
 
-        let roseCenterImage: SkImage | null = null;
-        try {
-          roseCenterImage = await loadSkiaImage(ROSE_CENTER_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load rose center SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let substrateImage: SkImage | null = null;
-        try {
-          substrateImage = await loadSkiaImage(ROSE_SUBSTRATE_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load rose substrate SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const petalLoadResults = await Promise.allSettled(
-          PETAL_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode petal image');
-            }
-            return img;
-          }),
-        );
-        const petalImages: SkImage[] = [];
-        for (const result of petalLoadResults) {
-          if (result.status === 'fulfilled') {
-            petalImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a petal image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let stemImage: SkImage | null = null;
-        try {
-          stemImage = await loadSkiaImage(STEM_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load stem SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let calyxImage: SkImage | null = null;
-        try {
-          calyxImage = await loadSkiaImage(CALYX_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load calyx SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const leafLoadResults = await Promise.allSettled(
-          LEAF_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode leaf image');
-            }
-            return img;
-          }),
-        );
-        const leafImages: SkImage[] = [];
-        for (const result of leafLoadResults) {
-          if (result.status === 'fulfilled') {
-            leafImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a leaf image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let earthImage: SkImage | null = null;
-        try {
-          earthImage = await loadSkiaImage(EARTH_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load earth SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let grassImage: SkImage | null = null;
-        try {
-          grassImage = await loadSkiaImage(GRASS_TILABLE_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load grass SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const cloverLoadResults = await Promise.allSettled(
-          CLOVER_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode clover image');
-            }
-            return img;
-          }),
-        );
-        const cloverImages: SkImage[] = [];
-        for (const result of cloverLoadResults) {
-          if (result.status === 'fulfilled') {
-            cloverImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a clover image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const mossStoneLoadResults = await Promise.allSettled(
-          MOSS_STONE_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode moss stone image');
-            }
-            return img;
-          }),
-        );
-        const mossStoneImages: SkImage[] = [];
-        for (const result of mossStoneLoadResults) {
-          if (result.status === 'fulfilled') {
-            mossStoneImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a moss stone image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const dandelionStemLoadResults = await Promise.allSettled(
-          DANDELION_STEM_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode dandelion stem image');
-            }
-            return img;
-          }),
-        );
-        const dandelionStemImages: SkImage[] = [];
-        for (const result of dandelionStemLoadResults) {
-          if (result.status === 'fulfilled') {
-            dandelionStemImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a dandelion stem image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const dandelionLeafLoadResults = await Promise.allSettled(
-          DANDELION_LEAF_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode dandelion leaf image');
-            }
-            return img;
-          }),
-        );
-        const dandelionLeafImages: SkImage[] = [];
-        for (const result of dandelionLeafLoadResults) {
-          if (result.status === 'fulfilled') {
-            dandelionLeafImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a dandelion leaf image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const dandelionFlowerLoadResults = await Promise.allSettled(
-          DANDELION_FLOWER_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode dandelion flower image');
-            }
-            return img;
-          }),
-        );
-        const dandelionFlowerImages: SkImage[] = [];
-        for (const result of dandelionFlowerLoadResults) {
-          if (result.status === 'fulfilled') {
-            dandelionFlowerImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a dandelion flower image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const chamomileStemLoadResults = await Promise.allSettled(
-          CHAMOMILE_STEM_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode chamomile stem image');
-            }
-            return img;
-          }),
-        );
-        const chamomileStemImages: SkImage[] = [];
-        for (const result of chamomileStemLoadResults) {
-          if (result.status === 'fulfilled') {
-            chamomileStemImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a chamomile stem image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const chamomileLeafLoadResults = await Promise.allSettled(
-          CHAMOMILE_LEAF_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode chamomile leaf image');
-            }
-            return img;
-          }),
-        );
-        const chamomileLeafImages: SkImage[] = [];
-        for (const result of chamomileLeafLoadResults) {
-          if (result.status === 'fulfilled') {
-            chamomileLeafImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a chamomile leaf image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const chamomileFlowerLoadResults = await Promise.allSettled(
-          CHAMOMILE_FLOWER_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode chamomile flower image');
-            }
-            return img;
-          }),
-        );
-        const chamomileFlowerImages: SkImage[] = [];
-        for (const result of chamomileFlowerLoadResults) {
-          if (result.status === 'fulfilled') {
-            chamomileFlowerImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a chamomile flower image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const poppyStemLoadResults = await Promise.allSettled(
-          POPPY_STEM_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode poppy stem image');
-            }
-            return img;
-          }),
-        );
-        const poppyStemImages: SkImage[] = [];
-        for (const result of poppyStemLoadResults) {
-          if (result.status === 'fulfilled') {
-            poppyStemImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a poppy stem image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const poppyLeafLoadResults = await Promise.allSettled(
-          POPPY_LEAF_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode poppy leaf image');
-            }
-            return img;
-          }),
-        );
-        const poppyLeafImages: SkImage[] = [];
-        for (const result of poppyLeafLoadResults) {
-          if (result.status === 'fulfilled') {
-            poppyLeafImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a poppy leaf image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const poppyFlowerLoadResults = await Promise.allSettled(
-          POPPY_FLOWER_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode poppy flower image');
-            }
-            return img;
-          }),
-        );
-        const poppyFlowerImages: SkImage[] = [];
-        for (const result of poppyFlowerLoadResults) {
-          if (result.status === 'fulfilled') {
-            poppyFlowerImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a poppy flower image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const wildVioletStemLoadResults = await Promise.allSettled(
-          WILD_VIOLET_STEM_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode wild_violet stem image');
-            }
-            return img;
-          }),
-        );
-        const wildVioletStemImages: SkImage[] = [];
-        for (const result of wildVioletStemLoadResults) {
-          if (result.status === 'fulfilled') {
-            wildVioletStemImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a wild_violet stem image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const wildVioletLeafLoadResults = await Promise.allSettled(
-          WILD_VIOLET_LEAF_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode wild_violet leaf image');
-            }
-            return img;
-          }),
-        );
-        const wildVioletLeafImages: SkImage[] = [];
-        for (const result of wildVioletLeafLoadResults) {
-          if (result.status === 'fulfilled') {
-            wildVioletLeafImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a wild_violet leaf image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const wildVioletFlowerLoadResults = await Promise.allSettled(
-          WILD_VIOLET_FLOWER_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode wild_violet flower image');
-            }
-            return img;
-          }),
-        );
-        const wildVioletFlowerImages: SkImage[] = [];
-        for (const result of wildVioletFlowerLoadResults) {
-          if (result.status === 'fulfilled') {
-            wildVioletFlowerImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a wild_violet flower image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let lycaenidaeBodyImage: SkImage | null = null;
-        try {
-          lycaenidaeBodyImage = await loadSkiaImage(LYCAENIDAE_BODY_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load lycaenidae body SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const lycaenidaeLeftWingLoadResults = await Promise.allSettled(
-          LYCAENIDAE_LEFT_WING_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode lycaenidae left wing image');
-            }
-            return img;
-          }),
-        );
-        const lycaenidaeWingLeftImages: SkImage[] = [];
-        for (const result of lycaenidaeLeftWingLoadResults) {
-          if (result.status === 'fulfilled') {
-            lycaenidaeWingLeftImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a lycaenidae left wing image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const lycaenidaeRightWingLoadResults = await Promise.allSettled(
-          LYCAENIDAE_RIGHT_WING_SOURCES.map(async (source) => {
-            const img = await loadSkiaImage(source);
-            if (img == null) {
-              throw new Error('Failed to decode lycaenidae right wing image');
-            }
-            return img;
-          }),
-        );
-        const lycaenidaeWingRightImages: SkImage[] = [];
-        for (const result of lycaenidaeRightWingLoadResults) {
-          if (result.status === 'fulfilled') {
-            lycaenidaeWingRightImages.push(result.value);
-          } else if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load a lycaenidae right wing image');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let beeBodyImage: SkImage | null = null;
-        try {
-          beeBodyImage = await loadSkiaImage(BEE_BODY_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load bee body SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let beeLeftWingImage: SkImage | null = null;
-        try {
-          beeLeftWingImage = await loadSkiaImage(BEE_LEFT_WING_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load bee left wing SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let beeRightWingImage: SkImage | null = null;
-        try {
-          beeRightWingImage = await loadSkiaImage(BEE_RIGHT_WING_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load bee right wing SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let bumblebeeBodyImage: SkImage | null = null;
-        try {
-          bumblebeeBodyImage = await loadSkiaImage(BUMBLEBEE_BODY_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load bumblebee body SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let bumblebeeLeftWingImage: SkImage | null = null;
-        try {
-          bumblebeeLeftWingImage = await loadSkiaImage(BUMBLEBEE_LEFT_WING_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load bumblebee left wing SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let bumblebeeRightWingImage: SkImage | null = null;
-        try {
-          bumblebeeRightWingImage = await loadSkiaImage(BUMBLEBEE_RIGHT_WING_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load bumblebee right wing SkImage');
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        let cloudPetalAtlas: CloudPetalAtlas | null = null;
-        try {
-          const cloudAtlasImage = await loadSkiaImage(CLOUD_ATLAS_SOURCE);
-          const petalAtlasImage = await loadSkiaImage(PETAL_ATLAS_SOURCE);
-          if (cloudAtlasImage != null && petalAtlasImage != null) {
-            cloudPetalAtlas = createCloudPetalAtlas(cloudAtlasImage, petalAtlasImage);
-          }
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load cloud/petal atlas');
-          }
-        }
-
-        trackSource();
-        trackSource();
-
-        let rosePetalAtlas: SkImage | null = null;
-        try {
-          rosePetalAtlas = await loadSkiaImage(ROSE_PETAL_ATLAS_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load rose petal atlas');
-          }
-        }
-
-        trackSource();
-
-        let roseLeafAtlas: SkImage | null = null;
-        try {
-          roseLeafAtlas = await loadSkiaImage(ROSE_LEAF_ATLAS_SOURCE);
-        } catch {
-          if (__DEV__) {
-            console.warn('[useFlowerGardenThemeAssets] Failed to load rose leaf atlas');
-          }
-        }
-
-        trackSource();
+        const [
+          petalImages,
+          cloverImages,
+          mossStoneImages,
+          lycaenidaeBodyImage,
+          lycaenidaeWingLeftImages,
+          lycaenidaeWingRightImages,
+          beeBodyImage,
+          beeLeftWingImage,
+          beeRightWingImage,
+          bumblebeeBodyImage,
+          bumblebeeLeftWingImage,
+          bumblebeeRightWingImage,
+          cloudPetalAtlas,
+        ] = await Promise.all([
+          loadAll(PETAL_SOURCES, 'petal'),
+          loadAll(CLOVER_SOURCES, 'clover'),
+          loadAll(MOSS_STONE_SOURCES, 'moss stone'),
+          loadSingle(LYCAENIDAE_BODY_SOURCE, 'lycaenidae body'),
+          loadAll(LYCAENIDAE_LEFT_WING_SOURCES, 'lycaenidae left wing'),
+          loadAll(LYCAENIDAE_RIGHT_WING_SOURCES, 'lycaenidae right wing'),
+          loadSingle(BEE_BODY_SOURCE, 'bee body'),
+          loadSingle(BEE_LEFT_WING_SOURCE, 'bee left wing'),
+          loadSingle(BEE_RIGHT_WING_SOURCE, 'bee right wing'),
+          loadSingle(BUMBLEBEE_BODY_SOURCE, 'bumblebee body'),
+          loadSingle(BUMBLEBEE_LEFT_WING_SOURCE, 'bumblebee left wing'),
+          loadSingle(BUMBLEBEE_RIGHT_WING_SOURCE, 'bumblebee right wing'),
+          loadCloudPetalAtlas(),
+        ]);
 
         if (cancelled) {
           return;
@@ -798,29 +253,81 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             roseBudImage,
             roseCenterImage,
             substrateImage,
-            petalImages: petalImages.length === PETAL_SOURCES.length ? petalImages : null,
+            petalImages:
+              petalImages.length === PETAL_SOURCES.length ? petalImages : null,
             calyxImage,
             stemImage,
-            leafImages: leafImages.length === LEAF_SOURCES.length ? leafImages : null,
+            leafImages:
+              leafImages.length === LEAF_SOURCES.length ? leafImages : null,
             earthImage,
             grassImage,
-            cloverImages: cloverImages.length === CLOVER_SOURCES.length ? cloverImages : null,
-            mossStoneImages: mossStoneImages.length === MOSS_STONE_SOURCES.length ? mossStoneImages : null,
-            dandelionStemImages: dandelionStemImages.length === DANDELION_STEM_SOURCES.length ? dandelionStemImages : null,
-            dandelionLeafImages: dandelionLeafImages.length === DANDELION_LEAF_SOURCES.length ? dandelionLeafImages : null,
-            dandelionFlowerImages: dandelionFlowerImages.length === DANDELION_FLOWER_SOURCES.length ? dandelionFlowerImages : null,
-            chamomileStemImages: chamomileStemImages.length === CHAMOMILE_STEM_SOURCES.length ? chamomileStemImages : null,
-            chamomileLeafImages: chamomileLeafImages.length === CHAMOMILE_LEAF_SOURCES.length ? chamomileLeafImages : null,
-            chamomileFlowerImages: chamomileFlowerImages.length === CHAMOMILE_FLOWER_SOURCES.length ? chamomileFlowerImages : null,
-            poppyStemImages: poppyStemImages.length === POPPY_STEM_SOURCES.length ? poppyStemImages : null,
-            poppyLeafImages: poppyLeafImages.length === POPPY_LEAF_SOURCES.length ? poppyLeafImages : null,
-            poppyFlowerImages: poppyFlowerImages.length === POPPY_FLOWER_SOURCES.length ? poppyFlowerImages : null,
-            wildVioletStemImages: wildVioletStemImages.length === WILD_VIOLET_STEM_SOURCES.length ? wildVioletStemImages : null,
-            wildVioletLeafImages: wildVioletLeafImages.length === WILD_VIOLET_LEAF_SOURCES.length ? wildVioletLeafImages : null,
-            wildVioletFlowerImages: wildVioletFlowerImages.length === WILD_VIOLET_FLOWER_SOURCES.length ? wildVioletFlowerImages : null,
+            cloverImages:
+              cloverImages.length === CLOVER_SOURCES.length
+                ? cloverImages
+                : null,
+            mossStoneImages:
+              mossStoneImages.length === MOSS_STONE_SOURCES.length
+                ? mossStoneImages
+                : null,
+            dandelionStemImages:
+              dandelionStemImages.length === DANDELION_STEM_SOURCES.length
+                ? dandelionStemImages
+                : null,
+            dandelionLeafImages:
+              dandelionLeafImages.length === DANDELION_LEAF_SOURCES.length
+                ? dandelionLeafImages
+                : null,
+            dandelionFlowerImages:
+              dandelionFlowerImages.length === DANDELION_FLOWER_SOURCES.length
+                ? dandelionFlowerImages
+                : null,
+            chamomileStemImages:
+              chamomileStemImages.length === CHAMOMILE_STEM_SOURCES.length
+                ? chamomileStemImages
+                : null,
+            chamomileLeafImages:
+              chamomileLeafImages.length === CHAMOMILE_LEAF_SOURCES.length
+                ? chamomileLeafImages
+                : null,
+            chamomileFlowerImages:
+              chamomileFlowerImages.length === CHAMOMILE_FLOWER_SOURCES.length
+                ? chamomileFlowerImages
+                : null,
+            poppyStemImages:
+              poppyStemImages.length === POPPY_STEM_SOURCES.length
+                ? poppyStemImages
+                : null,
+            poppyLeafImages:
+              poppyLeafImages.length === POPPY_LEAF_SOURCES.length
+                ? poppyLeafImages
+                : null,
+            poppyFlowerImages:
+              poppyFlowerImages.length === POPPY_FLOWER_SOURCES.length
+                ? poppyFlowerImages
+                : null,
+            wildVioletStemImages:
+              wildVioletStemImages.length === WILD_VIOLET_STEM_SOURCES.length
+                ? wildVioletStemImages
+                : null,
+            wildVioletLeafImages:
+              wildVioletLeafImages.length === WILD_VIOLET_LEAF_SOURCES.length
+                ? wildVioletLeafImages
+                : null,
+            wildVioletFlowerImages:
+              wildVioletFlowerImages.length === WILD_VIOLET_FLOWER_SOURCES.length
+                ? wildVioletFlowerImages
+                : null,
             lycaenidaeBodyImage,
-            lycaenidaeWingLeftImages: lycaenidaeWingLeftImages.length === LYCAENIDAE_LEFT_WING_SOURCES.length ? lycaenidaeWingLeftImages : null,
-            lycaenidaeWingRightImages: lycaenidaeWingRightImages.length === LYCAENIDAE_RIGHT_WING_SOURCES.length ? lycaenidaeWingRightImages : null,
+            lycaenidaeWingLeftImages:
+              lycaenidaeWingLeftImages.length ===
+              LYCAENIDAE_LEFT_WING_SOURCES.length
+                ? lycaenidaeWingLeftImages
+                : null,
+            lycaenidaeWingRightImages:
+              lycaenidaeWingRightImages.length ===
+              LYCAENIDAE_RIGHT_WING_SOURCES.length
+                ? lycaenidaeWingRightImages
+                : null,
             beeBodyImage,
             beeLeftWingImage,
             beeRightWingImage,
@@ -834,7 +341,10 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         });
       } catch (error) {
         if (__DEV__) {
-          console.warn('[useFlowerGardenThemeAssets] Failed to preload assets:', error);
+          console.warn(
+            '[useFlowerGardenThemeAssets] Failed to preload assets:',
+            error,
+          );
         }
       }
     };
@@ -843,10 +353,13 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
     return () => {
       cancelled = true;
+      loadedCountRef.current = 0;
+      setBackgroundImage(null);
+      setDecorationImages(null);
       setProgress(0);
       setReadyAssets(null);
     };
-  }, []);
+  }, [loadSingle, loadAll]);
 
   if (readyAssets != null) {
     return {
@@ -859,8 +372,8 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
   return {
     phase: 'loading',
-    backgroundImage: null,
-    decorationImages: null,
+    backgroundImage,
+    decorationImages,
     accentImages: null,
     progress,
   } as ThemeAssets;
