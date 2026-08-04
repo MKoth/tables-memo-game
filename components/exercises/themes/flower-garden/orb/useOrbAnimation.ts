@@ -2,8 +2,8 @@ import { useCallback, useEffect, useLayoutEffect } from 'react';
 import {
   cancelAnimation,
   Easing,
+  ReduceMotion,
   useDerivedValue,
-  useFrameCallback,
   useSharedValue,
   withDelay,
   withTiming,
@@ -13,6 +13,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import {
   ORB_BURST_DURATION_MS,
   ORB_ENTER_DURATION_MS,
+  ORB_IDLE_CLOCK_SPAN_MS,
 } from './orbAnimPresets';
 import { computeOrbAnimState, type OrbWrongStateInput } from './orbAnimWorklets';
 import {
@@ -24,6 +25,16 @@ import {
   type PetalSpawnConfig,
   type UseOrbAnimationResult,
 } from './orbAnimTypes';
+
+export function startOrbIdleClock(idleElapsedMs: SharedValue<number>): void {
+  'worklet';
+  idleElapsedMs.value = 0;
+  idleElapsedMs.value = withTiming(ORB_IDLE_CLOCK_SPAN_MS, {
+    duration: ORB_IDLE_CLOCK_SPAN_MS,
+    easing: Easing.linear,
+    reduceMotion: ReduceMotion.Never,
+  });
+}
 
 export type OrbWrongState = {
   /** Wrong-feedback progress (0–1) driven by the caller, e.g. a wrong tap. */
@@ -53,29 +64,10 @@ export function useOrbAnimation(
   const burstIntent = useSharedValue<BurstIntentValue>(BurstIntent.Release);
   const phase = useSharedValue<number>(enabled ? OrbPhase.Enter : OrbPhase.None);
   const configSv = useSharedValue(config);
-  const lastFrameMs = useSharedValue(-1);
 
   useLayoutEffect(() => {
     configSv.value = config;
   }, [config, configSv]);
-
-  useFrameCallback(frameInfo => {
-    const phaseNow = phase.value;
-    if (phaseNow !== OrbPhase.Idle) {
-      lastFrameMs.value = -1;
-      return;
-    }
-    const currentMs = frameInfo.timestamp;
-    if (lastFrameMs.value < 0) {
-      lastFrameMs.value = currentMs;
-      return;
-    }
-    const delta = currentMs - lastFrameMs.value;
-    lastFrameMs.value = currentMs;
-    if (delta > 0) {
-      idleElapsedMs.value = idleElapsedMs.value + delta;
-    }
-  }, true);
 
   const wrongSnapshot = useDerivedValue<OrbWrongStateInput>(
     () => ({
@@ -104,13 +96,13 @@ export function useOrbAnimation(
   useEffect(() => {
     cancelAnimation(enterProgress);
     cancelAnimation(burstProgress);
+    cancelAnimation(idleElapsedMs);
 
     if (!enabled) {
       enterProgress.value = 0;
       burstProgress.value = 0;
       idleElapsedMs.value = 0;
       burstIdleTimeMs.value = 0;
-      lastFrameMs.value = -1;
       phase.value = OrbPhase.None;
       return;
     }
@@ -118,34 +110,34 @@ export function useOrbAnimation(
     enterProgress.value = 0;
     burstProgress.value = 0;
     idleElapsedMs.value = 0;
-    lastFrameMs.value = -1;
     phase.value = OrbPhase.Enter;
 
     const currentConfig = configSv.value;
     if (currentConfig.skipEnter === true) {
       enterProgress.value = 1;
+      startOrbIdleClock(idleElapsedMs);
       phase.value = OrbPhase.Idle;
-      return;
+    } else {
+      enterProgress.value = withDelay(
+        currentConfig.enterDelayMs ?? 0,
+        withTiming(
+          1,
+          { duration: ORB_ENTER_DURATION_MS, easing: Easing.out(Easing.cubic) },
+          finished => {
+            'worklet';
+            if (finished) {
+              startOrbIdleClock(idleElapsedMs);
+              phase.value = OrbPhase.Idle;
+            }
+          },
+        ),
+      );
     }
-
-    enterProgress.value = withDelay(
-      currentConfig.enterDelayMs ?? 0,
-      withTiming(
-        1,
-        { duration: ORB_ENTER_DURATION_MS, easing: Easing.out(Easing.cubic) },
-        finished => {
-          'worklet';
-          if (finished) {
-            idleElapsedMs.value = 0;
-            phase.value = OrbPhase.Idle;
-          }
-        },
-      ),
-    );
 
     return () => {
       cancelAnimation(enterProgress);
       cancelAnimation(burstProgress);
+      cancelAnimation(idleElapsedMs);
     };
   }, [enabled, enterProgress, burstProgress, idleElapsedMs, phase, burstIdleTimeMs, configSv]);
 
@@ -160,6 +152,7 @@ export function useOrbAnimation(
       }
       burstIntent.value = intent;
       burstIdleTimeMs.value = idleElapsedMs.value;
+      cancelAnimation(idleElapsedMs);
       burstStartRealTimeMs.value = Date.now();
       phase.value = OrbPhase.Burst;
       burstProgress.value = 0;
