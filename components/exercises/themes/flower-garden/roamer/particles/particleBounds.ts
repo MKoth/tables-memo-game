@@ -7,22 +7,24 @@ export const DUST_RECT_SPEED_SMOOTHING = 0.08;
 export function computeDustRectHalfExtent(
   cfg: SpeciesParticleConfig,
   speed: number,
-  margin: number = DUST_RECT_MARGIN,
+  margin?: number,
 ): number {
   'worklet';
+  const m = margin ?? DUST_RECT_MARGIN;
   const trailReach = speed * (cfg.ttlMax / 1000);
   const driftReach = cfg.driftSpeed * (cfg.ttlMax / 1000);
   const maxRadius = cfg.startDiameterMax / 2;
-  return trailReach + driftReach + maxRadius + margin;
+  return trailReach + driftReach + maxRadius + m;
 }
 
 export function smoothDustRectSpeed(
   previous: number,
   current: number,
-  smoothing: number = DUST_RECT_SPEED_SMOOTHING,
+  smoothing?: number,
 ): number {
   'worklet';
-  return previous + (current - previous) * smoothing;
+  const k = smoothing ?? DUST_RECT_SPEED_SMOOTHING;
+  return previous + (current - previous) * k;
 }
 
 export function anyLiveDustRect(alive: number[]): boolean {
