@@ -15,6 +15,8 @@ import {
 } from '../../shaders/earthGrassBackground.sksl';
 import { buildEarthGrassBackgroundUniforms } from './buildEarthGrassBackgroundUniforms';
 
+const BACKGROUND_RES = 0.85;
+
 function compileEarthGrassBackgroundEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(EARTH_GRASS_BACKGROUND_SKSL);
   if (!effect) {
@@ -44,13 +46,16 @@ export function FlowerGardenBackgroundCanvas({
   brightness = 1.5,
   maskConfig,
 }: FlowerGardenBackgroundCanvasProps) {
+  const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
+  const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
+
   const uniforms = useMemo(
     () =>
-      buildEarthGrassBackgroundUniforms(maskConfig, width, height, {
+      buildEarthGrassBackgroundUniforms(maskConfig, bgWidth, bgHeight, {
         grassScale,
         brightness,
       }),
-    [maskConfig, width, height, grassScale, brightness],
+    [maskConfig, bgWidth, bgHeight, grassScale, brightness],
   );
 
   if (width === 0 || height === 0) {
@@ -58,7 +63,15 @@ export function FlowerGardenBackgroundCanvas({
   }
 
   return (
-    <Canvas style={[styles.canvas, { width, height }]}>
+    <Canvas
+      style={[
+        styles.canvas,
+        {
+          width: bgWidth,
+          height: bgHeight,
+          transform: [{ scale: 1 / BACKGROUND_RES }],
+        },
+      ]}>
       <Fill>
         <Shader source={earthGrassBackgroundEffect} uniforms={uniforms}>
           <ImageShader
@@ -66,16 +79,16 @@ export function FlowerGardenBackgroundCanvas({
             tx="repeat"
             ty="repeat"
             fit="none"
-            width={width}
-            height={height}
+            width={bgWidth}
+            height={bgHeight}
           />
           <ImageShader
             image={grassImage}
             tx="repeat"
             ty="repeat"
             fit="none"
-            width={width}
-            height={height}
+            width={bgWidth}
+            height={bgHeight}
           />
         </Shader>
       </Fill>
@@ -88,5 +101,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
+    transformOrigin: 'top left',
   },
 });
