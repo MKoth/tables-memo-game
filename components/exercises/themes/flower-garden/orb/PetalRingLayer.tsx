@@ -1,7 +1,7 @@
 import React from 'react';
 import { ColorMatrix, Group, type SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
-import { useDerivedValue } from 'react-native-reanimated';
+import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import type { AtlasRegion } from '../core/assets/textureAtlas/packTextureAtlas';
 import { AtlasSprite } from './AtlasSprite';
 import { ORB_PETAL_BASE_SIZE_PX } from './orbAnimPresets';
@@ -54,11 +54,13 @@ function Petal({ spawnIndex, sizeFactor, atlas, region, anim }: PetalProps) {
   });
 
   const size = ORB_PETAL_BASE_SIZE_PX * sizeFactor;
+  const regionValue = useSharedValue<AtlasRegion | null>(region);
+  const sizeValue = useSharedValue(size);
 
   return (
     <Group transform={transform} opacity={opacity}>
       <ColorMatrix matrix={tintMatrix} />
-      <AtlasSprite atlas={atlas} region={region} width={size} height={size} />
+      <AtlasSprite atlas={atlas} region={regionValue} width={sizeValue} height={sizeValue} />
     </Group>
   );
 }

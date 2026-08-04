@@ -22,6 +22,11 @@ export function buildCloudPetalAtlas(
 
   const surface = Skia.Surface.MakeOffscreen(layout.atlasWidth, layout.atlasHeight);
   if (surface == null) {
+    if (__DEV__) {
+      console.warn(
+        `[buildCloudPetalAtlas] Failed to create offscreen surface ${layout.atlasWidth}x${layout.atlasHeight}`,
+      );
+    }
     return null;
   }
 
