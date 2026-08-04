@@ -15,6 +15,10 @@ import {
   GROUND_SCATTER_COVERING_SIZE,
   GROUND_SCATTER_SKSL,
 } from './groundScatter.sksl';
+import {
+  spriteIntersectsViewport,
+  type CullViewport,
+} from './generateGroundScatterConfigs';
 
 function compileGroundScatterEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(GROUND_SCATTER_SKSL);
@@ -82,34 +86,64 @@ function GroundScatterRect({ config, images }: GroundScatterRectProps) {
   );
 }
 
-export type GroundScatterShaderLayerProps = {
+export type GroundScatterGroup = {
   configs: readonly GroundScatterConfig[];
   images: readonly SkImage[];
 };
 
+export type GroundScatterShaderLayerProps = {
+  groups: readonly GroundScatterGroup[];
+  viewportRect?: CullViewport | null;
+};
+
 function GroundScatterShaderLayerImpl({
-  configs,
-  images,
+  groups,
+  viewportRect,
 }: GroundScatterShaderLayerProps) {
-  const paddedImages = useMemo(
-    () => (images.length > 0 ? padImages(images) : null),
-    [images],
+  const paddedGroups = useMemo(
+    () =>
+      groups.map(g => ({
+        images: g.images.length > 0 ? padImages(g.images) : null,
+        configs: g.configs,
+      })),
+    [groups],
   );
 
-  if (configs.length === 0 || paddedImages == null) {
+  const hasContent = paddedGroups.some(
+    g => g.images != null && g.configs.length > 0,
+  );
+  if (!hasContent) {
     return null;
   }
 
   return (
     <Canvas style={styles.canvas} pointerEvents="none">
-      {configs.map(config => (
-        <GroundScatterRect key={config.spriteId} config={config} images={paddedImages} />
-      ))}
+      {paddedGroups.map(group =>
+        group.images != null
+          ? group.configs.map(config => {
+              if (
+                viewportRect &&
+                !spriteIntersectsViewport(config, viewportRect)
+              ) {
+                return null;
+              }
+              return (
+                <GroundScatterRect
+                  key={config.spriteId}
+                  config={config}
+                  images={group.images!}
+                />
+              );
+            })
+          : null,
+      )}
     </Canvas>
   );
 }
 
-export const GroundScatterShaderLayer = React.memo(GroundScatterShaderLayerImpl);
+export const GroundScatterShaderLayer = React.memo(
+  GroundScatterShaderLayerImpl,
+);
 
 const styles = StyleSheet.create({
   canvas: {

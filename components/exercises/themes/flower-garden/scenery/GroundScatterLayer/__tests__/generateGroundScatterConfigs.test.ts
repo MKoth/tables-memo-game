@@ -1,5 +1,6 @@
 import { createRng } from '../../BushShaderLayer/helpers/seededRandom';
 import {
+  cullGroundScatterConfigs,
   generateGroundScatterConfigs,
   validateGroundScatterConfigs,
   type GenerateGroundScatterConfigsInput,
@@ -236,5 +237,90 @@ describe('generateGroundScatterConfigs', () => {
     for (const key of ['left', 'right', 'top', 'bottom'] as const) {
       expect(onEdges[key]).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('cullGroundScatterConfigs', () => {
+  const fullViewport = { x: 0, y: 0, width: SCREEN_W, height: SCREEN_H };
+
+  it('keeps all elements when viewport covers full screen', () => {
+    const configs = generateGroundScatterConfigs(buildInput({ count: 10 }));
+    const culled = cullGroundScatterConfigs(configs, fullViewport);
+    expect(culled).toHaveLength(10);
+  });
+
+  it('returns empty array when all elements are outside viewport', () => {
+    const configs = generateGroundScatterConfigs(buildInput({ count: 10 }));
+    const culled = cullGroundScatterConfigs(configs, {
+      x: SCREEN_W + 100,
+      y: SCREEN_H + 100,
+      width: 50,
+      height: 50,
+    });
+    expect(culled).toHaveLength(0);
+  });
+
+  it('culls only the elements outside a partial viewport', () => {
+    const configs = generateGroundScatterConfigs(
+      buildInput({ kind: 'even', count: 20 }),
+    );
+    const partialVp = {
+      x: 100,
+      y: 200,
+      width: 200,
+      height: 400,
+    };
+    const culled = cullGroundScatterConfigs(configs, partialVp);
+    for (const c of culled) {
+      const halfSize = c.size * 0.5 * Math.max(1, c.shadowScale);
+      expect(c.x + halfSize).toBeGreaterThan(partialVp.x);
+      expect(c.x - halfSize).toBeLessThan(partialVp.x + partialVp.width);
+      expect(c.y + halfSize).toBeGreaterThan(partialVp.y);
+      expect(c.y - halfSize).toBeLessThan(partialVp.y + partialVp.height);
+    }
+    expect(culled.length).toBeLessThan(configs.length);
+  });
+
+  it('keeps elements that partially overlap the viewport edge', () => {
+    const configs = generateGroundScatterConfigs(
+      buildInput({ kind: 'even', count: 20 }),
+    );
+    const narrowVp = {
+      x: SCREEN_W / 2 - 1,
+      y: SCREEN_H / 2 - 1,
+      width: 2,
+      height: 2,
+    };
+    const culled = cullGroundScatterConfigs(configs, narrowVp);
+    for (const c of culled) {
+      const halfSize = c.size * 0.5 * Math.max(1, c.shadowScale);
+      const overlaps =
+        c.x + halfSize > narrowVp.x &&
+        c.x - halfSize < narrowVp.x + narrowVp.width &&
+        c.y + halfSize > narrowVp.y &&
+        c.y - halfSize < narrowVp.y + narrowVp.height;
+      expect(overlaps).toBe(true);
+    }
+  });
+
+  it('returns empty array for empty input', () => {
+    const culled = cullGroundScatterConfigs([], fullViewport);
+    expect(culled).toHaveLength(0);
+  });
+
+  it('preserves relative order of surviving elements', () => {
+    const configs = generateGroundScatterConfigs(
+      buildInput({ kind: 'even', count: 20 }),
+    );
+    const culled = cullGroundScatterConfigs(configs, fullViewport);
+    const ids = configs.map(c => c.spriteId);
+    const culledIds = culled.map(c => c.spriteId);
+    let ci = 0;
+    for (const id of ids) {
+      if (ci < culledIds.length && culledIds[ci] === id) {
+        ci++;
+      }
+    }
+    expect(ci).toBe(culledIds.length);
   });
 });

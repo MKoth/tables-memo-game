@@ -9,7 +9,10 @@ import { RoseSubstrateLayer } from './RoseSubstrateLayer/RoseSubstrateLayer';
 import { SceneryShadowLayer } from './SceneryShadowLayer/SceneryShadowLayer';
 import { FlowerGardenBackgroundCanvas } from './FlowerGardenBackgroundCanvas/FlowerGardenBackgroundCanvas';
 import { FieldFlowerShaderLayer } from './FieldFlowerShaderLayer/FieldFlowerShaderLayer';
-import { GroundScatterShaderLayer } from './GroundScatterLayer/GroundScatterShaderLayer';
+import {
+  GroundScatterShaderLayer,
+  type GroundScatterGroup,
+} from './GroundScatterLayer/GroundScatterShaderLayer';
 import { useGroundScatterConfigs } from './GroundScatterLayer/useGroundScatterConfigs';
 import type { EarthGrassBackgroundConfig } from '../shaders/earthGrassBackground.sksl';
 
@@ -118,11 +121,16 @@ function FlowerGardenSceneryContent() {
         />
       )}
       {groundDecorReady && (
-        <>
-          <GroundScatterShaderLayer configs={stoneConfigs} images={mossStoneImages!} />
-          <GroundScatterShaderLayer configs={petalConfigs} images={petalImages!} />
-          <GroundScatterShaderLayer configs={cloverConfigs} images={cloverImages!} />
-        </>
+        <GroundScatterShaderLayer
+          groups={
+            [
+              { configs: stoneConfigs, images: mossStoneImages },
+              { configs: petalConfigs, images: petalImages },
+              { configs: cloverConfigs, images: cloverImages },
+            ] as GroundScatterGroup[]
+          }
+          viewportRect={{ x: 0, y: 0, width, height }}
+        />
       )}
       {bushReady && (
         <>

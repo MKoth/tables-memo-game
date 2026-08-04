@@ -5,7 +5,9 @@ import { createRng, hashSeedString } from '../BushShaderLayer/helpers/seededRand
 import { computeGroundBand } from '../BushShaderLayer/groundBand';
 import { ROSE_TINT_PRESETS } from '../../carrier/FlowerGardenWordSpriteTableLayer/presets/roseTintPresets';
 import {
+  cullGroundScatterConfigs,
   generateGroundScatterConfigs,
+  type CullViewport,
   type GenerateGroundScatterConfigsInput,
 } from './generateGroundScatterConfigs';
 import type { GroundScatterConfig, GroundScatterKind, GroundScatterTint } from './types';
@@ -73,6 +75,7 @@ export type UseGroundScatterConfigsOptions = {
   shadowScale?: number;
   shadowOpacity?: number;
   shadowColor?: GroundScatterTint;
+  viewportRect?: CullViewport | null;
 };
 
 const NEUTRAL_TINT_STRENGTH = 0;
@@ -162,7 +165,12 @@ export function useGroundScatterConfigs(
       shadowColor: options.shadowColor ?? SHADOW_COLOR,
     };
 
-    return generateGroundScatterConfigs(input);
+    const configs = generateGroundScatterConfigs(input);
+
+    if (options.viewportRect) {
+      return cullGroundScatterConfigs(configs, options.viewportRect);
+    }
+    return configs;
   }, [
     kind,
     width,
@@ -197,5 +205,6 @@ export function useGroundScatterConfigs(
     options.shadowScale,
     options.shadowOpacity,
     options.shadowColor,
+    options.viewportRect,
   ]);
 }

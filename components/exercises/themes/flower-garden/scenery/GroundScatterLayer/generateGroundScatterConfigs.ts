@@ -10,6 +10,33 @@ export type GroundScatterZoneRect = {
   h: number;
 };
 
+export type CullViewport = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export function spriteIntersectsViewport(
+  config: GroundScatterConfig,
+  viewport: CullViewport,
+): boolean {
+  const halfSize = (config.size * 0.5) * Math.max(1, config.shadowScale);
+  return (
+    config.x + halfSize > viewport.x &&
+    config.x - halfSize < viewport.x + viewport.width &&
+    config.y + halfSize > viewport.y &&
+    config.y - halfSize < viewport.y + viewport.height
+  );
+}
+
+export function cullGroundScatterConfigs(
+  configs: readonly GroundScatterConfig[],
+  viewport: CullViewport,
+): GroundScatterConfig[] {
+  return configs.filter(config => spriteIntersectsViewport(config, viewport));
+}
+
 export type GenerateGroundScatterConfigsInput = {
   kind: GroundScatterKind;
   screenWidth: number;
