@@ -9,6 +9,7 @@ import { armRoamerExitFlight } from './core/exitFlightWorklets';
 import { resolveRoamerExitLegs } from './core/resolveRoamerExitPath';
 import { FlowerGardenParticleLayer } from './particles/FlowerGardenParticleLayer';
 import { RoamerLayer } from './RoamerLayer';
+import { useRenderTracker } from '../core/perf/flowerGardenPerfLogger';
 
 export type FlowerGardenRoamerMotionZoneController = {
   /** Roamer runtime index carrying `word`, or -1 when none does. */
@@ -27,12 +28,15 @@ export type FlowerGardenRoamerMotionZoneProps = ThemeRoamerMotionZoneProps & {
   controllerRef?: RefObject<FlowerGardenRoamerMotionZoneController | null>;
 };
 
-export function FlowerGardenRoamerMotionZone(props: FlowerGardenRoamerMotionZoneProps) {
+function FlowerGardenRoamerMotionZoneComponent(props: FlowerGardenRoamerMotionZoneProps) {
+  useRenderTracker('FG:RoamerMotionZone');
   if (props.controllerRef != null) {
     return <EscapableRoamerMotionZone {...props} />;
   }
   return <PlainRoamerMotionZone {...props} />;
 }
+
+export const FlowerGardenRoamerMotionZone = React.memo(FlowerGardenRoamerMotionZoneComponent);
 
 function PlainRoamerMotionZone({
   words,

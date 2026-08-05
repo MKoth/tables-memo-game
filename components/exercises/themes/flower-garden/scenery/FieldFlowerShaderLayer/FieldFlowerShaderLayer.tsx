@@ -11,6 +11,7 @@ import {
 } from '@shopify/react-native-skia';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 import { useExerciseClockQuantized } from '../../../../core';
+import { useRenderTracker } from '../../core/perf/flowerGardenPerfLogger';
 import type { FieldFlowerConfig, FieldFlowerType } from './types';
 import { COVERING_SIZE } from './types';
 import {
@@ -249,6 +250,7 @@ function FieldFlowerShaderLayerImpl({
   wildVioletLeafImages,
   wildVioletFlowerImages,
 }: FieldFlowerShaderLayerProps) {
+  useRenderTracker('FG:FieldFlowers');
   const { width, height } = useWindowDimensions();
   const clock = useExerciseClockQuantized(20);
 

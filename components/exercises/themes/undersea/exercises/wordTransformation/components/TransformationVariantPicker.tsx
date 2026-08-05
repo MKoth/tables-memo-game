@@ -2,13 +2,14 @@ import React, { useMemo } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../../core/providers/UnderseaThemeAssetsProvider';
-import { useExerciseClock } from '../../../../../core';
+import { useExerciseClockQuantized } from '../../../../../core';
 import { useExerciseLayout } from '../../../../../core';
 import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
 import {
   computeLetterLayout,
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
 } from '../../../../../core/layout/exerciseLayout';
+import { BUBBLE_IDLE_CLOCK_FPS } from '../../../roamer/bubbles/bubbleAnimPresets';
 import type { VariantPickerItem } from '../../../../../wordTransformation/domain/coreTypes';
 
 export type { VariantPickerItem } from '../../../../../wordTransformation/domain/coreTypes';
@@ -55,7 +56,7 @@ export function TransformationVariantPicker({
 }: TransformationVariantPickerProps) {
   const { roamerRect } = useExerciseLayout();
   const { images } = useUnderseaThemeAssetsContext();
-  const clock = useExerciseClock();
+  const clock = useExerciseClockQuantized(BUBBLE_IDLE_CLOCK_FPS);
 
   const layout = useMemo(
     () => computeLetterLayout(roamerRect, items.length, TRANSFORMATION_VARIANT_ROW_Y_RATIO),

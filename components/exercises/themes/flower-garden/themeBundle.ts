@@ -51,7 +51,7 @@ export const flowerGardenTheme: Theme = {
   wordTransformationVisual: {
     orbLayer: FlowerGardenTransformationOrbLayer as Theme['wordTransformationVisual']['orbLayer'],
     wordOrbs: FlowerGardenTransformationWordOrbs as Theme['wordTransformationVisual']['wordOrbs'],
-    letterOrb: FlowerGardenLetterOrb as Theme['wordTransformationVisual']['letterOrb'],
+    letterOrb: FlowerGardenLetterOrb as unknown as Theme['wordTransformationVisual']['letterOrb'],
   },
 
   roundResolution: {

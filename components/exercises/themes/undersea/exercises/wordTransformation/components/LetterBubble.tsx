@@ -7,10 +7,12 @@ import {
   vec,
 } from '@shopify/react-native-skia';
 import {
+  cancelAnimation,
   Easing,
   useDerivedValue,
   useSharedValue,
   withDelay,
+  withRepeat,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -153,6 +155,7 @@ function LetterBubbleComponent({
   const moveT = useSharedValue(0);
   const popSoundTrigger = useSharedValue(0);
   const enterSoundTrigger = useSharedValue(0);
+  const shakeClock = useSharedValue(0);
 
   // Read latest delay / sound callbacks without retriggering the status-driven
   // effects (which must only fire when the bubble enters/pops, not on every prop tick).
@@ -304,6 +307,23 @@ function LetterBubbleComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onPopComplete, popT, status]);
 
+  useEffect(() => {
+    if (status !== 'wrong') {
+      shakeClock.value = 0;
+      return;
+    }
+    shakeClock.value = withRepeat(
+      withTiming(1000 / WRONG_SHAKE_HZ, {
+        duration: 1000 / WRONG_SHAKE_HZ,
+        easing: Easing.linear,
+      }),
+      -1,
+    );
+    return () => {
+      cancelAnimation(shakeClock);
+    };
+  }, [shakeClock, status]);
+
   const anim = useDerivedValue<BubbleAnimState>(() => {
     const enter = enterT.value;
     const pop = popT.value;
@@ -318,7 +338,7 @@ function LetterBubbleComponent({
         ? WORD_TRANSFORMATION_BUBBLE_OPACITY * (1 - fade)
         : WORD_TRANSFORMATION_BUBBLE_OPACITY * enter;
     const shakeAmp = wrong * Math.max(2, d * 0.05);
-    const shakeT = clock.value / 1000;
+    const shakeT = shakeClock.value / 1000;
     const shakeX = shakeAmp * Math.sin(shakeT * WRONG_SHAKE_HZ * Math.PI * 2);
     const shakeY = shakeAmp * Math.cos(shakeT * WRONG_SHAKE_HZ * Math.PI * 2 * 1.17);
     const cx = posX.value + shakeX;

@@ -3,6 +3,7 @@ import { StyleSheet, useWindowDimensions } from 'react-native';
 import { Canvas, type SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAssetsProvider';
+import { useRenderTracker } from '../core/perf/flowerGardenPerfLogger';
 import type {
   OrbAnimState,
 } from './orbAnimTypes';
@@ -70,6 +71,7 @@ export function CaptureOrb({
   seed,
   preset = ORB_FLOWER_PRESET,
 }: CaptureOrbProps) {
+  useRenderTracker('FG:CaptureOrb');
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
   const ringImages = images.orbRingImages;
@@ -99,7 +101,6 @@ export function CaptureOrb({
       <OrbFlowerShader
         anim={anim}
         seed={seed}
-        targetDiameter={targetDiameter}
         preset={preset}
         ringVariants={ringImages}
         bedVariants={bedImages}

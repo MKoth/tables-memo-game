@@ -1,14 +1,18 @@
-import React, { useMemo } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { Canvas, matchFont } from '@shopify/react-native-skia';
-import { useExerciseClock } from '../../../../../core';
+import React, { useLayoutEffect, useMemo, useRef } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Canvas } from '@shopify/react-native-skia';
+import { makeMutable, type SharedValue } from 'react-native-reanimated';
+import { useExerciseClockQuantized } from '../../../../../core';
 import { useExerciseLayout } from '../../../../../core';
 import {
   computeLetterLayout,
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
 } from '../../../../../core/layout/exerciseLayout';
 import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
+import { logPerfEvent, useRenderTracker } from '../../../core/perf/flowerGardenPerfLogger';
 import { FlowerGardenLetterOrb } from './FlowerGardenLetterOrb';
+import { ORB_IDLE_CLOCK_FPS } from '../../../orb/orbAnimPresets';
+import type { LetterOrbGeometry } from '../../../orb/orbAnimTypes';
 import type { VariantPickerItem } from '../../../../../wordTransformation/domain/coreTypes';
 
 export type { VariantPickerItem } from '../../../../../wordTransformation/domain/coreTypes';
@@ -53,42 +57,65 @@ export function FlowerGardenTransformationVariantPicker({
   onSelect,
   playPop,
 }: FlowerGardenTransformationVariantPickerProps) {
+  useRenderTracker('FG:VariantPicker');
+  logPerfEvent(
+    `VariantPicker render items=${items.length} wrong=${wrongItemId ?? '-'} hidden=${hiddenItemIds?.size ?? 0} popped=${poppedItemIds?.size ?? 0}`,
+  );
   const { roamerRect } = useExerciseLayout();
   const { images } = useFlowerGardenAssetsContext();
-  const clock = useExerciseClock();
+  const clock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
+  const geometryMapRef = useRef<Map<string, SharedValue<LetterOrbGeometry>>>(new Map());
 
   const layout = useMemo(
     () => computeLetterLayout(roamerRect, items.length, TRANSFORMATION_VARIANT_ROW_Y_RATIO),
     [items.length, roamerRect],
   );
 
-  const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
-  const maxLabelLength = useMemo(
-    () => items.reduce((max, item) => Math.max(max, item.label.length), 1),
-    [items],
-  );
-  const font = useMemo(
-    () =>
-      matchFont({
-        fontFamily,
-        fontSize: Math.max(
-          14,
-          (layout.diameter * 0.5) / Math.max(1, maxLabelLength * 0.52),
-        ),
-        fontWeight: '700',
-      }),
-    [fontFamily, layout.diameter, maxLabelLength],
-  );
+  const itemGeometries = useMemo(() => {
+    const map = geometryMapRef.current;
+    return items.map((item, index) => {
+      let sv = map.get(item.id);
+      if (sv == null) {
+        sv = makeMutable<LetterOrbGeometry>({
+          centerX: layout.centers[index] ?? 0,
+          centerY: layout.rowY,
+          diameter: layout.diameter,
+        });
+        map.set(item.id, sv);
+      }
+      return { item, geometry: sv };
+    });
+  }, [items, layout]);
+
+  useLayoutEffect(() => {
+    const map = geometryMapRef.current;
+    const liveIds = new Set(items.map(item => item.id));
+    for (const id of map.keys()) {
+      if (!liveIds.has(id)) {
+        map.delete(id);
+      }
+    }
+    items.forEach((item, index) => {
+      const sv = map.get(item.id);
+      if (sv == null) {
+        return;
+      }
+      sv.value = {
+        centerX: layout.centers[index] ?? 0,
+        centerY: layout.rowY,
+        diameter: layout.diameter,
+      };
+    });
+  }, [items, layout]);
 
   if (items.length === 0 || images.orbRingSmallImages == null || images.orbBedSmallImages == null) {
     return null;
   }
-  const ringImage = images.orbRingSmallImages[0];
 
   return (
     <>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-        {items.map((item, i) => {
+        {itemGeometries.map(({ item, geometry }) => {
           if (hiddenItemIds?.has(item.id)) {
             return null;
           }
@@ -96,16 +123,12 @@ export function FlowerGardenTransformationVariantPicker({
             <FlowerGardenLetterOrb
               key={item.id}
               char={item.label}
-              centerX={layout.centers[i] ?? 0}
-              centerY={layout.rowY}
-              diameter={layout.diameter}
               status={statusFor(item, wrongItemId ?? null, poppedItemIds)}
+              geometry={geometry}
               popDelayMs={item.popDelayMs}
               onPopSound={item.popDelayMs != null ? playPop : undefined}
-              image={ringImage}
               ringVariants={images.orbRingSmallImages}
               bedVariants={images.orbBedSmallImages}
-              font={font}
               clock={clock}
             />
           );

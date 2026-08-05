@@ -12,6 +12,7 @@ import {
   type GroundScatterGroup,
 } from './GroundScatterLayer/GroundScatterShaderLayer';
 import { useGroundScatterConfigs } from './GroundScatterLayer/useGroundScatterConfigs';
+import { useRenderTracker } from '../core/perf/flowerGardenPerfLogger';
 import type { EarthGrassBackgroundConfig } from '../shaders/earthGrassBackground.sksl';
 
 const backgroundMaskConfig: EarthGrassBackgroundConfig = {
@@ -35,6 +36,7 @@ function allImagesReady(
 }
 
 function FlowerGardenSceneryContent() {
+  useRenderTracker('FG:SceneryContent');
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
   const { table, fieldFlowerConfigs, flowerSwingBoosts } = useFlowerGardenTableContext();
@@ -166,13 +168,15 @@ function FlowerGardenSceneryContent() {
   );
 }
 
-export function FlowerGardenScenery() {
+export function FlowerGardenSceneryComponent() {
   return (
     <View style={styles.container} pointerEvents="none">
       <FlowerGardenSceneryContent />
     </View>
   );
 }
+
+export const FlowerGardenScenery = React.memo(FlowerGardenSceneryComponent);
 
 const styles = StyleSheet.create({
   container: {

@@ -97,6 +97,24 @@ type UnderseaSatisfiesTheme = Assert<IsAssignable<typeof underseaTheme, Theme>>;
 
 const _compileTimeCheck: UnderseaSatisfiesTheme = true; // eslint-disable-line @typescript-eslint/no-unused-vars
 
+/**
+ * A theme component may be a plain function OR a React.memo / forwardRef
+ * component (which the `Theme` type's `ComponentType` already permits). The
+ * `typeof === 'function'` assertion is too strict for memo-wrapped layers, so
+ * accept any valid React component type here.
+ */
+function isReactComponent(value: unknown): boolean {
+  if (typeof value === 'function') return true;
+  if (typeof value === 'object' && value !== null) {
+    const maybe = value as { $$typeof?: unknown };
+    return (
+      maybe.$$typeof === Symbol.for('react.memo') ||
+      maybe.$$typeof === Symbol.for('react.forward_ref')
+    );
+  }
+  return false;
+}
+
 describe('Theme contract conformance', () => {
   it('undersea theme exposes all required top-level members', () => {
     const theme = underseaTheme;
@@ -116,7 +134,7 @@ describe('Theme contract conformance', () => {
   });
 
   it('undersea scenery is a component', () => {
-    expect(typeof underseaTheme.scenery).toBe('function');
+    expect(isReactComponent(underseaTheme.scenery)).toBe(true);
   });
 
   it('undersea roamer has motionZone, decorative, and matchLayer', () => {
@@ -126,10 +144,10 @@ describe('Theme contract conformance', () => {
   });
 
   it('undersea wordSprite has tableCell, sentenceRow, option, and match', () => {
-    expect(typeof underseaTheme.wordSprite.tableCell).toBe('function');
-    expect(typeof underseaTheme.wordSprite.sentenceRow).toBe('function');
-    expect(typeof underseaTheme.wordSprite.option).toBe('function');
-    expect(typeof underseaTheme.wordSprite.match).toBe('function');
+    expect(isReactComponent(underseaTheme.wordSprite.tableCell)).toBe(true);
+    expect(isReactComponent(underseaTheme.wordSprite.sentenceRow)).toBe(true);
+    expect(isReactComponent(underseaTheme.wordSprite.option)).toBe(true);
+    expect(isReactComponent(underseaTheme.wordSprite.match)).toBe(true);
   });
 
   it('undersea wordTransformationVisual has orbLayer, wordOrbs, and letterOrb', () => {

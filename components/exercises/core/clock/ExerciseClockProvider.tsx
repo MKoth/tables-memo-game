@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useDerivedValue } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
@@ -16,6 +16,10 @@ const ExerciseClockContext = createContext<ExerciseClockContextValue | null>(nul
 
 export function ExerciseClockProvider({ children }: { children: ReactNode }) {
   const { clock, setActive: setClockActive } = useThrottledClock(EXERCISE_SCENE_CLOCK_FPS);
+  const value = useMemo(
+    () => ({ clock, setClockActive }),
+    [clock, setClockActive],
+  );
 
   useEffect(() => {
     const syncActive = (state: AppStateStatus) => {
@@ -27,7 +31,7 @@ export function ExerciseClockProvider({ children }: { children: ReactNode }) {
   }, [setClockActive]);
 
   return (
-    <ExerciseClockContext.Provider value={{ clock, setClockActive }}>
+    <ExerciseClockContext.Provider value={value}>
       {children}
     </ExerciseClockContext.Provider>
   );

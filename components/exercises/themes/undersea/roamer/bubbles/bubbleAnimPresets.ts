@@ -12,6 +12,8 @@ export const BUBBLE_NEUTRAL_TINT = {
 
 export const BUBBLE_ENTER_DURATION_MS = 500;
 export const BUBBLE_BURST_DURATION_MS = 400;
+/** Rate (fps) at which idle bubble motion steps from the shared exercise clock. */
+export const BUBBLE_IDLE_CLOCK_FPS = 15;
 
 export const BUBBLE_IDLE_WOBBLE = {
   wobbleAmp: defaults.wobbleAmp,

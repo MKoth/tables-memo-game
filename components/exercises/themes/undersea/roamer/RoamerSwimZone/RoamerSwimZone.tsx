@@ -13,8 +13,9 @@ export type {
   RoamerSwimZoneProps,
 } from './types';
 
-export const RoamerSwimZone = forwardRef<RoamerSwimZoneController, RoamerSwimZoneProps>(
-  function RoamerSwimZone(
+export const RoamerSwimZone = React.memo(
+  forwardRef<RoamerSwimZoneController, RoamerSwimZoneProps>(
+    function RoamerSwimZone(
     {
       words,
       interactive: interactiveProp = true,
@@ -106,8 +107,8 @@ export const RoamerSwimZone = forwardRef<RoamerSwimZoneController, RoamerSwimZon
       </View>
     );
   },
+),
 );
-
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',

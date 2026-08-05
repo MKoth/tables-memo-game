@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont } from '@shopify/react-native-skia';
 import { useUnderseaThemeAssetsContext } from '../../../core/providers/UnderseaThemeAssetsProvider';
-import { useExerciseClock } from '../../../../../core';
+import { useExerciseClockQuantized } from '../../../../../core';
 import { useExerciseLayout } from '../../../../../core';
 import {
   computeLetterLayout,
@@ -13,6 +13,7 @@ import { LetterBubble, type LetterBubbleStatus } from './LetterBubble';
 import type { LetterOrbModel } from '../../../../../wordTransformation/domain';
 
 import { bubbleDeformUniformDefaults } from '../../../shaders/bubbleDeform.sksl';
+import { BUBBLE_IDLE_CLOCK_FPS } from '../../../roamer/bubbles/bubbleAnimPresets';
 import { ROUND_MERGE_DURATION_MS } from '../../../../../sentenceTransformation/domain/roundResolutionTiming';
 import { MergeLetterLabels } from '../../sentenceTransformation/merge/MergeLetterLabels';
 import { MetaballMergeLayer } from '../../sentenceTransformation/merge/MetaballMergeLayer';
@@ -58,7 +59,7 @@ export function TransformationWordBubbles({
   const { roamerRect } = useExerciseLayout();
   const zoneRect = zoneRectProp ?? roamerRect;
   const { images } = useUnderseaThemeAssetsContext();
-  const clock = useExerciseClock();
+  const clock = useExerciseClockQuantized(BUBBLE_IDLE_CLOCK_FPS);
 
   const mergeProgress = useMergeProgress(
     ROUND_MERGE_DURATION_MS,

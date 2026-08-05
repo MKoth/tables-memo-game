@@ -4,7 +4,7 @@ import { useUnderseaThemeAssetsContext } from '../core/providers/UnderseaThemeAs
 import { useExerciseClock } from '../../../core';
 import { UnderseaThemeSceneryBackground } from './UnderseaThemeSceneryBackground';
 
-export function UnderseaThemeScenery() {
+function UnderseaThemeSceneryComponent() {
   const { width, height } = useWindowDimensions();
   const { images } = useUnderseaThemeAssetsContext();
   const clock = useExerciseClock();
@@ -26,6 +26,8 @@ export function UnderseaThemeScenery() {
     </View>
   );
 }
+
+export const UnderseaThemeScenery = React.memo(UnderseaThemeSceneryComponent);
 
 const styles = StyleSheet.create({
   container: {

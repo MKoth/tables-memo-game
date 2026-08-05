@@ -1,5 +1,6 @@
 import React, { useMemo, type ReactNode } from 'react';
 import type { InsertPreviewLayout } from '../../../../../core/layout/exerciseLayout';
+import { useRenderTracker } from '../../../core/perf/flowerGardenPerfLogger';
 import type { InsertAnimationState, LetterOrbModel } from '../../../../../wordTransformation/domain';
 import { FlowerGardenTransformationInsertFlight } from './FlowerGardenTransformationInsertFlight';
 import {
@@ -67,6 +68,7 @@ export function FlowerGardenTransformationOrbLayer({
   playPop,
   playInflate,
 }: FlowerGardenTransformationOrbLayerProps) {
+  useRenderTracker('FG:OrbLayer');
   const insertPreview = useMemo(
     () => insertPreviewFromAnimation(insertAnimation),
     [insertAnimation],

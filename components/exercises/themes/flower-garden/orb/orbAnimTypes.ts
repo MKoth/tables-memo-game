@@ -20,6 +20,8 @@ export type OrbAnimState = {
   centerX: number;
   centerY: number;
   diameter: number;
+  /** Move-resolved target diameter — what the orb settles at (enter/burst move it). */
+  targetDiameter: number;
   overallOpacity: number;
   captureVisualT: number;
   phase: number;
@@ -63,4 +65,21 @@ export type UseOrbAnimationResult = {
   anim: SharedValue<OrbAnimState>;
   phase: SharedValue<number>;
   startBurst: (intent?: BurstIntentValue) => void;
+};
+
+/**
+ * Per-letter layout written by the layer parents into a stable shared value so
+ * relayouts animate without re-rendering the orb. `centerX/Y`/`diameter` are
+ * the targets; `initial*`/`skipEnter`/`moveDurationMs` seed the mount position
+ * and the move tween (mirrors the old prop-based layout effect).
+ */
+export type LetterOrbGeometry = {
+  centerX: number;
+  centerY: number;
+  diameter: number;
+  initialCenterX?: number;
+  initialCenterY?: number;
+  initialDiameter?: number;
+  skipEnter?: boolean;
+  moveDurationMs?: number;
 };

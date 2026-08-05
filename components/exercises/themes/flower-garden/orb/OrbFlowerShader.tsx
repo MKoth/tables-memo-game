@@ -41,7 +41,6 @@ export type OrbFlowerShaderProps = {
   anim: SharedValue<OrbAnimState>;
   /** Per-orb seed picking the ring/bed variant of the shader. */
   seed: number;
-  targetDiameter: number;
   preset: OrbFlowerPreset;
   ringVariants: ReadonlyArray<SkImage | null>;
   bedVariants: ReadonlyArray<SkImage | null>;
@@ -50,7 +49,6 @@ export type OrbFlowerShaderProps = {
 export function OrbFlowerShader({
   anim,
   seed,
-  targetDiameter,
   preset,
   ringVariants,
   bedVariants,
@@ -62,13 +60,12 @@ export function OrbFlowerShader({
     bedVariants[Math.floor(seed / ORB_FLOWER_VARIANT_COUNT) % bedVariantCount] ??
     null;
 
-  const maxSpriteDiameter =
-    Math.max(preset.ringDiameterFraction, preset.bedDiameterFraction) *
-    targetDiameter *
-    0.5;
-
   const bounds = useDerivedValue(() => {
-    const { centerX, centerY } = anim.value;
+    const { centerX, centerY, targetDiameter } = anim.value;
+    const maxSpriteDiameter =
+      Math.max(preset.ringDiameterFraction, preset.bedDiameterFraction) *
+      targetDiameter *
+      0.5;
     const margin =
       maxSpriteDiameter * Math.max(ORB_RING_ENTER_SCALE, ORB_RING_BURST_SCALE) +
       ORB_RECT_PADDING;
@@ -80,8 +77,8 @@ export function OrbFlowerShader({
     return {
       centerX: a.centerX,
       centerY: a.centerY,
-      ringDiameter: preset.ringDiameterFraction * targetDiameter,
-      bedDiameter: preset.bedDiameterFraction * targetDiameter,
+      ringDiameter: preset.ringDiameterFraction * a.targetDiameter,
+      bedDiameter: preset.bedDiameterFraction * a.targetDiameter,
       ringSizePx: ringImage == null ? 0 : ringImage.width(),
       bedSizePx: bedImage == null ? 0 : bedImage.width(),
       rotationSpeed: preset.rotationSpeed,
@@ -96,7 +93,9 @@ export function OrbFlowerShader({
     };
   });
 
-  if (targetDiameter <= 0 || ringImage == null || bedImage == null) {
+  const currentTargetDiameter = anim.value.targetDiameter;
+
+  if (currentTargetDiameter <= 0 || ringImage == null || bedImage == null) {
     return null;
   }
 

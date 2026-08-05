@@ -71,17 +71,22 @@ export function computeOrbAnimState(
     tintStrength,
   };
 
+  const state = {
+    centerX,
+    centerY,
+    targetDiameter,
+    overallOpacity: 0,
+    captureVisualT: 0,
+    enterT: 0,
+    burstT: 0,
+    idleElapsedMs: 0,
+  };
+
   if (phase === OrbPhase.None) {
     return {
-      centerX,
-      centerY,
+      ...state,
       diameter: 0,
-      overallOpacity: 0,
-      captureVisualT: 0,
       phase,
-      enterT: 0,
-      burstT: 0,
-      idleElapsedMs: 0,
       ...tinted,
     };
   }
@@ -93,13 +98,11 @@ export function computeOrbAnimState(
         ? 0
         : clamp01((t - ORB_PETAL_FADE_START) / (ORB_PETAL_FADE_END - ORB_PETAL_FADE_START));
     return {
-      centerX,
-      centerY,
+      ...state,
       diameter: targetDiameter,
       overallOpacity: 1 - fadeT,
       captureVisualT: 1 - clamp01(t / 0.4),
       phase,
-      enterT: 1,
       burstT: t,
       idleElapsedMs,
       ...tinted,
@@ -108,14 +111,12 @@ export function computeOrbAnimState(
 
   if (phase === OrbPhase.Idle) {
     return {
-      centerX,
-      centerY,
+      ...state,
       diameter: targetDiameter,
       overallOpacity: 1,
       captureVisualT: 1,
       phase,
       enterT: 1,
-      burstT: 0,
       idleElapsedMs,
       ...tinted,
     };
@@ -123,6 +124,7 @@ export function computeOrbAnimState(
 
   const t = clamp01(enterProgress);
   return {
+    ...state,
     centerX: lerp(config.originX, targetCenterX, t) + shakeX,
     centerY: lerp(config.originY, targetCenterY, t) + shakeY,
     diameter: lerp(startDiameter, targetDiameter, t),
@@ -130,8 +132,6 @@ export function computeOrbAnimState(
     captureVisualT: 1,
     phase,
     enterT: t,
-    burstT: 0,
-    idleElapsedMs: 0,
     ...tinted,
   };
 }

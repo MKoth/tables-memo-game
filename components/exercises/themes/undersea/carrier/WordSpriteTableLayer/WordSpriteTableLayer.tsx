@@ -15,7 +15,7 @@ export type {
  * Thin shell: reads preloaded wordSprite images from context before mounting
  * the stateful inner layer, keeping hook call order unconditional inside each component.
  */
-export function WordSpriteTableLayer({
+function WordSpriteTableLayerComponent({
   table,
   onWordSpriteSound,
   interactive = true,
@@ -46,3 +46,5 @@ export function WordSpriteTableLayer({
     />
   );
 }
+
+export const WordSpriteTableLayer = React.memo(WordSpriteTableLayerComponent);

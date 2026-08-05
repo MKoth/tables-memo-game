@@ -4,7 +4,7 @@ export const ORB_IDLE_CLOCK_SPAN_MS = Number.MAX_SAFE_INTEGER;
 /** Tween duration (ms) for relayout moves and insert flights. */
 export const ORB_MOVE_DURATION_MS = 320;
 /** Rate (fps) at which idle orb motion steps from the shared exercise clock. */
-export const ORB_IDLE_CLOCK_FPS = 30;
+export const ORB_IDLE_CLOCK_FPS = 15;
 
 export const ORB_DIAMETER_RATIO = 0.65;
 export const ORB_ROAMER_SCALE = 1.22;
@@ -53,7 +53,7 @@ export const ORB_FLOWER_PRESET: OrbFlowerPreset = {
 export const LETTER_ORB_FLOWER_PRESET: OrbFlowerPreset = {
   ringDiameterFraction: 0.9,
   bedDiameterFraction: 0.6,
-  rotationSpeed: 0.3,
+  rotationSpeed: 0,
 };
 
 /** Ring scale at the start of the enter fade (shrinks down to 1). */

@@ -1,30 +1,40 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { Platform } from 'react-native';
 import {
   Glyphs,
   Group,
+  matchFont,
   vec,
+  type SkFont,
   type SkImage,
 } from '@shopify/react-native-skia';
 import {
   cancelAnimation,
   Easing,
+  useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
   withDelay,
+  withRepeat,
   withSequence,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import type { ThemeLetterOrbProps } from '../../../../../themeContract';
+import { usePropDiffLogger, useRenderTracker } from '../../../core/perf/flowerGardenPerfLogger';
 import {
   LETTER_ORB_FLOWER_PRESET,
   ORB_ENTER_DURATION_MS,
   ORB_MOVE_DURATION_MS,
   ORB_WRONG_FEEDBACK_MS,
   ORB_WRONG_RAMP_MS,
+  ORB_WRONG_SHAKE_HZ,
 } from '../../../orb/orbAnimPresets';
 import { OrbFlowerShader } from '../../../orb/OrbFlowerShader';
-import { BurstIntent } from '../../../orb/orbAnimTypes';
+import {
+  BurstIntent,
+  type LetterOrbGeometry,
+} from '../../../orb/orbAnimTypes';
 import {
   useOrbAnimation,
   type OrbWrongState,
@@ -35,6 +45,58 @@ const LABEL_STROKE_WIDTH = 2;
 const LABEL_FILL_COLOR = '#ffffff';
 const LABEL_STROKE_COLOR = '#0a2840';
 const LABEL_WRONG_COLOR = '#ff5a5a';
+
+/**
+ * Labels are drawn at a fixed font size and scaled by the animated diameter
+ * (d / LABEL_REF_DIAMETER), so the font never changes when the layout
+ * reflows and relayouts do not re-render the orb.
+ */
+const LABEL_REF_DIAMETER = 56;
+
+type LabelGlyph = { id: number; pos: ReturnType<typeof vec> };
+
+const labelFontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
+const labelFontCache = new Map<number, SkFont>();
+const labelGlyphCache = new Map<string, LabelGlyph[]>();
+
+function labelFontFor(charLength: number): SkFont {
+  const fontSize =
+    charLength === 1
+      ? Math.max(16, LABEL_REF_DIAMETER * 0.5)
+      : Math.max(14, (LABEL_REF_DIAMETER * 0.5) / Math.max(1, charLength * 0.52));
+  let font = labelFontCache.get(fontSize);
+  if (font == null) {
+    font = matchFont({
+      fontFamily: labelFontFamily,
+      fontSize,
+      fontWeight: '700',
+    });
+    labelFontCache.set(fontSize, font);
+  }
+  return font;
+}
+
+function labelGlyphsFor(char: string, font: SkFont, letterSpacing: number): LabelGlyph[] {
+  const key = `${font.getSize()}-${char}-${letterSpacing}`;
+  let glyphs = labelGlyphCache.get(key);
+  if (glyphs == null) {
+    const ids = font.getGlyphIDs(char);
+    const textWidth = font.getTextWidth(char);
+    const metrics = font.getMetrics();
+    const offsetX = LABEL_REF_DIAMETER * 0.5 - textWidth * 0.5;
+    const offsetY = LABEL_REF_DIAMETER * 0.5 - (metrics.ascent + metrics.descent) * 0.5;
+    let curX = offsetX;
+    glyphs = ids.map((id, i) => {
+      const pos = vec(curX, offsetY);
+      if (i < char.length) {
+        curX += font.getTextWidth(char[i]) + letterSpacing;
+      }
+      return { id, pos };
+    });
+    labelGlyphCache.set(key, glyphs);
+  }
+  return glyphs;
+}
 
 function parseHexColor(hex: string): { r: number; g: number; b: number } {
   const normalized = hex.replace('#', '').trim();
@@ -56,19 +118,46 @@ function parseHexColor(hex: string): { r: number; g: number; b: number } {
   };
 }
 
+export type FlowerGardenLetterOrbProps = {
+  char: string;
+  status: 'idle' | 'wrong' | 'popped';
+  /** Stable shared value holding the target/initial layout. The parent writes
+   * it on relayout; the orb animates toward it without re-rendering. */
+  geometry: SharedValue<LetterOrbGeometry>;
+  clock: SharedValue<number>;
+  /** Optional mount-time move (e.g. insert flights): tweened in a layout
+   * effect during the commit itself, so the animation starts even when the
+   * passive-effect/mapper pipeline is delayed under load. */
+  moveCenterX?: number;
+  moveCenterY?: number;
+  moveDiameter?: number;
+  initialCenterX?: number;
+  initialCenterY?: number;
+  initialDiameter?: number;
+  moveDurationMs?: number;
+  wrongTintColor?: string;
+  popDelayMs?: number;
+  enterDelayMs?: number;
+  onPopSound?: () => void;
+  onEnterSound?: () => void;
+  onEnterComplete?: () => void;
+  labelFixed?: boolean;
+  letterSpacing?: number;
+  ringVariants?: SkImage[] | null;
+  bedVariants?: SkImage[] | null;
+};
+
 function FlowerGardenLetterOrbComponent({
   char,
-  centerX,
-  centerY,
-  diameter,
   status,
-  image: _image,
-  font,
+  geometry,
   clock,
+  moveCenterX,
+  moveCenterY,
+  moveDiameter,
   initialCenterX,
   initialCenterY,
   initialDiameter,
-  skipEnter = false,
   moveDurationMs = ORB_MOVE_DURATION_MS,
   wrongTintColor = LABEL_WRONG_COLOR,
   popDelayMs,
@@ -76,88 +165,158 @@ function FlowerGardenLetterOrbComponent({
   onPopSound,
   onEnterSound,
   onEnterComplete,
-  onMoveComplete: _onMoveComplete,
-  onPopComplete,
   labelFixed = false,
   letterSpacing = 0,
-  wobbleBoostT: _wobbleBoostT,
   ringVariants,
   bedVariants,
-}: ThemeLetterOrbProps & {
-  ringVariants?: SkImage[] | null;
-  bedVariants?: SkImage[] | null;
-}) {
+}: FlowerGardenLetterOrbProps) {
+  useRenderTracker('FG:LetterOrb');
+  usePropDiffLogger('LetterOrb', {
+    char,
+    status,
+    geometry,
+    clock,
+    popDelayMs,
+    enterDelayMs,
+    labelFixed,
+    letterSpacing,
+    ringVariants,
+    bedVariants,
+    onPopSound,
+    onEnterSound,
+    onEnterComplete,
+  });
   const orbSeed = useMemo(
     () => hashSeedString(`flower-garden-letter-orb-${char}`),
     [char],
   );
 
-  const posX = useSharedValue(initialCenterX ?? centerX);
-  const posY = useSharedValue(initialCenterY ?? centerY);
-  const dia = useSharedValue(initialDiameter ?? diameter);
+  const initialGeometry = geometry.value;
+  const posX = useSharedValue(initialCenterX ?? initialGeometry.initialCenterX ?? initialGeometry.centerX);
+  const posY = useSharedValue(initialCenterY ?? initialGeometry.initialCenterY ?? initialGeometry.centerY);
+  const dia = useSharedValue(initialDiameter ?? initialGeometry.initialDiameter ?? initialGeometry.diameter);
 
-  // useLayoutEffect so relayout moves + insert flights start before first paint.
+  // Insert flights tween from the commit itself (layout effect), not via the
+  // passive-effect mapper pipeline which can run hundreds of ms late when the
+  // pick commit saturates the JS thread.
   useLayoutEffect(() => {
-    cancelAnimation(posX);
-    cancelAnimation(posY);
-    cancelAnimation(dia);
-    posX.value = withTiming(centerX, {
-      duration: moveDurationMs,
-      easing: Easing.inOut(Easing.cubic),
-    });
-    posY.value = withTiming(centerY, {
-      duration: moveDurationMs,
-      easing: Easing.inOut(Easing.cubic),
-    });
-    dia.value = withTiming(diameter, {
-      duration: moveDurationMs,
-      easing: Easing.inOut(Easing.cubic),
-    });
-  }, [centerX, centerY, diameter, dia, moveDurationMs, posX, posY]);
+    if (moveCenterX == null || moveCenterY == null || moveDiameter == null) {
+      return;
+    }
+    posX.value = withTiming(moveCenterX, { duration: moveDurationMs, easing: Easing.inOut(Easing.cubic) });
+    posY.value = withTiming(moveCenterY, { duration: moveDurationMs, easing: Easing.inOut(Easing.cubic) });
+    dia.value = withTiming(moveDiameter, { duration: moveDurationMs, easing: Easing.inOut(Easing.cubic) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const orbConfig = useMemo(
-    () => ({
-      originX: skipEnter ? centerX : (initialCenterX ?? centerX),
-      originY: skipEnter ? centerY : (initialCenterY ?? centerY),
-      targetCenterX: centerX,
-      targetCenterY: centerY,
-      targetDiameter: diameter,
+  // Mount-time snapshot: the first reaction run has `previous === null`, but the
+  // parent may have already written the move target (e.g. insert flights seed at
+  // the from-position) — compare against the snapshot instead of skipping.
+  const mountGeometry = useSharedValue(initialGeometry);
+
+  const logReactionRef = useRef<(msg: string) => void>(() => {});
+  useEffect(() => {
+    logReactionRef.current = msg => console.log(`[FG:Reaction] ${Date.now()} char=${char} ${msg}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    console.log(
+      `[FG:OrbMount] ${Date.now()} char=${char} posX=${posX.value.toFixed(0)} posY=${posY.value.toFixed(0)} dia=${dia.value.toFixed(0)}`,
+    );
+    return () => {
+      console.log(`[FG:OrbUnmount] ${Date.now()} char=${char} posX=${posX.value.toFixed(0)}`);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Relayouts arrive as writes to `geometry` — animate toward the new target
+  // on the UI thread without any React re-render.
+  useAnimatedReaction(
+    () => geometry.value,
+    (current, previous) => {
+      if (current == null) {
+        return;
+      }
+      const prev = previous ?? mountGeometry.value;
+      if (prev == null) {
+        return;
+      }
+      const moved =
+        current.centerX !== prev.centerX ||
+        current.centerY !== prev.centerY ||
+        current.diameter !== prev.diameter;
+      scheduleOnRN(
+        logReactionRef.current,
+        `firstRun=${previous == null} moved=${moved} currentX=${current.centerX.toFixed(0)} prevX=${prev.centerX.toFixed(0)} dur=${moved ? (current.moveDurationMs ?? ORB_MOVE_DURATION_MS) : 0}`,
+      );
+      if (!moved) {
+        return;
+      }
+      const duration = current.moveDurationMs ?? ORB_MOVE_DURATION_MS;
+      posX.value = withTiming(current.centerX, {
+        duration,
+        easing: Easing.inOut(Easing.cubic),
+      });
+      posY.value = withTiming(current.centerY, {
+        duration,
+        easing: Easing.inOut(Easing.cubic),
+      });
+      dia.value = withTiming(current.diameter, {
+        duration,
+        easing: Easing.inOut(Easing.cubic),
+      });
+    },
+    [dia, geometry, mountGeometry, posX, posY],
+  );
+
+  const orbConfig = useMemo(() => {
+    const g = geometry.value;
+    return {
+      originX: g.skipEnter ? g.centerX : (g.initialCenterX ?? g.centerX),
+      originY: g.skipEnter ? g.centerY : (g.initialCenterY ?? g.centerY),
+      targetCenterX: g.centerX,
+      targetCenterY: g.centerY,
+      targetDiameter: g.diameter,
       moveCenterX: posX,
       moveCenterY: posY,
       moveDiameter: dia,
-      initialDiameter,
-      skipEnter,
+      initialDiameter: g.initialDiameter,
+      skipEnter: g.skipEnter,
       enterDelayMs,
       popDelayMs,
-    }),
-    [
-      centerX,
-      centerY,
-      diameter,
-      dia,
-      enterDelayMs,
-      initialCenterX,
-      initialCenterY,
-      initialDiameter,
-      popDelayMs,
-      posX,
-      posY,
-      skipEnter,
-    ],
-  );
+    };
+  }, [dia, enterDelayMs, geometry, popDelayMs, posX, posY]);
 
   const wrongT = useSharedValue(0);
   const wrongTint = useMemo(() => parseHexColor(wrongTintColor), [wrongTintColor]);
+  const shakeClock = useSharedValue(0);
+
+  useEffect(() => {
+    if (status !== 'wrong') {
+      shakeClock.value = 0;
+      return;
+    }
+    shakeClock.value = withRepeat(
+      withTiming(1000 / ORB_WRONG_SHAKE_HZ, {
+        duration: 1000 / ORB_WRONG_SHAKE_HZ,
+        easing: Easing.linear,
+      }),
+      -1,
+    );
+    return () => {
+      cancelAnimation(shakeClock);
+    };
+  }, [shakeClock, status]);
 
   const wrongState = useMemo<OrbWrongState>(
     () => ({
       wrongProgress: wrongT,
-      clock,
+      clock: shakeClock,
       tintR: wrongTint.r,
       tintG: wrongTint.g,
       tintB: wrongTint.b,
     }),
-    [clock, wrongT, wrongTint],
+    [shakeClock, wrongT, wrongTint],
   );
 
   useEffect(() => {
@@ -174,8 +333,6 @@ function FlowerGardenLetterOrbComponent({
     );
   }, [status, wrongT]);
 
-  const onPopCompleteRef = useRef(onPopComplete);
-  onPopCompleteRef.current = onPopComplete;
   const onEnterCompleteRef = useRef(onEnterComplete);
   onEnterCompleteRef.current = onEnterComplete;
   const onPopSoundRef = useRef(onPopSound);
@@ -185,10 +342,6 @@ function FlowerGardenLetterOrbComponent({
 
   const handleBurstCompleteWorklet = useCallback((_burstIdleTimeMs: number, _intent: number) => {
     'worklet';
-    const onComplete = onPopCompleteRef.current;
-    if (onComplete != null) {
-      scheduleOnRN(onComplete);
-    }
   }, []);
 
   const { anim, startBurst } = useOrbAnimation(
@@ -200,7 +353,7 @@ function FlowerGardenLetterOrbComponent({
     clock,
   );
 
-  const statusRef = useRef<ThemeLetterOrbProps['status'] | null>(null);
+  const statusRef = useRef<FlowerGardenLetterOrbProps['status'] | null>(null);
   const startBurstRef = useRef(startBurst);
   startBurstRef.current = startBurst;
 
@@ -239,7 +392,7 @@ function FlowerGardenLetterOrbComponent({
   }, [status, popSoundTrigger]);
 
   useEffect(() => {
-    if (skipEnter) {
+    if (geometry.value.skipEnter) {
       return;
     }
     const delay = enterDelayMs ?? 0;
@@ -271,29 +424,20 @@ function FlowerGardenLetterOrbComponent({
     }
     // Enter delay is read from the config at mount; the sound refs stay current.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enterSoundTrigger, enterCompleteTrigger, skipEnter]);
+  }, [enterCompleteTrigger, enterSoundTrigger, geometry]);
 
-  const glyphs = useMemo(() => {
-    const ids = font.getGlyphIDs(char);
-    const textWidth = font.getTextWidth(char);
-    const metrics = font.getMetrics();
-    const offsetX = diameter * 0.5 - textWidth * 0.5;
-    const offsetY = diameter * 0.5 - (metrics.ascent + metrics.descent) * 0.5;
-    let curX = offsetX;
-    return ids.map((id, i) => {
-      const pos = vec(curX, offsetY);
-      if (i < char.length) {
-        curX += font.getTextWidth(char[i]) + letterSpacing;
-      }
-      return { id, pos };
-    });
-  }, [char, diameter, font, letterSpacing]);
+  const font = useMemo(() => labelFontFor(char.length), [char.length]);
+
+  const glyphs = useMemo(
+    () => labelGlyphsFor(char, font, letterSpacing),
+    [char, font, letterSpacing],
+  );
 
   const labelTransform = useDerivedValue(() => {
     const { centerX: cx, centerY: cy, diameter: d } = anim.value;
-    const ox = diameter * 0.5;
-    const oy = diameter * 0.5;
-    const scale = labelFixed ? 1 : d > 0 ? d / diameter : 1;
+    const ox = LABEL_REF_DIAMETER * 0.5;
+    const oy = LABEL_REF_DIAMETER * 0.5;
+    const scale = labelFixed ? 1 : d > 0 ? d / LABEL_REF_DIAMETER : 1;
     return [
       { translateX: cx - d * 0.5 },
       { translateY: cy - d * 0.5 },
@@ -321,7 +465,6 @@ function FlowerGardenLetterOrbComponent({
       <OrbFlowerShader
         anim={anim}
         seed={orbSeed}
-        targetDiameter={diameter}
         preset={LETTER_ORB_FLOWER_PRESET}
         ringVariants={ringVariants}
         bedVariants={bedVariants}
