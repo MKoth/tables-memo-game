@@ -18,15 +18,13 @@ export function FlowerGardenWordSpriteTableLayer({
   const { captureBridge, onWordSpriteMatchSuccess } = useExerciseRuntime();
   const roseBudImage = images.roseBudImage;
   const roseCenterImage = images.roseCenterImage;
-  const petalImages = images.petalImages;
-  const rosePetalAtlas = images.rosePetalAtlas;
+  const roseRingImages = images.roseRingImages;
 
   if (
     roseBudImage == null ||
     roseCenterImage == null ||
-    petalImages == null ||
-    petalImages.length !== 6 ||
-    rosePetalAtlas == null
+    roseRingImages == null ||
+    roseRingImages.length !== 4
   ) {
     return null;
   }
@@ -36,8 +34,7 @@ export function FlowerGardenWordSpriteTableLayer({
       table={table}
       roseBudImage={roseBudImage}
       roseCenterImage={roseCenterImage}
-      petalImages={petalImages}
-      rosePetalAtlas={rosePetalAtlas}
+      ringImages={roseRingImages}
       capturedWord={captureBridge?.capturedWord ?? null}
       orbPhase={captureBridge?.orbPhase}
       onMatchSuccess={onWordSpriteMatchSuccess}

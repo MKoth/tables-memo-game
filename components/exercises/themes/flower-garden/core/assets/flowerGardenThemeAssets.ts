@@ -12,6 +12,12 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     center: require('../../../../../../assets/images/flower_garden_theme/roses/rose_center_3x.png'),
     substrate: require('../../../../../../assets/images/flower_garden_theme/roses/substrate_3x.png'),
   },
+  roseRings: {
+    ring6: require('../../../../../../assets/images/flower_garden_theme/roses/petals-ring-6.png'),
+    ring9: require('../../../../../../assets/images/flower_garden_theme/roses/petals-ring-9.png'),
+    ring10: require('../../../../../../assets/images/flower_garden_theme/roses/petals-ring-10.png'),
+    ring11: require('../../../../../../assets/images/flower_garden_theme/roses/petals-ring-11.png'),
+  },
   bush: {
     stem: require('../../../../../../assets/images/flower_garden_theme/roses/stem_3x.png'),
     calyx: require('../../../../../../assets/images/flower_garden_theme/roses/rose_base_3x.png'),
@@ -158,7 +164,6 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     cloverSmallBed2: require('../../../../../../assets/images/flower_garden_theme/orb/clover-small-bed2.png'),
     cloverSmallBed3: require('../../../../../../assets/images/flower_garden_theme/orb/clover-small-bed3.png'),
   },
-  rosePetalAtlas: require('../../../../../../assets/images/flower_garden_theme/rose_petal_atlas.png'),
   roseLeafAtlas: require('../../../../../../assets/images/flower_garden_theme/rose_leaf_atlas.png'),
 } as const;
 
@@ -482,7 +487,18 @@ export const CLOUD_PATCH_SOURCES = [
   CLOUD_PATCH21_SOURCE,
 ] as const;
 
-export const ROSE_PETAL_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.rosePetalAtlas;
+export const ROSE_RING6_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roseRings.ring6;
+export const ROSE_RING9_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roseRings.ring9;
+export const ROSE_RING10_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roseRings.ring10;
+export const ROSE_RING11_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roseRings.ring11;
+
+export const ROSE_RING_SOURCES = [
+  ROSE_RING11_SOURCE,
+  ROSE_RING10_SOURCE,
+  ROSE_RING9_SOURCE,
+  ROSE_RING6_SOURCE,
+] as const;
+
 export const ROSE_LEAF_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roseLeafAtlas;
 
 export const ORB_RING_SOURCES = [
@@ -553,14 +569,15 @@ export type FlowerGardenThemeImages = {
   orbRingSmallImages: SkImage[] | null;
   orbBedImages: SkImage[] | null;
   orbBedSmallImages: SkImage[] | null;
-  rosePetalAtlas: SkImage | null;
+  roseRingImages: SkImage[] | null;
   roseLeafAtlas: SkImage | null;
 };
 
-export const FLOWER_GARDEN_ATLAS_IMAGE_COUNT = 2;
+export const FLOWER_GARDEN_ATLAS_IMAGE_COUNT = 1;
 
 export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roses).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roseRings).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bush).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.soil).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.dandelion).length +

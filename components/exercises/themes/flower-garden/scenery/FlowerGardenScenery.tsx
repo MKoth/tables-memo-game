@@ -5,7 +5,6 @@ import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAsse
 import { useFlowerGardenTableContext } from './flowerGardenTableContext';
 import { useBushConfigs } from './BushShaderLayer/useBushConfigs';
 import { BushAndShadowLayer } from './BushAndShadowLayer';
-import { RoseSubstrateLayer } from './RoseSubstrateLayer/RoseSubstrateLayer';
 import { FlowerGardenBackgroundCanvas } from './FlowerGardenBackgroundCanvas/FlowerGardenBackgroundCanvas';
 import { FieldFlowerShaderLayer } from './FieldFlowerShaderLayer/FieldFlowerShaderLayer';
 import {
@@ -142,14 +141,6 @@ function FlowerGardenSceneryContent() {
             stemImage={stemImage}
             calyxImage={calyxImage}
             leafAtlas={roseLeafAtlas}
-          />
-          <RoseSubstrateLayer
-            bushConfigs={bushConfigs}
-            layoutX={wordSpriteBridge.layoutX}
-            layoutY={wordSpriteBridge.layoutY}
-            layoutScale={wordSpriteBridge.layoutScale}
-            roseBellSizes={roseBellSizes}
-            substrateImage={substrateImage!}
           />
         </>
       )}

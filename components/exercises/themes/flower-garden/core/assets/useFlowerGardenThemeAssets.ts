@@ -37,7 +37,7 @@ import {
   ROSE_BUD_SOURCE,
   ROSE_CENTER_SOURCE,
   ROSE_LEAF_ATLAS_SOURCE,
-  ROSE_PETAL_ATLAS_SOURCE,
+  ROSE_RING_SOURCES,
   ROSE_SUBSTRATE_SOURCE,
   STEM_SOURCE,
   WILD_VIOLET_FLOWER_SOURCES,
@@ -162,7 +162,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         const [
           roseBudImage,
           roseCenterImage,
-          rosePetalAtlas,
+          roseRingImages,
           dandelionStemImages,
           dandelionLeafImages,
           dandelionFlowerImages,
@@ -178,7 +178,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         ] = await Promise.all([
           loadSingle(ROSE_BUD_SOURCE, 'rose bud'),
           loadSingle(ROSE_CENTER_SOURCE, 'rose center'),
-          loadSingle(ROSE_PETAL_ATLAS_SOURCE, 'rose petal atlas'),
+          loadAll(ROSE_RING_SOURCES, 'rose petal ring'),
           loadAll(DANDELION_STEM_SOURCES, 'dandelion stem'),
           loadAll(DANDELION_LEAF_SOURCES, 'dandelion leaf'),
           loadAll(DANDELION_FLOWER_SOURCES, 'dandelion flower'),
@@ -341,7 +341,10 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
               orbBedSmallImages.length === ORB_BED_SMALL_SOURCES.length
                 ? orbBedSmallImages
                 : null,
-            rosePetalAtlas,
+            roseRingImages:
+              roseRingImages.length === ROSE_RING_SOURCES.length
+                ? roseRingImages
+                : null,
             roseLeafAtlas,
           },
         });

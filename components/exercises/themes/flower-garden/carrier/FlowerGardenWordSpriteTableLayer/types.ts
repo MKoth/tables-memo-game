@@ -34,8 +34,7 @@ export type FlowerWordSpriteTableLayerInnerProps = {
   table: TableData;
   roseBudImage: import('@shopify/react-native-skia').SkImage;
   roseCenterImage: import('@shopify/react-native-skia').SkImage;
-  petalImages: readonly import('@shopify/react-native-skia').SkImage[];
-  rosePetalAtlas: import('@shopify/react-native-skia').SkImage;
+  ringImages: readonly import('@shopify/react-native-skia').SkImage[];
   capturedWord: string | null;
   orbPhase?: import('react-native-reanimated').SharedValue<number>;
   onMatchSuccess?: (targetX: number, targetY: number, hitIdx: number) => void;

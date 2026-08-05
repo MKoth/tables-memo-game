@@ -3,12 +3,11 @@ import { FilterMode, ImageShader, MipmapMode, Rect, Shader, Skia, type SkImage, 
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { MAX_RINGS, ROSE_BUD_SKSL, roseBudUniformDefaults } from '../../../shaders/roseBudDeform.sksl';
-import { ROSE_PETAL_ATLAS_FLAT_REGIONS, ROSE_PETAL_ATLAS_WIDTH, ROSE_PETAL_ATLAS_HEIGHT } from '../../../core/assets/textureAtlas/rosePetalAtlasRegions';
 import {
   computeRoseFlashUniforms,
   computeRoseHighlightUniforms,
 } from '../presets/roseFlashPresets';
-import { computeRoseBudRingHashes } from '../presets/roseBudRingHash';
+import { computeRoseRingRotations } from '../presets/roseRingPresets';
 import { TINT_FLASH_MS } from '../config/flowerTableLayerConfig';
 import type { RoseTintRgb } from '../presets/roseTintPresets';
 import type { FlowerCellConfig } from '../types';
@@ -32,17 +31,8 @@ const SPRITE_SAMPLING = {
   mipmap: MipmapMode.Linear,
 } as const;
 
-const PADDED_PETALS_COUNT = padRingArray(roseBudUniformDefaults.petalsCount);
 const PADDED_RING_RADIUS_MIN = padRingArray(roseBudUniformDefaults.ringRadius.min);
 const PADDED_RING_RADIUS_MAX = padRingArray(roseBudUniformDefaults.ringRadius.max);
-const PADDED_RING_BORDER_MIN = padRingArray(roseBudUniformDefaults.ringBorder.min);
-const PADDED_RING_BORDER_MAX = padRingArray(roseBudUniformDefaults.ringBorder.max);
-const PADDED_PETAL_WIDTH_MIN = padRingArray(roseBudUniformDefaults.petalWidth.min);
-const PADDED_PETAL_WIDTH_MAX = padRingArray(roseBudUniformDefaults.petalWidth.max);
-const PADDED_RING_ROTATION_MIN = padRingArray(roseBudUniformDefaults.ringRotation.min);
-const PADDED_RING_ROTATION_MAX = padRingArray(roseBudUniformDefaults.ringRotation.max);
-const PADDED_RING_BORDER_DEVIATION = padRingArray(roseBudUniformDefaults.ringBorderDeviation);
-const PADDED_PETAL_WIDTH_DEVIATION = padRingArray(roseBudUniformDefaults.petalWidthDeviation);
 const PADDED_RING_OPACITY_MIN = padRingArray(roseBudUniformDefaults.ringOpacity.min);
 const PADDED_RING_OPACITY_MAX = padRingArray(roseBudUniformDefaults.ringOpacity.max);
 
@@ -60,7 +50,7 @@ export type CellRoseBudProps = {
   tintFlashUntil: SharedValue<number[]>;
   roseBudImage: SkImage;
   roseCenterImage: SkImage;
-  petalAtlas: SkImage | null;
+  ringImages: readonly SkImage[];
 };
 
 export function CellRoseBud({
@@ -77,11 +67,11 @@ export function CellRoseBud({
   tintFlashUntil,
   roseBudImage,
   roseCenterImage,
-  petalAtlas,
+  ringImages,
 }: CellRoseBudProps) {
   const idx = config.index;
   const tintVariant = highlightTint ?? tint;
-  const ringHashes = computeRoseBudRingHashes(idx);
+  const ringImageSize = ringImages.map(image => image.width());
 
   const uniforms = useDerivedValue(() => {
     const scale = layoutScale.value[idx] ?? 1;
@@ -107,6 +97,7 @@ export function CellRoseBud({
         : highlightTint != null
           ? computeRoseHighlightUniforms(clock.value, highlightTint, TINT_FLASH_MS)
           : clickFlash;
+    const ringRotations = computeRoseRingRotations(coefficient);
 
     return {
       roseX: cx - halfSize,
@@ -140,24 +131,15 @@ export function CellRoseBud({
       flashWaveRadiusPeriods: flash.flashWaveRadiusPeriods,
       flashBrightnessBoost: flash.flashBrightnessBoost,
       ringsCount: roseBudUniformDefaults.ringsCount,
-      petalsCount: PADDED_PETALS_COUNT,
       ringRadiusMin: PADDED_RING_RADIUS_MIN,
       ringRadiusMax: PADDED_RING_RADIUS_MAX,
-      ringBorderMin: PADDED_RING_BORDER_MIN,
-      ringBorderMax: PADDED_RING_BORDER_MAX,
-      petalWidthMin: PADDED_PETAL_WIDTH_MIN,
-      petalWidthMax: PADDED_PETAL_WIDTH_MAX,
-      ringRotationMin: PADDED_RING_ROTATION_MIN,
-      ringRotationMax: PADDED_RING_ROTATION_MAX,
-      ringBorderDeviation: PADDED_RING_BORDER_DEVIATION,
-      petalWidthDeviation: PADDED_PETAL_WIDTH_DEVIATION,
       ringOpacityMin: PADDED_RING_OPACITY_MIN,
       ringOpacityMax: PADDED_RING_OPACITY_MAX,
-      ringHashBorder: ringHashes.ringHashBorder,
-      ringHashWidth: ringHashes.ringHashWidth,
+      ringImageSize,
+      ringRotCos: ringRotations.ringRotCos,
+      ringRotSin: ringRotations.ringRotSin,
+      ringImageRadiusFrac: roseBudUniformDefaults.ringImageRadiusFrac,
       coefficient,
-      iTime: clock.value / 1000,
-      petalRegions: ROSE_PETAL_ATLAS_FLAT_REGIONS,
     };
   });
 
@@ -165,7 +147,7 @@ export function CellRoseBud({
   const rectY = useDerivedValue(() => uniforms.value.roseY);
   const rectSize = useDerivedValue(() => uniforms.value.roseW);
 
-  if (petalAtlas == null) {
+  if (ringImages.length !== MAX_RINGS) {
     return null;
   }
 
@@ -194,17 +176,20 @@ export function CellRoseBud({
           ty="clamp"
           sampling={SPRITE_SAMPLING}
         />
-        <ImageShader
-          image={petalAtlas}
-          x={0}
-          y={0}
-          width={ROSE_PETAL_ATLAS_WIDTH}
-          height={ROSE_PETAL_ATLAS_HEIGHT}
-          fit="fill"
-          tx="clamp"
-          ty="clamp"
-          sampling={SPRITE_SAMPLING}
-        />
+        {ringImages.map((image, index) => (
+          <ImageShader
+            key={`ring-${index}`}
+            image={image}
+            x={0}
+            y={0}
+            width={image.width()}
+            height={image.height()}
+            fit="fill"
+            tx="clamp"
+            ty="clamp"
+            sampling={SPRITE_SAMPLING}
+          />
+        ))}
       </Shader>
     </Rect>
   );

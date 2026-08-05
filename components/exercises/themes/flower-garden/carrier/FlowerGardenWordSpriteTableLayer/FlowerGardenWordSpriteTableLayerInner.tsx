@@ -47,8 +47,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
   table,
   roseBudImage,
   roseCenterImage,
-  petalImages: _petalImages,
-  rosePetalAtlas,
+  ringImages,
   capturedWord,
   orbPhase,
   onMatchSuccess,
@@ -473,7 +472,7 @@ export function FlowerGardenWordSpriteTableLayerInner({
             tintFlashUntil={tintFlashUntil}
             roseBudImage={roseBudImage}
             roseCenterImage={roseCenterImage}
-            petalAtlas={rosePetalAtlas}
+            ringImages={ringImages}
           />
         ))}
         {drawOrder.map(config => {

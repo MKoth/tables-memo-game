@@ -1,6 +1,4 @@
-export const MAX_PETALS = 16;
 export const MAX_RINGS = 4;
-export const MAX_PETAL_SLOTS = MAX_RINGS * MAX_PETALS;
 
 export const ROSE_BUD_SKSL = `
 uniform float roseX;
@@ -34,42 +32,27 @@ uniform float flashWaveStrength;
 uniform float flashWaveRadiusPeriods;
 uniform float flashBrightnessBoost;
 uniform float ringsCount;
-uniform float petalsCount[${MAX_RINGS}];
 uniform float ringRadiusMin[${MAX_RINGS}];
 uniform float ringRadiusMax[${MAX_RINGS}];
-uniform float ringBorderMin[${MAX_RINGS}];
-uniform float ringBorderMax[${MAX_RINGS}];
-uniform float petalWidthMin[${MAX_RINGS}];
-uniform float petalWidthMax[${MAX_RINGS}];
-uniform float ringRotationMin[${MAX_RINGS}];
-uniform float ringRotationMax[${MAX_RINGS}];
-uniform float ringBorderDeviation[${MAX_RINGS}];
-uniform float petalWidthDeviation[${MAX_RINGS}];
 uniform float ringOpacityMin[${MAX_RINGS}];
 uniform float ringOpacityMax[${MAX_RINGS}];
-uniform float ringHashBorder[${MAX_PETAL_SLOTS}];
-uniform float ringHashWidth[${MAX_PETAL_SLOTS}];
+uniform float ringImageSize[${MAX_RINGS}];
+uniform float ringRotCos[${MAX_RINGS}];
+uniform float ringRotSin[${MAX_RINGS}];
+uniform float ringImageRadiusFrac;
 uniform float coefficient;
-uniform float iTime;
 uniform shader budTexture;
 uniform shader roseCenterTexture;
-uniform shader petalAtlas;
-uniform float4 petalRegions[6];
+uniform shader ringTexture0;
+uniform shader ringTexture1;
+uniform shader ringTexture2;
+uniform shader ringTexture3;
 
-const float petalBottomDarkness = 0.7;
-
-half4 samplePetal(int variant, float2 texCoord) {
-  float4 rgn;
-  if (variant == 0)      { rgn = petalRegions[0]; }
-  else if (variant == 1) { rgn = petalRegions[1]; }
-  else if (variant == 2) { rgn = petalRegions[2]; }
-  else if (variant == 3) { rgn = petalRegions[3]; }
-  else if (variant == 4) { rgn = petalRegions[4]; }
-  else                   { rgn = petalRegions[5]; }
-  float u = (texCoord.x - roseX) / roseW;
-  float v = (texCoord.y - roseY) / roseH;
-  float2 atlasCoord = float2(rgn.x + u * rgn.z, rgn.y + v * rgn.w);
-  return petalAtlas.eval(atlasCoord);
+half4 sampleRing(int ring, float2 px) {
+  if (ring == 0)      { return ringTexture0.eval(px); }
+  else if (ring == 1) { return ringTexture1.eval(px); }
+  else if (ring == 2) { return ringTexture2.eval(px); }
+  else                { return ringTexture3.eval(px); }
 }
 
 half4 main(float2 fragCoord) {
@@ -84,22 +67,10 @@ half4 main(float2 fragCoord) {
   int   rings            = int(ringsCount);
 
   float ringRadiusL[${MAX_RINGS}];
-  float ringBorderL[${MAX_RINGS}];
-  float petalWidthL[${MAX_RINGS}];
-  float ringRotationL[${MAX_RINGS}];
-  float ringBorderDeviationL[${MAX_RINGS}];
-  float petalWidthDeviationL[${MAX_RINGS}];
   float ringOpacityL[${MAX_RINGS}];
-  int   petalsCountL[${MAX_RINGS}];
   for (int i = 0; i < ${MAX_RINGS}; i++) {
-    ringRadiusL[i]         = mix(ringRadiusMin[i],   ringRadiusMax[i],   coefficient);
-    ringBorderL[i]         = mix(ringBorderMin[i],   ringBorderMax[i],   coefficient);
-    petalWidthL[i]         = mix(petalWidthMin[i],   petalWidthMax[i],   coefficient);
-    ringRotationL[i]       = mix(ringRotationMin[i], ringRotationMax[i], coefficient);
-    ringBorderDeviationL[i] = ringBorderDeviation[i];
-    petalWidthDeviationL[i] = petalWidthDeviation[i];
-    ringOpacityL[i]         = mix(ringOpacityMin[i], ringOpacityMax[i], coefficient);
-    petalsCountL[i]        = int(petalsCount[i]);
+    ringRadiusL[i]   = mix(ringRadiusMin[i], ringRadiusMax[i], coefficient);
+    ringOpacityL[i]  = mix(ringOpacityMin[i], ringOpacityMax[i], coefficient);
   }
 
   float2 center = float2(roseX, roseY) + float2(roseW, roseH) * 0.5;
@@ -130,55 +101,23 @@ half4 main(float2 fragCoord) {
   for (int ring = 0; ring < ${MAX_RINGS}; ring++) {
     if (ring >= rings) break;
 
-    float borderDevFrac = ringBorderDeviationL[ring] / 100.0;
-    float ringInner = ringRadiusL[ring] - ringBorderL[ring] * (1.0 + borderDevFrac);
-    float ringOuter = ringRadiusL[ring] + ringBorderL[ring] * (1.0 + borderDevFrac);
-    if (r < ringInner || r > ringOuter) continue;
+    float radius = ringRadiusL[ring];
+    if (r < radius * 0.4 || r > radius * 1.6) continue;
 
-    int count = petalsCountL[ring];
-    float slotAngle = 6.2831853 / float(count);
-    float widthDevFrac = petalWidthDeviationL[ring] / 100.0;
+    float rc = ringRotCos[ring];
+    float rs = ringRotSin[ring];
+    float2 rotated = float2(delta.x * rc + delta.y * rs, -delta.x * rs + delta.y * rc);
 
-    for (int i = 0; i < ${MAX_PETALS}; i++) {
-      if (i >= count) break;
+    float scale = ringImageRadiusFrac * ringImageSize[ring] * 0.5 / radius;
+    float2 px = rotated / halfSize * scale + ringImageSize[ring] * 0.5;
 
-      int variant = i;
-      if (variant >= 6) { variant -= 6; }
+    half4 ringColor = sampleRing(ring, px);
 
-      float borderRng = ringHashBorder[ring * ${MAX_PETALS} + i];
-      float petalBorder = ringBorderL[ring] * (1.0 + (borderRng * 2.0 - 1.0) * borderDevFrac);
+    float ringAlpha = ringColor.a * ringOpacityL[ring];
+    ringAlpha *= 1.0 - smoothstep(radius * 1.45, radius * 1.6, r);
+    if (ringAlpha < 0.01) continue;
 
-      float widthRng = ringHashWidth[ring * ${MAX_PETALS} + i];
-      float halfSpan = petalWidthL[ring] * (1.0 + (widthRng * 2.0 - 1.0) * widthDevFrac) * 3.14159265;
-
-      float petalInner = ringRadiusL[ring] - petalBorder;
-      float petalOuter = ringRadiusL[ring] + petalBorder;
-      if (r < petalInner || r > petalOuter) continue;
-
-      float petalCenterAngle = float(i) * slotAngle + ringRotationL[ring];
-      float angularDist = theta - petalCenterAngle;
-      if (angularDist >  3.14159265) angularDist -= 6.2831853;
-      if (angularDist < -3.14159265) angularDist += 6.2831853;
-
-      if (abs(angularDist) > halfSpan) continue;
-
-      float u = 0.5 + angularDist / (2.0 * halfSpan);
-      float v = 1.0 - (r - petalInner) / (2.0 * petalBorder);
-
-      float uFade = smoothstep(0.0, 0.06, u) * (1.0 - smoothstep(0.94, 1.0, u));
-      float vFade = smoothstep(0.0, 0.06, v) * (1.0 - smoothstep(0.94, 1.0, v));
-      float edgeFade = uFade * vFade;
-
-      float2 texCoord = float2(roseX + u * roseW, roseY + v * roseH);
-      half4 petalColor = samplePetal(variant, texCoord);
-      petalColor.rgb *= brightnessL + 0.1 - petalBottomDarkness * v;
-      petalColor.a *= edgeFade;
-
-      float ringAlpha = petalColor.a * ringOpacityL[ring];
-      if (ringAlpha < 0.01) continue;
-
-      color = petalColor * ringAlpha + color * (1.0 - ringAlpha);
-    }
+    color = ringColor * ringAlpha + color * (1.0 - ringAlpha);
   }
 
   if (centerDiam > 0.0) {
@@ -231,13 +170,9 @@ export const roseBudUniformDefaults = {
   tintA: [1, 1, 1],
   tintStrength: 1,
   ringsCount: 4,
-  petalsCount: [7 ,8 ,10, 11],
-  ringRadius: { min: [0.5 ,0.5 ,0.5, 0.4], max: [0.72, 0.68 ,0.57, 0.43] },
-  ringBorder: { min: [0.09, 0.07 ,0.04, 0.02], max: [0.27, 0.12 ,0.11, 0.10] },
-  petalWidth: { min: [0.17, 0.15 ,0.14, 0.16], max: [0.17, 0.15 ,0.14, 0.16] },
+  ringRadius: { min: [0.41, 0.39, 0.37, 0.3], max: [0.6, 0.5, 0.4, 0.3] },
   ringRotation: { min: [0, 0, 0, 0], max: [1.5, 1.3, 0.9, 0.5] },
-  ringBorderDeviation: [10, 30, 30, 20],
-  petalWidthDeviation: [10, 10, 20, 50],
-  roseCenterOpacity: { min: 1, max: 0.93 },
-  ringOpacity: { min: [1, 1, 1, 1], max: [0.85, 0.85, 0.85, 0.85] },
+  ringOpacity: { min: [1, 1, 1, 1], max: [1, 1, 1, 1] },
+  roseCenterOpacity: { min: 1, max: 1 },
+  ringImageRadiusFrac: 0.65,
 } as const;
