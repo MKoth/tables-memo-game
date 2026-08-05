@@ -10,7 +10,6 @@ import {
 } from '../../../../../core/layout/exerciseLayout';
 import type { ThemeTransformationWordOrbsProps } from '../../../../../themeContract';
 import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
-import { logPerfEvent, useRenderTracker } from '../../../core/perf/flowerGardenPerfLogger';
 import { ORB_IDLE_CLOCK_FPS } from '../../../orb/orbAnimPresets';
 import type { LetterOrbGeometry } from '../../../orb/orbAnimTypes';
 import type { LetterOrbModel } from '../../../../../wordTransformation/domain';
@@ -60,10 +59,6 @@ export function FlowerGardenTransformationWordOrbs({
   playInflate,
   zoneRect: zoneRectProp,
 }: ThemeTransformationWordOrbsProps) {
-  useRenderTracker('FG:WordOrbs');
-  logPerfEvent(
-    `WordOrbs render letters=${letters.length} statuses=${letters.map(statusFor).join('')} insert=${insertPreview != null ? 'y' : 'n'}`,
-  );
   const { roamerRect } = useExerciseLayout();
   const zoneRect = zoneRectProp ?? roamerRect;
   const { images } = useFlowerGardenAssetsContext();

@@ -9,7 +9,6 @@ import {
   TRANSFORMATION_VARIANT_ROW_Y_RATIO,
 } from '../../../../../core/layout/exerciseLayout';
 import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
-import { logPerfEvent, useRenderTracker } from '../../../core/perf/flowerGardenPerfLogger';
 import { FlowerGardenLetterOrb } from './FlowerGardenLetterOrb';
 import { ORB_IDLE_CLOCK_FPS } from '../../../orb/orbAnimPresets';
 import type { LetterOrbGeometry } from '../../../orb/orbAnimTypes';
@@ -57,10 +56,6 @@ export function FlowerGardenTransformationVariantPicker({
   onSelect,
   playPop,
 }: FlowerGardenTransformationVariantPickerProps) {
-  useRenderTracker('FG:VariantPicker');
-  logPerfEvent(
-    `VariantPicker render items=${items.length} wrong=${wrongItemId ?? '-'} hidden=${hiddenItemIds?.size ?? 0} popped=${poppedItemIds?.size ?? 0}`,
-  );
   const { roamerRect } = useExerciseLayout();
   const { images } = useFlowerGardenAssetsContext();
   const clock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);

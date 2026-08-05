@@ -4,7 +4,6 @@ import { Canvas, Group, type SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { useExerciseLayout } from '../../../core';
 import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAssetsProvider';
-import { useRenderTracker } from '../core/perf/flowerGardenPerfLogger';
 import { useRoamerSimulation, type RoamerSimulation } from './core/useRoamerSimulation';
 import { ButterflyInstance } from './butterfly/ButterflyInstance';
 import { BeeInstance } from './bee/BeeInstance';
@@ -38,7 +37,6 @@ type RoamerLayerContentProps = {
 };
 
 function RoamerLayerContent({ sim, interactive, images, hiddenIndices }: RoamerLayerContentProps) {
-  useRenderTracker('FG:RoamerLayer');
   if (sim.runtimeEntries.length === 0) {
     return null;
   }

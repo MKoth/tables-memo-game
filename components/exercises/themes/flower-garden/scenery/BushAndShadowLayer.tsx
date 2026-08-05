@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
-import { useRenderTracker } from '../core/perf/flowerGardenPerfLogger';
 import {
   Canvas,
   Circle,
@@ -76,7 +75,6 @@ function BushAndShadowLayerImpl({
   leafAtlas,
   style,
 }: BushAndShadowLayerProps) {
-  useRenderTracker('FG:BushAndShadow');
   const { width, height } = useWindowDimensions();
 
   const resolved = useMemo(() => resolveSceneryShadowStyle(style), [style]);

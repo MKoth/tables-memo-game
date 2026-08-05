@@ -23,7 +23,6 @@ import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
 import { useFieldFlowerConfigs } from './scenery/FieldFlowerShaderLayer/useFieldFlowerConfigs';
 import { useRoamerSimulation, type RoamerSimulation } from './roamer/core/useRoamerSimulation';
 import { useFlowerGardenAssetsContext } from './core/providers/FlowerGardenAssetsProvider';
-import { useFlowerGardenPerfMonitor } from './core/perf/flowerGardenPerfLogger';
 import { hashSeedString } from './scenery/BushShaderLayer/helpers/seededRandom';
 import { CaptureOrb, getSpeciesImages } from './orb/CaptureOrb';
 import { CapturedRoamerCanvas } from './orb/CapturedRoamerCanvas';
@@ -409,7 +408,6 @@ function SimAndLayers({
 }
 
 function FlowerGardenExerciseContent() {
-  useFlowerGardenPerfMonitor();
   const table = spanishPresentTable2Plural;
   const words = useMemo(() => getTableBodyWords(table), [table]);
   const tutorialStep = useExerciseStore((state) => state.tutorialStep);

@@ -29,8 +29,6 @@ import { FlowerGardenScenery } from './scenery/FlowerGardenScenery';
 import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
 import { useFieldFlowerConfigs } from './scenery/FieldFlowerShaderLayer/useFieldFlowerConfigs';
 import { FlowerGardenTransformationOrbLayer } from './exercises/wordTransformation/components/FlowerGardenTransformationOrbLayer';
-import { useFlowerGardenPerfMonitor } from './core/perf/flowerGardenPerfLogger';
-import { logPerfEvent, useRenderTracker } from './core/perf/flowerGardenPerfLogger';
 import { useWordTransformationGame } from '../../wordTransformation/hooks/useWordTransformationGame';
 
 const SCENERY_Z = 1;
@@ -42,19 +40,9 @@ type WordTransformationContentProps = {
 };
 
 function WordTransformationContent({ sounds }: WordTransformationContentProps) {
-  useFlowerGardenPerfMonitor();
-  useRenderTracker('FG:Content');
   const table = spanishPresentTable2Plural;
   const words = useMemo(() => getTableBodyWords(table), [table]);
   const soundEnabled = useExerciseStore(state => state.soundEnabled);
-
-  const soundsRef = useRef(sounds);
-  useEffect(() => {
-    if (soundsRef.current !== sounds) {
-      logPerfEvent('Content: sounds identity changed');
-      soundsRef.current = sounds;
-    }
-  }, [sounds]);
 
   const { wordSpriteBridge } = useExerciseRuntime();
   const { spriteRect, roamerRect } = useExerciseLayout();

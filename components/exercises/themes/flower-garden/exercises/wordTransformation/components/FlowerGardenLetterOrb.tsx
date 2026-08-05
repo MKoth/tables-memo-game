@@ -21,7 +21,6 @@ import {
   type SharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { usePropDiffLogger, useRenderTracker } from '../../../core/perf/flowerGardenPerfLogger';
 import {
   LETTER_ORB_FLOWER_PRESET,
   ORB_ENTER_DURATION_MS,
@@ -170,22 +169,6 @@ function FlowerGardenLetterOrbComponent({
   ringVariants,
   bedVariants,
 }: FlowerGardenLetterOrbProps) {
-  useRenderTracker('FG:LetterOrb');
-  usePropDiffLogger('LetterOrb', {
-    char,
-    status,
-    geometry,
-    clock,
-    popDelayMs,
-    enterDelayMs,
-    labelFixed,
-    letterSpacing,
-    ringVariants,
-    bedVariants,
-    onPopSound,
-    onEnterSound,
-    onEnterComplete,
-  });
   const orbSeed = useMemo(
     () => hashSeedString(`flower-garden-letter-orb-${char}`),
     [char],
@@ -214,21 +197,6 @@ function FlowerGardenLetterOrbComponent({
   // the from-position) — compare against the snapshot instead of skipping.
   const mountGeometry = useSharedValue(initialGeometry);
 
-  const logReactionRef = useRef<(msg: string) => void>(() => {});
-  useEffect(() => {
-    logReactionRef.current = msg => console.log(`[FG:Reaction] ${Date.now()} char=${char} ${msg}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  useEffect(() => {
-    console.log(
-      `[FG:OrbMount] ${Date.now()} char=${char} posX=${posX.value.toFixed(0)} posY=${posY.value.toFixed(0)} dia=${dia.value.toFixed(0)}`,
-    );
-    return () => {
-      console.log(`[FG:OrbUnmount] ${Date.now()} char=${char} posX=${posX.value.toFixed(0)}`);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Relayouts arrive as writes to `geometry` — animate toward the new target
   // on the UI thread without any React re-render.
   useAnimatedReaction(
@@ -245,10 +213,6 @@ function FlowerGardenLetterOrbComponent({
         current.centerX !== prev.centerX ||
         current.centerY !== prev.centerY ||
         current.diameter !== prev.diameter;
-      scheduleOnRN(
-        logReactionRef.current,
-        `firstRun=${previous == null} moved=${moved} currentX=${current.centerX.toFixed(0)} prevX=${prev.centerX.toFixed(0)} dur=${moved ? (current.moveDurationMs ?? ORB_MOVE_DURATION_MS) : 0}`,
-      );
       if (!moved) {
         return;
       }

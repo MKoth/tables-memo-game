@@ -4,7 +4,6 @@ import { Canvas } from '@shopify/react-native-skia';
 import { makeMutable, type SharedValue } from 'react-native-reanimated';
 import { useExerciseClockQuantized } from '../../../../../core';
 import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
-import { useRenderTracker } from '../../../core/perf/flowerGardenPerfLogger';
 import { FlowerGardenLetterOrb } from './FlowerGardenLetterOrb';
 import { ORB_IDLE_CLOCK_FPS } from '../../../orb/orbAnimPresets';
 import type { LetterOrbGeometry } from '../../../orb/orbAnimTypes';
@@ -38,7 +37,6 @@ function buildFlightGeometry(flight: InsertAnimationState): LetterOrbGeometry {
 export function FlowerGardenTransformationInsertFlight({
   flight,
 }: FlowerGardenTransformationInsertFlightProps) {
-  useRenderTracker('FG:InsertFlight');
   const { images } = useFlowerGardenAssetsContext();
   const clock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
   const geometryRef = useRef<SharedValue<LetterOrbGeometry> | null>(null);
@@ -62,9 +60,6 @@ export function FlowerGardenTransformationInsertFlight({
         moveDurationMs: flight.flyDurationMs,
       };
       geometryRef.current = makeMutable<LetterOrbGeometry>(fromGeometry);
-      console.log(
-        `[FG:Seed] ${Date.now()} char=${flight.char} key=${flightKey} fromX=${flight.fromCenterX.toFixed(0)} fromY=${flight.fromCenterY.toFixed(0)}`,
-      );
     }
     return { key: flightKey, geometry: geometryRef.current };
   }, [flight, flightKey]);
@@ -78,9 +73,6 @@ export function FlowerGardenTransformationInsertFlight({
       return;
     }
     geometryRef.current.value = buildFlightGeometry(flight);
-    console.log(
-      `[FG:Write] ${Date.now()} phase=${flight.phase} key=${flightKey} fromX=${flight.fromCenterX.toFixed(0)} toX=${flight.toCenterX.toFixed(0)} dur=${flight.phase === 'dismiss' ? 0 : flight.flyDurationMs}`,
-    );
   }, [flight]);
 
   if (images.orbRingSmallImages == null || images.orbBedSmallImages == null) {

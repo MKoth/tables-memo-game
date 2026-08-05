@@ -1,7 +1,6 @@
 import React from 'react';
 import { useFlowerGardenAssetsContext } from '../../core/providers/FlowerGardenAssetsProvider';
 import { useExerciseRuntime } from '../../../../core';
-import { useRenderTracker } from '../../core/perf/flowerGardenPerfLogger';
 import { FlowerGardenWordSpriteTableLayerInner } from './FlowerGardenWordSpriteTableLayerInner';
 import { DEFAULT_TRANSLATION_DISPLAY_MS } from './config/flowerTableLayerConfig';
 import type { FlowerWordSpriteTableLayerProps } from './types';
@@ -15,7 +14,6 @@ function FlowerGardenWordSpriteTableLayerComponent({
   extraRevealedBodyIndices,
   controllerRef,
 }: FlowerWordSpriteTableLayerProps) {
-  useRenderTracker('FG:TableLayer');
   const { images } = useFlowerGardenAssetsContext();
   const { captureBridge, onWordSpriteMatchSuccess } = useExerciseRuntime();
   const roseBudImage = images.roseBudImage;
