@@ -21,8 +21,6 @@ import {
   OrbPhase,
   type BurstIntentValue,
   type OrbAnimationConfig,
-  type PetalRingConfig,
-  type PetalSpawnConfig,
   type UseOrbAnimationResult,
 } from './orbAnimTypes';
 
@@ -80,8 +78,6 @@ export type OrbWrongState = {
 
 export function useOrbAnimation(
   config: OrbAnimationConfig,
-  rings: ReadonlyArray<PetalRingConfig>,
-  petals: ReadonlyArray<PetalSpawnConfig>,
   onDismiss: () => void,
   enabled = true,
   onBurstCompleteWorklet?: (burstIdleTimeMs: number, intent: BurstIntentValue) => void,
@@ -124,8 +120,6 @@ export function useOrbAnimation(
       burstProgress.value,
       phase.value === OrbPhase.Burst ? burstIdleTimeMs.value : resolvedIdleElapsedMs.value,
       configSv.value,
-      rings,
-      petals,
       wrongSnapshot.value,
     ),
   );
@@ -249,8 +243,5 @@ export {
   type BurstIntentValue,
   type OrbAnimState,
   type OrbAnimationConfig,
-  type PetalAnimState,
-  type PetalRingConfig,
-  type PetalSpawnConfig,
   type UseOrbAnimationResult,
 } from './orbAnimTypes';

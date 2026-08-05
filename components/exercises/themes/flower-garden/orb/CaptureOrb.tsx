@@ -1,20 +1,15 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { Canvas, type SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAssetsProvider';
-import {
-  ORB_PETAL_SIZE_FACTOR_BY_RING,
-  ORB_RING_CONFIGS,
-} from './orbAnimPresets';
 import type {
   OrbAnimState,
-  PetalRingConfig,
-  PetalSpawnConfig,
 } from './orbAnimTypes';
-import { PetalRingLayer, type PetalSlot } from './PetalRingLayer';
 import { CapturedRoamerCanvas } from './CapturedRoamerCanvas';
 import { OrbWordLabel } from './OrbWordLabel';
+import { OrbFlowerShader } from './OrbFlowerShader';
+import { ORB_FLOWER_PRESET, type OrbFlowerPreset } from './orbAnimPresets';
 import type { RoamerRuntimeEntry, RoamerSpecies } from '../roamer/core/types';
 
 type ImageLookup = ReturnType<typeof useFlowerGardenAssetsContext>['images'];
@@ -57,45 +52,33 @@ export function getSpeciesImages(
 export type CaptureOrbProps = {
   anim: SharedValue<OrbAnimState>;
   capturedEntry: RoamerRuntimeEntry;
-  petals: ReadonlyArray<PetalSpawnConfig>;
   centerX: number;
   centerY: number;
   word?: string | null;
   targetDiameter?: number;
+  seed: number;
+  preset?: OrbFlowerPreset;
 };
 
 export function CaptureOrb({
   anim,
   capturedEntry,
-  petals,
   centerX,
   centerY,
   word,
   targetDiameter = 0,
+  seed,
+  preset = ORB_FLOWER_PRESET,
 }: CaptureOrbProps) {
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
-  const cloudPetalAtlas = images.cloudPetalAtlas;
-
-  const slotsByRing = useMemo(() => {
-    const buckets: PetalSlot[][] = [[], [], []];
-    for (let i = 0; i < petals.length; i++) {
-      const p = petals[i]!;
-      if (p.ringIndex < 0 || p.ringIndex >= buckets.length) continue;
-      buckets[p.ringIndex]!.push({
-        spawnIndex: i,
-        imageIndex: p.imageIndex,
-      });
-    }
-    return buckets;
-  }, [petals]);
-
-  const reversedRings = useMemo(() => [...ORB_RING_CONFIGS].reverse(), []);
+  const ringImages = images.orbRingImages;
+  const bedImages = images.orbBedImages;
 
   if (width === 0 || height === 0) {
     return null;
   }
-  if (cloudPetalAtlas == null) {
+  if (ringImages == null || bedImages == null) {
     return null;
   }
 
@@ -113,6 +96,14 @@ export function CaptureOrb({
       style={[StyleSheet.absoluteFill, { width, height }]}
       pointerEvents="none"
     >
+      <OrbFlowerShader
+        anim={anim}
+        seed={seed}
+        targetDiameter={targetDiameter}
+        preset={preset}
+        ringVariants={ringImages}
+        bedVariants={bedImages}
+      />
       <CapturedRoamerCanvas
         entry={capturedEntry}
         anim={anim}
@@ -125,19 +116,8 @@ export function CaptureOrb({
       {word != null && word.length > 0 && (
         <OrbWordLabel word={word} anim={anim} targetDiameter={targetDiameter} />
       )}
-      {reversedRings.map(ring => (
-        <PetalRingLayer
-          key={`ring-${ring.ringIndex}`}
-          sizeFactor={ORB_PETAL_SIZE_FACTOR_BY_RING[ring.ringIndex] ?? 1}
-          slots={slotsByRing[ring.ringIndex] ?? []}
-          anim={anim}
-          atlas={cloudPetalAtlas.petalImage}
-          regions={cloudPetalAtlas.petalRegions}
-        />
-      ))}
     </Canvas>
   );
 }
 
-export { ORB_PETAL_SIZE_FACTOR_BY_RING };
-export type { ImageLookup, PetalRingConfig, SpeciesImageSet };
+export type { ImageLookup, SpeciesImageSet };

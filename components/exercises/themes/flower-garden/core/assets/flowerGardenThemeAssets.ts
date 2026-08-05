@@ -1,5 +1,4 @@
 import type { SkImage } from '@shopify/react-native-skia';
-import type { CloudPetalAtlas } from './textureAtlas/buildCloudPetalAtlas';
 
 const FLOWER_GARDEN_IMAGE_ASSETS = {
   roses: {
@@ -146,30 +145,19 @@ const FLOWER_GARDEN_IMAGE_ASSETS = {
     lightBlue21: require('../../../../../../assets/images/flower_garden_theme/cloud/cloud-light-blue21.png'),
   },
   orb: {
-    petal1: require('../../../../../../assets/images/flower_garden_theme/orb/pettel1.png'),
-    petal2: require('../../../../../../assets/images/flower_garden_theme/orb/pettel2.png'),
-    petal3: require('../../../../../../assets/images/flower_garden_theme/orb/pettel3.png'),
-    petal4: require('../../../../../../assets/images/flower_garden_theme/orb/pettel4.png'),
-    petal5: require('../../../../../../assets/images/flower_garden_theme/orb/pettel5.png'),
-    petal6: require('../../../../../../assets/images/flower_garden_theme/orb/pettel6.png'),
-    petal7: require('../../../../../../assets/images/flower_garden_theme/orb/pettel7.png'),
-    petal8: require('../../../../../../assets/images/flower_garden_theme/orb/pettel8.png'),
-    petal9: require('../../../../../../assets/images/flower_garden_theme/orb/pettel9.png'),
-    petal10: require('../../../../../../assets/images/flower_garden_theme/orb/pettel10.png'),
-    petal11: require('../../../../../../assets/images/flower_garden_theme/orb/pettel11.png'),
-    petal12: require('../../../../../../assets/images/flower_garden_theme/orb/pettel12.png'),
-    petal13: require('../../../../../../assets/images/flower_garden_theme/orb/pettel13.png'),
-    petal14: require('../../../../../../assets/images/flower_garden_theme/orb/pettel14.png'),
-    petal15: require('../../../../../../assets/images/flower_garden_theme/orb/pettel15.png'),
-    petal16: require('../../../../../../assets/images/flower_garden_theme/orb/pettel16.png'),
-    petal17: require('../../../../../../assets/images/flower_garden_theme/orb/pettel17.png'),
-    petal18: require('../../../../../../assets/images/flower_garden_theme/orb/pettel18.png'),
-    petal19: require('../../../../../../assets/images/flower_garden_theme/orb/pettel19.png'),
-    petal20: require('../../../../../../assets/images/flower_garden_theme/orb/pettel20.png'),
-    petal21: require('../../../../../../assets/images/flower_garden_theme/orb/pettel21.png'),
+    pettelsRing1: require('../../../../../../assets/images/flower_garden_theme/orb/pettels-ring1.png'),
+    pettelsRing2: require('../../../../../../assets/images/flower_garden_theme/orb/pettels-ring2.png'),
+    pettelsRing3: require('../../../../../../assets/images/flower_garden_theme/orb/pettels-ring3.png'),
+    pettelsSmallRing1: require('../../../../../../assets/images/flower_garden_theme/orb/pettels-small-ring1.png'),
+    pettelsSmallRing2: require('../../../../../../assets/images/flower_garden_theme/orb/pettels-small-ring2.png'),
+    pettelsSmallRing3: require('../../../../../../assets/images/flower_garden_theme/orb/pettels-small-ring3.png'),
+    cloverBed1: require('../../../../../../assets/images/flower_garden_theme/orb/clover-bed1.png'),
+    cloverBed2: require('../../../../../../assets/images/flower_garden_theme/orb/clover-bed2.png'),
+    cloverBed3: require('../../../../../../assets/images/flower_garden_theme/orb/clover-bed3.png'),
+    cloverSmallBed1: require('../../../../../../assets/images/flower_garden_theme/orb/clover-small-bed1.png'),
+    cloverSmallBed2: require('../../../../../../assets/images/flower_garden_theme/orb/clover-small-bed2.png'),
+    cloverSmallBed3: require('../../../../../../assets/images/flower_garden_theme/orb/clover-small-bed3.png'),
   },
-  cloudAtlas: require('../../../../../../assets/images/flower_garden_theme/cloud_atlas.png'),
-  petalAtlas: require('../../../../../../assets/images/flower_garden_theme/petal_atlas.png'),
   rosePetalAtlas: require('../../../../../../assets/images/flower_garden_theme/rose_petal_atlas.png'),
   roseLeafAtlas: require('../../../../../../assets/images/flower_garden_theme/rose_leaf_atlas.png'),
 } as const;
@@ -435,27 +423,18 @@ export const BUMBLEBEE_BODY_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.body;
 export const BUMBLEBEE_LEFT_WING_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.leftWing;
 export const BUMBLEBEE_RIGHT_WING_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.bumblebee.rightWing;
 
-export const ORB_PETAL1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal1;
-export const ORB_PETAL2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal2;
-export const ORB_PETAL3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal3;
-export const ORB_PETAL4_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal4;
-export const ORB_PETAL5_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal5;
-export const ORB_PETAL6_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal6;
-export const ORB_PETAL7_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal7;
-export const ORB_PETAL8_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal8;
-export const ORB_PETAL9_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal9;
-export const ORB_PETAL10_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal10;
-export const ORB_PETAL11_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal11;
-export const ORB_PETAL12_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal12;
-export const ORB_PETAL13_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal13;
-export const ORB_PETAL14_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal14;
-export const ORB_PETAL15_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal15;
-export const ORB_PETAL16_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal16;
-export const ORB_PETAL17_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal17;
-export const ORB_PETAL18_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal18;
-export const ORB_PETAL19_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal19;
-export const ORB_PETAL20_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal20;
-export const ORB_PETAL21_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.petal21;
+export const ORB_RING1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.pettelsRing1;
+export const ORB_RING2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.pettelsRing2;
+export const ORB_RING3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.pettelsRing3;
+export const ORB_RING_SMALL1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.pettelsSmallRing1;
+export const ORB_RING_SMALL2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.pettelsSmallRing2;
+export const ORB_RING_SMALL3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.pettelsSmallRing3;
+export const ORB_BED1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.cloverBed1;
+export const ORB_BED2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.cloverBed2;
+export const ORB_BED3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.cloverBed3;
+export const ORB_BED_SMALL1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.cloverSmallBed1;
+export const ORB_BED_SMALL2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.cloverSmallBed2;
+export const ORB_BED_SMALL3_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.orb.cloverSmallBed3;
 
 export const CLOUD_PATCH1_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.yellow1;
 export const CLOUD_PATCH2_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloud.yellow2;
@@ -503,33 +482,31 @@ export const CLOUD_PATCH_SOURCES = [
   CLOUD_PATCH21_SOURCE,
 ] as const;
 
-export const CLOUD_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.cloudAtlas;
-export const PETAL_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.petalAtlas;
 export const ROSE_PETAL_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.rosePetalAtlas;
 export const ROSE_LEAF_ATLAS_SOURCE = FLOWER_GARDEN_IMAGE_ASSETS.roseLeafAtlas;
 
-export const ORB_PETAL_SOURCES = [
-  ORB_PETAL1_SOURCE,
-  ORB_PETAL2_SOURCE,
-  ORB_PETAL3_SOURCE,
-  ORB_PETAL4_SOURCE,
-  ORB_PETAL5_SOURCE,
-  ORB_PETAL6_SOURCE,
-  ORB_PETAL7_SOURCE,
-  ORB_PETAL8_SOURCE,
-  ORB_PETAL9_SOURCE,
-  ORB_PETAL10_SOURCE,
-  ORB_PETAL11_SOURCE,
-  ORB_PETAL12_SOURCE,
-  ORB_PETAL13_SOURCE,
-  ORB_PETAL14_SOURCE,
-  ORB_PETAL15_SOURCE,
-  ORB_PETAL16_SOURCE,
-  ORB_PETAL17_SOURCE,
-  ORB_PETAL18_SOURCE,
-  ORB_PETAL19_SOURCE,
-  ORB_PETAL20_SOURCE,
-  ORB_PETAL21_SOURCE,
+export const ORB_RING_SOURCES = [
+  ORB_RING1_SOURCE,
+  ORB_RING2_SOURCE,
+  ORB_RING3_SOURCE,
+] as const;
+
+export const ORB_RING_SMALL_SOURCES = [
+  ORB_RING_SMALL1_SOURCE,
+  ORB_RING_SMALL2_SOURCE,
+  ORB_RING_SMALL3_SOURCE,
+] as const;
+
+export const ORB_BED_SOURCES = [
+  ORB_BED1_SOURCE,
+  ORB_BED2_SOURCE,
+  ORB_BED3_SOURCE,
+] as const;
+
+export const ORB_BED_SMALL_SOURCES = [
+  ORB_BED_SMALL1_SOURCE,
+  ORB_BED_SMALL2_SOURCE,
+  ORB_BED_SMALL3_SOURCE,
 ] as const;
 
 export type FlowerGardenLycaenidaeKey = keyof typeof FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae;
@@ -572,12 +549,15 @@ export type FlowerGardenThemeImages = {
   bumblebeeBodyImage: SkImage | null;
   bumblebeeLeftWingImage: SkImage | null;
   bumblebeeRightWingImage: SkImage | null;
-  cloudPetalAtlas: CloudPetalAtlas | null;
+  orbRingImages: SkImage[] | null;
+  orbRingSmallImages: SkImage[] | null;
+  orbBedImages: SkImage[] | null;
+  orbBedSmallImages: SkImage[] | null;
   rosePetalAtlas: SkImage | null;
   roseLeafAtlas: SkImage | null;
 };
 
-export const FLOWER_GARDEN_ATLAS_IMAGE_COUNT = 4;
+export const FLOWER_GARDEN_ATLAS_IMAGE_COUNT = 2;
 
 export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.roses).length +
@@ -590,6 +570,7 @@ export const FLOWER_GARDEN_IMAGE_COUNT =
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.lycaenidae).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bee).length +
   Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.bumblebee).length +
+  Object.keys(FLOWER_GARDEN_IMAGE_ASSETS.orb).length +
   FLOWER_GARDEN_ATLAS_IMAGE_COUNT;
 
 export const FLOWER_GARDEN_SOUND_COUNT = 0;

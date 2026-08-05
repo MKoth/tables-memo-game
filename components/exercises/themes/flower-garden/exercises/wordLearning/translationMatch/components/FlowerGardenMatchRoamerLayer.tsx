@@ -6,15 +6,13 @@ import { useExerciseClockQuantized, useExerciseLayout } from '../../../../../../
 import { useFlowerGardenAssetsContext } from '../../../../core/providers/FlowerGardenAssetsProvider';
 import { RoamerLayer } from '../../../../roamer/RoamerLayer';
 import { useRoamerSimulation } from '../../../../roamer/core/useRoamerSimulation';
-import { generateOrbPetalConfigs } from '../../../../orb/generateOrbPetalConfigs';
-import { createRng, hashSeedString } from '../../../../scenery/BushShaderLayer/helpers/seededRandom';
+import { hashSeedString } from '../../../../scenery/BushShaderLayer/helpers/seededRandom';
 import { CaptureOrb } from '../../../../orb/CaptureOrb';
 import { OrbPhase, useOrbAnimation } from '../../../../orb/useOrbAnimation';
 import {
   ORB_CAPTIVE_DRIFT_RATIO,
   ORB_DIAMETER_RATIO,
   ORB_IDLE_CLOCK_FPS,
-  ORB_RING_CONFIGS,
   ORB_ROAMER_TAP_HIT_RADIUS,
 } from '../../../../orb/orbAnimPresets';
 import { useFlowerGardenRoamerTapGesture } from '../../../../orb/useFlowerGardenRoamerTapGesture';
@@ -39,7 +37,7 @@ export function FlowerGardenMatchRoamerLayer({
   const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
   const { images } = useFlowerGardenAssetsContext();
   const idleClock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
-  const cloudPetalAtlasReady = images.cloudPetalAtlas != null;
+  const orbReady = images.orbRingImages != null && images.orbBedImages != null;
 
   const capturedRoamerIndexSv = useSharedValue(-1);
 
@@ -63,14 +61,7 @@ export function FlowerGardenMatchRoamerLayer({
     orbCaptureRadius,
   });
 
-  const petalSeed = useMemo(() => hashSeedString('flower-garden-orb-match'), []);
-  const petals = useMemo(
-    () =>
-      generateOrbPetalConfigs({
-        rng: createRng(petalSeed),
-      }),
-    [petalSeed],
-  );
+  const orbSeed = useMemo(() => hashSeedString('flower-garden-orb-match'), []);
 
   const [selection, setSelection] = useState<{
     roamerIndex: number;
@@ -148,8 +139,6 @@ export function FlowerGardenMatchRoamerLayer({
 
   const { anim, phase, startBurst } = useOrbAnimation(
     orbConfig,
-    ORB_RING_CONFIGS,
-    petals,
     handleDismiss,
     selection != null,
     releaseRoamerFromOrb,
@@ -268,7 +257,7 @@ export function FlowerGardenMatchRoamerLayer({
           </View>
         </GestureDetector>
       </View>
-      {capturedEntry != null && cloudPetalAtlasReady && (
+      {capturedEntry != null && orbReady && (
         <View
           style={[styles.container, { zIndex: MATCH_ORB_Z }]}
           pointerEvents="none"
@@ -276,9 +265,10 @@ export function FlowerGardenMatchRoamerLayer({
           <CaptureOrb
             anim={anim}
             capturedEntry={capturedEntry}
-            petals={petals}
             centerX={targetCenterX}
             centerY={targetCenterY}
+            targetDiameter={targetDiameter}
+            seed={orbSeed}
           />
         </View>
       )}

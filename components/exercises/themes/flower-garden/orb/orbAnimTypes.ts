@@ -16,34 +16,19 @@ export const BurstIntent = {
 
 export type BurstIntentValue = (typeof BurstIntent)[keyof typeof BurstIntent];
 
-export type PetalRingConfig = {
-  ringIndex: number;
-  centerRadius: number;
-  thickness: number;
-  petalCount: number;
-  rotationSpeed: number;
-  direction: 1 | -1;
-  widthFraction: number;
-  phaseOffset: number;
-};
-
-export type PetalAnimState = {
-  x: number;
-  y: number;
-  angle: number;
-  scaleX: number;
-  opacity: number;
-  /** Wrong-feedback tint strength carried per petal (0 = untinted). */
-  tintStrength: number;
-};
-
 export type OrbAnimState = {
   centerX: number;
   centerY: number;
   diameter: number;
   overallOpacity: number;
-  petals: PetalAnimState[];
   captureVisualT: number;
+  phase: number;
+  /** Progress of the enter spiral in [0, 1]. */
+  enterT: number;
+  /** Progress of the burst scatter in [0, 1]. */
+  burstT: number;
+  /** Seconds-equivalent ms since the idle phase started (frozen at burst start). */
+  idleElapsedMs: number;
   /** Wrong-feedback tint color carried for the petal draw (0–1 channels). */
   tintR: number;
   tintG: number;
@@ -72,22 +57,6 @@ export type OrbAnimationConfig = {
   enterDelayMs?: number;
   /** Delay (ms) before the burst starts once `startBurst` fires. */
   popDelayMs?: number;
-};
-
-export type PetalSpawnConfig = {
-  ringIndex: number;
-  imageIndex: number;
-  initialAngle: number;
-  phase: number;
-  phaseSpeed: number;
-  brownianStep: number;
-  driftPhase: number;
-  startRadius: number;
-  startAngle: number;
-  /** Burst direction offset in [-1, 1], scaled by ORB_BURST_CONE_RAD at use site. */
-  burstAngle: number;
-  /** Burst speed multiplier in [ORB_BURST_SPEED_MIN, ORB_BURST_SPEED_MAX]. */
-  burstSpeed: number;
 };
 
 export type UseOrbAnimationResult = {

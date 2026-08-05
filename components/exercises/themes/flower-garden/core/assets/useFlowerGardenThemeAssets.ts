@@ -13,29 +13,31 @@ import {
   CHAMOMILE_FLOWER_SOURCES,
   CHAMOMILE_LEAF_SOURCES,
   CHAMOMILE_STEM_SOURCES,
-  CLOUD_ATLAS_SOURCE,
   CLOVER_SOURCES,
   DANDELION_FLOWER_SOURCES,
   DANDELION_LEAF_SOURCES,
   DANDELION_STEM_SOURCES,
   EARTH_SOURCE,
-  GRASS_TILABLE_SOURCE,
   FLOWER_GARDEN_IMAGE_ASSETS,
   FLOWER_GARDEN_PRELOAD_TOTAL,
+  GRASS_TILABLE_SOURCE,
   LEAF_SOURCES,
   LYCAENIDAE_BODY_SOURCE,
   LYCAENIDAE_LEFT_WING_SOURCES,
   LYCAENIDAE_RIGHT_WING_SOURCES,
   MOSS_STONE_SOURCES,
-  PETAL_ATLAS_SOURCE,
-  ROSE_PETAL_ATLAS_SOURCE,
-  ROSE_LEAF_ATLAS_SOURCE,
+  ORB_BED_SMALL_SOURCES,
+  ORB_BED_SOURCES,
+  ORB_RING_SMALL_SOURCES,
+  ORB_RING_SOURCES,
   PETAL_SOURCES,
   POPPY_FLOWER_SOURCES,
   POPPY_LEAF_SOURCES,
   POPPY_STEM_SOURCES,
   ROSE_BUD_SOURCE,
   ROSE_CENTER_SOURCE,
+  ROSE_LEAF_ATLAS_SOURCE,
+  ROSE_PETAL_ATLAS_SOURCE,
   ROSE_SUBSTRATE_SOURCE,
   STEM_SOURCE,
   WILD_VIOLET_FLOWER_SOURCES,
@@ -47,8 +49,6 @@ import {
 import {
   createFlowerGardenSoundController,
 } from './useFlowerGardenThemeSounds';
-import { createCloudPetalAtlas } from './textureAtlas/buildCloudPetalAtlas';
-import type { CloudPetalAtlas } from './textureAtlas/buildCloudPetalAtlas';
 
 type FlowerGardenAssetsReady = {
   images: FlowerGardenThemeImages;
@@ -116,21 +116,6 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
   useEffect(() => {
     let cancelled = false;
-
-    const loadCloudPetalAtlas = async (): Promise<CloudPetalAtlas | null> => {
-      const cloudResult = await loadSingle(CLOUD_ATLAS_SOURCE, 'cloud atlas');
-      if (cancelled) {
-        return null;
-      }
-      const petalResult = await loadSingle(PETAL_ATLAS_SOURCE, 'petal atlas');
-      if (cancelled) {
-        return null;
-      }
-      if (cloudResult != null && petalResult != null) {
-        return createCloudPetalAtlas(cloudResult, petalResult);
-      }
-      return null;
-    };
 
     const preload = async () => {
       try {
@@ -225,7 +210,10 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           bumblebeeBodyImage,
           bumblebeeLeftWingImage,
           bumblebeeRightWingImage,
-          cloudPetalAtlas,
+          orbRingImages,
+          orbRingSmallImages,
+          orbBedImages,
+          orbBedSmallImages,
         ] = await Promise.all([
           loadAll(PETAL_SOURCES, 'petal'),
           loadAll(CLOVER_SOURCES, 'clover'),
@@ -239,7 +227,10 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           loadSingle(BUMBLEBEE_BODY_SOURCE, 'bumblebee body'),
           loadSingle(BUMBLEBEE_LEFT_WING_SOURCE, 'bumblebee left wing'),
           loadSingle(BUMBLEBEE_RIGHT_WING_SOURCE, 'bumblebee right wing'),
-          loadCloudPetalAtlas(),
+          loadAll(ORB_RING_SOURCES, 'orb petal ring'),
+          loadAll(ORB_RING_SMALL_SOURCES, 'orb small petal ring'),
+          loadAll(ORB_BED_SOURCES, 'orb clover bed'),
+          loadAll(ORB_BED_SMALL_SOURCES, 'orb small clover bed'),
         ]);
 
         if (cancelled) {
@@ -334,7 +325,22 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
             bumblebeeBodyImage,
             bumblebeeLeftWingImage,
             bumblebeeRightWingImage,
-            cloudPetalAtlas,
+            orbRingImages:
+              orbRingImages.length === ORB_RING_SOURCES.length
+                ? orbRingImages
+                : null,
+            orbRingSmallImages:
+              orbRingSmallImages.length === ORB_RING_SMALL_SOURCES.length
+                ? orbRingSmallImages
+                : null,
+            orbBedImages:
+              orbBedImages.length === ORB_BED_SOURCES.length
+                ? orbBedImages
+                : null,
+            orbBedSmallImages:
+              orbBedSmallImages.length === ORB_BED_SMALL_SOURCES.length
+                ? orbBedSmallImages
+                : null,
             rosePetalAtlas,
             roseLeafAtlas,
           },

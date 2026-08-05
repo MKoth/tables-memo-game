@@ -1,12 +1,3 @@
-import type { PetalRingConfig } from './orbAnimTypes';
-
-export const ORB_PETAL_COUNT = 21;
-
-/** Ring-count knob bounds for exercises that want fewer petal rings (e.g. letter orbs). */
-export const ORB_RING_COUNT_MIN = 1;
-export const ORB_RING_COUNT_MAX = 3;
-export const ORB_RING_COUNT_DEFAULT = 3;
-
 export const ORB_ENTER_DURATION_MS = 500;
 export const ORB_BURST_DURATION_MS = 400;
 export const ORB_IDLE_CLOCK_SPAN_MS = Number.MAX_SAFE_INTEGER;
@@ -14,41 +5,6 @@ export const ORB_IDLE_CLOCK_SPAN_MS = Number.MAX_SAFE_INTEGER;
 export const ORB_MOVE_DURATION_MS = 320;
 /** Rate (fps) at which idle orb motion steps from the shared exercise clock. */
 export const ORB_IDLE_CLOCK_FPS = 30;
-
-export const ORB_RING_RADII_FRACTIONS: ReadonlyArray<{
-  center: number;
-  thickness: number;
-  widthFraction: number;
-}> = [
-  { center: 0.4, thickness: 0.08, widthFraction: 0.4 },
-  { center: 0.5, thickness: 0.14, widthFraction: 0.5 },
-  { center: 0.55, thickness: 0.18, widthFraction: 0.6 },
-];
-
-export const ORB_RING_PETAL_COUNTS: ReadonlyArray<number> = [12, 12, 12];
-
-export const ORB_RING_ROTATION_SPEEDS: ReadonlyArray<number> = [0.32, -0.22, 0.14];
-
-export const ORB_RING_PHASE_OFFSETS: ReadonlyArray<number> = [0.4, 2.3, 4.1];
-
-export const ORB_PETAL_STRETCH_GAIN = 0.55;
-export const ORB_PETAL_PHASE_SPEED_MIN = 0.9;
-export const ORB_PETAL_PHASE_SPEED_MAX = 2.8;
-export const ORB_PETAL_BROWNIAN_STEP_MIN = 0.0008;
-export const ORB_PETAL_BROWNIAN_STEP_MAX = 0.0035;
-
-export const ORB_SPAWN_RADIUS_RATIO = 0.05;
-export const ORB_SPAWN_ANGLE_JITTER = Math.PI * 2;
-export const ORB_SPAWN_DIAMETER_RATIO = 0.18;
-
-export const ORB_PETAL_BASE_SIZE_PX = 28;
-export const ORB_PETAL_SIZE_FACTOR_BY_RING: ReadonlyArray<number> = [0.9, 1.15, 1.1];
-export const ORB_PETAL_WIDTH_FRACTION_BOOST = 6;
-
-export const ORB_BURST_DISTANCE = 0.85;
-export const ORB_BURST_CONE_RAD = Math.PI / 6;
-export const ORB_BURST_SPEED_MIN = 0.85;
-export const ORB_BURST_SPEED_MAX = 1.25;
 
 export const ORB_DIAMETER_RATIO = 0.65;
 export const ORB_ROAMER_SCALE = 1.22;
@@ -61,43 +17,7 @@ export const ORB_CAPTIVE_ANGLE_SWAY_SPEED = 0.4;
 export const ORB_CAPTIVE_ANGLE_SWAY_AMP = 0.3;
 export const ORB_CAPTIVE_WING_RATE = 16;
 
-export const ORB_PETAL_FADE_START = 0.5;
-export const ORB_PETAL_FADE_END = 1.0;
-
-export const ORB_RING_CONFIGS: ReadonlyArray<PetalRingConfig> = ORB_RING_RADII_FRACTIONS.map(
-  (radius, ringIndex) => ({
-    ringIndex,
-    centerRadius: radius.center,
-    thickness: radius.thickness,
-    petalCount: ORB_RING_PETAL_COUNTS[ringIndex]!,
-    rotationSpeed: ORB_RING_ROTATION_SPEEDS[ringIndex]!,
-    direction: ORB_RING_ROTATION_SPEEDS[ringIndex]! >= 0 ? 1 : -1,
-    phaseOffset: ORB_RING_PHASE_OFFSETS[ringIndex] ?? 0,
-    widthFraction: radius.widthFraction,
-  }),
-);
-
-/** Letter-orb preset: a single small petal ring for word-transformation letters. */
-export const LETTER_ORB_RING_COUNT = 1;
-export const LETTER_ORB_PETAL_COUNT = 7;
-
-export const LETTER_ORB_RING_CONFIGS: ReadonlyArray<PetalRingConfig> = [
-  {
-    ringIndex: 0,
-    centerRadius: 0.4,
-    thickness: 0.14,
-    petalCount: LETTER_ORB_PETAL_COUNT,
-    rotationSpeed: 0.35,
-    direction: 1,
-    widthFraction: 0.5,
-    phaseOffset: 0,
-  },
-];
-
-/** Petal size factor for letter orbs (capture orb inner ring ≈ 0.9). */
-export const LETTER_ORB_PETAL_SIZE_FACTOR = 0.6;
-
-/** Wrong-feedback tint strength applied to petals while a letter orb flashes wrong. */
+/** Wrong-feedback tint strength applied to the petal ring while an orb flashes wrong. */
 export const ORB_WRONG_TINT_STRENGTH = 0.82;
 /** Whole-orb shake frequency (Hz) while wrong feedback is active. */
 export const ORB_WRONG_SHAKE_HZ = 11;
@@ -105,3 +25,40 @@ export const ORB_WRONG_SHAKE_HZ = 11;
 export const ORB_WRONG_FEEDBACK_MS = 1000;
 /** Ramp-up / ramp-down duration (ms) of the wrong tint + shake envelope. */
 export const ORB_WRONG_RAMP_MS = 180;
+
+/** Enter start diameter as a fraction of the target diameter. */
+export const ORB_SPAWN_DIAMETER_RATIO = 0.18;
+/** Burst ring fade-out tween window. */
+export const ORB_PETAL_FADE_START = 0.5;
+export const ORB_PETAL_FADE_END = 1.0;
+
+/**
+ * The simplified orb draws two pre-rendered sprites: a petal ring rotating
+ * around the orb center and a clover bed sitting below it, unrotated.
+ * The remaining per-orb parameters are the ring/bed diameters (as fractions
+ * of the orb diameter) and the ring rotation speed.
+ */
+export type OrbFlowerPreset = {
+  ringDiameterFraction: number;
+  bedDiameterFraction: number;
+  rotationSpeed: number;
+};
+
+export const ORB_FLOWER_PRESET: OrbFlowerPreset = {
+  ringDiameterFraction: 0.95,
+  bedDiameterFraction: 0.55,
+  rotationSpeed: 0.25,
+};
+
+export const LETTER_ORB_FLOWER_PRESET: OrbFlowerPreset = {
+  ringDiameterFraction: 0.9,
+  bedDiameterFraction: 0.6,
+  rotationSpeed: 0.3,
+};
+
+/** Ring scale at the start of the enter fade (shrinks down to 1). */
+export const ORB_RING_ENTER_SCALE = 1.35;
+/** Ring scale at the end of the burst fade (grows while fading out). */
+export const ORB_RING_BURST_SCALE = 1.25;
+
+export const ORB_FLOWER_VARIANT_COUNT = 3;

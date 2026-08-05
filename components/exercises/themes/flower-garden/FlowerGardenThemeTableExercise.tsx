@@ -23,17 +23,14 @@ import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
 import { useFieldFlowerConfigs } from './scenery/FieldFlowerShaderLayer/useFieldFlowerConfigs';
 import { useRoamerSimulation, type RoamerSimulation } from './roamer/core/useRoamerSimulation';
 import { useFlowerGardenAssetsContext } from './core/providers/FlowerGardenAssetsProvider';
-import { generateOrbPetalConfigs } from './orb/generateOrbPetalConfigs';
-import { createRng, hashSeedString } from './scenery/BushShaderLayer/helpers/seededRandom';
+import { hashSeedString } from './scenery/BushShaderLayer/helpers/seededRandom';
 import { CaptureOrb, getSpeciesImages } from './orb/CaptureOrb';
 import { CapturedRoamerCanvas } from './orb/CapturedRoamerCanvas';
-import { CaptureOrbCloudLayer } from './orb/CaptureOrbCloudLayer';
 import { useOrbAnimation } from './orb/useOrbAnimation';
 import {
   ORB_CAPTIVE_DRIFT_RATIO,
   ORB_DIAMETER_RATIO,
   ORB_IDLE_CLOCK_FPS,
-  ORB_RING_CONFIGS,
   ORB_ROAMER_TAP_HIT_RADIUS,
 } from './orb/orbAnimPresets';
 import { BurstIntent } from './orb/orbAnimTypes';
@@ -47,7 +44,6 @@ const WORD_SPRITE_LAYER_Z = 5;
 const SCENERY_Z = 1;
 const ROAMER_Z = 2;
 const ROAMER_GESTURE_Z = 3;
-const ORB_CLOUD_Z = 4;
 const ORB_Z = 6;
 const ORB_TAP_Z = 7;
 const ESCAPE_Z = 8;
@@ -69,7 +65,7 @@ function RoamerOrbLayer({
   const { publishCaptureBridge } = useExerciseRuntime();
   const { screenWidth, screenHeight } = useExerciseLayout();
   const idleClock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
-  const cloudPetalAtlasReady = images.cloudPetalAtlas != null;
+  const orbReady = images.orbRingImages != null && images.orbBedImages != null;
 
   const [selection, setSelection] = useState<{
     roamerIndex: number;
@@ -95,14 +91,7 @@ function RoamerOrbLayer({
 
   useEffect(() => () => cancelTransitionRaf(), [cancelTransitionRaf]);
 
-  const petalSeed = useMemo(() => hashSeedString('flower-garden-orb-table'), []);
-  const petals = useMemo(
-    () =>
-      generateOrbPetalConfigs({
-        rng: createRng(petalSeed),
-      }),
-    [petalSeed],
-  );
+  const orbSeed = useMemo(() => hashSeedString('flower-garden-orb-table'), []);
 
   const targetCenterX = sim.swimZone.x + sim.swimZone.w * 0.5;
   const targetCenterY = sim.swimZone.y + sim.swimZone.h * 0.5;
@@ -165,8 +154,6 @@ function RoamerOrbLayer({
 
   const { anim, phase, startBurst } = useOrbAnimation(
     orbConfig,
-    ORB_RING_CONFIGS,
-    petals,
     handleDismiss,
     selection != null,
     releaseRoamerFromOrb,
@@ -316,29 +303,17 @@ function RoamerOrbLayer({
           <View style={[styles.fullLayer, { zIndex: ROAMER_GESTURE_Z }]} />
         </GestureDetector>
       )}
-      {capturedEntry != null && cloudPetalAtlasReady && (
+      {capturedEntry != null && orbReady && (
         <>
-          {images.cloudPetalAtlas != null && (
-            <View style={[styles.fullLayer, { zIndex: ORB_CLOUD_Z }]} pointerEvents="none">
-              <CaptureOrbCloudLayer
-                centerX={targetCenterX}
-                centerY={targetCenterY}
-                diameter={targetDiameter}
-                phase={phase}
-                atlas={images.cloudPetalAtlas.cloudImage}
-                regions={images.cloudPetalAtlas.cloudRegions}
-              />
-            </View>
-          )}
           <View style={[styles.fullLayer, { zIndex: ORB_Z }]} pointerEvents="none">
             <CaptureOrb
               anim={anim}
               capturedEntry={capturedEntry}
-              petals={petals}
               centerX={targetCenterX}
               centerY={targetCenterY}
               word={capturedWord}
               targetDiameter={targetDiameter}
+              seed={orbSeed}
             />
           </View>
           {interactive && (

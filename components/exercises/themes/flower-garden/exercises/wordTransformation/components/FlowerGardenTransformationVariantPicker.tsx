@@ -80,10 +80,10 @@ export function FlowerGardenTransformationVariantPicker({
     [fontFamily, layout.diameter, maxLabelLength],
   );
 
-  if (items.length === 0 || images.cloudPetalAtlas == null) {
+  if (items.length === 0 || images.orbRingSmallImages == null || images.orbBedSmallImages == null) {
     return null;
   }
-  const cloudPetalAtlas = images.cloudPetalAtlas;
+  const ringImage = images.orbRingSmallImages[0];
 
   return (
     <>
@@ -102,8 +102,9 @@ export function FlowerGardenTransformationVariantPicker({
               status={statusFor(item, wrongItemId ?? null, poppedItemIds)}
               popDelayMs={item.popDelayMs}
               onPopSound={item.popDelayMs != null ? playPop : undefined}
-              image={cloudPetalAtlas.cloudImage}
-              cloudPetalAtlas={cloudPetalAtlas}
+              image={ringImage}
+              ringVariants={images.orbRingSmallImages}
+              bedVariants={images.orbBedSmallImages}
               font={font}
               clock={clock}
             />

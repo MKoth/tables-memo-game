@@ -65,10 +65,10 @@ export function FlowerGardenTransformationWordOrbs({
     [activeLayout.diameter, fontFamily],
   );
 
-  if (letters.length === 0 || images.cloudPetalAtlas == null) {
+  if (letters.length === 0 || images.orbRingSmallImages == null || images.orbBedSmallImages == null) {
     return null;
   }
-  const cloudPetalAtlas = images.cloudPetalAtlas;
+  const ringImage = images.orbRingSmallImages[0];
 
   return (
     <>
@@ -96,8 +96,9 @@ export function FlowerGardenTransformationWordOrbs({
               enterDelayMs={letter.enterDelayMs}
               onPopSound={letter.popDelayMs != null ? playPop : undefined}
               onEnterSound={letter.enterDelayMs != null ? playInflate : undefined}
-              image={cloudPetalAtlas.cloudImage}
-              cloudPetalAtlas={cloudPetalAtlas}
+              image={ringImage}
+              ringVariants={images.orbRingSmallImages}
+              bedVariants={images.orbBedSmallImages}
               font={font}
               clock={clock}
             />

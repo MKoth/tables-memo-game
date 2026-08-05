@@ -3,6 +3,7 @@ import {
   Glyphs,
   Group,
   vec,
+  type SkImage,
 } from '@shopify/react-native-skia';
 import {
   cancelAnimation,
@@ -15,25 +16,20 @@ import {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { ThemeLetterOrbProps } from '../../../../../themeContract';
-import type { CloudPetalAtlas } from '../../../core/assets/textureAtlas/buildCloudPetalAtlas';
-import { generateOrbPetalConfigs, sliceOrbRings } from '../../../orb/generateOrbPetalConfigs';
 import {
-  LETTER_ORB_PETAL_SIZE_FACTOR,
-  LETTER_ORB_RING_CONFIGS,
-  LETTER_ORB_RING_COUNT,
+  LETTER_ORB_FLOWER_PRESET,
   ORB_ENTER_DURATION_MS,
   ORB_MOVE_DURATION_MS,
   ORB_WRONG_FEEDBACK_MS,
   ORB_WRONG_RAMP_MS,
 } from '../../../orb/orbAnimPresets';
-import { PetalRingLayer, type PetalSlot } from '../../../orb/PetalRingLayer';
-import { LetterOrbCloudLayer } from '../../../orb/LetterOrbCloudLayer';
+import { OrbFlowerShader } from '../../../orb/OrbFlowerShader';
 import { BurstIntent } from '../../../orb/orbAnimTypes';
 import {
   useOrbAnimation,
   type OrbWrongState,
 } from '../../../orb/useOrbAnimation';
-import { createRng, hashSeedString } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
+import { hashSeedString } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
 
 const LABEL_STROKE_WIDTH = 2;
 const LABEL_FILL_COLOR = '#ffffff';
@@ -85,28 +81,15 @@ function FlowerGardenLetterOrbComponent({
   labelFixed = false,
   letterSpacing = 0,
   wobbleBoostT: _wobbleBoostT,
-  cloudPetalAtlas,
+  ringVariants,
+  bedVariants,
 }: ThemeLetterOrbProps & {
-  cloudPetalAtlas?: CloudPetalAtlas | null;
+  ringVariants?: SkImage[] | null;
+  bedVariants?: SkImage[] | null;
 }) {
-
-  const petalSeed = useMemo(() => hashSeedString(`flower-garden-letter-orb-${char}`), [char]);
-  const rings = useMemo(
-    () => sliceOrbRings(LETTER_ORB_RING_CONFIGS, LETTER_ORB_RING_COUNT),
-    [],
-  );
-  const petals = useMemo(
-    () =>
-      generateOrbPetalConfigs({
-        rng: createRng(petalSeed),
-        rings,
-      }),
-    [petalSeed, rings],
-  );
-
-  const slots = useMemo<PetalSlot[]>(
-    () => petals.map((petal, index) => ({ spawnIndex: index, imageIndex: petal.imageIndex })),
-    [petals],
+  const orbSeed = useMemo(
+    () => hashSeedString(`flower-garden-letter-orb-${char}`),
+    [char],
   );
 
   const posX = useSharedValue(initialCenterX ?? centerX);
@@ -210,8 +193,6 @@ function FlowerGardenLetterOrbComponent({
 
   const { anim, startBurst } = useOrbAnimation(
     orbConfig,
-    rings,
-    petals,
     () => {},
     true,
     handleBurstCompleteWorklet,
@@ -331,26 +312,19 @@ function FlowerGardenLetterOrbComponent({
 
   const fillColor = status === 'wrong' ? LABEL_WRONG_COLOR : LABEL_FILL_COLOR;
 
-  if (cloudPetalAtlas == null) {
+  if (ringVariants == null || bedVariants == null) {
     return null;
   }
 
   return (
     <Group>
-      <LetterOrbCloudLayer
+      <OrbFlowerShader
         anim={anim}
-        centerX={centerX}
-        centerY={centerY}
-        diameter={diameter}
-        atlas={cloudPetalAtlas.cloudImage}
-        regions={cloudPetalAtlas.cloudRegions}
-      />
-      <PetalRingLayer
-        sizeFactor={LETTER_ORB_PETAL_SIZE_FACTOR}
-        slots={slots}
-        anim={anim}
-        atlas={cloudPetalAtlas.petalImage}
-        regions={cloudPetalAtlas.petalRegions}
+        seed={orbSeed}
+        targetDiameter={diameter}
+        preset={LETTER_ORB_FLOWER_PRESET}
+        ringVariants={ringVariants}
+        bedVariants={bedVariants}
       />
       <Group transform={labelTransform} opacity={labelOpacity}>
         <Group
