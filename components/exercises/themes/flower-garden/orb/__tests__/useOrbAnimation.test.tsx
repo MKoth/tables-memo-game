@@ -31,6 +31,7 @@ jest.mock('react-native-reanimated', () => {
     cancelAnimation: jest.fn(),
     Easing,
     useFrameCallback: jest.fn(),
+    useAnimatedReaction: jest.fn(),
   };
 });
 

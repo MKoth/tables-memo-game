@@ -24,6 +24,7 @@ import type {
   VariantPickerItem,
   VariantSourceLayout,
 } from '../wordTransformation/domain/coreTypes';
+import type { WordTransformationSceneState } from '../wordTransformation/scene/sceneStateTypes';
 import type {
   InsertPreviewLayout,
 } from '../core/layout/exerciseLayout';
@@ -213,6 +214,8 @@ export type ThemeTransformationOrbLayerProps = {
   wrongItemId?: string;
   pickerHiddenItemIds?: string[];
   poppedPickerItemIds?: string[];
+  /** Scene-driven mode: per-press changes flow through this instead of props. */
+  sceneStateSv?: SharedValue<WordTransformationSceneState>;
   onLetterPress: (position: number) => void;
   onVariantSelect: (item: VariantPickerItem, source: VariantSourceLayout) => void;
   playPop?: () => void;
@@ -225,6 +228,8 @@ export type ThemeTransformationWordOrbsProps = {
   insertPreview?: InsertPreviewLayout;
   mergeWord?: string | null;
   onMergeComplete?: () => void;
+  /** Scene-driven mode: per-press changes flow through this instead of props. */
+  sceneStateSv?: SharedValue<WordTransformationSceneState>;
   onLetterPress: (position: number) => void;
   playPop?: () => void;
   playInflate?: () => void;

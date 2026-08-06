@@ -30,6 +30,7 @@ import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
 import { useFieldFlowerConfigs } from './scenery/FieldFlowerShaderLayer/useFieldFlowerConfigs';
 import { FlowerGardenTransformationOrbLayer } from './exercises/wordTransformation/components/FlowerGardenTransformationOrbLayer';
 import { useWordTransformationGame } from '../../wordTransformation/hooks/useWordTransformationGame';
+import type { WordTransformationSceneState } from '../../wordTransformation/scene/sceneStateTypes';
 
 const SCENERY_Z = 1;
 const WORD_SPRITE_LAYER_Z = 5;
@@ -87,6 +88,18 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
     [sounds],
   );
 
+  const sceneStateSv = useSharedValue<WordTransformationSceneState>({
+    wordOrbsVisible: true,
+    lettersInteractive: true,
+    letters: [],
+    insertAnimation: null,
+    variantPicker: {
+      visible: false,
+      interactive: false,
+      items: [],
+    },
+  });
+
   const game = useWordTransformationGame({
     table,
     roamerRect,
@@ -94,6 +107,7 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
     playPop: sounds.playOrbPop,
     playInflate: sounds.playOrbInflate,
     playWrong: sounds.playWrongClick,
+    sceneStateSv,
   });
 
   const instructionCenterY =
@@ -124,24 +138,9 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
         </View>
         <View style={[styles.fullLayer, { zIndex: ORB_LAYER_Z }]} pointerEvents="box-none">
           <FlowerGardenTransformationOrbLayer
-            wordOrbsVisible={!game.isCompleted}
             letters={game.letters}
-            lettersInteractive={
-              !game.transitioning &&
-              game.insertAnimation == null &&
-              game.wordTransition == null
-            }
-            insertAnimation={game.insertAnimation}
-            variantPickerVisible={
-              (game.mode === 'insert' || game.insertAnimation != null) &&
-              !game.transitioning &&
-              game.wordTransition == null
-            }
-            variantPickerInteractive={game.insertAnimation == null}
             variantPickerItems={game.variantPickerItems}
-            wrongItemId={game.wrongItemId}
-            pickerHiddenItemIds={game.pickerHiddenItemIds}
-            poppedPickerItemIds={game.poppedPickerItemIds}
+            sceneStateSv={sceneStateSv}
             onLetterPress={game.handleLetterPress}
             onVariantSelect={game.handleVariantPress}
             playPop={sounds.playOrbPop}

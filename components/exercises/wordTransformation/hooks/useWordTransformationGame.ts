@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
 import type { TableData } from '../../../../data/tableData';
 import type { ZoneRect } from '../../core/layout/computeExerciseLayout';
 import { useWordTransformationCoreBridge } from '../../core/hooks/useWordTransformationCoreBridge';
@@ -15,7 +16,13 @@ import {
   type TransformationMode,
   type VariantSourceLayout,
   type WordOperationSequence,
+  type WordTransformationCoreSnapshot,
 } from '../domain';
+import { deriveSceneState } from '../scene/deriveSceneState';
+import type {
+  WordTransformationSceneContext,
+  WordTransformationSceneState,
+} from '../scene/sceneStateTypes';
 
 export type WordTransitionPhase = 'exit' | 'enter';
 
@@ -71,6 +78,9 @@ export type UseWordTransformationGameParams = {
   playPop?: () => void;
   playInflate?: () => void;
   playWrong?: () => void;
+  /** Theme scene shared value — when provided, core snapshots flow into it
+   * and React only re-renders at op/word boundaries. */
+  sceneStateSv?: SharedValue<WordTransformationSceneState>;
 };
 
 export function useWordTransformationGame({
@@ -81,6 +91,7 @@ export function useWordTransformationGame({
   playPop,
   playInflate,
   playWrong,
+  sceneStateSv,
 }: UseWordTransformationGameParams): WordTransformationGame {
   const exercise = useMemo(() => createWordTransformationExercise(table), [table]);
   const order = useMemo(
@@ -104,8 +115,29 @@ export function useWordTransformationGame({
   const isCompleted = order.length === 0 || orderPos >= order.length;
   const sequence = isCompleted ? null : exercise.sequences[order[orderPos]] ?? null;
 
+  const sceneContextRef = useRef<WordTransformationSceneContext>({
+    isCompleted: false,
+    transitioning: false,
+    wordTransition: null,
+  });
+
+  const publishSceneStateRef = useRef<(snapshot: WordTransformationCoreSnapshot) => void>(
+    () => {},
+  );
+  publishSceneStateRef.current = (snapshot) => {
+    if (sceneStateSv == null) {
+      return;
+    }
+    sceneStateSv.value = deriveSceneState({
+      snapshot,
+      context: sceneContextRef.current,
+      roamerRect,
+    });
+  };
+
   const {
     coreSnapshot,
+    latestSnapshotRef,
     handleLetterPress: handleLetterPressUnguarded,
     handleVariantPress: handleVariantPressUnguarded,
     loadSequence,
@@ -120,7 +152,17 @@ export function useWordTransformationGame({
       startWordExitTransitionRef.current(completedSequence, finalWord);
     },
     skipSequenceLoadRef,
+    sceneStateSv,
+    publishSceneState: publishSceneStateRef.current,
   });
+
+  const applySceneContext = useCallback((context: WordTransformationSceneContext) => {
+    sceneContextRef.current = context;
+    const snapshot = latestSnapshotRef.current;
+    if (snapshot != null) {
+      publishSceneStateRef.current(snapshot);
+    }
+  }, [latestSnapshotRef]);
 
   const clearWordTransitionTimers = useCallback(() => {
     wordTransitionTimersRef.current.forEach(clearTimeout);
@@ -144,6 +186,11 @@ export function useWordTransformationGame({
       setWordTransition(null);
       setWordTransitioning(false);
       setOrderPos(nextPos);
+      applySceneContext({
+        isCompleted: true,
+        transitioning: false,
+        wordTransition: null,
+      });
       return;
     }
 
@@ -175,6 +222,15 @@ export function useWordTransformationGame({
       revealOrder,
       revealedPositions: new Set(),
     });
+    applySceneContext({
+      isCompleted: false,
+      transitioning: true,
+      wordTransition: {
+        phase: 'enter',
+        word: latestSnapshotRef.current?.currentWord ?? nextSequence.baseWord,
+        order: revealOrder,
+      },
+    });
 
     const enterCompleteDelay = computeCascadeCompleteDelayMs(revealOrder.length, 'enter');
 
@@ -183,7 +239,9 @@ export function useWordTransformationGame({
       setWordTransitioning(false);
     }, enterCompleteDelay);
   }, [
+    applySceneContext,
     exercise.sequences,
+    latestSnapshotRef,
     loadSequence,
     order,
     orderPos,
@@ -209,6 +267,11 @@ export function useWordTransformationGame({
         popOrder,
         poppedPositions: new Set(),
       });
+      applySceneContext({
+        isCompleted: false,
+        transitioning: true,
+        wordTransition: { phase: 'exit', word, order: popOrder },
+      });
 
       const exitCompleteDelay = computeCascadeCompleteDelayMs(popOrder.length, 'exit');
 
@@ -218,6 +281,7 @@ export function useWordTransformationGame({
       }, exitCompleteDelay);
     },
     [
+      applySceneContext,
       clearWordTransitionTimers,
       onSequenceSolved,
       scheduleWordTransitionTimer,
@@ -243,6 +307,34 @@ export function useWordTransformationGame({
 
   const displayWord =
     wordTransition != null ? coreSnapshot?.currentWord ?? sequence?.baseWord ?? '' : coreSnapshot?.currentWord ?? '';
+
+  const sceneWordTransition = useMemo(() => {
+    if (wordTransition == null) {
+      return null;
+    }
+    return {
+      phase: wordTransition.phase,
+      word: displayWord,
+      order:
+        wordTransition.phase === 'exit'
+          ? wordTransition.popOrder
+          : wordTransition.revealOrder,
+    };
+  }, [displayWord, wordTransition]);
+
+  sceneContextRef.current = {
+    isCompleted,
+    transitioning: wordTransitioning,
+    wordTransition: sceneWordTransition,
+  };
+
+  useEffect(() => {
+    const snapshot = latestSnapshotRef.current;
+    if (snapshot == null) {
+      return;
+    }
+    publishSceneStateRef.current(snapshot);
+  }, [isCompleted, latestSnapshotRef, roamerRect, wordTransition, wordTransitioning]);
 
   const letters = useMemo<LetterOrbModel[]>(() => {
     if (wordTransition != null) {

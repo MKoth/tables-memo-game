@@ -3,6 +3,7 @@ import {
   cancelAnimation,
   Easing,
   ReduceMotion,
+  useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
   withDelay,
@@ -83,6 +84,7 @@ export function useOrbAnimation(
   onBurstCompleteWorklet?: (burstIdleTimeMs: number, intent: BurstIntentValue) => void,
   wrongState?: OrbWrongState,
   idleClock?: SharedValue<number>,
+  retargetEnter?: SharedValue<{ skipEnter: boolean; enterDelayMs: number | null } | null>,
 ): UseOrbAnimationResult {
   const enterProgress = useSharedValue(0);
   const burstProgress = useSharedValue(0);
@@ -181,8 +183,49 @@ export function useOrbAnimation(
     configSv,
   ]);
 
+  useAnimatedReaction(
+    () => retargetEnter?.value,
+    (target, prev) => {
+      if (retargetEnter == null || target == null || prev === target || !enabled) {
+        return;
+      }
+      cancelAnimation(enterProgress);
+      cancelAnimation(burstProgress);
+      if (target.skipEnter) {
+        enterProgress.value = 1;
+        enterIdle(phase, idleClock, idleClockStartMs, idleElapsedMs);
+        return;
+      }
+      enterProgress.value = 0;
+      phase.value = OrbPhase.Enter;
+      enterProgress.value = withDelay(
+        target.enterDelayMs ?? 0,
+        withTiming(
+          1,
+          { duration: ORB_ENTER_DURATION_MS, easing: Easing.out(Easing.cubic) },
+          finished => {
+            'worklet';
+            if (finished) {
+              enterIdle(phase, idleClock, idleClockStartMs, idleElapsedMs);
+            }
+          },
+        ),
+      );
+    },
+    [
+      burstProgress,
+      enabled,
+      enterProgress,
+      idleClock,
+      idleClockStartMs,
+      idleElapsedMs,
+      phase,
+      retargetEnter,
+    ],
+  );
+
   const startBurst = useCallback(
-    (intent: BurstIntentValue = BurstIntent.Release) => {
+    (intent: BurstIntentValue = BurstIntent.Release, popDelayMs?: number) => {
       if (phase.value === OrbPhase.None || phase.value === OrbPhase.Burst) {
         return;
       }
@@ -202,7 +245,7 @@ export function useOrbAnimation(
       phase.value = OrbPhase.Burst;
       burstProgress.value = 0;
       burstProgress.value = withDelay(
-        configSv.value.popDelayMs ?? 0,
+        configSv.value.popDelayMs ?? popDelayMs ?? 0,
         withTiming(
           1,
           { duration: ORB_BURST_DURATION_MS, easing: Easing.out(Easing.cubic) },

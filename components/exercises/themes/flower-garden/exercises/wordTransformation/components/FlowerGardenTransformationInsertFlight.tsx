@@ -1,19 +1,26 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Canvas } from '@shopify/react-native-skia';
-import { makeMutable, type SharedValue } from 'react-native-reanimated';
+import {
+  useAnimatedReaction,
+  useSharedValue,
+  type SharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useExerciseClockQuantized } from '../../../../../core';
 import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
 import { FlowerGardenLetterOrb } from './FlowerGardenLetterOrb';
 import { ORB_IDLE_CLOCK_FPS } from '../../../orb/orbAnimPresets';
 import type { LetterOrbGeometry } from '../../../orb/orbAnimTypes';
 import type { InsertAnimationState } from '../../../../../wordTransformation/domain';
+import type { WordTransformationSceneState } from '../../../../../wordTransformation/scene/sceneStateTypes';
 
 export type FlowerGardenTransformationInsertFlightProps = {
-  flight: InsertAnimationState | null;
+  sceneStateSv: SharedValue<WordTransformationSceneState>;
 };
 
 function buildFlightGeometry(flight: InsertAnimationState): LetterOrbGeometry {
+  'worklet';
   const landed = flight.phase === 'dismiss';
   const fromX = flight.fromCenterX;
   const fromY = flight.fromCenterY;
@@ -32,48 +39,56 @@ function buildFlightGeometry(flight: InsertAnimationState): LetterOrbGeometry {
 
 /**
  * Canvas stays mounted so picking a variant does not pay Skia surface creation
- * on the click frame — only the FlowerGardenLetterOrb inside toggles.
+ * on the click frame — only the FlowerGardenLetterOrb inside toggles. The orb
+ * mounts/unmounts once per flight (2 React renders per op); its geometry seeds
+ * and fly/dismiss targets are written on the UI thread from the scene shared
+ * value, so the flight starts without waiting on the JS thread.
  */
 export function FlowerGardenTransformationInsertFlight({
-  flight,
+  sceneStateSv,
 }: FlowerGardenTransformationInsertFlightProps) {
   const { images } = useFlowerGardenAssetsContext();
   const clock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
-  const geometryRef = useRef<SharedValue<LetterOrbGeometry> | null>(null);
+  const flightGeometrySv = useSharedValue<LetterOrbGeometry | null>(null);
+  const [flight, setFlight] = useState<{ char: string; key: string } | null>(null);
 
-  const flightKey = flight == null ? null : flight.selectedChoiceId ?? flight.char;
+  useAnimatedReaction(
+    () => sceneStateSv.value.insertAnimation,
+    (insert, prev) => {
+      const mountKey = insert == null ? null : insert.selectedChoiceId ?? insert.char;
+      const prevKey = prev == null ? null : prev.selectedChoiceId ?? prev.char;
+      if (mountKey !== prevKey) {
+        if (insert == null) {
+          flightGeometrySv.value = null;
+          scheduleOnRN(setFlight, null);
+          return;
+        }
+        flightGeometrySv.value = {
+          centerX: insert.fromCenterX,
+          centerY: insert.fromCenterY,
+          diameter: insert.fromDiameter,
+          initialCenterX: insert.fromCenterX,
+          initialCenterY: insert.fromCenterY,
+          initialDiameter: insert.fromDiameter,
+          skipEnter: true,
+          moveDurationMs: 0,
+        };
+        requestAnimationFrame(() => {
+          if (flightGeometrySv.value != null) {
+            flightGeometrySv.value = buildFlightGeometry(insert);
+          }
+        });
+        scheduleOnRN(setFlight, { char: insert.char, key: mountKey as string });
+        return;
+      }
+      if (insert != null && flightGeometrySv.value != null) {
+        flightGeometrySv.value = buildFlightGeometry(insert);
+      }
+    },
+    [flightGeometrySv, sceneStateSv],
+  );
 
-  // Seed the geometry at the from-position so the first write animates the fly.
-  const flightGeometry = useMemo(() => {
-    if (flight == null || flightKey == null) {
-      return null;
-    }
-    if (geometryRef.current == null) {
-      const fromGeometry: LetterOrbGeometry = {
-        centerX: flight.fromCenterX,
-        centerY: flight.fromCenterY,
-        diameter: flight.fromDiameter,
-        initialCenterX: flight.fromCenterX,
-        initialCenterY: flight.fromCenterY,
-        initialDiameter: flight.fromDiameter,
-        skipEnter: true,
-        moveDurationMs: flight.flyDurationMs,
-      };
-      geometryRef.current = makeMutable<LetterOrbGeometry>(fromGeometry);
-    }
-    return { key: flightKey, geometry: geometryRef.current };
-  }, [flight, flightKey]);
-
-  useLayoutEffect(() => {
-    if (flight == null) {
-      geometryRef.current = null;
-      return;
-    }
-    if (geometryRef.current == null) {
-      return;
-    }
-    geometryRef.current.value = buildFlightGeometry(flight);
-  }, [flight]);
+  const flightGeometry = flight == null ? null : flightGeometrySv;
 
   if (images.orbRingSmallImages == null || images.orbBedSmallImages == null) {
     return null;
@@ -83,20 +98,13 @@ export function FlowerGardenTransformationInsertFlight({
     <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
       {flight != null && flightGeometry != null && (
         <FlowerGardenLetterOrb
-          key={flightGeometry.key}
+          key={flight.key}
           char={flight.char}
           status="idle"
-          geometry={flightGeometry.geometry}
-          initialCenterX={flight.fromCenterX}
-          initialCenterY={flight.fromCenterY}
-          initialDiameter={flight.fromDiameter}
-          moveCenterX={flight.toCenterX}
-          moveCenterY={flight.toCenterY}
-          moveDiameter={flight.toDiameter}
-          moveDurationMs={flight.phase === 'dismiss' ? 0 : flight.flyDurationMs}
+          geometry={flightGeometry}
+          clock={clock}
           ringVariants={images.orbRingSmallImages}
           bedVariants={images.orbBedSmallImages}
-          clock={clock}
         />
       )}
     </Canvas>

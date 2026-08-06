@@ -64,7 +64,7 @@ export type OrbAnimationConfig = {
 export type UseOrbAnimationResult = {
   anim: SharedValue<OrbAnimState>;
   phase: SharedValue<number>;
-  startBurst: (intent?: BurstIntentValue) => void;
+  startBurst: (intent?: BurstIntentValue, popDelayMs?: number) => void;
 };
 
 /**

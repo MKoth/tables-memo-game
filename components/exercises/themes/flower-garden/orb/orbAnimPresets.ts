@@ -53,7 +53,7 @@ export const ORB_FLOWER_PRESET: OrbFlowerPreset = {
 export const LETTER_ORB_FLOWER_PRESET: OrbFlowerPreset = {
   ringDiameterFraction: 0.9,
   bedDiameterFraction: 0.6,
-  rotationSpeed: 0,
+  rotationSpeed: 0.3,
 };
 
 /** Ring scale at the start of the enter fade (shrinks down to 1). */

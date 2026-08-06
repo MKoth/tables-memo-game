@@ -49,8 +49,8 @@ export const flowerGardenTheme: Theme = {
   },
 
   wordTransformationVisual: {
-    orbLayer: FlowerGardenTransformationOrbLayer as Theme['wordTransformationVisual']['orbLayer'],
-    wordOrbs: FlowerGardenTransformationWordOrbs as Theme['wordTransformationVisual']['wordOrbs'],
+    orbLayer: FlowerGardenTransformationOrbLayer as unknown as Theme['wordTransformationVisual']['orbLayer'],
+    wordOrbs: FlowerGardenTransformationWordOrbs as unknown as Theme['wordTransformationVisual']['wordOrbs'],
     letterOrb: FlowerGardenLetterOrb as unknown as Theme['wordTransformationVisual']['letterOrb'],
   },
 

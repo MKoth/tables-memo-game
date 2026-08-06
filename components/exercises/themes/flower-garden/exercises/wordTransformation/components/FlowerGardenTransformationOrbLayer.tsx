@@ -1,102 +1,73 @@
-import React, { useMemo, type ReactNode } from 'react';
-import type { InsertPreviewLayout } from '../../../../../core/layout/exerciseLayout';
-import type { InsertAnimationState, LetterOrbModel } from '../../../../../wordTransformation/domain';
+import React, { type ReactNode } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
+import type {
+  VariantPickerItem,
+} from '../../../../../wordTransformation/domain';
+import type { LetterOrbModel } from '../../../../../wordTransformation/domain';
+import type { WordTransformationSceneState } from '../../../../../wordTransformation/scene/sceneStateTypes';
 import { FlowerGardenTransformationInsertFlight } from './FlowerGardenTransformationInsertFlight';
 import {
   FlowerGardenTransformationVariantPicker,
-  type FlowerGardenTransformationVariantPickerProps,
-  type VariantPickerItem,
   type VariantPickerSourceLayout,
 } from './FlowerGardenTransformationVariantPicker';
 import { FlowerGardenTransformationWordOrbs } from './FlowerGardenTransformationWordOrbs';
-
-function insertPreviewFromAnimation(
-  insertAnimation: InsertAnimationState | null,
-): InsertPreviewLayout | undefined {
-  if (insertAnimation == null || insertAnimation.phase === 'dismiss') {
-    return undefined;
-  }
-
-  return {
-    insertIndex: insertAnimation.insertIndex,
-    insertLength: insertAnimation.insertLength,
-    targetLetterCount: insertAnimation.nextWord.length,
-  };
-}
+import { FlowerGardenTransformationTapLayer } from './FlowerGardenTransformationTapLayer';
 
 export type FlowerGardenTransformationOrbLayerProps = {
-  wordOrbsVisible?: boolean;
   mergeWord?: string | null;
   onMergeComplete?: () => void;
   /** Rendered after word orbs and before insert flight (e.g. sentence resolution). */
   betweenWordOrbsAndInsertFlight?: ReactNode;
+  /** React identity for the word orbs — updates only at op/word boundaries. */
   letters: LetterOrbModel[];
-  lettersInteractive: boolean;
-  insertAnimation: InsertAnimationState | null;
-  variantPickerVisible: boolean;
-  variantPickerInteractive: boolean;
+  /** React identity for the picker elements (id + label) — op-boundary updates. */
   variantPickerItems: VariantPickerItem[];
-  wrongItemId?: FlowerGardenTransformationVariantPickerProps['wrongItemId'];
-  pickerHiddenItemIds?: FlowerGardenTransformationVariantPickerProps['hiddenItemIds'];
-  poppedPickerItemIds?: FlowerGardenTransformationVariantPickerProps['poppedItemIds'];
+  /** Theme scene state — every per-press change flows through this. */
+  sceneStateSv: SharedValue<WordTransformationSceneState>;
   onLetterPress: (position: number) => void;
-  onVariantSelect: (
-    item: VariantPickerItem,
-    source: VariantPickerSourceLayout,
-  ) => void;
+  onVariantSelect: (item: VariantPickerItem, source: VariantPickerSourceLayout) => void;
   playPop?: () => void;
   playInflate?: () => void;
 };
 
+/**
+ * Word-transformation visual layer: word orbs, picker, and insert flight all
+ * read the scene shared value on the UI thread, so presses never re-render
+ * React. Input is a single worklet hit-tested tap gesture over the roamer zone.
+ */
 export function FlowerGardenTransformationOrbLayer({
-  wordOrbsVisible = true,
   mergeWord: _mergeWord,
   onMergeComplete: _onMergeComplete,
   betweenWordOrbsAndInsertFlight,
   letters,
-  lettersInteractive,
-  insertAnimation,
-  variantPickerVisible,
-  variantPickerInteractive,
   variantPickerItems,
-  wrongItemId,
-  pickerHiddenItemIds,
-  poppedPickerItemIds,
+  sceneStateSv,
   onLetterPress,
   onVariantSelect,
   playPop,
   playInflate,
 }: FlowerGardenTransformationOrbLayerProps) {
-  const insertPreview = useMemo(
-    () => insertPreviewFromAnimation(insertAnimation),
-    [insertAnimation],
-  );
-
   return (
     <>
-      {wordOrbsVisible && (
-        <FlowerGardenTransformationWordOrbs
-          letters={letters}
-          interactive={lettersInteractive}
-          insertPreview={insertPreview}
-          onLetterPress={onLetterPress}
-          playPop={playPop}
-          playInflate={playInflate}
-        />
-      )}
+      <FlowerGardenTransformationWordOrbs
+        letters={letters}
+        sceneStateSv={sceneStateSv}
+        playPop={playPop}
+        playInflate={playInflate}
+      />
       {betweenWordOrbsAndInsertFlight}
-      <FlowerGardenTransformationInsertFlight flight={insertAnimation} />
-      {variantPickerVisible && (
-        <FlowerGardenTransformationVariantPicker
-          items={variantPickerItems}
-          wrongItemId={wrongItemId}
-          hiddenItemIds={pickerHiddenItemIds}
-          poppedItemIds={poppedPickerItemIds}
-          interactive={variantPickerInteractive}
-          onSelect={onVariantSelect}
-          playPop={playPop}
-        />
-      )}
+      <FlowerGardenTransformationInsertFlight sceneStateSv={sceneStateSv} />
+      <FlowerGardenTransformationVariantPicker
+        items={variantPickerItems}
+        sceneStateSv={sceneStateSv}
+        playPop={playPop}
+      />
+      <FlowerGardenTransformationTapLayer
+        sceneStateSv={sceneStateSv}
+        variantPickerItems={variantPickerItems}
+        onLetterPress={onLetterPress}
+        onVariantSelect={onVariantSelect}
+      />
     </>
   );
 }

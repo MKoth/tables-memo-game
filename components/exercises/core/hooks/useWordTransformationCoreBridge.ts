@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState, type MutableRefObject } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
 import type { ZoneRect } from '../layout/computeExerciseLayout';
 import { computeLetterLayout } from '../layout/exerciseLayout';
 import {
@@ -8,6 +9,7 @@ import {
   type WordOperationSequence,
   type WordTransformationCoreSnapshot,
 } from '../../wordTransformation/domain';
+import type { WordTransformationSceneState } from '../../wordTransformation/scene/sceneStateTypes';
 
 export type UseWordTransformationCoreBridgeParams = {
   roamerRect: ZoneRect;
@@ -18,10 +20,20 @@ export type UseWordTransformationCoreBridgeParams = {
   playWrong?: () => void;
   onSequenceComplete: (sequence: WordOperationSequence, finalWord: string) => void;
   skipSequenceLoadRef?: MutableRefObject<boolean>;
+  /**
+   * When provided, every core notify is published into this shared value
+   * (theme scene state) instead of re-rendering React on each press. React
+   * state then only syncs on op/word boundaries.
+   */
+  sceneStateSv?: SharedValue<WordTransformationSceneState>;
+  /** Receives the full snapshot on every notify (used to derive the scene). */
+  publishSceneState?: (snapshot: WordTransformationCoreSnapshot) => void;
 };
 
 export type UseWordTransformationCoreBridgeResult = {
   coreSnapshot: WordTransformationCoreSnapshot | null;
+  /** Raw latest snapshot — updated on every notify regardless of React sync. */
+  latestSnapshotRef: MutableRefObject<WordTransformationCoreSnapshot | null>;
   handleLetterPress: (position: number) => void;
   handleVariantPress: (item: VariantPickerPressItem, source: VariantSourceLayout) => void;
   loadSequence: (sequence: WordOperationSequence, sequenceKey: string | number) => void;
@@ -36,11 +48,14 @@ export function useWordTransformationCoreBridge({
   playWrong,
   onSequenceComplete,
   skipSequenceLoadRef,
+  sceneStateSv,
+  publishSceneState,
 }: UseWordTransformationCoreBridgeParams): UseWordTransformationCoreBridgeResult {
   const [, bumpRender] = useReducer((value: number) => value + 1, 0);
   const [coreSnapshot, setCoreSnapshot] = useState<WordTransformationCoreSnapshot | null>(null);
 
   const coreRef = useRef<ReturnType<typeof createWordTransformationCore> | null>(null);
+  const latestSnapshotRef = useRef<WordTransformationCoreSnapshot | null>(null);
   const roamerRectRef = useRef(roamerRect);
   roamerRectRef.current = roamerRect;
 
@@ -54,9 +69,36 @@ export function useWordTransformationCoreBridge({
   const onSequenceCompleteRef = useRef(onSequenceComplete);
   onSequenceCompleteRef.current = onSequenceComplete;
 
+  const sceneStateSvRef = useRef(sceneStateSv);
+  sceneStateSvRef.current = sceneStateSv;
+  const publishSceneStateRef = useRef(publishSceneState);
+  publishSceneStateRef.current = publishSceneState;
+
+  const lastSyncSequenceRef = useRef<WordOperationSequence | null>(null);
+  const lastSyncSignatureRef = useRef<string | null>(null);
+
   const syncCoreSnapshot = useCallback(() => {
-    setCoreSnapshot(coreRef.current?.getSnapshot() ?? null);
-    bumpRender();
+    const snapshot = coreRef.current?.getSnapshot() ?? null;
+    latestSnapshotRef.current = snapshot;
+    if (snapshot == null) {
+      return;
+    }
+    publishSceneStateRef.current?.(snapshot);
+    if (sceneStateSvRef.current == null) {
+      setCoreSnapshot(snapshot);
+      bumpRender();
+      return;
+    }
+    const sequenceChanged = snapshot.sequence !== lastSyncSequenceRef.current;
+    const signature = `${snapshot.opIndex}|${snapshot.currentWord}|${snapshot.instruction}`;
+    const shouldSync =
+      sequenceChanged || signature !== lastSyncSignatureRef.current;
+    lastSyncSequenceRef.current = snapshot.sequence;
+    lastSyncSignatureRef.current = signature;
+    if (shouldSync) {
+      setCoreSnapshot(snapshot);
+      bumpRender();
+    }
   }, []);
 
   useEffect(() => {
@@ -116,6 +158,7 @@ export function useWordTransformationCoreBridge({
 
   return {
     coreSnapshot,
+    latestSnapshotRef,
     handleLetterPress,
     handleVariantPress,
     loadSequence,

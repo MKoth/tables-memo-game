@@ -32,6 +32,7 @@ import {
 import { OrbFlowerShader } from '../../../orb/OrbFlowerShader';
 import {
   BurstIntent,
+  type BurstIntentValue,
   type LetterOrbGeometry,
 } from '../../../orb/orbAnimTypes';
 import {
@@ -39,6 +40,7 @@ import {
   type OrbWrongState,
 } from '../../../orb/useOrbAnimation';
 import { hashSeedString } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
+import type { WordTransformationSceneState } from '../../../../../wordTransformation/scene/sceneStateTypes';
 
 const LABEL_STROKE_WIDTH = 2;
 const LABEL_FILL_COLOR = '#ffffff';
@@ -117,12 +119,65 @@ function parseHexColor(hex: string): { r: number; g: number; b: number } {
   };
 }
 
+export type FlowerGardenLetterOrbSceneEntry = {
+  centerX: number;
+  centerY: number;
+  diameter: number;
+  skipEnter: boolean;
+  popped: boolean;
+  wrong: boolean;
+  hidden: boolean;
+  popDelayMs: number | null;
+  enterDelayMs: number | null;
+};
+
+function sceneEntryWorklet(
+  state: WordTransformationSceneState,
+  kind: 'letters' | 'picker',
+  key: string | number,
+): FlowerGardenLetterOrbSceneEntry | null {
+  'worklet';
+  if (kind === 'letters') {
+    const letter = state.letters[key as number];
+    if (letter == null) {
+      return null;
+    }
+    return {
+      centerX: letter.centerX,
+      centerY: letter.centerY,
+      diameter: letter.diameter,
+      skipEnter: letter.skipEnter === true,
+      popped: letter.popped,
+      wrong: letter.wrong,
+      hidden: false,
+      popDelayMs: letter.popDelayMs,
+      enterDelayMs: letter.enterDelayMs,
+    };
+  }
+  const item = state.variantPicker.items[key as number];
+  if (item == null) {
+    return null;
+  }
+  return {
+    centerX: item.centerX,
+    centerY: item.centerY,
+    diameter: item.diameter,
+    skipEnter: false,
+    popped: item.popped,
+    wrong: item.wrong,
+    hidden: item.hidden,
+    popDelayMs: item.popDelayMs,
+    enterDelayMs: null,
+  };
+}
+
 export type FlowerGardenLetterOrbProps = {
   char: string;
-  status: 'idle' | 'wrong' | 'popped';
+  status?: 'idle' | 'wrong' | 'popped';
   /** Stable shared value holding the target/initial layout. The parent writes
-   * it on relayout; the orb animates toward it without re-rendering. */
-  geometry: SharedValue<LetterOrbGeometry>;
+   * it on relayout; the orb animates toward it without re-rendering. Not needed
+   * when `sceneStateSv` is provided — the orb follows the scene geometry. */
+  geometry?: SharedValue<LetterOrbGeometry | null>;
   clock: SharedValue<number>;
   /** Optional mount-time move (e.g. insert flights): tweened in a layout
    * effect during the commit itself, so the animation starts even when the
@@ -144,11 +199,17 @@ export type FlowerGardenLetterOrbProps = {
   letterSpacing?: number;
   ringVariants?: SkImage[] | null;
   bedVariants?: SkImage[] | null;
+  /** When provided, status is derived from the theme scene state on the UI
+   * thread (bursts, wrong feedback, pop sounds) instead of the `status` prop,
+   * so per-press changes never re-render React. */
+  sceneStateSv?: SharedValue<WordTransformationSceneState>;
+  sceneKind?: 'letters' | 'picker';
+  sceneKey?: string | number;
 };
 
 function FlowerGardenLetterOrbComponent({
   char,
-  status,
+  status = 'idle',
   geometry,
   clock,
   moveCenterX,
@@ -168,16 +229,42 @@ function FlowerGardenLetterOrbComponent({
   letterSpacing = 0,
   ringVariants,
   bedVariants,
+  sceneStateSv,
+  sceneKind,
+  sceneKey,
 }: FlowerGardenLetterOrbProps) {
+  const sceneDriven = sceneStateSv != null && sceneKind != null && sceneKey != null;
+
   const orbSeed = useMemo(
     () => hashSeedString(`flower-garden-letter-orb-${char}`),
     [char],
   );
 
-  const initialGeometry = geometry.value;
-  const posX = useSharedValue(initialCenterX ?? initialGeometry.initialCenterX ?? initialGeometry.centerX);
-  const posY = useSharedValue(initialCenterY ?? initialGeometry.initialCenterY ?? initialGeometry.centerY);
-  const dia = useSharedValue(initialDiameter ?? initialGeometry.initialDiameter ?? initialGeometry.diameter);
+  const initialSceneEntry = sceneDriven
+    ? sceneEntryWorklet(sceneStateSv!.value, sceneKind!, sceneKey!)
+    : null;
+  const initialGeometry = geometry?.value;
+  const posX = useSharedValue(
+    initialSceneEntry?.centerX ??
+      initialCenterX ??
+      initialGeometry?.initialCenterX ??
+      initialGeometry?.centerX ??
+      0,
+  );
+  const posY = useSharedValue(
+    initialSceneEntry?.centerY ??
+      initialCenterY ??
+      initialGeometry?.initialCenterY ??
+      initialGeometry?.centerY ??
+      0,
+  );
+  const dia = useSharedValue(
+    initialSceneEntry?.diameter ??
+      initialDiameter ??
+      initialGeometry?.initialDiameter ??
+      initialGeometry?.diameter ??
+      0,
+  );
 
   // Insert flights tween from the commit itself (layout effect), not via the
   // passive-effect mapper pipeline which can run hundreds of ms late when the
@@ -200,9 +287,9 @@ function FlowerGardenLetterOrbComponent({
   // Relayouts arrive as writes to `geometry` — animate toward the new target
   // on the UI thread without any React re-render.
   useAnimatedReaction(
-    () => geometry.value,
+    () => (geometry == null ? null : geometry.value),
     (current, previous) => {
-      if (current == null) {
+      if (current == null || geometry == null) {
         return;
       }
       const prev = previous ?? mountGeometry.value;
@@ -233,8 +320,89 @@ function FlowerGardenLetterOrbComponent({
     [dia, geometry, mountGeometry, posX, posY],
   );
 
+  const sceneGeometry = useDerivedValue(() => {
+    if (sceneStateSv == null || sceneKind == null || sceneKey == null) {
+      return null;
+    }
+    return sceneEntryWorklet(sceneStateSv.value, sceneKind, sceneKey);
+  }, [sceneKind, sceneKey, sceneStateSv]);
+
+  // Scene-driven orbs follow the scene geometry on the UI thread — preview
+  // shifts, dismiss returns, relayouts — without any React re-render.
+  useAnimatedReaction(
+    () => sceneGeometry.value,
+    (current, previous) => {
+      if (current == null || sceneGeometry == null) {
+        return;
+      }
+      const prev = previous;
+      if (prev == null) {
+        return;
+      }
+      const moved =
+        current.centerX !== prev.centerX ||
+        current.centerY !== prev.centerY ||
+        current.diameter !== prev.diameter;
+      if (!moved) {
+        return;
+      }
+      const duration = current.skipEnter ? 0 : ORB_MOVE_DURATION_MS;
+      posX.value = withTiming(current.centerX, {
+        duration,
+        easing: Easing.inOut(Easing.cubic),
+      });
+      posY.value = withTiming(current.centerY, {
+        duration,
+        easing: Easing.inOut(Easing.cubic),
+      });
+      dia.value = withTiming(current.diameter, {
+        duration,
+        easing: Easing.inOut(Easing.cubic),
+      });
+    },
+    [dia, posX, posY, sceneGeometry],
+  );
+
+  const skipEnterAtMount = initialSceneEntry?.skipEnter ?? initialGeometry?.skipEnter === true;
+
   const orbConfig = useMemo(() => {
-    const g = geometry.value;
+    const g = geometry?.value;
+    const entry =
+      sceneStateSv != null && sceneKind != null && sceneKey != null
+        ? sceneEntryWorklet(sceneStateSv.value, sceneKind, sceneKey)
+        : null;
+    if (entry != null) {
+      return {
+        originX: entry.centerX,
+        originY: entry.centerY,
+        targetCenterX: entry.centerX,
+        targetCenterY: entry.centerY,
+        targetDiameter: entry.diameter,
+        moveCenterX: posX,
+        moveCenterY: posY,
+        moveDiameter: dia,
+        initialDiameter: entry.skipEnter ? entry.diameter : undefined,
+        skipEnter: entry.skipEnter,
+        enterDelayMs: entry.enterDelayMs ?? enterDelayMs,
+        popDelayMs: undefined,
+      };
+    }
+    if (g == null) {
+      return {
+        originX: posX.value,
+        originY: posY.value,
+        targetCenterX: posX.value,
+        targetCenterY: posY.value,
+        targetDiameter: dia.value,
+        moveCenterX: posX,
+        moveCenterY: posY,
+        moveDiameter: dia,
+        initialDiameter: undefined,
+        skipEnter: false,
+        enterDelayMs,
+        popDelayMs,
+      };
+    }
     return {
       originX: g.skipEnter ? g.centerX : (g.initialCenterX ?? g.centerX),
       originY: g.skipEnter ? g.centerY : (g.initialCenterY ?? g.centerY),
@@ -249,13 +417,16 @@ function FlowerGardenLetterOrbComponent({
       enterDelayMs,
       popDelayMs,
     };
-  }, [dia, enterDelayMs, geometry, popDelayMs, posX, posY]);
+  }, [dia, enterDelayMs, geometry, popDelayMs, posX, posY, sceneKey, sceneKind, sceneStateSv]);
 
   const wrongT = useSharedValue(0);
   const wrongTint = useMemo(() => parseHexColor(wrongTintColor), [wrongTintColor]);
   const shakeClock = useSharedValue(0);
 
   useEffect(() => {
+    if (sceneDriven) {
+      return;
+    }
     if (status !== 'wrong') {
       shakeClock.value = 0;
       return;
@@ -270,7 +441,7 @@ function FlowerGardenLetterOrbComponent({
     return () => {
       cancelAnimation(shakeClock);
     };
-  }, [shakeClock, status]);
+  }, [sceneDriven, shakeClock, status]);
 
   const wrongState = useMemo<OrbWrongState>(
     () => ({
@@ -284,6 +455,9 @@ function FlowerGardenLetterOrbComponent({
   );
 
   useEffect(() => {
+    if (sceneDriven) {
+      return;
+    }
     if (status !== 'wrong') {
       wrongT.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
       return;
@@ -295,7 +469,7 @@ function FlowerGardenLetterOrbComponent({
       withTiming(1, { duration: holdMs }),
       withTiming(0, { duration: rampMs, easing: Easing.inOut(Easing.cubic) }),
     );
-  }, [status, wrongT]);
+  }, [sceneDriven, status, wrongT]);
 
   const onEnterCompleteRef = useRef(onEnterComplete);
   onEnterCompleteRef.current = onEnterComplete;
@@ -308,6 +482,11 @@ function FlowerGardenLetterOrbComponent({
     'worklet';
   }, []);
 
+  const retargetEnterSv = useSharedValue<{
+    skipEnter: boolean;
+    enterDelayMs: number | null;
+  } | null>(null);
+
   const { anim, startBurst } = useOrbAnimation(
     orbConfig,
     () => {},
@@ -315,6 +494,7 @@ function FlowerGardenLetterOrbComponent({
     handleBurstCompleteWorklet,
     wrongState,
     clock,
+    retargetEnterSv,
   );
 
   const statusRef = useRef<FlowerGardenLetterOrbProps['status'] | null>(null);
@@ -322,18 +502,24 @@ function FlowerGardenLetterOrbComponent({
   startBurstRef.current = startBurst;
 
   useEffect(() => {
+    if (sceneDriven) {
+      return;
+    }
     const previous = statusRef.current;
     statusRef.current = status;
     if (status === 'popped' && previous !== 'popped') {
       startBurstRef.current(BurstIntent.Release);
     }
-  }, [status]);
+  }, [sceneDriven, status]);
 
   const popSoundTrigger = useSharedValue(0);
   const enterSoundTrigger = useSharedValue(0);
   const enterCompleteTrigger = useSharedValue(0);
 
   useEffect(() => {
+    if (sceneDriven) {
+      return;
+    }
     if (status !== 'popped') {
       return;
     }
@@ -353,14 +539,119 @@ function FlowerGardenLetterOrbComponent({
     }
     // Delay + sound are read from refs so this only fires on the popped transition.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, popSoundTrigger]);
+  }, [sceneDriven, status, popSoundTrigger]);
+
+  const dispatchBurst = useCallback((intent: BurstIntentValue, burstDelayMs?: number) => {
+    startBurstRef.current(intent, burstDelayMs);
+  }, []);
+  const dispatchPopSound = useCallback(() => {
+    onPopSoundRef.current?.();
+  }, []);
+  const dispatchEnterSound = useCallback(() => {
+    onEnterSoundRef.current?.();
+  }, []);
+
+  useAnimatedReaction(
+    () => (sceneStateSv == null ? null : sceneStateSv.value),
+    (scene, prevScene) => {
+      if (sceneStateSv == null || sceneKind == null || sceneKey == null || scene == null) {
+        return;
+      }
+      const entry = sceneEntryWorklet(scene, sceneKind, sceneKey);
+      if (entry == null) {
+        return;
+      }
+      const prevEntry =
+        prevScene == null ? null : sceneEntryWorklet(prevScene, sceneKind, sceneKey);
+      const wasPopped = prevEntry != null && prevEntry.popped;
+      const wasWrong = prevEntry != null && prevEntry.wrong;
+
+      if (entry.popped && !wasPopped) {
+        scheduleOnRN(dispatchBurst, BurstIntent.Release, entry.popDelayMs ?? 0);
+      }
+
+      if (entry.wrong !== wasWrong) {
+        if (entry.wrong) {
+          shakeClock.value = withRepeat(
+            withTiming(1000 / ORB_WRONG_SHAKE_HZ, {
+              duration: 1000 / ORB_WRONG_SHAKE_HZ,
+              easing: Easing.linear,
+            }),
+            -1,
+          );
+          const rampMs = ORB_WRONG_RAMP_MS;
+          const holdMs = Math.max(0, ORB_WRONG_FEEDBACK_MS - rampMs * 2);
+          wrongT.value = withSequence(
+            withTiming(1, { duration: rampMs, easing: Easing.out(Easing.cubic) }),
+            withTiming(1, { duration: holdMs }),
+            withTiming(0, { duration: rampMs, easing: Easing.inOut(Easing.cubic) }),
+          );
+        } else {
+          cancelAnimation(shakeClock);
+          shakeClock.value = 0;
+          wrongT.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
+        }
+      }
+
+      if (entry.popped && !wasPopped && entry.popDelayMs != null) {
+        popSoundTrigger.value = 0;
+        popSoundTrigger.value = withDelay(
+          entry.popDelayMs,
+          withTiming(1, { duration: 0 }, finished => {
+            'worklet';
+            if (finished) {
+              scheduleOnRN(dispatchPopSound);
+            }
+          }),
+        );
+      }
+
+      if (
+        prevEntry != null &&
+        entry.enterDelayMs != null &&
+        (entry.enterDelayMs !== prevEntry.enterDelayMs ||
+          entry.skipEnter !== prevEntry.skipEnter)
+      ) {
+        retargetEnterSv.value = {
+          skipEnter: entry.skipEnter,
+          enterDelayMs: entry.enterDelayMs,
+        };
+        enterSoundTrigger.value = 0;
+        enterSoundTrigger.value = withDelay(
+          entry.enterDelayMs,
+          withTiming(1, { duration: 0 }, finished => {
+            'worklet';
+            if (finished) {
+              scheduleOnRN(dispatchEnterSound);
+            }
+          }),
+        );
+      }
+    },
+    [
+      dispatchBurst,
+      dispatchEnterSound,
+      dispatchPopSound,
+      enterSoundTrigger,
+      popSoundTrigger,
+      retargetEnterSv,
+      sceneKind,
+      sceneKey,
+      sceneStateSv,
+      shakeClock,
+      wrongT,
+    ],
+  );
 
   useEffect(() => {
-    if (geometry.value.skipEnter) {
+    if (skipEnterAtMount) {
       return;
     }
     const delay = enterDelayMs ?? 0;
     const sound = onEnterSoundRef.current;
+    if (sceneDriven && initialSceneEntry?.enterDelayMs == null) {
+      return;
+    }
     if (sound != null) {
       enterSoundTrigger.value = 0;
       enterSoundTrigger.value = withDelay(
@@ -388,7 +679,7 @@ function FlowerGardenLetterOrbComponent({
     }
     // Enter delay is read from the config at mount; the sound refs stay current.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enterCompleteTrigger, enterSoundTrigger, geometry]);
+  }, [enterCompleteTrigger, enterSoundTrigger, initialSceneEntry, sceneDriven, skipEnterAtMount]);
 
   const font = useMemo(() => labelFontFor(char.length), [char.length]);
 
@@ -418,6 +709,29 @@ function FlowerGardenLetterOrbComponent({
     return overallOpacity * captureVisualT;
   });
 
+  const sceneFillColor = useDerivedValue(() => {
+    if (sceneStateSv == null || sceneKind == null || sceneKey == null) {
+      return LABEL_FILL_COLOR;
+    }
+    const entry = sceneEntryWorklet(sceneStateSv.value, sceneKind, sceneKey);
+    return entry != null && entry.wrong ? LABEL_WRONG_COLOR : LABEL_FILL_COLOR;
+  }, [sceneKind, sceneKey, sceneStateSv]);
+
+  const sceneOpacity = useDerivedValue(() => {
+    if (sceneStateSv == null || sceneKind == null || sceneKey == null) {
+      return 1;
+    }
+    const state = sceneStateSv.value;
+    if (sceneKind === 'letters' && !state.wordOrbsVisible) {
+      return 0;
+    }
+    if (sceneKind === 'picker' && !state.variantPicker.visible) {
+      return 0;
+    }
+    const entry = sceneEntryWorklet(state, sceneKind, sceneKey);
+    return entry != null && entry.hidden ? 0 : 1;
+  }, [sceneKind, sceneKey, sceneStateSv]);
+
   const fillColor = status === 'wrong' ? LABEL_WRONG_COLOR : LABEL_FILL_COLOR;
 
   if (ringVariants == null || bedVariants == null) {
@@ -425,7 +739,7 @@ function FlowerGardenLetterOrbComponent({
   }
 
   return (
-    <Group>
+    <Group opacity={sceneOpacity}>
       <OrbFlowerShader
         anim={anim}
         seed={orbSeed}
@@ -442,7 +756,7 @@ function FlowerGardenLetterOrbComponent({
           color={LABEL_STROKE_COLOR}>
           <Glyphs font={font} glyphs={glyphs} />
         </Group>
-        <Glyphs font={font} glyphs={glyphs} color={fillColor} />
+        <Glyphs font={font} glyphs={glyphs} color={sceneDriven ? sceneFillColor : fillColor} />
       </Group>
     </Group>
   );
