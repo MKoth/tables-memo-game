@@ -90,6 +90,7 @@ jest.mock('react-native', () => {
 
 import type { Theme } from '../Theme';
 import { underseaTheme } from '../../themes/undersea/themeBundle';
+import { flowerGardenTheme } from '../../themes/flower-garden/themeBundle';
 
 type Assert<T extends true> = T;
 type IsAssignable<T, U> = T extends U ? true : false;
@@ -150,10 +151,12 @@ describe('Theme contract conformance', () => {
     expect(isReactComponent(underseaTheme.wordSprite.match)).toBe(true);
   });
 
-  it('undersea wordTransformationVisual has orbLayer, wordOrbs, and letterOrb', () => {
-    expect(underseaTheme.wordTransformationVisual.orbLayer).toBeDefined();
-    expect(underseaTheme.wordTransformationVisual.wordOrbs).toBeDefined();
-    expect(underseaTheme.wordTransformationVisual.letterOrb).toBeDefined();
+  it('undersea wordTransformationVisual has a scene visual', () => {
+    expect(isReactComponent(underseaTheme.wordTransformationVisual.scene)).toBe(true);
+  });
+
+  it('flower-garden wordTransformationVisual has a scene visual', () => {
+    expect(isReactComponent(flowerGardenTheme.wordTransformationVisual.scene)).toBe(true);
   });
 
   it('undersea roundResolution has resolutionOrb, resolveFlight, and mergeOrbs', () => {

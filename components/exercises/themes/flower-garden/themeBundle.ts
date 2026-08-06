@@ -7,9 +7,7 @@ import { FlowerGardenWordSpriteTableLayer } from './carrier/FlowerGardenWordSpri
 import { FlowerGardenWordSpriteSentenceRowLayer } from './exercises/sentenceTransformation/components/FlowerGardenWordSpriteSentenceRowLayer';
 import { FlowerGardenOptionWordSpriteLayer } from './exercises/variantSelection/components/FlowerGardenOptionWordSpriteLayer';
 import { FlowerGardenMatchWordSpriteLayer } from './exercises/wordLearning/translationMatch/components/FlowerGardenMatchWordSpriteLayer';
-import { FlowerGardenTransformationOrbLayer } from './exercises/wordTransformation/components/FlowerGardenTransformationOrbLayer';
-import { FlowerGardenTransformationWordOrbs } from './exercises/wordTransformation/components/FlowerGardenTransformationWordOrbs';
-import { FlowerGardenLetterOrb } from './exercises/wordTransformation/components/FlowerGardenLetterOrb';
+import { FlowerGardenTransformationActorsCanvas } from './wordTransformationScene/FlowerGardenTransformationActorsCanvas';
 import { FlowerGardenTransformationRoundResolutionOrb } from './exercises/sentenceTransformation/components/FlowerGardenTransformationRoundResolutionOrb';
 import { FlowerGardenTransformationMergeOrbs } from './exercises/sentenceTransformation/components/FlowerGardenTransformationMergeOrbs';
 import { FlowerGardenVariantSelectionResolveFlight } from './exercises/variantSelection/components/FlowerGardenVariantSelectionResolveFlight';
@@ -49,9 +47,7 @@ export const flowerGardenTheme: Theme = {
   },
 
   wordTransformationVisual: {
-    orbLayer: FlowerGardenTransformationOrbLayer as unknown as Theme['wordTransformationVisual']['orbLayer'],
-    wordOrbs: FlowerGardenTransformationWordOrbs as unknown as Theme['wordTransformationVisual']['wordOrbs'],
-    letterOrb: FlowerGardenLetterOrb as unknown as Theme['wordTransformationVisual']['letterOrb'],
+    scene: FlowerGardenTransformationActorsCanvas as Theme['wordTransformationVisual']['scene'],
   },
 
   roundResolution: {

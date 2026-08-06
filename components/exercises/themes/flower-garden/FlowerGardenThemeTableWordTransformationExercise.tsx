@@ -28,7 +28,7 @@ import { ExerciseCornerControls, TransformationInstructionBar } from '../../ui';
 import { FlowerGardenScenery } from './scenery/FlowerGardenScenery';
 import { FlowerGardenTableProvider } from './scenery/flowerGardenTableContext';
 import { useFieldFlowerConfigs } from './scenery/FieldFlowerShaderLayer/useFieldFlowerConfigs';
-import { FlowerGardenTransformationOrbLayer } from './exercises/wordTransformation/components/FlowerGardenTransformationOrbLayer';
+import { FlowerGardenTransformationActorsCanvas } from './wordTransformationScene/FlowerGardenTransformationActorsCanvas';
 import { useWordTransformationGame } from '../../wordTransformation/hooks/useWordTransformationGame';
 import type { WordTransformationSceneState } from '../../wordTransformation/scene/sceneStateTypes';
 
@@ -137,10 +137,9 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
           />
         </View>
         <View style={[styles.fullLayer, { zIndex: ORB_LAYER_Z }]} pointerEvents="box-none">
-          <FlowerGardenTransformationOrbLayer
-            letters={game.letters}
-            variantPickerItems={game.variantPickerItems}
+          <FlowerGardenTransformationActorsCanvas
             sceneStateSv={sceneStateSv}
+            variantPickerItems={game.variantPickerItems}
             onLetterPress={game.handleLetterPress}
             onVariantSelect={game.handleVariantPress}
             playPop={sounds.playOrbPop}

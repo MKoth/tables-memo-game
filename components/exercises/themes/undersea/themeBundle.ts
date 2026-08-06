@@ -7,9 +7,7 @@ import { WordSpriteTableLayer } from './carrier';
 import { WordSpriteSentenceRowLayer } from './exercises/sentenceTransformation/components/WordSpriteSentenceRowLayer/WordSpriteSentenceRowLayer';
 import { OptionWordSpriteLayer } from './exercises/variantSelection/components/OptionWordSpriteLayer';
 import { MatchWordSpriteLayer } from './exercises/wordLearning/translationMatch/components/MatchWordSpriteLayer';
-import { TransformationBubbleLayer } from './exercises/wordTransformation/components/TransformationBubbleLayer';
-import { TransformationWordBubbles } from './exercises/wordTransformation/components/TransformationWordBubbles';
-import { LetterBubble } from './exercises/wordTransformation/components/LetterBubble';
+import { UnderseaWordTransformationSceneVisual } from './exercises/wordTransformation/components/UnderseaWordTransformationSceneVisual';
 import { TransformationRoundResolutionBubble } from './exercises/sentenceTransformation/components/TransformationRoundResolutionBubble';
 import { TransformationMergeBubbles } from './exercises/sentenceTransformation/components/TransformationMergeBubbles';
 import { VariantSelectionResolveFlight } from './exercises/variantSelection/components/VariantSelectionResolveFlight';
@@ -49,9 +47,7 @@ export const underseaTheme: Theme = {
   },
 
   wordTransformationVisual: {
-    orbLayer: TransformationBubbleLayer as Theme['wordTransformationVisual']['orbLayer'],
-    wordOrbs: TransformationWordBubbles as Theme['wordTransformationVisual']['wordOrbs'],
-    letterOrb: LetterBubble as Theme['wordTransformationVisual']['letterOrb'],
+    scene: UnderseaWordTransformationSceneVisual as Theme['wordTransformationVisual']['scene'],
   },
 
   roundResolution: {

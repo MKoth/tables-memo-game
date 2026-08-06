@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode, RefObject, MutableRefObject } from 'react';
-import type { SkFont, SkImage } from '@shopify/react-native-skia';
+import type { SkImage } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import type {
   ZoneRect,
@@ -19,15 +19,10 @@ import type {
   MotionPath,
 } from '../sentenceTransformation/domain/motionPathPlanner';
 import type {
-  LetterOrbModel,
-  InsertAnimationState,
   VariantPickerItem,
   VariantSourceLayout,
 } from '../wordTransformation/domain/coreTypes';
 import type { WordTransformationSceneState } from '../wordTransformation/scene/sceneStateTypes';
-import type {
-  InsertPreviewLayout,
-} from '../core/layout/exerciseLayout';
 import type { RoundResolutionOrbState } from '../sentenceTransformation/domain/roundResolutionOrbState';
 import type {
   MatchSessionController,
@@ -200,67 +195,14 @@ export type ThemeMatchRoamerLayerProps = {
   keepOutDiskSv?: SharedValue<KeepOutDisk | null>;
 };
 
-export type ThemeTransformationOrbLayerProps = {
-  wordOrbsVisible?: boolean;
-  mergeWord?: string | null;
-  onMergeComplete?: () => void;
-  betweenWordOrbsAndInsertFlight?: ReactNode;
-  letters: LetterOrbModel[];
-  lettersInteractive: boolean;
-  insertAnimation: InsertAnimationState | null;
-  variantPickerVisible: boolean;
-  variantPickerInteractive: boolean;
+export type ThemeWordTransformationSceneProps = {
+  /** Per-press changes flow through this — the visual never re-renders React. */
+  sceneStateSv: SharedValue<WordTransformationSceneState>;
   variantPickerItems: VariantPickerItem[];
-  wrongItemId?: string;
-  pickerHiddenItemIds?: string[];
-  poppedPickerItemIds?: string[];
-  /** Scene-driven mode: per-press changes flow through this instead of props. */
-  sceneStateSv?: SharedValue<WordTransformationSceneState>;
   onLetterPress: (position: number) => void;
   onVariantSelect: (item: VariantPickerItem, source: VariantSourceLayout) => void;
   playPop?: () => void;
   playInflate?: () => void;
-};
-
-export type ThemeTransformationWordOrbsProps = {
-  letters: LetterOrbModel[];
-  interactive?: boolean;
-  insertPreview?: InsertPreviewLayout;
-  mergeWord?: string | null;
-  onMergeComplete?: () => void;
-  /** Scene-driven mode: per-press changes flow through this instead of props. */
-  sceneStateSv?: SharedValue<WordTransformationSceneState>;
-  onLetterPress: (position: number) => void;
-  playPop?: () => void;
-  playInflate?: () => void;
-  zoneRect?: ZoneRect;
-};
-
-export type ThemeLetterOrbProps = {
-  char: string;
-  centerX: number;
-  centerY: number;
-  diameter: number;
-  status: 'idle' | 'wrong' | 'popped';
-  image: SkImage;
-  font: SkFont;
-  clock: SharedValue<number>;
-  initialCenterX?: number;
-  initialCenterY?: number;
-  initialDiameter?: number;
-  skipEnter?: boolean;
-  moveDurationMs?: number;
-  wrongTintColor?: string;
-  popDelayMs?: number;
-  enterDelayMs?: number;
-  onPopSound?: () => void;
-  onEnterSound?: () => void;
-  onEnterComplete?: () => void;
-  onMoveComplete?: () => void;
-  onPopComplete?: () => void;
-  labelFixed?: boolean;
-  letterSpacing?: number;
-  wobbleBoostT?: SharedValue<number>;
 };
 
 export type ThemeResolutionOrbProps = {
@@ -328,9 +270,7 @@ export type Theme = {
   };
 
   wordTransformationVisual: {
-    orbLayer: ComponentType<ThemeTransformationOrbLayerProps>;
-    wordOrbs: ComponentType<ThemeTransformationWordOrbsProps>;
-    letterOrb: ComponentType<ThemeLetterOrbProps>;
+    scene: ComponentType<ThemeWordTransformationSceneProps>;
   };
 
   roundResolution: {

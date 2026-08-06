@@ -30,11 +30,9 @@ An object with four component members:
 - **`match`** — `ComponentType<ThemeMatchWordSpriteLayerProps>`. Renders the WordSprite layer for translation match. Receives words, shared values for capture/match state, tap data ref, and keep-out disk.
 
 #### `wordTransformationVisual`
-An object with three component members:
+An object with one component member:
 
-- **`bubbleLayer`** — `ComponentType<ThemeTransformationBubbleLayerProps>`. The combined letter-bubble + variant-picker + insert-flight layer for word transformation. Receives letter models, animation state, variant picker state, and interaction callbacks.
-- **`wordBubbles`** — `ComponentType<ThemeTransformationWordBubblesProps>`. The word-bubble display for translation exercises (English prompt, Spanish result). Receives letter models, insert preview, merge state, and callbacks.
-- **`letterBubble`** — `ComponentType<ThemeLetterBubbleProps>`. A single letter bubble with enter/move/pop animations. Receives character, position, diameter, status, font, image, clock, and animation callbacks.
+- **`scene`** — `ComponentType<ThemeWordTransformationSceneProps>`. The single scene visual for word transformation: word letter actors, variant picker, and insert flight all drawn in one canvas and driven by the scene-state shared value, so per-press changes never re-render React. Receives `sceneStateSv`, variant picker item identities, press callbacks, and pop/inflate sound hooks. Themes whose visuals are prop-driven (e.g. undersea) may implement this as a thin adapter that re-syncs the scene state into props.
 
 #### `roundResolution`
 An object with three component members:
