@@ -39,6 +39,7 @@ import { armRoamerExitFlight } from './roamer/core/exitFlightWorklets';
 import { resolveRoamerExitLegs } from './roamer/core/resolveRoamerExitPath';
 import type { RoamerRuntimeEntry } from './roamer/core/types';
 import { FlightState } from './roamer/core/types';
+import type { FlowerWordSpriteSoundKind } from './carrier/FlowerGardenWordSpriteTableLayer/types';
 
 const WORD_SPRITE_LAYER_Z = 5;
 const SCENERY_Z = 1;
@@ -411,20 +412,58 @@ function FlowerGardenExerciseContent() {
   const table = spanishPresentTable2Plural;
   const words = useMemo(() => getTableBodyWords(table), [table]);
   const tutorialStep = useExerciseStore((state) => state.tutorialStep);
+  const soundEnabled = useExerciseStore((state) => state.soundEnabled);
   const tutorialActive = tutorialStep !== 'idle';
+  const { sounds } = useFlowerGardenAssetsContext();
   const fieldFlowerConfigs = useFieldFlowerConfigs();
   const flowerSwingBoosts = useSharedValue<number[]>([]);
   const [eliminatedRoamerIndices, setEliminatedRoamerIndices] = useState<number[]>([]);
 
   useEffect(() => {
+    sounds.startAmbient();
+    return () => {
+      sounds.stopAmbient();
+    };
+  }, [sounds]);
+
+  useEffect(() => {
+    sounds.setMuted(!soundEnabled);
+  }, [sounds, soundEnabled]);
+
+  const handleWordSpriteSound = useCallback(
+    (kind: FlowerWordSpriteSoundKind) => {
+      if (kind === 'success') {
+        sounds.playSuccessClick();
+        return;
+      }
+      if (kind === 'error') {
+        sounds.playWrongClick();
+        return;
+      }
+      sounds.playPrimaryClick();
+    },
+    [sounds],
+  );
+
+  useEffect(() => {
     flowerSwingBoosts.value = new Array(Math.max(fieldFlowerConfigs.length, 1)).fill(0);
   }, [fieldFlowerConfigs.length, flowerSwingBoosts]);
 
-  const handleRoamerEscaped = useCallback((roamerIndex: number) => {
-    setEliminatedRoamerIndices(prev =>
-      prev.includes(roamerIndex) ? prev : [...prev, roamerIndex],
-    );
-  }, []);
+  const handleRoamerEscaped = useCallback(
+    (roamerIndex: number) => {
+      setEliminatedRoamerIndices(prev => {
+        if (prev.includes(roamerIndex)) {
+          return prev;
+        }
+        const next = [...prev, roamerIndex];
+        if (next.length === words.length) {
+          sounds.playFanfare();
+        }
+        return next;
+      });
+    },
+    [sounds, words.length],
+  );
 
   return (
     <ExerciseRuntimeProvider>
@@ -443,6 +482,7 @@ function FlowerGardenExerciseContent() {
             <View style={styles.wordSpriteLayer} pointerEvents="box-none">
               <FlowerGardenWordSpriteTableLayer
                 table={table}
+                onWordSpriteSound={handleWordSpriteSound}
                 interactive={!tutorialActive}
               />
             </View>

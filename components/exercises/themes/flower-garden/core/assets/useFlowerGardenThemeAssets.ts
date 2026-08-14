@@ -48,10 +48,15 @@ import {
 } from './flowerGardenThemeAssets';
 import {
   createFlowerGardenSoundController,
+  loadAllFlowerGardenThemeSounds,
+  releaseFlowerGardenThemeSounds,
+  type FlowerGardenSoundController,
+  type LoadedFlowerGardenThemeSounds,
 } from './useFlowerGardenThemeSounds';
 
 type FlowerGardenAssetsReady = {
   images: FlowerGardenThemeImages;
+  sounds: FlowerGardenSoundController;
 };
 
 export function useFlowerGardenThemeAssets(): ThemeAssets {
@@ -62,6 +67,9 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
     null,
   );
   const loadedCountRef = useRef(0);
+  const loadedSoundsRef = useRef<LoadedFlowerGardenThemeSounds | null>(null);
+  const soundStateRef = useRef({ ambiencePlaying: false, muted: false });
+  const appStateCleanupRef = useRef<(() => void) | null>(null);
 
   const tickProgress = useCallback(() => {
     loadedCountRef.current += 1;
@@ -116,6 +124,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
   useEffect(() => {
     let cancelled = false;
+    const soundState = soundStateRef.current;
 
     const preload = async () => {
       try {
@@ -214,6 +223,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           orbRingSmallImages,
           orbBedImages,
           orbBedSmallImages,
+          flowerGardenSounds,
         ] = await Promise.all([
           loadAll(PETAL_SOURCES, 'petal'),
           loadAll(CLOVER_SOURCES, 'clover'),
@@ -231,11 +241,20 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           loadAll(ORB_RING_SMALL_SOURCES, 'orb small petal ring'),
           loadAll(ORB_BED_SOURCES, 'orb clover bed'),
           loadAll(ORB_BED_SMALL_SOURCES, 'orb small clover bed'),
+          loadAllFlowerGardenThemeSounds(tickProgress),
         ]);
 
         if (cancelled) {
+          releaseFlowerGardenThemeSounds(flowerGardenSounds);
           return;
         }
+
+        loadedSoundsRef.current = flowerGardenSounds;
+        const { sounds, bindAppState } = createFlowerGardenSoundController(
+          flowerGardenSounds,
+          soundState,
+        );
+        appStateCleanupRef.current = bindAppState();
 
         setProgress(100);
         setReadyAssets({
@@ -347,6 +366,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
                 : null,
             roseLeafAtlas,
           },
+          sounds,
         });
       } catch (error) {
         if (__DEV__) {
@@ -362,20 +382,25 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
 
     return () => {
       cancelled = true;
+      appStateCleanupRef.current?.();
+      appStateCleanupRef.current = null;
+      soundState.ambiencePlaying = false;
+      releaseFlowerGardenThemeSounds(loadedSoundsRef.current);
+      loadedSoundsRef.current = null;
       loadedCountRef.current = 0;
       setBackgroundImage(null);
       setDecorationImages(null);
       setProgress(0);
       setReadyAssets(null);
     };
-  }, [loadSingle, loadAll]);
+  }, [loadSingle, loadAll, tickProgress]);
 
   if (readyAssets != null) {
     return {
       phase: 'ready',
       progress: 100,
       images: readyAssets.images,
-      sounds: createFlowerGardenSoundController(),
+      sounds: readyAssets.sounds,
     };
   }
 

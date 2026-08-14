@@ -1,13 +1,19 @@
-import { AppState, Image, type AppStateStatus } from 'react-native';
-import Sound from 'react-native-sound';
+import { AppState, type AppStateStatus } from 'react-native';
+import type Sound from 'react-native-sound';
+import {
+  activateAudioSession,
+  deactivateAudioSessionFlag,
+  loadCoreThemeSounds,
+  loadSound,
+  playOneShot,
+  releaseCoreThemeSounds,
+  SUCCESS_CLICK_VOLUME,
+} from '../../../../core/sounds/useCoreThemeSounds';
 import {
   SFX_VOLUME,
-  SUCCESS_CLICK_VOLUME,
   UNDERSEA_SOUND_ASSETS,
   WATERFLOW_VOLUME,
 } from './underseaThemeSoundAssets';
-
-Sound.setCategory('Playback', true);
 
 type LoadedSound = Sound;
 
@@ -36,57 +42,6 @@ export type UnderseaThemeSoundController = {
   isMuted: () => boolean;
 };
 
-function resolveSoundUri(source: number): string {
-  const resolved = Image.resolveAssetSource(source);
-  if (resolved?.uri == null || resolved.uri.length === 0) {
-    throw new Error('Unable to resolve sound asset URI');
-  }
-  return resolved.uri;
-}
-
-export function loadSound(source: number, volume: number): Promise<LoadedSound> {
-  return new Promise((resolve, reject) => {
-    const uri = resolveSoundUri(source);
-    const sound = new Sound(uri, (error) => {
-      if (error != null) {
-        reject(error);
-        return;
-      }
-      sound.setVolume(volume);
-      resolve(sound);
-    });
-  });
-}
-
-/**
- * The audio session only needs activating once per foreground session. Calling
- * `Sound.setActive(true)` on every one-shot (e.g. each bubble pop in a staggered
- * cascade) is a redundant bridge round-trip that piles onto the JS thread.
- */
-let audioSessionActive = false;
-
-function activateAudioSession(): void {
-  if (audioSessionActive) {
-    return;
-  }
-  Sound.setActive(true);
-  audioSessionActive = true;
-}
-
-function deactivateAudioSessionFlag(): void {
-  audioSessionActive = false;
-}
-
-function playOneShot(sound: LoadedSound | null, volume = SFX_VOLUME): void {
-  if (sound == null || !sound.isLoaded()) {
-    return;
-  }
-  activateAudioSession();
-  sound.setVolume(volume);
-  sound.stop();
-  sound.play();
-}
-
 export async function loadAllUnderseaThemeSounds(
   onItemLoaded?: () => void,
 ): Promise<LoadedUnderseaThemeSounds> {
@@ -100,6 +55,7 @@ export async function loadAllUnderseaThemeSounds(
     });
 
   const [
+    coreSounds,
     waterflow,
     splash0,
     splash1,
@@ -107,11 +63,9 @@ export async function loadAllUnderseaThemeSounds(
     splash3,
     bubbleInflate,
     bubblePop,
-    successClick,
-    wrongClick,
     primaryClick,
-    fanfare,
   ] = await Promise.all([
+    loadCoreThemeSounds(tick),
     loadTracked(UNDERSEA_SOUND_ASSETS.waterflow, WATERFLOW_VOLUME),
     loadTracked(UNDERSEA_SOUND_ASSETS.splash[0], SFX_VOLUME),
     loadTracked(UNDERSEA_SOUND_ASSETS.splash[1], SFX_VOLUME),
@@ -119,10 +73,7 @@ export async function loadAllUnderseaThemeSounds(
     loadTracked(UNDERSEA_SOUND_ASSETS.splash[3], SFX_VOLUME),
     loadTracked(UNDERSEA_SOUND_ASSETS.bubbleInflate, SFX_VOLUME),
     loadTracked(UNDERSEA_SOUND_ASSETS.bubblePop, SFX_VOLUME),
-    loadTracked(UNDERSEA_SOUND_ASSETS.successClick, SUCCESS_CLICK_VOLUME),
-    loadTracked(UNDERSEA_SOUND_ASSETS.wrongClick, SFX_VOLUME),
     loadTracked(UNDERSEA_SOUND_ASSETS.primaryClick, SFX_VOLUME),
-    loadTracked(UNDERSEA_SOUND_ASSETS.fanfare, SFX_VOLUME),
   ]);
 
   waterflow.setNumberOfLoops(-1);
@@ -132,10 +83,10 @@ export async function loadAllUnderseaThemeSounds(
     splash: [splash0, splash1, splash2, splash3],
     bubbleInflate,
     bubblePop,
-    successClick,
-    wrongClick,
+    successClick: coreSounds.successClick,
+    wrongClick: coreSounds.wrongClick,
     primaryClick,
-    fanfare,
+    fanfare: coreSounds.fanfare,
   };
 }
 
@@ -149,11 +100,9 @@ export function releaseUnderseaThemeSounds(loaded: LoadedUnderseaThemeSounds | n
     ...loaded.splash,
     loaded.bubbleInflate,
     loaded.bubblePop,
-    loaded.successClick,
-    loaded.wrongClick,
     loaded.primaryClick,
-    loaded.fanfare,
   ].forEach(sound => sound.release());
+  releaseCoreThemeSounds(loaded);
 }
 
 type SoundControllerState = {

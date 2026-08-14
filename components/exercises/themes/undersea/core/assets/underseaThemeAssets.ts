@@ -2,7 +2,6 @@ import type { SkImage } from '@shopify/react-native-skia';
 
 export {
   SFX_VOLUME,
-  SUCCESS_CLICK_VOLUME,
   UNDERSEA_SOUND_ASSETS,
   WATERFLOW_VOLUME,
 } from './underseaThemeSoundAssets';

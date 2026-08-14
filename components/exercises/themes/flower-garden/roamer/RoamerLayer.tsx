@@ -1,14 +1,21 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { Canvas, Group, type SkImage } from '@shopify/react-native-skia';
-import { useDerivedValue } from 'react-native-reanimated';
+import { useAnimatedReaction, useDerivedValue, runOnJS } from 'react-native-reanimated';
 import { useExerciseLayout } from '../../../core';
 import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAssetsProvider';
+import type { FlowerGardenSoundController } from '../core/assets/useFlowerGardenThemeSounds';
 import { useRoamerSimulation, type RoamerSimulation } from './core/useRoamerSimulation';
 import { ButterflyInstance } from './butterfly/ButterflyInstance';
 import { BeeInstance } from './bee/BeeInstance';
 import { BumblebeeInstance } from './bumblebee/BumblebeeInstance';
-import { FlightState, type RoamerSharedRuntime, type RoamerSpawn } from './core/types';
+import {
+  FlightState,
+  type RoamerSharedRuntime,
+  type RoamerSpawn,
+} from './core/types';
+import type { FlowerGardenBuzzSpecies } from '../core/assets/useFlowerGardenThemeSounds';
+import { isRoamerBuzzActive } from './core/roamerBuzz';
 import { pickRoamerDrawPass } from './core/pickRoamerDrawPass';
 
 export type RoamerLayerProps = {
@@ -40,6 +47,33 @@ function RoamerLayerContent({ sim, interactive, images, hiddenIndices }: RoamerL
   if (sim.runtimeEntries.length === 0) {
     return null;
   }
+
+  return (
+    <>
+      {sim.runtimeEntries.map(({ spawn, runtime }, index) => {
+        if (spawn.species === 'bee' || spawn.species === 'bumblebee') {
+          return (
+            <BuzzRoamerLink
+              key={`buzz-${index}`}
+              roamerIndex={index}
+              species={spawn.species}
+              runtime={runtime}
+            />
+          );
+        }
+        return null;
+      })}
+      <RoamerCanvas sim={sim} interactive={interactive} images={images} hiddenIndices={hiddenIndices} />
+    </>
+  );
+}
+
+function RoamerCanvas({
+  sim,
+  interactive,
+  images,
+  hiddenIndices,
+}: RoamerLayerContentProps) {
 
   const isHidden = (index: number) => hiddenIndices.includes(index);
 
@@ -202,6 +236,46 @@ export function RoamerLayer({
       images={images}
     />
   );
+}
+
+type BuzzRoamerLinkProps = {
+  roamerIndex: number;
+  species: FlowerGardenBuzzSpecies;
+  runtime: RoamerSharedRuntime;
+};
+
+function BuzzRoamerLink({ roamerIndex, species, runtime }: BuzzRoamerLinkProps) {
+  const { sounds } = useFlowerGardenAssetsContext();
+  const soundsRef = useRef<FlowerGardenSoundController>(sounds);
+  soundsRef.current = sounds;
+
+  useEffect(() => {
+    soundsRef.current.registerRoamerBuzz(roamerIndex, species);
+    return () => {
+      soundsRef.current.releaseRoamerBuzz(roamerIndex);
+    };
+  }, [roamerIndex, species]);
+
+  const handleBuzzActive = useCallback(
+    (active: boolean) => {
+      soundsRef.current.setRoamerBuzzActive(roamerIndex, active);
+    },
+    [roamerIndex],
+  );
+
+  useAnimatedReaction(
+    () =>
+      isRoamerBuzzActive(
+        runtime.state.value as FlightState,
+        runtime.isPreTakeoff.value,
+      ),
+    (active: boolean) => {
+      runOnJS(handleBuzzActive)(active);
+    },
+    [roamerIndex, runtime],
+  );
+
+  return null;
 }
 
 type PassProps = {

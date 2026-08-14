@@ -104,6 +104,7 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
     table,
     roamerRect,
     onSequenceSolved: handleSequenceSolved,
+    onAllSolved: sounds.playFanfare,
     playPop: sounds.playOrbPop,
     playInflate: sounds.playOrbInflate,
     playWrong: sounds.playWrongClick,
