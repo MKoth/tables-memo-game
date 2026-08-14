@@ -69,6 +69,10 @@ export type UseVariantSelectionGameParams = {
   screenHeight: number;
   roamerRect: ZoneRect;
   spriteRect: ZoneRect;
+  /** Multiplier for the sentence rose sizes (must match the theme row layer's `sizeScale`). */
+  rowSizeScale?: number;
+  /** Multiplier on the sentence line height (must match the theme row layer's `lineHeightRatio`). */
+  rowLineHeightRatio?: number;
   playSuccess?: () => void;
   playWrong?: () => void;
 };
@@ -80,6 +84,8 @@ export function useVariantSelectionGame({
   screenHeight,
   roamerRect,
   spriteRect,
+  rowSizeScale = 1,
+  rowLineHeightRatio = 1,
   playSuccess,
   playWrong,
 }: UseVariantSelectionGameParams): VariantSelectionGame {
@@ -135,8 +141,10 @@ export function useVariantSelectionGame({
         roamerRect,
         conjugatedForm: currentRound?.conjugatedForm ?? '',
         roundPos: roundSnapshot.roundPos,
+        sizeScale: rowSizeScale,
+        lineHeightRatio: rowLineHeightRatio,
       }),
-    [displaySlots, spriteRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
+    [displaySlots, spriteRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos, rowSizeScale, rowLineHeightRatio],
   );
 
   const optionLayout = useMemo(() => {
@@ -235,6 +243,8 @@ export function useVariantSelectionGame({
       roamerRectRef.current,
       currentRound?.conjugatedForm ?? '',
       roundSnapshot.roundPos,
+      rowSizeScale,
+      rowLineHeightRatio,
     );
     if (blankCenter == null) return null;
 
@@ -258,7 +268,7 @@ export function useVariantSelectionGame({
       toSpawnX,
       toSpawnY,
     };
-  }, [blankSlotIndex, displaySlots, currentRound, roundSnapshot.roundPos, optionLayout.centers, optionLayout.rowY, optionLayout.diameter, motionPaths]);
+  }, [blankSlotIndex, displaySlots, currentRound, roundSnapshot.roundPos, optionLayout.centers, optionLayout.rowY, optionLayout.diameter, motionPaths, rowSizeScale, rowLineHeightRatio]);
 
   const handleRowEnterComplete = useCallback(() => {
     roundRef.current?.notifyRowEnterComplete();

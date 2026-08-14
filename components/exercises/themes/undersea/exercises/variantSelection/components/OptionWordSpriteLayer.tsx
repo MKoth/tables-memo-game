@@ -28,6 +28,7 @@ import { WORD_SPRITE_TINT_PRESET_INDEX, type WordSpriteTintPresetIndex } from '.
 import {
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
+  ROUND_SOLVED_POP_DURATION_MS,
 } from '../../../../../sentenceTransformation/domain';
 import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from '../../../../../core/layout/exerciseLayout';
 import { rollBodyTint } from '../../../carrier/wordSpriteVisualTokens';
@@ -256,7 +257,6 @@ export function OptionWordSpriteLayer({
   const motionAngles = useSharedValue<number[]>([]);
   const motionAmps = useSharedValue<number[]>([]);
   const swimProgress = useSharedValue(1);
-  const optionExitProgress = useSharedValue<number[]>([]);
 
   const onOptionTapRef = useRef(onOptionTap);
   onOptionTapRef.current = onOptionTap;
@@ -302,33 +302,17 @@ export function OptionWordSpriteLayer({
   const hasAnswer = correctOptionIndex >= 0;
 
   useEffect(() => {
-    if (roundPhase === 'enter') {
-      optionExitProgress.value = options.map(() => 0);
-    }
-  }, [roundPhase, options, optionExitProgress]);
-
-  const fireOptionExitAnim = useRef<() => void>(() => {});
-  fireOptionExitAnim.current = () => {
-    'worklet';
-    const prog = [...optionExitProgress.value];
-    for (let i = 0; i < prog.length; i++) {
-      if ((prog[i] ?? 0) < 1) {
-        prog[i] = withTiming(1, {
-          duration: ROUND_ROW_EXIT_DURATION_MS,
-          easing: Easing.in(Easing.cubic),
-        });
-      }
-    }
-    optionExitProgress.value = prog;
-  };
-
-  useEffect(() => {
     if (!hasAnswer || options.length === 0) return;
-    runOnUI(() => {
-      'worklet';
-      fireOptionExitAnim.current();
-    })();
-  }, [hasAnswer, correctOptionIndex, options.length, optionExitProgress]);
+    slotAnimScale.value = withTiming(
+      slotAnimScale.value.map((scale, index) =>
+        index === correctOptionIndex ? 0 : scale,
+      ),
+      {
+        duration: ROUND_SOLVED_POP_DURATION_MS,
+        easing: Easing.out(Easing.cubic),
+      },
+    );
+  }, [hasAnswer, correctOptionIndex, options.length, slotAnimScale]);
 
   useEffect(() => {
     const count = motionPaths.length;
@@ -356,9 +340,9 @@ export function OptionWordSpriteLayer({
     const rowY = optionLayout.rowY;
     layoutY.value = optionLayout.centers.map(() => rowY);
     baseLayoutScale.value = options.map(() => 1);
-    slotAnimScale.value = options.map(() => 1);
 
     if (roundPhase === 'enter') {
+      slotAnimScale.value = options.map(() => 1);
       swimProgress.value = 0;
       motionAngles.value = enterAnglesList;
       motionAmps.value = new Array(count).fill(TILT_AMP_MAX);
@@ -389,27 +373,16 @@ export function OptionWordSpriteLayer({
       cY: centerYs.value,
       anim: slotAnimScale.value,
       base: baseLayoutScale.value,
-      exitProg: optionExitProgress.value,
     }),
-    ({ xs, ys, progress, sX, sY, cX, cY, anim, base, exitProg }) => {
+    ({ xs, ys, progress, sX, sY, cX, cY, anim, base }) => {
       const hasPaths = sX.length > 0 && sX.length === xs.length;
       renderLayoutX.value = xs.map((x, i) => {
-        if (exitProg[i] > 0) {
-          const fromX = cX[i] ?? x;
-          const toX = sX[i] ?? x;
-          return fromX + (toX - fromX) * exitProg[i];
-        }
         if (!hasPaths) return x;
         const fromX = sX[i] ?? x;
         const toX = cX[i] ?? x;
         return fromX + (toX - fromX) * progress;
       });
       renderLayoutY.value = ys.map((y, i) => {
-        if (exitProg[i] > 0) {
-          const fromY = cY[i] ?? y;
-          const toY = sY[i] ?? y;
-          return fromY + (toY - fromY) * exitProg[i];
-        }
         if (!hasPaths) return y;
         const fromY = sY[i] ?? y;
         const toY = cY[i] ?? y;
@@ -420,9 +393,7 @@ export function OptionWordSpriteLayer({
   );
 
   useEffect(() => {
-    if (roundPhase !== 'resolve') return;
-
-    optionExitProgress.value = options.map(() => 0);
+    if (roundPhase !== 'exit') return;
 
     const count = options.length;
     const amps = new Array(count).fill(0);
@@ -444,7 +415,7 @@ export function OptionWordSpriteLayer({
         }
       },
     );
-  }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress, optionExitProgress]);
+  }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress]);
 
   const cellConfigs = useMemo(
     () => options.map(opt => toCellConfig(opt, optionLayout.diameter, roundPos)),
@@ -494,7 +465,7 @@ export function OptionWordSpriteLayer({
           />
         ))}
       </Canvas>
-      {roundPhase !== 'enter' && options.map((option, idx) => (
+      {roundPhase !== 'enter' && !hasAnswer && options.map((option, idx) => (
         <SingleOptionGesture
           key={`gesture-${option.index}`}
           centerX={gestureCenters[idx]?.x ?? 0}
