@@ -37,7 +37,8 @@ function allImagesReady(
 function FlowerGardenSceneryContent() {
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
-  const { table, fieldFlowerConfigs, flowerSwingBoosts } = useFlowerGardenTableContext();
+  const { table, fieldFlowerConfigs, flowerSwingBoosts, groundScatterBandZone } =
+    useFlowerGardenTableContext();
   const { wordSpriteBridge } = useExerciseRuntime();
   const bushConfigs = useBushConfigs(table);
 
@@ -66,6 +67,7 @@ function FlowerGardenSceneryContent() {
   const petalConfigs = useGroundScatterConfigs({
     kind: 'band',
     variantCount: petalImages?.length ?? 6,
+    bandZone: groundScatterBandZone ?? null,
   });
 
   const groundDecorReady =

@@ -1,10 +1,12 @@
 export type Point2D = { x: number; y: number };
 
 function lerp(a: number, b: number, t: number): number {
+  'worklet';
   return a + (b - a) * t;
 }
 
 function lerpPoint(a: Point2D, b: Point2D, t: number): Point2D {
+  'worklet';
   return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
 }
 
@@ -26,6 +28,7 @@ export function bezierPoint(
   p1: Point2D,
   p2: Point2D,
 ): Point2D {
+  'worklet';
   const a = lerpPoint(p0, p1, t);
   const b = lerpPoint(p1, p2, t);
   return lerpPoint(a, b, t);

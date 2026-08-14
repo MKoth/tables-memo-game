@@ -36,6 +36,8 @@ type FlowerGardenTransformationActorsCanvasProps = {
   onVariantSelect: (item: VariantPickerItem, source: VariantSourceLayout) => void;
   playPop?: () => void;
   playInflate?: () => void;
+  /** Fired (screen coords) when a tap hits no letter or picker orb. */
+  onNeutralTap?: (x: number, y: number) => void;
 };
 
 function buildSceneTargetsWorklet(scene: WordTransformationSceneState): SceneHitTarget[] {
@@ -84,6 +86,7 @@ export function FlowerGardenTransformationActorsCanvas({
   onVariantSelect,
   playPop,
   playInflate,
+  onNeutralTap,
 }: FlowerGardenTransformationActorsCanvasProps) {
   const { roamerRect } = useExerciseLayout();
   const { images } = useFlowerGardenAssetsContext();
@@ -165,18 +168,15 @@ export function FlowerGardenTransformationActorsCanvas({
     onDeactivate: e => {
       'worklet';
       const scene = sceneStateSv.value;
-      if (
-        !scene.lettersInteractive &&
-        !(scene.variantPicker.visible && scene.variantPicker.interactive)
-      ) {
-        return;
-      }
       const hit = pickSceneHitTarget(
         e.x + roamerRect.x,
         e.y + roamerRect.y,
         buildSceneTargetsWorklet(scene),
       );
       if (hit == null) {
+        if (onNeutralTap != null) {
+          scheduleOnRN(onNeutralTap, e.x + roamerRect.x, e.y + roamerRect.y);
+        }
         return;
       }
       if (hit.kind === 'letter') {

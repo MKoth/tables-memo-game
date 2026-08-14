@@ -51,6 +51,8 @@ export type CellRoseBudProps = {
   roseBudImage: SkImage;
   roseCenterImage: SkImage;
   ringImages: readonly SkImage[];
+  /** Per-slot petal openness (0 closed, 1 open); overrides the scale-derived coefficient. */
+  openness?: SharedValue<number[]>;
 };
 
 export function CellRoseBud({
@@ -68,6 +70,7 @@ export function CellRoseBud({
   roseBudImage,
   roseCenterImage,
   ringImages,
+  openness,
 }: CellRoseBudProps) {
   const idx = config.index;
   const tintVariant = highlightTint ?? tint;
@@ -83,7 +86,11 @@ export function CellRoseBud({
     const cellMax = layoutScaleMax.value[idx] ?? 0;
     const cellRange = cellMax - cellMin;
     const rawCoef = cellRange > 1e-6 ? (scale - cellMin) / cellRange : 0;
-    const coefficient = rawCoef < 0 ? 0 : rawCoef > 1 ? 1 : rawCoef;
+    const scaleCoefficient = rawCoef < 0 ? 0 : rawCoef > 1 ? 1 : rawCoef;
+    const coefficient =
+      openness != null
+        ? Math.max(0, Math.min(1, openness.value[idx] ?? 1))
+        : scaleCoefficient;
 
     const clickFlash = computeRoseFlashUniforms(
       clock.value,

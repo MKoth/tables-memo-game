@@ -1,12 +1,15 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 import type { TableData } from '../../../../../data/tableData';
+import type { ZoneRect } from '../../../core';
 import type { FieldFlowerConfig } from './FieldFlowerShaderLayer/types';
 
 export type FlowerGardenTableContextValue = {
   table: TableData | null;
   fieldFlowerConfigs?: readonly FieldFlowerConfig[];
   flowerSwingBoosts?: SharedValue<number[]>;
+  /** Replaces the petal scatter band zone (defaults to above the ground band). */
+  groundScatterBandZone?: ZoneRect;
 };
 
 const FlowerGardenTableContext = createContext<FlowerGardenTableContextValue | null>(null);

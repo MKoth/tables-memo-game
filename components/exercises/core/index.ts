@@ -6,6 +6,7 @@ export {
   type EscapeExitEdge,
   type ExerciseLayout,
   type ExerciseOrientation,
+  type ExerciseZoneRatios,
   type ZoneRect,
 } from './layout/computeExerciseLayout';
 export { useExerciseDeviceOrientation } from './layout/useExerciseDeviceOrientation';

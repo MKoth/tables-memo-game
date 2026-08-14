@@ -151,6 +151,77 @@ describe('computeSentenceRowLayout', () => {
 
     expect(uniqueYs.size).toBeGreaterThan(1);
   });
+
+  it('pulls wrapped lines closer together with lineHeightRatio < 1', () => {
+    const slots: SentencePromptDisplaySlot[] = Array.from({ length: 14 }, (_, index) => ({
+      kind: 'token' as const,
+      text: `w${index}`,
+    }));
+    const base = computeSentenceRowLayout({
+      slots,
+      spriteRect: SPRITE_RECT,
+      roamerRect: ROAMER_RECT,
+      conjugatedForm: 'target',
+      roundPos: 0,
+    });
+    const tighter = computeSentenceRowLayout({
+      slots,
+      spriteRect: SPRITE_RECT,
+      roamerRect: ROAMER_RECT,
+      conjugatedForm: 'target',
+      roundPos: 0,
+      lineHeightRatio: 0.75,
+    });
+
+    const baseYs = Array.from(new Set(base.ys)).sort((a, b) => a - b);
+    const tighterYs = Array.from(new Set(tighter.ys)).sort((a, b) => a - b);
+    expect(baseYs.length).toBeGreaterThan(1);
+    expect(tighterYs.length).toBe(baseYs.length);
+    for (let i = 1; i < baseYs.length; i++) {
+      const baseGap = baseYs[i]! - baseYs[i - 1]!;
+      const tighterGap = tighterYs[i]! - tighterYs[i - 1]!;
+      expect(tighterGap).toBeCloseTo(baseGap * 0.75, 5);
+    }
+  });
+
+  it('scales bell sizes and blank footprint with sizeScale', () => {
+    const slots: SentencePromptDisplaySlot[] = [
+      { kind: 'token', text: 'Yo' },
+      { kind: 'blank' },
+      { kind: 'token', text: 'hoy.' },
+    ];
+    const bigSprite: ZoneRect = { x: 0, y: 0, w: 1000, h: 700 };
+    const base = computeSentenceRowLayout({
+      slots,
+      spriteRect: bigSprite,
+      roamerRect: ROAMER_RECT,
+      conjugatedForm: 'como',
+      roundPos: 0,
+    });
+    const scaled = computeSentenceRowLayout({
+      slots,
+      spriteRect: bigSprite,
+      roamerRect: ROAMER_RECT,
+      conjugatedForm: 'como',
+      roundPos: 0,
+      sizeScale: 1.5,
+    });
+
+    for (let i = 0; i < base.configs.length; i++) {
+      expect(scaled.configs[i]?.bodySize).toBeCloseTo(
+        base.configs[i]!.bodySize * 1.5,
+        5,
+      );
+    }
+    expect(scaled.blankFootprintDiameter).toBeCloseTo(
+      base.blankFootprintDiameter * 1.5,
+      5,
+    );
+    expect(scaled.xs[0]).toBeLessThan(base.xs[0]);
+    expect(scaled.xs[scaled.xs.length - 1]!).toBeGreaterThan(
+      base.xs[base.xs.length - 1]!,
+    );
+  });
 });
 
 describe('computeRoundResolutionFlight', () => {

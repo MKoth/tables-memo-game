@@ -87,6 +87,8 @@ export type BushShaderBushRectProps = {
   stemImage: SkImage;
   calyxImage: SkImage;
   leafAtlas: SkImage;
+  /** When provided, drawn instead of the rest-based bounding box (covers animated stems). */
+  rectOverride?: { x: number; y: number; w: number; h: number };
 };
 
 export function BushShaderBushRect({
@@ -98,6 +100,7 @@ export function BushShaderBushRect({
   stemImage,
   calyxImage,
   leafAtlas,
+  rectOverride,
 }: BushShaderBushRectProps) {
   const { staticUniforms, bushRect } = useMemo(() => {
     return {
@@ -105,9 +108,9 @@ export function BushShaderBushRect({
         ...pickBushStaticUniforms(bush, roseBellSizes),
         leafRegions: ROSE_LEAF_ATLAS_FLAT_REGIONS,
       },
-      bushRect: computeBushRect(bush, BUSH_RECT_MARGIN),
+      bushRect: rectOverride ?? computeBushRect(bush, BUSH_RECT_MARGIN),
     };
-  }, [bush, roseBellSizes]);
+  }, [bush, roseBellSizes, rectOverride]);
 
   const uniforms = useDerivedValue(() => {
     const x = layoutX.value;

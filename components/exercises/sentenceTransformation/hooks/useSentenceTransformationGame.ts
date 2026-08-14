@@ -104,6 +104,10 @@ export type UseSentenceTransformationGameParams = {
   playInflate?: () => void;
   playWrong?: () => void;
   playSuccess?: () => void;
+  /** Multiplier for sentence-row bell sizes. */
+  rowSizeScale?: number;
+  /** Multiplier on the sentence-row line height (wrapped lines closer together). */
+  rowLineHeightRatio?: number;
 };
 
 export function useSentenceTransformationGame({
@@ -117,6 +121,8 @@ export function useSentenceTransformationGame({
   playInflate,
   playWrong,
   playSuccess,
+  rowSizeScale = 1,
+  rowLineHeightRatio = 1,
 }: UseSentenceTransformationGameParams): SentenceTransformationGame {
   const exercise = useMemo(
     () => createSentenceTransformationExercise(table),
@@ -138,8 +144,12 @@ export function useSentenceTransformationGame({
   const roundRef = useRef<ReturnType<typeof createSentenceRoundController> | null>(null);
   const roamerRectRef = useRef(roamerRect);
   const spriteRectRef = useRef(spriteRect);
+  const rowSizeScaleRef = useRef(rowSizeScale);
+  const rowLineHeightRatioRef = useRef(rowLineHeightRatio);
   roamerRectRef.current = roamerRect;
   spriteRectRef.current = spriteRect;
+  rowSizeScaleRef.current = rowSizeScale;
+  rowLineHeightRatioRef.current = rowLineHeightRatio;
 
   const playPopRef = useRef(playPop);
   playPopRef.current = playPop;
@@ -208,8 +218,18 @@ export function useSentenceTransformationGame({
         roamerRect,
         conjugatedForm: currentRound?.conjugatedForm ?? '',
         roundPos: roundSnapshot.roundPos,
+        sizeScale: rowSizeScale,
+        lineHeightRatio: rowLineHeightRatio,
       }),
-    [displaySlots, spriteRect, roamerRect, currentRound?.conjugatedForm, roundSnapshot.roundPos],
+    [
+      displaySlots,
+      spriteRect,
+      roamerRect,
+      currentRound?.conjugatedForm,
+      roundSnapshot.roundPos,
+      rowSizeScale,
+      rowLineHeightRatio,
+    ],
   );
 
   const motionPaths = useMemo<MotionPath[]>(() => {
@@ -262,6 +282,8 @@ export function useSentenceTransformationGame({
         roamerRect: roamerRectRef.current,
         conjugatedForm: solvedWord,
         roundPos: snapshot.roundPos,
+        sizeScale: rowSizeScaleRef.current,
+        lineHeightRatio: rowLineHeightRatioRef.current,
       });
 
       if (flight != null) {

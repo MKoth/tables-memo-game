@@ -148,6 +148,10 @@ export type SentenceRowLayoutInput = {
   roamerRect: ZoneRect;
   conjugatedForm: string;
   roundPos: number;
+  /** Multiplier for the row's bell sizes (positions spread to match). */
+  sizeScale?: number;
+  /** Multiplier on the line height — `< 1` pulls wrapped lines closer together. */
+  lineHeightRatio?: number;
 };
 
 export type SentenceRowLayout = {
@@ -162,7 +166,7 @@ export type SentenceRowLayout = {
 const SLOT_GAP = 10;
 const LINE_GAP = 9;
 const BODY_BELL_SIZE_MIN = 50;
-const BODY_BELL_SIZE_MAX =90;
+export const BODY_BELL_SIZE_MAX = 90;
 const TOKEN_SIZE_VARIATION = 0.86;
 
 function clamp(val: number, lo: number, hi: number): number {
@@ -186,6 +190,7 @@ function estimateSlotWidth(
 /** Lay out sentence row wordSprite horizontally with line wrapping, vertically centered. */
 export function computeSentenceRowLayout(input: SentenceRowLayoutInput): SentenceRowLayout {
   const { slots, spriteRect, roamerRect, conjugatedForm, roundPos } = input;
+  const sizeScale = input.sizeScale ?? 1;
   const zoneLeft = spriteRect.x;
   const zoneTop = spriteRect.y;
   const zoneWidth = spriteRect.w;
@@ -205,9 +210,9 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
 
   // Base bell size for the row (used for uniform font scale and as a baseline for rolls)
   const baseBellSize = clamp(
-    Math.min(zoneWidth / Math.max(slotCount, 3), zoneHeight * 0.35),
-    BODY_BELL_SIZE_MIN,
-    BODY_BELL_SIZE_MAX,
+    Math.min(zoneWidth / Math.max(slotCount, 3), zoneHeight * 0.35) * sizeScale,
+    BODY_BELL_SIZE_MIN * sizeScale,
+    BODY_BELL_SIZE_MAX * sizeScale,
   );
   const fontScale = computeWordSpriteFontScale(baseBellSize);
 
@@ -215,14 +220,18 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
   const letterLayout = computeLetterLayout(roamerRect, conjugatedForm.length);
   const gap = letterLayout.diameter * GAP_RATIO;
   const naturalWidth =
-    conjugatedForm.length > 0
+    (conjugatedForm.length > 0
       ? conjugatedForm.length * letterLayout.diameter +
         (conjugatedForm.length - 1) * gap
-      : letterLayout.diameter * 1.4;
+      : letterLayout.diameter * 1.4) * sizeScale;
 
   // Cap the footprint so it doesn't push everything off screen or look absurdly large.
   // We cap it relative to zone height to ensure wrapped lines still fit.
-  const maxWidth = Math.min(zoneWidth * 0.45, zoneHeight * 0.65, BODY_BELL_SIZE_MAX * 2.0);
+  const maxWidth = Math.min(
+    zoneWidth * 0.45,
+    zoneHeight * 0.65,
+    BODY_BELL_SIZE_MAX * 2.0 * sizeScale,
+  );
   const blankFootprintDiameter = Math.min(naturalWidth, maxWidth);
 
   const scales: number[] = new Array(slotCount).fill(1);
@@ -296,8 +305,8 @@ export function computeSentenceRowLayout(input: SentenceRowLayoutInput): Sentenc
     ),
     baseBellSize,
   );
-  const lineHeight = rowMaxBellSize + LINE_GAP;
-  const blockHeight = lines.length * lineHeight - LINE_GAP;
+  const lineHeight = (rowMaxBellSize + LINE_GAP) * (input.lineHeightRatio ?? 1);
+  const blockHeight = lines.length * lineHeight - (lineHeight - rowMaxBellSize);
   const blockTop = zoneTop + Math.max(0, (zoneHeight - blockHeight) * 0.5);
 
   const xs: number[] = new Array(slotCount).fill(zoneLeft + zoneWidth * 0.5);
@@ -324,6 +333,8 @@ export function blankSlotCenter(
   roamerRect: ZoneRect,
   conjugatedForm: string,
   roundPos: number,
+  sizeScale = 1,
+  lineHeightRatio = 1,
 ): { x: number; y: number; bodySize: number; footprintDiameter: number } | null {
   const blankIndex = slots.findIndex((slot) => slot.kind === 'blank');
   if (blankIndex < 0) {
@@ -336,6 +347,8 @@ export function blankSlotCenter(
     roamerRect,
     conjugatedForm,
     roundPos,
+    sizeScale,
+    lineHeightRatio,
   });
 
   return {
@@ -361,6 +374,8 @@ export type RoundResolutionFlightInput = {
   roamerRect: ZoneRect;
   conjugatedForm: string;
   roundPos: number;
+  sizeScale?: number;
+  lineHeightRatio?: number;
 };
 
 /** Fly-from (roamer letter row) and fly-to (blank slot) geometry for round resolve phase. */
@@ -368,7 +383,15 @@ export function computeRoundResolutionFlight(
   input: RoundResolutionFlightInput,
 ): RoundResolutionFlightLayout | null {
   const { slots, spriteRect, roamerRect, conjugatedForm, roundPos } = input;
-  const blank = blankSlotCenter(slots, spriteRect, roamerRect, conjugatedForm, roundPos);
+  const blank = blankSlotCenter(
+    slots,
+    spriteRect,
+    roamerRect,
+    conjugatedForm,
+    roundPos,
+    input.sizeScale ?? 1,
+    input.lineHeightRatio ?? 1,
+  );
   if (blank == null) {
     return null;
   }

@@ -26,6 +26,13 @@ export type ControlsAnchor = {
   edge: 'bottomRight' | 'bottomLeft' | 'topRight' | 'topLeft';
 };
 
+export type ExerciseZoneRatios = {
+  /** Fraction of the screen taken by the roamer zone. `>= 1` makes both zones the full screen. */
+  roamerFraction: number;
+  wordSpriteInsetRatio: number;
+  wordSpriteHeightFraction: number;
+};
+
 export type ExerciseLayout = {
   orientation: ExerciseOrientation;
   screenWidth: number;
@@ -53,23 +60,30 @@ function rect(
   return { x, y, w, h };
 }
 
-function portraitLayout(width: number, height: number): {
-  roamer: ZoneRect;
-  sprite: ZoneRect;
-} {
-  const splitY = height * ROAMER_ZONE_FRACTION;
+function portraitLayout(
+  width: number,
+  height: number,
+  ratios: ExerciseZoneRatios,
+): { roamer: ZoneRect; sprite: ZoneRect } {
+  const splitY = height * ratios.roamerFraction;
   return {
-    sprite: rect(0, height * JELLY_INSET_RATIO, width, height * JELLY_ZONE_FRACTION),
+    sprite: rect(
+      0,
+      height * ratios.wordSpriteInsetRatio,
+      width,
+      height * ratios.wordSpriteHeightFraction,
+    ),
     roamer: rect(0, splitY, width, height - splitY),
   };
 }
 
-function landscapeLayout(width: number, height: number): {
-  roamer: ZoneRect;
-  sprite: ZoneRect;
-} {
-  const splitX = width * ROAMER_ZONE_FRACTION;
-  const inset = height * JELLY_INSET_RATIO;
+function landscapeLayout(
+  width: number,
+  height: number,
+  ratios: ExerciseZoneRatios,
+): { roamer: ZoneRect; sprite: ZoneRect } {
+  const splitX = width * ratios.roamerFraction;
+  const inset = height * ratios.wordSpriteInsetRatio;
   return {
     roamer: rect(0, 0, splitX, height),
     sprite: rect(splitX, inset, width - splitX, height - inset),
@@ -103,23 +117,33 @@ export function computeExerciseLayout(
   screenWidth: number,
   screenHeight: number,
   orientation: ExerciseOrientation,
+  zoneRatios: ExerciseZoneRatios = {
+    roamerFraction: ROAMER_ZONE_FRACTION,
+    wordSpriteInsetRatio: JELLY_INSET_RATIO,
+    wordSpriteHeightFraction: JELLY_ZONE_FRACTION,
+  },
 ): ExerciseLayout {
   let roamerRect: ZoneRect;
   let spriteRect: ZoneRect;
 
-  switch (orientation) {
-    case 'portrait': {
-      const zones = portraitLayout(screenWidth, screenHeight);
-      roamerRect = zones.roamer;
-      spriteRect = zones.sprite;
-      break;
-    }
-    case 'landscapeLeft':
-    case 'landscapeRight': {
-      const zones = landscapeLayout(screenWidth, screenHeight);
-      roamerRect = zones.roamer;
-      spriteRect = zones.sprite;
-      break;
+  if (zoneRatios.roamerFraction >= 1) {
+    roamerRect = rect(0, 0, screenWidth, screenHeight);
+    spriteRect = roamerRect;
+  } else {
+    switch (orientation) {
+      case 'portrait': {
+        const zones = portraitLayout(screenWidth, screenHeight, zoneRatios);
+        roamerRect = zones.roamer;
+        spriteRect = zones.sprite;
+        break;
+      }
+      case 'landscapeLeft':
+      case 'landscapeRight': {
+        const zones = landscapeLayout(screenWidth, screenHeight, zoneRatios);
+        roamerRect = zones.roamer;
+        spriteRect = zones.sprite;
+        break;
+      }
     }
   }
 

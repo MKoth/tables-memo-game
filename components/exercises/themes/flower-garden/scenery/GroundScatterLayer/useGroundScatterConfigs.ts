@@ -9,6 +9,7 @@ import {
   generateGroundScatterConfigs,
   type CullViewport,
   type GenerateGroundScatterConfigsInput,
+  type GroundScatterZoneRect,
 } from './generateGroundScatterConfigs';
 import type { GroundScatterConfig, GroundScatterKind, GroundScatterTint } from './types';
 
@@ -76,6 +77,8 @@ export type UseGroundScatterConfigsOptions = {
   shadowOpacity?: number;
   shadowColor?: GroundScatterTint;
   viewportRect?: CullViewport | null;
+  /** When provided, replaces the computed petal band zone entirely. */
+  bandZone?: GroundScatterZoneRect | null;
 };
 
 const NEUTRAL_TINT_STRENGTH = 0;
@@ -116,19 +119,22 @@ export function useGroundScatterConfigs(
     const minDistance = options.minDistance ?? (isStone ? DEFAULT_STONE_MIN_DISTANCE : isBand ? DEFAULT_PETAL_MIN_DISTANCE : DEFAULT_CLOVER_MIN_DISTANCE);
 
     const zone =
-      isBand && spriteRect != null
-        ? (() => {
-            const bandHeightAbove = screenHeight * (options.bandHeightFraction ?? DEFAULT_PETAL_BAND_HEIGHT_FRACTION);
-            const groundBand = computeGroundBand(spriteRect, screenHeight);
-            const zoneY = groundBand.y - bandHeightAbove;
-            return {
-              x: spriteRect.x,
-              y: zoneY,
-              w: spriteRect.w,
-              h: groundBand.y + groundBand.h - zoneY,
-            };
-          })()
-        : null;
+      isBand && options.bandZone != null
+        ? options.bandZone
+        : isBand && spriteRect != null
+          ? (() => {
+              const bandHeightAbove = screenHeight * (options.bandHeightFraction ?? DEFAULT_PETAL_BAND_HEIGHT_FRACTION);
+              const groundBand = computeGroundBand(spriteRect, screenHeight);
+              const zoneY = groundBand.y - bandHeightAbove;
+              const zoneBottom = Math.min(groundBand.y + groundBand.h, screenHeight);
+              return {
+                x: spriteRect.x,
+                y: zoneY,
+                w: spriteRect.w,
+                h: Math.max(0, zoneBottom - zoneY),
+              };
+            })()
+          : null;
 
     const input: GenerateGroundScatterConfigsInput = {
       kind,
@@ -206,5 +212,6 @@ export function useGroundScatterConfigs(
     options.shadowOpacity,
     options.shadowColor,
     options.viewportRect,
+    options.bandZone,
   ]);
 }

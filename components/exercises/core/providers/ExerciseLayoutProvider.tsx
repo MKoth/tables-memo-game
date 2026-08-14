@@ -3,18 +3,25 @@ import { useWindowDimensions } from 'react-native';
 import {
   computeExerciseLayout,
   type ExerciseLayout,
+  type ExerciseZoneRatios,
 } from '../layout/computeExerciseLayout';
 import { useExerciseDeviceOrientation } from '../layout/useExerciseDeviceOrientation';
 
 const ExerciseLayoutContext = createContext<ExerciseLayout | null>(null);
 
-export function ExerciseLayoutProvider({ children }: { children: React.ReactNode }) {
+export function ExerciseLayoutProvider({
+  zoneRatios,
+  children,
+}: {
+  zoneRatios?: ExerciseZoneRatios;
+  children: React.ReactNode;
+}) {
   const { width, height } = useWindowDimensions();
   const orientation = useExerciseDeviceOrientation();
 
   const layout = useMemo(
-    () => computeExerciseLayout(width, height, orientation),
-    [width, height, orientation],
+    () => computeExerciseLayout(width, height, orientation, zoneRatios),
+    [width, height, orientation, zoneRatios],
   );
 
   return (
