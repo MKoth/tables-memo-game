@@ -61,6 +61,10 @@ export type UseFieldFlowerConfigsOptions = {
   maxSwingAmplitude?: number;
   minSwingSpeed?: number;
   maxSwingSpeed?: number;
+  /** Top of the placement band as a fraction of screen height (replaces the lower band). */
+  bandTopRatio?: number;
+  /** Height of the placement band as a fraction of screen height (replaces the lower band). */
+  bandHeightRatio?: number;
 };
 
 export function useFieldFlowerConfigs(
@@ -126,6 +130,8 @@ export function useFieldFlowerConfigs(
       maxSwingAmplitude,
       minSwingSpeed,
       maxSwingSpeed,
+      bandTopRatio: options.bandTopRatio,
+      bandHeightRatio: options.bandHeightRatio,
     };
 
     return generateFieldFlowerConfigs(input);
@@ -157,5 +163,7 @@ export function useFieldFlowerConfigs(
     maxSwingAmplitude,
     minSwingSpeed,
     maxSwingSpeed,
+    options.bandTopRatio,
+    options.bandHeightRatio,
   ]);
 }

@@ -329,6 +329,9 @@ export function MatchRoamerLayer({
 
   const handleFishSelect = useCallback(
     (word: string, fishIndex: number, originX: number, originY: number) => {
+      if (shared.escapeActiveSv.value) {
+        return;
+      }
       if (sessionController != null) {
         const captured = sessionController.captureRoamer(fishIndex, word);
         if (!captured) {
@@ -346,7 +349,7 @@ export function MatchRoamerLayer({
         setPoolHiddenFishIndex(fishIndex);
       });
     },
-    [cancelTransitionRaf, sessionController, sim],
+    [cancelTransitionRaf, sessionController, sim, shared.escapeActiveSv],
   );
 
   if (tapDataRef) {

@@ -22,6 +22,7 @@ import { FlowerGardenSentenceTransformationExercise } from './components/exercis
 import { FlowerGardenVariantSelectionExercise } from './components/exercises/FlowerGardenVariantSelectionExercise';
 import { FlowerGardenTranslationChoiceExercise } from './components/exercises/FlowerGardenTranslationChoiceExercise';
 import { FlowerGardenTranslationSpellingExercise } from './components/exercises/FlowerGardenTranslationSpellingExercise';
+import { FlowerGardenTranslationMatchExercise } from './components/exercises/FlowerGardenTranslationMatchExercise';
 
 type ExerciseKey =
   | 'table'
@@ -36,7 +37,8 @@ type ExerciseKey =
   | 'flowerGardenSentenceTransformation'
   | 'flowerGardenVariantSelection'
   | 'flowerGardenTranslationChoice'
-  | 'flowerGardenTranslationSpelling';
+  | 'flowerGardenTranslationSpelling'
+  | 'flowerGardenTranslationMatch';
 
 const EXERCISES: { key: ExerciseKey; label: string }[] = [
   { key: 'table', label: 'Table (Conjugation)' },
@@ -52,6 +54,7 @@ const EXERCISES: { key: ExerciseKey; label: string }[] = [
   { key: 'flowerGardenVariantSelection', label: 'Flower Garden Variant Selection' },
   { key: 'flowerGardenTranslationChoice', label: 'Flower Garden Translation Choice' },
   { key: 'flowerGardenTranslationSpelling', label: 'Flower Garden Translation Spelling' },
+  { key: 'flowerGardenTranslationMatch', label: 'Flower Garden Translation Match' },
 ];
 
 const EXERCISE_COMPONENTS: Record<ExerciseKey, React.ComponentType> = {
@@ -68,6 +71,7 @@ const EXERCISE_COMPONENTS: Record<ExerciseKey, React.ComponentType> = {
   flowerGardenVariantSelection: FlowerGardenVariantSelectionExercise,
   flowerGardenTranslationChoice: FlowerGardenTranslationChoiceExercise,
   flowerGardenTranslationSpelling: FlowerGardenTranslationSpellingExercise,
+  flowerGardenTranslationMatch: FlowerGardenTranslationMatchExercise,
 };
 
 function ExerciseScreen({

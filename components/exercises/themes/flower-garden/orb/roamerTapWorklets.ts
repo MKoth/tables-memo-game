@@ -4,11 +4,15 @@ export function findRoamerIndexAtTap(
   positions: number[],
   count: number,
   hitRadius: number,
+  excludedIndices: number[] = [],
 ): number {
   'worklet';
   let bestIdx = -1;
   let bestDist = Infinity;
   for (let i = 0; i < count; i++) {
+    if (excludedIndices.includes(i)) {
+      continue;
+    }
     const cx = positions[i * 2] ?? 0;
     const cy = positions[i * 2 + 1] ?? 0;
     const dist = Math.hypot(tapX - cx, tapY - cy);

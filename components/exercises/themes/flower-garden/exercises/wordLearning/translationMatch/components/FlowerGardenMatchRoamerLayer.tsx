@@ -1,28 +1,38 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
-import { useAnimatedReaction, useSharedValue } from 'react-native-reanimated';
+import { Canvas } from '@shopify/react-native-skia';
+import { runOnUI, useAnimatedReaction, useSharedValue } from 'react-native-reanimated';
+import type { SharedValue } from 'react-native-reanimated';
 import { useExerciseClockQuantized, useExerciseLayout } from '../../../../../../core';
 import { useFlowerGardenAssetsContext } from '../../../../core/providers/FlowerGardenAssetsProvider';
 import { RoamerLayer } from '../../../../roamer/RoamerLayer';
 import { useRoamerSimulation } from '../../../../roamer/core/useRoamerSimulation';
 import { hashSeedString } from '../../../../scenery/BushShaderLayer/helpers/seededRandom';
-import { CaptureOrb } from '../../../../orb/CaptureOrb';
-import { OrbPhase, useOrbAnimation } from '../../../../orb/useOrbAnimation';
+import { CaptureOrb, getSpeciesImages } from '../../../../orb/CaptureOrb';
+import { CapturedRoamerCanvas } from '../../../../orb/CapturedRoamerCanvas';
+import { OrbPhase, BurstIntent, useOrbAnimation } from '../../../../orb/useOrbAnimation';
 import {
   ORB_CAPTIVE_DRIFT_RATIO,
   ORB_DIAMETER_RATIO,
   ORB_IDLE_CLOCK_FPS,
   ORB_ROAMER_TAP_HIT_RADIUS,
 } from '../../../../orb/orbAnimPresets';
-import { useFlowerGardenRoamerTapGesture } from '../../../../orb/useFlowerGardenRoamerTapGesture';
+import { armRoamerExitFlight } from '../../../../roamer/core/exitFlightWorklets';
+import { resolveRoamerExitLegs } from '../../../../roamer/core/resolveRoamerExitPath';
 import type { ThemeMatchRoamerLayerProps } from '../../../../../../themeContract';
 import type { RoamerRuntimeEntry } from '../../../../roamer/core/types';
 import { FlightState } from '../../../../roamer/core/types';
 import type { KeepOutDisk } from '../../../../../../wordLearning/translationMatch/domain/wordSpriteRoaming';
+import type { FlowerGardenMatchRoamerTapData } from '../flowerGarden/useFlowerGardenCombinedMatchGestures';
 
 const MATCH_ROAMER_Z = 3;
 const MATCH_ORB_Z = 6;
+const MATCH_ESCAPE_Z = 8;
+
+export type FlowerGardenMatchRoamerLayerProps = ThemeMatchRoamerLayerProps & {
+  /** Position of the matched rose, read when the correct-match escape fires. */
+  escapeWaypointSv?: SharedValue<{ x: number; y: number } | null>;
+};
 
 export function FlowerGardenMatchRoamerLayer({
   words,
@@ -32,7 +42,8 @@ export function FlowerGardenMatchRoamerLayer({
   tapDataRef,
   interactive = true,
   keepOutDiskSv,
-}: ThemeMatchRoamerLayerProps) {
+  escapeWaypointSv,
+}: FlowerGardenMatchRoamerLayerProps) {
   const layout = useExerciseLayout();
   const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
   const { images } = useFlowerGardenAssetsContext();
@@ -49,6 +60,26 @@ export function FlowerGardenMatchRoamerLayer({
     0.5 *
     (1 - ORB_CAPTIVE_DRIFT_RATIO);
 
+  const [eliminatedRoamerIndices, setEliminatedRoamerIndices] = useState<number[]>([]);
+  const [escapingRoamerIndex, setEscapingRoamerIndex] = useState<number | null>(null);
+  /** Written synchronously when an escape arms, so taps are excluded before any re-render. */
+  const departingRoamerIndicesSv = useSharedValue<number[]>([]);
+
+  const handleRoamerEscaped = useCallback(
+    (roamerIndex: number) => {
+      departingRoamerIndicesSv.value = departingRoamerIndicesSv.value.filter(
+        i => i !== roamerIndex,
+      );
+      setEliminatedRoamerIndices(prev => {
+        if (prev.includes(roamerIndex)) {
+          return prev;
+        }
+        return [...prev, roamerIndex];
+      });
+    },
+    [departingRoamerIndicesSv],
+  );
+
   const sim = useRoamerSimulation({
     words,
     width: screenWidth,
@@ -59,12 +90,14 @@ export function FlowerGardenMatchRoamerLayer({
     orbCaptureCenterX,
     orbCaptureCenterY,
     orbCaptureRadius,
+    onRoamerEscaped: handleRoamerEscaped,
   });
 
   const orbSeed = useMemo(() => hashSeedString('flower-garden-orb-match'), []);
 
   const [selection, setSelection] = useState<{
     roamerIndex: number;
+    word: string;
     originX: number;
     originY: number;
   } | null>(null);
@@ -72,6 +105,15 @@ export function FlowerGardenMatchRoamerLayer({
   const transitionRafRef = useRef<number | null>(null);
   const soundsRef = useRef(sounds);
   soundsRef.current = sounds;
+
+  useEffect(() => {
+    if (
+      escapingRoamerIndex != null &&
+      eliminatedRoamerIndices.includes(escapingRoamerIndex)
+    ) {
+      setEscapingRoamerIndex(null);
+    }
+  }, [eliminatedRoamerIndices, escapingRoamerIndex]);
 
   const cancelTransitionRaf = useCallback(() => {
     if (transitionRafRef.current != null) {
@@ -81,6 +123,7 @@ export function FlowerGardenMatchRoamerLayer({
   }, []);
 
   useEffect(() => () => cancelTransitionRaf(), [cancelTransitionRaf]);
+
   const targetCenterX = roamerRect.x + roamerRect.w * 0.5;
   const targetCenterY = roamerRect.y + roamerRect.h * 0.5;
   const targetDiameter = Math.min(roamerRect.w, roamerRect.h) * ORB_DIAMETER_RATIO;
@@ -130,12 +173,13 @@ export function FlowerGardenMatchRoamerLayer({
 
   const handleDismiss = useCallback(() => {
     cancelTransitionRaf();
+    sessionController?.release();
     setPoolHiddenRoamerIndex(null);
     transitionRafRef.current = requestAnimationFrame(() => {
       transitionRafRef.current = null;
       setSelection(null);
     });
-  }, [cancelTransitionRaf]);
+  }, [cancelTransitionRaf, sessionController]);
 
   const { anim, phase, startBurst } = useOrbAnimation(
     orbConfig,
@@ -171,6 +215,13 @@ export function FlowerGardenMatchRoamerLayer({
 
   const armCapture = useCallback(
     (roamerIndex: number, originX: number, originY: number) => {
+      if (
+        departingRoamerIndicesSv.value.includes(roamerIndex) ||
+        escapingRoamerIndex === roamerIndex ||
+        eliminatedRoamerIndices.includes(roamerIndex)
+      ) {
+        return;
+      }
       cancelTransitionRaf();
       soundsRef.current?.playOrbInflate();
       capturedRoamerIndexSv.value = roamerIndex;
@@ -188,18 +239,19 @@ export function FlowerGardenMatchRoamerLayer({
         entry.runtime.sitTargetOffsetY.value = 0;
         entry.runtime.sitActionTimer.value = 0;
       }
-      setSelection({ roamerIndex, originX, originY });
+      setSelection({ roamerIndex, word: words[roamerIndex] ?? '', originX, originY });
       setPoolHiddenRoamerIndex(roamerIndex);
     },
-    [cancelTransitionRaf, sim.runtimeEntries, capturedRoamerIndexSv],
+    [
+      cancelTransitionRaf,
+      sim.runtimeEntries,
+      capturedRoamerIndexSv,
+      words,
+      escapingRoamerIndex,
+      eliminatedRoamerIndices,
+      departingRoamerIndicesSv,
+    ],
   );
-
-  const roamerTapGesture = useFlowerGardenRoamerTapGesture({
-    sharedPositions: sim.sharedPositions,
-    roamerCount: sim.runtimeEntries.length,
-    hitRadius: ORB_ROAMER_TAP_HIT_RADIUS,
-    onRoamerTap: armCapture,
-  });
 
   useEffect(() => {
     if (!triggerEscapeRef) {
@@ -210,31 +262,102 @@ export function FlowerGardenMatchRoamerLayer({
       if (previous) {
         previous();
       }
-      soundsRef.current?.playOrbPop();
-      startBurst();
+      if (selection == null) {
+        return;
+      }
+      const entry = sim.runtimeEntries[selection.roamerIndex];
+      if (entry == null) {
+        return;
+      }
+      const waypoint = escapeWaypointSv?.value;
+      const waypointX = waypoint?.x ?? entry.runtime.x.value;
+      const waypointY = waypoint?.y ?? entry.runtime.y.value;
+      const legs = resolveRoamerExitLegs({
+        waypointX,
+        waypointY,
+        screenWidth,
+        screenHeight,
+      });
+      const departing = departingRoamerIndicesSv.value;
+      if (!departing.includes(selection.roamerIndex)) {
+        departingRoamerIndicesSv.value = [...departing, selection.roamerIndex];
+      }
+      setPoolHiddenRoamerIndex(null);
+      setEscapingRoamerIndex(selection.roamerIndex);
+      setSelection(null);
+      runOnUI(armRoamerExitFlight)(
+        entry.runtime,
+        capturedRoamerIndexSv,
+        legs.leg1X,
+        legs.leg1Y,
+        legs.leg2X,
+        legs.leg2Y,
+      );
+      startBurst(BurstIntent.Escape);
     };
     return () => {
       triggerEscapeRef.current = previous;
     };
-  }, [startBurst, triggerEscapeRef]);
+  }, [
+    startBurst,
+    triggerEscapeRef,
+    selection,
+    sim.runtimeEntries,
+    screenWidth,
+    screenHeight,
+    escapeWaypointSv,
+    capturedRoamerIndexSv,
+    departingRoamerIndicesSv,
+  ]);
+
+  const hiddenIndices = useMemo(() => {
+    const list = [...eliminatedRoamerIndices];
+    if (poolHiddenRoamerIndex != null && !list.includes(poolHiddenRoamerIndex)) {
+      list.push(poolHiddenRoamerIndex);
+    }
+    if (escapingRoamerIndex != null && !list.includes(escapingRoamerIndex)) {
+      list.push(escapingRoamerIndex);
+    }
+    return list;
+  }, [eliminatedRoamerIndices, poolHiddenRoamerIndex, escapingRoamerIndex]);
 
   if (tapDataRef) {
-    tapDataRef.current = {
-      armCapture: (roamerIndex: number, originX: number, originY: number) => {
-        if (sessionController) {
-          const ok = sessionController.captureRoamer(roamerIndex, '');
-          if (!ok) {
+    const data: FlowerGardenMatchRoamerTapData = {
+      sharedPositions: sim.sharedPositions,
+      roamerCount: sim.runtimeEntries.length,
+      hitRadius: ORB_ROAMER_TAP_HIT_RADIUS,
+      eliminatedIndices: [...hiddenIndices, ...departingRoamerIndicesSv.value],
+      words,
+      onRoamerSelect: (roamerIndex: number, originX: number, originY: number) => {
+        if (
+          departingRoamerIndicesSv.value.includes(roamerIndex) ||
+          hiddenIndices.includes(roamerIndex)
+        ) {
+          return;
+        }
+        if (sessionController != null) {
+          const word = words[roamerIndex] ?? '';
+          const captured = sessionController.captureRoamer(roamerIndex, word);
+          if (!captured) {
             return;
           }
         }
         armCapture(roamerIndex, originX, originY);
       },
+      orbAnim: anim,
+      orbPhase: phase,
       startBurst,
     };
+    tapDataRef.current = data;
   }
 
   const capturedEntry: RoamerRuntimeEntry | null =
     selection != null ? sim.runtimeEntries[selection.roamerIndex] ?? null : null;
+
+  const escapingEntry: RoamerRuntimeEntry | null =
+    escapingRoamerIndex != null ? sim.runtimeEntries[escapingRoamerIndex] ?? null : null;
+  const escapingSpeciesImages =
+    escapingEntry != null ? getSpeciesImages(images, escapingEntry) : null;
 
   if (screenWidth === 0 || screenHeight === 0) {
     return null;
@@ -244,34 +367,51 @@ export function FlowerGardenMatchRoamerLayer({
     <>
       <View
         style={[styles.container, { zIndex: MATCH_ROAMER_Z }]}
-        pointerEvents={interactive ? 'box-none' : 'none'}
-      >
-        <GestureDetector gesture={roamerTapGesture}>
-          <View style={StyleSheet.absoluteFill}>
-            <RoamerLayer
-              words={words}
-              interactive={interactive}
-              sim={sim}
-              hiddenIndices={poolHiddenRoamerIndex != null ? [poolHiddenRoamerIndex] : []}
-            />
-          </View>
-        </GestureDetector>
+        pointerEvents="box-none">
+        <RoamerLayer
+          words={words}
+          interactive={interactive}
+          sim={sim}
+          hiddenIndices={hiddenIndices}
+        />
       </View>
       {capturedEntry != null && orbReady && (
         <View
           style={[styles.container, { zIndex: MATCH_ORB_Z }]}
-          pointerEvents="none"
-        >
+          pointerEvents="none">
           <CaptureOrb
             anim={anim}
             capturedEntry={capturedEntry}
             centerX={targetCenterX}
             centerY={targetCenterY}
+            word={selection?.word ?? null}
             targetDiameter={targetDiameter}
             seed={orbSeed}
           />
         </View>
       )}
+      {escapingEntry != null &&
+        escapingSpeciesImages != null &&
+        escapingSpeciesImages.body != null &&
+        escapingSpeciesImages.leftWing != null &&
+        escapingSpeciesImages.rightWing != null && (
+          <View
+            style={[styles.container, { zIndex: MATCH_ESCAPE_Z }]}
+            pointerEvents="none">
+            <Canvas style={styles.canvas}>
+              <CapturedRoamerCanvas
+                entry={escapingEntry}
+                anim={anim}
+                bodyImage={escapingSpeciesImages.body}
+                leftWingImage={escapingSpeciesImages.leftWing}
+                rightWingImage={escapingSpeciesImages.rightWing}
+                centerX={0}
+                centerY={0}
+                escapeMode
+              />
+            </Canvas>
+          </View>
+        )}
     </>
   );
 }
@@ -284,5 +424,12 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     overflow: 'visible',
+  },
+  canvas: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
 });

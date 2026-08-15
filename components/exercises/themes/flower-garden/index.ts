@@ -5,3 +5,4 @@ export { FlowerGardenThemeTableSentenceTransformationExercise } from './FlowerGa
 export { FlowerGardenThemeTableVariantSelectionExercise } from './FlowerGardenThemeTableVariantSelectionExercise';
 export { FlowerGardenThemeTableTranslationChoiceExercise } from './FlowerGardenThemeTableTranslationChoiceExercise';
 export { FlowerGardenThemeTableTranslationSpellingExercise } from './FlowerGardenThemeTableTranslationSpellingExercise';
+export { FlowerGardenThemeTableTranslationMatchExercise } from './FlowerGardenThemeTableTranslationMatchExercise';

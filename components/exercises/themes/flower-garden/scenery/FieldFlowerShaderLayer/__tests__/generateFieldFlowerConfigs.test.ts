@@ -42,6 +42,8 @@ function buildInput(
     maxSwingAmplitude: overrides.maxSwingAmplitude ?? 10,
     minSwingSpeed: overrides.minSwingSpeed ?? 1.0,
     maxSwingSpeed: overrides.maxSwingSpeed ?? 2.0,
+    bandTopRatio: overrides.bandTopRatio,
+    bandHeightRatio: overrides.bandHeightRatio,
   };
 }
 
@@ -78,6 +80,29 @@ describe('generateFieldFlowerConfigs', () => {
       expect(fc.headerY).toBeLessThanOrEqual(SCREEN_H);
       expect(fc.headerX).toBeGreaterThanOrEqual(0);
       expect(fc.headerX).toBeLessThanOrEqual(SCREEN_W);
+    }
+  });
+
+  it('places every header inside a custom center band when band ratios are given', () => {
+    const bandTop = 0.25;
+    const bandHeight = 0.5;
+    const configs = generateFieldFlowerConfigs(
+      buildInput({ count: 5, bandTopRatio: bandTop, bandHeightRatio: bandHeight }),
+    );
+    const minY = SCREEN_H * bandTop;
+    const maxY = SCREEN_H * (bandTop + bandHeight);
+    for (const fc of configs) {
+      expect(fc.headerY).toBeGreaterThanOrEqual(minY);
+      expect(fc.headerY).toBeLessThanOrEqual(maxY);
+    }
+  });
+
+  it('keeps default band placement when no band ratios are given', () => {
+    const input = buildInput({ count: 5, lowerScreenFraction: 0.3 });
+    const configs = generateFieldFlowerConfigs(input);
+    const lowerYStart = SCREEN_H * (1 - 0.3);
+    for (const fc of configs) {
+      expect(fc.headerY).toBeGreaterThanOrEqual(lowerYStart);
     }
   });
 

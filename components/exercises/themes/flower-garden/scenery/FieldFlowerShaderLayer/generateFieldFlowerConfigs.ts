@@ -38,6 +38,10 @@ export type GenerateFieldFlowerConfigsInput = {
   maxSwingAmplitude: number;
   minSwingSpeed: number;
   maxSwingSpeed: number;
+  /** Top of the placement band as a fraction of screen height (replaces the lower band). */
+  bandTopRatio?: number;
+  /** Height of the placement band as a fraction of screen height (replaces the lower band). */
+  bandHeightRatio?: number;
 };
 
 const LEAF_VARIANT_COUNT = 4;
@@ -77,6 +81,19 @@ function distributeFlowerTypes(count: number, rng: Rng): FieldFlowerType[] {
   return types;
 }
 
+export function resolveFieldFlowerBand(
+  input: GenerateFieldFlowerConfigsInput,
+): { bandTop: number; bandBottom: number } {
+  const { screenHeight, lowerScreenFraction } = input;
+  const defaultTop = screenHeight * (1 - lowerScreenFraction);
+  const bandTop = input.bandTopRatio != null ? input.bandTopRatio * screenHeight : defaultTop;
+  const bandBottom =
+    input.bandHeightRatio != null
+      ? bandTop + input.bandHeightRatio * screenHeight
+      : screenHeight;
+  return { bandTop, bandBottom };
+}
+
 export function validateFieldFlowerConfigs(
   configs: FieldFlowerConfig[],
   input: GenerateFieldFlowerConfigsInput,
@@ -87,12 +104,12 @@ export function validateFieldFlowerConfigs(
     );
   }
 
-  const lowerYStart = input.screenHeight * (1 - input.lowerScreenFraction);
-  const upperYEnd = input.screenHeight - input.bottomPadding;
+  const { bandTop, bandBottom } = resolveFieldFlowerBand(input);
+  const bandBottomInclusive = bandBottom - input.bottomPadding;
   for (const fc of configs) {
-    if (fc.headerY < lowerYStart || fc.headerY > upperYEnd) {
+    if (fc.headerY < bandTop || fc.headerY > bandBottomInclusive) {
       throw new Error(
-        `validateFieldFlowerConfigs: flower ${fc.flowerId} headerY ${fc.headerY} outside lower ${input.lowerScreenFraction} band`,
+        `validateFieldFlowerConfigs: flower ${fc.flowerId} headerY ${fc.headerY} outside band [${bandTop}, ${bandBottomInclusive}]`,
       );
     }
     if (fc.headerX < 0 || fc.headerX > input.screenWidth) {
@@ -130,12 +147,10 @@ export function generateFieldFlowerConfigs(
 ): FieldFlowerConfig[] {
   const {
     screenWidth,
-    screenHeight,
     rng,
     count,
     minLeaves,
     maxLeaves,
-    lowerScreenFraction,
     minFlowerSize,
     maxFlowerSize,
     minLeafLength,
@@ -164,15 +179,15 @@ export function generateFieldFlowerConfigs(
   const flowerTypes = distributeFlowerTypes(count, rng);
 
   const configs: FieldFlowerConfig[] = [];
-  const lowerYStart = screenHeight * (1 - lowerScreenFraction);
+  const { bandTop, bandBottom } = resolveFieldFlowerBand(input);
   const xMin = screenWidth * 0.1;
   const xRange = screenWidth * 0.8;
-  const yMaxExtent = screenHeight - lowerYStart - bottomPadding;
+  const yMaxExtent = Math.max(0, bandBottom - bandTop - bottomPadding);
 
   function randomPosition(): { x: number; y: number } {
     return {
       x: xMin + rng() * xRange,
-      y: lowerYStart + rng() * yMaxExtent,
+      y: bandTop + rng() * yMaxExtent,
     };
   }
 
