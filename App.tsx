@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Pressable,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -24,6 +25,8 @@ import { FlowerGardenTranslationChoiceExercise } from './components/exercises/Fl
 import { FlowerGardenTranslationSpellingExercise } from './components/exercises/FlowerGardenTranslationSpellingExercise';
 import { FlowerGardenTranslationMatchExercise } from './components/exercises/FlowerGardenTranslationMatchExercise';
 
+type ThemeKey = 'undersea' | 'flowerGarden';
+
 type ExerciseKey =
   | 'table'
   | 'wordTransformation'
@@ -40,21 +43,26 @@ type ExerciseKey =
   | 'flowerGardenTranslationSpelling'
   | 'flowerGardenTranslationMatch';
 
-const EXERCISES: { key: ExerciseKey; label: string }[] = [
-  { key: 'table', label: 'Table (Conjugation)' },
-  { key: 'wordTransformation', label: 'Word Transformation' },
-  { key: 'sentenceTransformation', label: 'Sentence Transformation' },
-  { key: 'variantSelection', label: 'Variant Selection' },
-  { key: 'translationChoice', label: 'Translation Choice' },
-  { key: 'translationSpelling', label: 'Translation Spelling' },
-  { key: 'translationMatch', label: 'Translation Match' },
-  { key: 'flowerGardenTable', label: 'Flower Garden Table' },
-  { key: 'flowerGardenWordTransformation', label: 'Flower Garden Word Transformation' },
-  { key: 'flowerGardenSentenceTransformation', label: 'Flower Garden Sentence Transformation' },
-  { key: 'flowerGardenVariantSelection', label: 'Flower Garden Variant Selection' },
-  { key: 'flowerGardenTranslationChoice', label: 'Flower Garden Translation Choice' },
-  { key: 'flowerGardenTranslationSpelling', label: 'Flower Garden Translation Spelling' },
-  { key: 'flowerGardenTranslationMatch', label: 'Flower Garden Translation Match' },
+const THEMES: { key: ThemeKey; label: string }[] = [
+  { key: 'undersea', label: 'Undersea' },
+  { key: 'flowerGarden', label: 'Flower Garden' },
+];
+
+const EXERCISES: { key: ExerciseKey; theme: ThemeKey; label: string }[] = [
+  { key: 'table', theme: 'undersea', label: 'Table (Conjugation)' },
+  { key: 'wordTransformation', theme: 'undersea', label: 'Word Transformation' },
+  { key: 'sentenceTransformation', theme: 'undersea', label: 'Sentence Transformation' },
+  { key: 'variantSelection', theme: 'undersea', label: 'Variant Selection' },
+  { key: 'translationChoice', theme: 'undersea', label: 'Translation Choice' },
+  { key: 'translationSpelling', theme: 'undersea', label: 'Translation Spelling' },
+  { key: 'translationMatch', theme: 'undersea', label: 'Translation Match' },
+  { key: 'flowerGardenTable', theme: 'flowerGarden', label: 'Table (Conjugation)' },
+  { key: 'flowerGardenWordTransformation', theme: 'flowerGarden', label: 'Word Transformation' },
+  { key: 'flowerGardenSentenceTransformation', theme: 'flowerGarden', label: 'Sentence Transformation' },
+  { key: 'flowerGardenVariantSelection', theme: 'flowerGarden', label: 'Variant Selection' },
+  { key: 'flowerGardenTranslationChoice', theme: 'flowerGarden', label: 'Translation Choice' },
+  { key: 'flowerGardenTranslationSpelling', theme: 'flowerGarden', label: 'Translation Spelling' },
+  { key: 'flowerGardenTranslationMatch', theme: 'flowerGarden', label: 'Translation Match' },
 ];
 
 const EXERCISE_COMPONENTS: Record<ExerciseKey, React.ComponentType> = {
@@ -121,16 +129,43 @@ function App() {
 }
 
 function MenuScreen({ onSelect }: { onSelect: (key: ExerciseKey) => void }) {
+  const insets = useSafeAreaInsets();
+  const [activeTheme, setActiveTheme] = useState<ThemeKey>('undersea');
+  const themeExercises = EXERCISES.filter(ex => ex.theme === activeTheme);
+
   return (
-    <View style={styles.menu}>
-      {EXERCISES.map(ex => (
-        <Pressable
-          key={ex.key}
-          style={({ pressed }) => [styles.menuButton, pressed && styles.menuButtonPressed]}
-          onPress={() => onSelect(ex.key)}>
-          <Text style={styles.menuButtonText}>{ex.label}</Text>
-        </Pressable>
-      ))}
+    <View style={[styles.menu, { paddingTop: insets.top + 16 }]}>
+      <View style={styles.tabs}>
+        {THEMES.map(theme => {
+          const isActive = theme.key === activeTheme;
+          return (
+            <Pressable
+              key={theme.key}
+              style={[styles.tab, isActive && styles.tabActive]}
+              onPress={() => setActiveTheme(theme.key)}>
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                {theme.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <ScrollView
+        style={styles.menuScroll}
+        contentContainerStyle={[
+          styles.menuContent,
+          { paddingBottom: insets.bottom + 24 },
+        ]}
+        showsVerticalScrollIndicator={false}>
+        {themeExercises.map(ex => (
+          <Pressable
+            key={ex.key}
+            style={({ pressed }) => [styles.menuButton, pressed && styles.menuButtonPressed]}
+            onPress={() => onSelect(ex.key)}>
+            <Text style={styles.menuButtonText}>{ex.label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -144,10 +179,40 @@ const styles = StyleSheet.create({
   },
   menu: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  tabs: {
+    flexDirection: 'row',
+    marginHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: '#e8e8f0',
+    borderRadius: 12,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 9,
+    alignItems: 'center',
+  },
+  tabActive: {
+    backgroundColor: '#1a1a2e',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1a1a2e',
+  },
+  tabTextActive: {
+    color: '#fff',
+  },
+  menuScroll: {
+    flex: 1,
+  },
+  menuContent: {
     alignItems: 'center',
     gap: 12,
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   menuButton: {
     width: '100%',
