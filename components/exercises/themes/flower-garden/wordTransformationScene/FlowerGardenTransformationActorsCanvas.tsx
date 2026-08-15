@@ -47,7 +47,7 @@ function buildSceneTargetsWorklet(scene: WordTransformationSceneState): SceneHit
     const letters = scene.letters;
     for (let i = 0; i < letters.length; i++) {
       const letter = letters[i];
-      if (letter == null || letter.popped) {
+      if (letter == null || letter.popped || letter.hidden) {
         continue;
       }
       targets.push({
@@ -190,7 +190,7 @@ export function FlowerGardenTransformationActorsCanvas({
   const scene = sceneStateSv.value;
   const accessibleLetters =
     scene.lettersInteractive && scene.wordOrbsVisible
-      ? scene.letters.filter(letter => !letter.popped)
+      ? scene.letters.filter(letter => !letter.popped && !letter.hidden)
       : [];
   const accessiblePickerItems =
     scene.variantPicker.visible && scene.variantPicker.interactive

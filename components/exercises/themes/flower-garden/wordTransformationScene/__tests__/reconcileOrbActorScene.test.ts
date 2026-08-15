@@ -151,6 +151,22 @@ describe('reconcileOrbActorScene', () => {
     expect(result.soundEvents).toEqual([{ kind: 'pop', dueClockMs: CLOCK_MS + 100 + 320 }]);
   });
 
+  it('hides a letter instantly when hidden is set (no burst, no sound)', () => {
+    const first = makeScene({ letters: [makeLetter({ position: 0 })] });
+    const { runtimes } = reconcileOrbActorScene([], first, CLOCK_MS);
+    expect(runtimes[0].visible).toBe(true);
+
+    const second = makeScene({
+      letters: [makeLetter({ position: 0, hidden: true })],
+    });
+    const result = reconcileOrbActorScene(runtimes, second, CLOCK_MS + 100);
+
+    expect(result.runtimes[0].visible).toBe(false);
+    expect(result.runtimes[0].popped).toBe(false);
+    expect(result.runtimes[0].phase).not.toBe(OrbPhase.Burst);
+    expect(result.soundEvents).toEqual([]);
+  });
+
   it('re-enters a recovered letter with its cascade delay', () => {
     const popped = makeScene({ letters: [makeLetter({ position: 0, popped: true })] });
     const { runtimes } = reconcileOrbActorScene([], popped, CLOCK_MS);

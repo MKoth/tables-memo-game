@@ -14,6 +14,8 @@ export type WordTransformationSceneLetter = {
   popDelayMs: number | null;
   /** Per-letter enter delay (ms) — inflate cascade staggers on the UI thread. */
   enterDelayMs: number | null;
+  /** Instant invisible flag — no burst animation (used for the seamless flight handoff). */
+  hidden?: boolean;
 };
 
 export type WordTransformationScenePickerItem = {

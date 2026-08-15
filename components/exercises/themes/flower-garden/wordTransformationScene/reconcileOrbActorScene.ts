@@ -109,7 +109,7 @@ function reconcileLetterSlot(
   const targetX = letter.centerX;
   const targetY = letter.centerY;
   const targetDiameter = letter.diameter;
-  const visible = scene.wordOrbsVisible;
+  const visible = scene.wordOrbsVisible && letter.hidden !== true;
   const wrongStartMs = wrongStartMsFor(prev, letter.wrong, clockMs);
 
   if (prev == null) {
