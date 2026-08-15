@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Canvas, matchFont, type SkFont, type SkImage } from '@shopify/react-native-skia';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -28,8 +28,11 @@ import { WORD_SPRITE_TINT_PRESET_INDEX, type WordSpriteTintPresetIndex } from '.
 import {
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
-  ROUND_SOLVED_POP_DURATION_MS,
+  ROUND_RESOLVE_FLY_DURATION_MS,
 } from '../../../../../sentenceTransformation/domain';
+import {
+  ROUND_TRANSLATION_DISPLAY_MS,
+} from '../../../../../variantSelection/domain/roundResolutionTiming';
 import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from '../../../../../core/layout/exerciseLayout';
 import { rollBodyTint } from '../../../carrier/wordSpriteVisualTokens';
 import { triggerWordSpriteTintFlash } from '../../../carrier/WordSpriteTableLayer/worklets/wordSpriteTableWorklets';
@@ -43,6 +46,22 @@ export type OptionWordSpriteLayerProps = {
   roundPos: number;
   correctOptionIndex: number;
   onOptionTap: (option: OptionWordSpriteState) => void;
+  /**
+   * When true the selected option is hidden instantly on solve so the
+   * resolve-flight copy can replace it seamlessly; wrong options flee.
+   * When omitted, all options flee on solve (legacy behaviour).
+   */
+  seamlessResolve?: boolean;
+  /** Blank-slot center the selected option flies to on solve. */
+  resolveTargetX?: number;
+  resolveTargetY?: number;
+  /** Off-screen point the selected option exits to at the end of the round. */
+  resolveExitX?: number;
+  resolveExitY?: number;
+  onResolveComplete?: () => void;
+  onExitComplete?: () => void;
+  /** Shown on the landed option while holding when tapped. */
+  translation?: string;
 };
 
 function toCellConfig(option: OptionWordSpriteState, bellSize: number, roundPos: number): CellConfig {
@@ -116,6 +135,7 @@ function SlotOptionCellWordSprite({
 type SlotOptionCellLabelProps = {
   config: CellConfig;
   font: SkFont;
+  displayLabel?: string;
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
@@ -132,6 +152,7 @@ type SlotOptionCellLabelProps = {
 function SlotOptionCellLabel({
   config,
   font,
+  displayLabel,
   layoutX,
   layoutY,
   layoutScale,
@@ -151,6 +172,7 @@ function SlotOptionCellLabel({
     <CellLabel
       config={config}
       font={font}
+      displayLabel={displayLabel}
       layoutX={layoutX}
       layoutY={layoutY}
       layoutScale={layoutScale}
@@ -207,6 +229,14 @@ export function OptionWordSpriteLayer({
   roundPos,
   correctOptionIndex,
   onOptionTap,
+  seamlessResolve = false,
+  resolveTargetX,
+  resolveTargetY,
+  resolveExitX,
+  resolveExitY,
+  onResolveComplete,
+  onExitComplete,
+  translation,
 }: OptionWordSpriteLayerProps) {
   const { images } = useUnderseaThemeAssetsContext();
   const { roamerRect, labelRotationRad } = useExerciseLayout();
@@ -257,11 +287,42 @@ export function OptionWordSpriteLayer({
   const motionAngles = useSharedValue<number[]>([]);
   const motionAmps = useSharedValue<number[]>([]);
   const swimProgress = useSharedValue(1);
+  const fleeProgress = useSharedValue(0);
+  const resolveProgress = useSharedValue(0);
+  const resolveExitProgress = useSharedValue(0);
+  const resolveIndex = useSharedValue(-1);
+  const resolveTargetXSv = useSharedValue(0);
+  const resolveTargetYSv = useSharedValue(0);
+  const resolveExitXSv = useSharedValue(0);
+  const resolveExitYSv = useSharedValue(0);
 
   const onOptionTapRef = useRef(onOptionTap);
   onOptionTapRef.current = onOptionTap;
   const optionsRef = useRef(options);
   optionsRef.current = options;
+
+  const fireResolveComplete = useCallback(() => {
+    onResolveComplete?.();
+  }, [onResolveComplete]);
+
+  const fireExitComplete = useCallback(() => {
+    onExitComplete?.();
+  }, [onExitComplete]);
+
+  const [showTranslation, setShowTranslation] = useState(false);
+  const translatedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleResolvedOptionTap = useCallback(() => {
+    if (!translation) return;
+    setShowTranslation(true);
+    if (translatedTimeoutRef.current != null) {
+      clearTimeout(translatedTimeoutRef.current);
+    }
+    translatedTimeoutRef.current = setTimeout(() => {
+      setShowTranslation(false);
+      translatedTimeoutRef.current = null;
+    }, ROUND_TRANSLATION_DISPLAY_MS);
+  }, [translation]);
 
   const triggerFlash = useCallback(
     (index: number, preset: WordSpriteTintPresetIndex) => {
@@ -302,17 +363,59 @@ export function OptionWordSpriteLayer({
   const hasAnswer = correctOptionIndex >= 0;
 
   useEffect(() => {
+    resolveTargetXSv.value = resolveTargetX ?? 0;
+    resolveTargetYSv.value = resolveTargetY ?? 0;
+    resolveExitXSv.value = resolveExitX ?? 0;
+    resolveExitYSv.value = resolveExitY ?? 0;
+  }, [resolveTargetX, resolveTargetY, resolveExitX, resolveExitY, resolveTargetXSv, resolveTargetYSv, resolveExitXSv, resolveExitYSv]);
+
+  useEffect(() => {
+    if (!seamlessResolve) return;
     if (!hasAnswer || options.length === 0) return;
-    slotAnimScale.value = withTiming(
-      slotAnimScale.value.map((scale, index) =>
-        index === correctOptionIndex ? 0 : scale,
-      ),
-      {
-        duration: ROUND_SOLVED_POP_DURATION_MS,
-        easing: Easing.out(Easing.cubic),
-      },
-    );
-  }, [hasAnswer, correctOptionIndex, options.length, slotAnimScale]);
+    runOnUI(() => {
+      'worklet';
+      if (fleeProgress.value < 1) {
+        fleeProgress.value = withTiming(1, {
+          duration: ROUND_ROW_EXIT_DURATION_MS,
+          easing: Easing.in(Easing.cubic),
+        });
+      }
+      if (resolveProgress.value < 1) {
+        const startX = centerXs.value[correctOptionIndex] ?? 0;
+        const startY = centerYs.value[correctOptionIndex] ?? 0;
+        const targetX = resolveTargetXSv.value;
+        const targetY = resolveTargetYSv.value;
+        resolveIndex.value = correctOptionIndex;
+        resolveProgress.value = withTiming(
+          1,
+          {
+            duration: ROUND_RESOLVE_FLY_DURATION_MS,
+            easing: Easing.out(Easing.cubic),
+          },
+          finished => {
+            'worklet';
+            if (finished) {
+              const amps = [...motionAmps.value];
+              if (amps.length > correctOptionIndex) {
+                amps[correctOptionIndex] = 0;
+                motionAmps.value = amps;
+              }
+              scheduleOnRN(fireResolveComplete);
+            }
+          },
+        );
+        const angles = [...motionAngles.value];
+        const amps = [...motionAmps.value];
+        angles[correctOptionIndex] = Math.atan2(
+          targetY - startY,
+          targetX - startX,
+        );
+        amps[correctOptionIndex] = withTiming(TILT_AMP_MAX, { duration: 300 });
+        motionAngles.value = angles;
+        motionAmps.value = amps;
+      }
+    })();
+  }, [hasAnswer, correctOptionIndex, options.length, seamlessResolve, fleeProgress, resolveProgress, resolveIndex, resolveTargetXSv, resolveTargetYSv, centerXs, centerYs, motionAngles, motionAmps, fireResolveComplete]);
 
   useEffect(() => {
     const count = motionPaths.length;
@@ -343,6 +446,10 @@ export function OptionWordSpriteLayer({
 
     if (roundPhase === 'enter') {
       slotAnimScale.value = options.map(() => 1);
+      fleeProgress.value = 0;
+      resolveProgress.value = 0;
+      resolveExitProgress.value = 0;
+      resolveIndex.value = -1;
       swimProgress.value = 0;
       motionAngles.value = enterAnglesList;
       motionAmps.value = new Array(count).fill(TILT_AMP_MAX);
@@ -360,7 +467,7 @@ export function OptionWordSpriteLayer({
         },
       );
     }
-  }, [motionPaths, roundPhase, optionLayout, options, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, baseLayoutScale, slotAnimScale, layoutX, layoutY, swimProgress]);
+  }, [motionPaths, roundPhase, optionLayout, options, spawnXs, spawnYs, centerXs, centerYs, enterAngles, exitAngles, motionAngles, motionAmps, baseLayoutScale, slotAnimScale, layoutX, layoutY, swimProgress, fleeProgress, resolveProgress, resolveExitProgress, resolveIndex]);
 
   useAnimatedReaction(
     () => ({
@@ -373,16 +480,56 @@ export function OptionWordSpriteLayer({
       cY: centerYs.value,
       anim: slotAnimScale.value,
       base: baseLayoutScale.value,
+      flee: fleeProgress.value,
+      resolve: resolveProgress.value,
+      resolveExit: resolveExitProgress.value,
+      resolveIdx: resolveIndex.value,
+      tX: resolveTargetXSv.value,
+      tY: resolveTargetYSv.value,
+      eX: resolveExitXSv.value,
+      eY: resolveExitYSv.value,
     }),
-    ({ xs, ys, progress, sX, sY, cX, cY, anim, base }) => {
+    ({ xs, ys, progress, sX, sY, cX, cY, anim, base, flee, resolve, resolveExit, resolveIdx, tX, tY, eX, eY }) => {
       const hasPaths = sX.length > 0 && sX.length === xs.length;
       renderLayoutX.value = xs.map((x, i) => {
+        const isResolveCell = i === resolveIdx;
+        if (isResolveCell && resolveExit > 0) {
+          const fromX = tX;
+          const toX = eX;
+          return fromX + (toX - fromX) * resolveExit;
+        }
+        if (isResolveCell && resolve > 0) {
+          const fromX = cX[i] ?? x;
+          const toX = tX;
+          return fromX + (toX - fromX) * resolve;
+        }
+        if (!isResolveCell && flee > 0) {
+          const fromX = cX[i] ?? x;
+          const toX = sX[i] ?? x;
+          return fromX + (toX - fromX) * flee;
+        }
         if (!hasPaths) return x;
         const fromX = sX[i] ?? x;
         const toX = cX[i] ?? x;
         return fromX + (toX - fromX) * progress;
       });
       renderLayoutY.value = ys.map((y, i) => {
+        const isResolveCell = i === resolveIdx;
+        if (isResolveCell && resolveExit > 0) {
+          const fromY = tY;
+          const toY = eY;
+          return fromY + (toY - fromY) * resolveExit;
+        }
+        if (isResolveCell && resolve > 0) {
+          const fromY = cY[i] ?? y;
+          const toY = tY;
+          return fromY + (toY - fromY) * resolve;
+        }
+        if (!isResolveCell && flee > 0) {
+          const fromY = cY[i] ?? y;
+          const toY = sY[i] ?? y;
+          return fromY + (toY - fromY) * flee;
+        }
         if (!hasPaths) return y;
         const fromY = sY[i] ?? y;
         const toY = cY[i] ?? y;
@@ -393,14 +540,11 @@ export function OptionWordSpriteLayer({
   );
 
   useEffect(() => {
-    if (roundPhase !== 'exit') return;
+    if (roundPhase !== 'resolve' || seamlessResolve) return;
 
     const count = options.length;
-    const amps = new Array(count).fill(0);
+    const amps = new Array(count).fill(TILT_AMP_MAX);
     motionAngles.value = exitAngles.value;
-    for (let i = 0; i < count; i++) {
-      amps[i] = TILT_AMP_MAX;
-    }
     motionAmps.value = amps;
     swimProgress.value = withTiming(
       0,
@@ -415,7 +559,44 @@ export function OptionWordSpriteLayer({
         }
       },
     );
-  }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress]);
+  }, [exitAngles, motionAmps, motionAngles, options.length, roundPhase, swimProgress, seamlessResolve]);
+
+  useEffect(() => {
+    if (!seamlessResolve) return;
+    if (roundPhase !== 'exit' || correctOptionIndex < 0) return;
+    runOnUI(() => {
+      'worklet';
+      if (resolveExitProgress.value < 1) {
+        resolveExitProgress.value = withTiming(
+          1,
+          {
+            duration: ROUND_ROW_EXIT_DURATION_MS,
+            easing: Easing.in(Easing.cubic),
+          },
+          finished => {
+            'worklet';
+            if (finished) {
+              const amps = [...motionAmps.value];
+              if (amps.length > correctOptionIndex) {
+                amps[correctOptionIndex] = 0;
+                motionAmps.value = amps;
+              }
+              scheduleOnRN(fireExitComplete);
+            }
+          },
+        );
+        const angles = [...motionAngles.value];
+        const amps = [...motionAmps.value];
+        angles[correctOptionIndex] = Math.atan2(
+          resolveExitYSv.value - resolveTargetYSv.value,
+          resolveExitXSv.value - resolveTargetXSv.value,
+        );
+        amps[correctOptionIndex] = withTiming(TILT_AMP_MAX, { duration: 300 });
+        motionAngles.value = angles;
+        motionAmps.value = amps;
+      }
+    })();
+  }, [roundPhase, correctOptionIndex, seamlessResolve, resolveExitProgress, resolveExitXSv, resolveExitYSv, resolveTargetXSv, resolveTargetYSv, motionAngles, motionAmps, fireExitComplete]);
 
   const cellConfigs = useMemo(
     () => options.map(opt => toCellConfig(opt, optionLayout.diameter, roundPos)),
@@ -451,6 +632,11 @@ export function OptionWordSpriteLayer({
             key={`${config.key}-label`}
             config={config}
             font={bodyFont}
+            displayLabel={
+              seamlessResolve && showTranslation && config.index === correctOptionIndex
+                ? translation
+                : undefined
+            }
             layoutX={renderLayoutX}
             layoutY={renderLayoutY}
             layoutScale={layoutScale}
@@ -474,6 +660,17 @@ export function OptionWordSpriteLayer({
           onTap={() => fireOptionTap(option.index)}
         />
       ))}
+      {seamlessResolve &&
+        roundPhase === 'hold' &&
+        correctOptionIndex >= 0 &&
+        translation != null && (
+          <SingleOptionGesture
+            centerX={resolveTargetX ?? 0}
+            centerY={resolveTargetY ?? 0}
+            size={gestureSize}
+            onTap={handleResolvedOptionTap}
+          />
+        )}
     </>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
   Canvas,
@@ -20,10 +20,11 @@ import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGard
 import { useExerciseClockQuantized, useExerciseLayout } from '../../../../../core';
 import { computeLetterLayout, TRANSFORMATION_VARIANT_ROW_Y_RATIO } from '../../../../../core/layout/exerciseLayout';
 import {
+  ROUND_RESOLVE_FLY_DURATION_MS,
   ROUND_ROW_ENTER_DURATION_MS,
   ROUND_ROW_EXIT_DURATION_MS,
+  ROUND_TRANSLATION_DISPLAY_MS,
 } from '../../../../../variantSelection/domain/roundResolutionTiming';
-import { ROUND_SOLVED_POP_DURATION_MS } from '../../../../../sentenceTransformation/domain';
 import {
   LETTER_ORB_FLOWER_PRESET,
   ORB_ENTER_DURATION_MS,
@@ -59,6 +60,16 @@ export type FlowerGardenOptionWordSpriteLayerProps = {
   onOptionTap: (option: OptionWordSpriteState) => void;
   /** Option row zone override (defaults to the exercise layout roamer zone). */
   roamerRect?: ZoneRect;
+  /** Blank-slot center the selected option flies to on solve. */
+  resolveTargetX?: number;
+  resolveTargetY?: number;
+  /** Off-screen point the selected option exits to at the end of the round. */
+  resolveExitX?: number;
+  resolveExitY?: number;
+  onResolveComplete?: () => void;
+  onExitComplete?: () => void;
+  /** Shown on the landed option while holding when tapped. */
+  translation?: string;
 };
 
 function wrongFeedbackProgress(
@@ -84,6 +95,7 @@ function wrongFeedbackProgress(
 
 type SlotOptionOrbProps = {
   form: string;
+  labelOverride?: string;
   index: number;
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
@@ -98,6 +110,7 @@ type SlotOptionOrbProps = {
 
 function SlotOptionOrb({
   form,
+  labelOverride,
   index,
   layoutX,
   layoutY,
@@ -109,6 +122,7 @@ function SlotOptionOrb({
   bedVariants,
   clock,
 }: SlotOptionOrbProps) {
+  const displayForm = labelOverride ?? form;
   const seed = useMemo(
     () => hashSeedString(`flower-garden-variant-option-${index}-${form}`),
     [index, form],
@@ -146,8 +160,8 @@ function SlotOptionOrb({
     };
   });
 
-  const font = useMemo(() => labelFontFor(form.length), [form.length]);
-  const glyphs = useMemo(() => labelGlyphsFor(form, font), [font, form]);
+  const font = useMemo(() => labelFontFor(displayForm.length), [displayForm.length]);
+  const glyphs = useMemo(() => labelGlyphsFor(displayForm, font), [displayForm, font]);
 
   const labelTransform = useDerivedValue(() => {
     const cx = layoutX.value[index] ?? 0;
@@ -255,6 +269,13 @@ export function FlowerGardenOptionWordSpriteLayer({
   correctOptionIndex,
   onOptionTap,
   roamerRect: roamerRectProp,
+  resolveTargetX,
+  resolveTargetY,
+  resolveExitX,
+  resolveExitY,
+  onResolveComplete,
+  onExitComplete,
+  translation,
 }: FlowerGardenOptionWordSpriteLayerProps) {
   const { images } = useFlowerGardenAssetsContext();
   const { roamerRect: layoutRoamerRect } = useExerciseLayout();
@@ -282,6 +303,14 @@ export function FlowerGardenOptionWordSpriteLayer({
   const layoutY = useSharedValue<number[]>([]);
   const layoutDiameter = useSharedValue<number[]>([]);
   const layoutOpacity = useSharedValue<number[]>(options.map(() => 1));
+  const fleeProgress = useSharedValue(0);
+  const resolveProgress = useSharedValue(0);
+  const resolveExitProgress = useSharedValue(0);
+  const resolveIndex = useSharedValue(-1);
+  const resolveTargetXSv = useSharedValue(0);
+  const resolveTargetYSv = useSharedValue(0);
+  const resolveExitXSv = useSharedValue(0);
+  const resolveExitYSv = useSharedValue(0);
   const enterSettle = useSharedValue(1);
   const wrongUntil = useSharedValue<number[]>(options.map(() => 0));
 
@@ -295,6 +324,29 @@ export function FlowerGardenOptionWordSpriteLayer({
   onOptionTapRef.current = onOptionTap;
   const optionsRef = useRef(options);
   optionsRef.current = options;
+
+  const fireResolveComplete = useCallback(() => {
+    onResolveComplete?.();
+  }, [onResolveComplete]);
+
+  const fireExitComplete = useCallback(() => {
+    onExitComplete?.();
+  }, [onExitComplete]);
+
+  const [showTranslation, setShowTranslation] = useState(false);
+  const translatedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleResolvedOptionTap = useCallback(() => {
+    if (!translation) return;
+    setShowTranslation(true);
+    if (translatedTimeoutRef.current != null) {
+      clearTimeout(translatedTimeoutRef.current);
+    }
+    translatedTimeoutRef.current = setTimeout(() => {
+      setShowTranslation(false);
+      translatedTimeoutRef.current = null;
+    }, ROUND_TRANSLATION_DISPLAY_MS);
+  }, [translation]);
 
   const fireOptionTap = useCallback(
     (optionIndex: number) => {
@@ -324,19 +376,42 @@ export function FlowerGardenOptionWordSpriteLayer({
   const hasAnswer = correctOptionIndex >= 0;
 
   useEffect(() => {
+    resolveTargetXSv.value = resolveTargetX ?? 0;
+    resolveTargetYSv.value = resolveTargetY ?? 0;
+    resolveExitXSv.value = resolveExitX ?? 0;
+    resolveExitYSv.value = resolveExitY ?? 0;
+  }, [resolveTargetX, resolveTargetY, resolveExitX, resolveExitY, resolveTargetXSv, resolveTargetYSv, resolveExitXSv, resolveExitYSv]);
+
+  useEffect(() => {
     if (!hasAnswer || options.length === 0) {
       return;
     }
-    layoutOpacity.value = withTiming(
-      layoutOpacity.value.map((opacity, index) =>
-        index === correctOptionIndex ? 0 : opacity,
-      ),
-      {
-        duration: ROUND_SOLVED_POP_DURATION_MS,
-        easing: Easing.out(Easing.cubic),
-      },
-    );
-  }, [hasAnswer, correctOptionIndex, options.length, layoutOpacity]);
+    runOnUI(() => {
+      'worklet';
+      if (fleeProgress.value < 1) {
+        fleeProgress.value = withTiming(1, {
+          duration: ROUND_ROW_EXIT_DURATION_MS,
+          easing: Easing.in(Easing.cubic),
+        });
+      }
+      if (resolveProgress.value < 1) {
+        resolveIndex.value = correctOptionIndex;
+        resolveProgress.value = withTiming(
+          1,
+          {
+            duration: ROUND_RESOLVE_FLY_DURATION_MS,
+            easing: Easing.out(Easing.cubic),
+          },
+          finished => {
+            'worklet';
+            if (finished) {
+              scheduleOnRN(fireResolveComplete);
+            }
+          },
+        );
+      }
+    })();
+  }, [hasAnswer, correctOptionIndex, options.length, fleeProgress, resolveProgress, resolveIndex, fireResolveComplete]);
 
   useEffect(() => {
     const count = motionPaths.length;
@@ -358,6 +433,10 @@ export function FlowerGardenOptionWordSpriteLayer({
     layoutY.value = optionLayout.centers.map(() => optionLayout.rowY);
 
     if (roundPhase === 'enter') {
+      fleeProgress.value = 0;
+      resolveProgress.value = 0;
+      resolveExitProgress.value = 0;
+      resolveIndex.value = -1;
       swimProgress.value = 0;
       enterSettle.value = 0;
       swimProgress.value = withTiming(
@@ -381,6 +460,10 @@ export function FlowerGardenOptionWordSpriteLayer({
     spawnYs,
     centerXs,
     centerYs,
+    fleeProgress,
+    resolveProgress,
+    resolveExitProgress,
+    resolveIndex,
     enterSettle,
     layoutX,
     layoutY,
@@ -396,10 +479,34 @@ export function FlowerGardenOptionWordSpriteLayer({
       sY: spawnYs.value,
       cX: centerXs.value,
       cY: centerYs.value,
+      flee: fleeProgress.value,
+      resolve: resolveProgress.value,
+      resolveExit: resolveExitProgress.value,
+      resolveIdx: resolveIndex.value,
+      tX: resolveTargetXSv.value,
+      tY: resolveTargetYSv.value,
+      eX: resolveExitXSv.value,
+      eY: resolveExitYSv.value,
     }),
-    ({ xs, ys, progress, sX, sY, cX, cY }) => {
+    ({ xs, ys, progress, sX, sY, cX, cY, flee, resolve, resolveExit, resolveIdx, tX, tY, eX, eY }) => {
       const hasPaths = sX.length > 0 && sX.length === xs.length;
       renderLayoutX.value = xs.map((x, i) => {
+        const isResolveCell = i === resolveIdx;
+        if (isResolveCell && resolveExit > 0) {
+          const fromX = tX;
+          const toX = eX;
+          return fromX + (toX - fromX) * resolveExit;
+        }
+        if (isResolveCell && resolve > 0) {
+          const fromX = cX[i] ?? x;
+          const toX = tX;
+          return fromX + (toX - fromX) * resolve;
+        }
+        if (!isResolveCell && flee > 0) {
+          const fromX = cX[i] ?? x;
+          const toX = sX[i] ?? x;
+          return fromX + (toX - fromX) * flee;
+        }
         if (!hasPaths) {
           return x;
         }
@@ -408,6 +515,22 @@ export function FlowerGardenOptionWordSpriteLayer({
         return fromX + (toX - fromX) * progress;
       });
       renderLayoutY.value = ys.map((y, i) => {
+        const isResolveCell = i === resolveIdx;
+        if (isResolveCell && resolveExit > 0) {
+          const fromY = tY;
+          const toY = eY;
+          return fromY + (toY - fromY) * resolveExit;
+        }
+        if (isResolveCell && resolve > 0) {
+          const fromY = cY[i] ?? y;
+          const toY = tY;
+          return fromY + (toY - fromY) * resolve;
+        }
+        if (!isResolveCell && flee > 0) {
+          const fromY = cY[i] ?? y;
+          const toY = sY[i] ?? y;
+          return fromY + (toY - fromY) * flee;
+        }
         if (!hasPaths) {
           return y;
         }
@@ -427,7 +550,29 @@ export function FlowerGardenOptionWordSpriteLayer({
       duration: ROUND_ROW_EXIT_DURATION_MS,
       easing: Easing.in(Easing.cubic),
     });
-  }, [roundPhase, swimProgress]);
+
+    if (correctOptionIndex < 0) {
+      return;
+    }
+    runOnUI(() => {
+      'worklet';
+      if (resolveExitProgress.value < 1) {
+        resolveExitProgress.value = withTiming(
+          1,
+          {
+            duration: ROUND_ROW_EXIT_DURATION_MS,
+            easing: Easing.in(Easing.cubic),
+          },
+          finished => {
+            'worklet';
+            if (finished) {
+              scheduleOnRN(fireExitComplete);
+            }
+          },
+        );
+      }
+    })();
+  }, [roundPhase, correctOptionIndex, swimProgress, resolveExitProgress, fireExitComplete]);
 
   const gestureSize = optionLayout.diameter * 1.4;
 
@@ -447,6 +592,11 @@ export function FlowerGardenOptionWordSpriteLayer({
             <SlotOptionOrb
               key={`option-${option.index}`}
               form={option.form}
+              labelOverride={
+                showTranslation && option.index === correctOptionIndex
+                  ? translation
+                  : undefined
+              }
               index={option.index}
               layoutX={renderLayoutX}
               layoutY={renderLayoutY}
@@ -471,6 +621,16 @@ export function FlowerGardenOptionWordSpriteLayer({
             onTap={() => fireOptionTap(option.index)}
           />
         ))}
+      {roundPhase === 'hold' &&
+        correctOptionIndex >= 0 &&
+        translation != null && (
+          <SingleOptionGesture
+            centerX={resolveTargetX ?? 0}
+            centerY={resolveTargetY ?? 0}
+            size={gestureSize}
+            onTap={handleResolvedOptionTap}
+          />
+        )}
     </>
   );
 }

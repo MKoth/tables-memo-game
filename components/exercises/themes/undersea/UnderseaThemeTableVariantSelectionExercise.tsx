@@ -21,13 +21,11 @@ import { TransformationInstructionBar, ExerciseCornerControls } from '../../ui';
 import { WordSpriteSentenceRowLayer } from './exercises/sentenceTransformation/components/WordSpriteSentenceRowLayer/WordSpriteSentenceRowLayer';
 import { useVariantSelectionGame } from '../../variantSelection/hooks/useVariantSelectionGame';
 import { OptionWordSpriteLayer } from './exercises/variantSelection/components/OptionWordSpriteLayer';
-import { VariantSelectionResolveFlight } from './exercises/variantSelection/components/VariantSelectionResolveFlight';
 import { ROUND_RESOLVE_FLY_DURATION_MS } from '../../variantSelection/domain/roundResolutionTiming';
 
 const DECORATIVE_ROAMER_Z = 2;
 const SENTENCE_ROW_LAYER_Z = 5;
 const OPTION_LAYER_Z = 10;
-const RESOLVE_FLIGHT_Z = 12;
 
 type VariantSelectionContentProps = {
   sounds: UnderseaThemeSoundController;
@@ -98,25 +96,15 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
           roundPos={game.roundPos}
           correctOptionIndex={game.correctOptionIndex}
           onOptionTap={game.handleOptionTap}
+          seamlessResolve
+          resolveTargetX={game.resolveFlight?.toCenterX}
+          resolveTargetY={game.resolveFlight?.toCenterY}
+          resolveExitX={game.resolveFlight?.toSpawnX}
+          resolveExitY={game.resolveFlight?.toSpawnY}
+          onResolveComplete={game.handleResolveComplete}
+          onExitComplete={game.handleExitComplete}
+          translation={game.translation}
         />
-      </View>
-      <View style={styles.resolveFlightLayer} pointerEvents="box-none">
-        {game.resolveFlight != null && (
-          <VariantSelectionResolveFlight
-            phase={game.resolveFlightPhase}
-            form={game.resolveFlight.form}
-            translation={game.translation}
-            fromCenterX={game.resolveFlight.fromCenterX}
-            fromCenterY={game.resolveFlight.fromCenterY}
-            toCenterX={game.resolveFlight.toCenterX}
-            toCenterY={game.resolveFlight.toCenterY}
-            diameter={game.resolveFlight.diameter}
-            toSpawnX={game.resolveFlight.toSpawnX}
-            toSpawnY={game.resolveFlight.toSpawnY}
-            onResolveComplete={game.handleResolveComplete}
-            onExitComplete={game.handleExitComplete}
-          />
-        )}
       </View>
       <TransformationInstructionBar
         message={game.instruction}
@@ -165,13 +153,5 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     zIndex: OPTION_LAYER_Z,
-  },
-  resolveFlightLayer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    zIndex: RESOLVE_FLIGHT_Z,
   },
 });

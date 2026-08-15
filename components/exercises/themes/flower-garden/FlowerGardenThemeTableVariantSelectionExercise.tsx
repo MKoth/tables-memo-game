@@ -33,7 +33,6 @@ import {
   type FlowerGardenSentenceRowTapController,
 } from './exercises/sentenceTransformation/components/FlowerGardenWordSpriteSentenceRowLayer';
 import { FlowerGardenOptionWordSpriteLayer } from './exercises/variantSelection/components/FlowerGardenOptionWordSpriteLayer';
-import { FlowerGardenVariantSelectionResolveFlight } from './exercises/variantSelection/components/FlowerGardenVariantSelectionResolveFlight';
 import { TAP_MAX_DISTANCE_PX } from './carrier/FlowerGardenWordSpriteTableLayer/config/flowerTableLayerConfig';
 
 const FULL_SCREEN_ZONE_RATIOS: ExerciseZoneRatios = {
@@ -56,7 +55,6 @@ const DECORATIVE_ROAMER_Z = 2;
 const ROW_TAP_Z = 4;
 const SENTENCE_ROW_LAYER_Z = 5;
 const OPTION_LAYER_Z = 10;
-const RESOLVE_FLIGHT_Z = 12;
 
 type RowTapSurfaceProps = {
   onTap: (x: number, y: number) => void;
@@ -197,25 +195,14 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
             correctOptionIndex={game.correctOptionIndex}
             onOptionTap={game.handleOptionTap}
             roamerRect={orbRect}
+            resolveTargetX={game.resolveFlight?.toCenterX}
+            resolveTargetY={game.resolveFlight?.toCenterY}
+            resolveExitX={game.resolveFlight?.toSpawnX}
+            resolveExitY={game.resolveFlight?.toSpawnY}
+            onResolveComplete={game.handleResolveComplete}
+            onExitComplete={game.handleExitComplete}
+            translation={game.translation}
           />
-        </View>
-        <View style={[styles.fullLayer, { zIndex: RESOLVE_FLIGHT_Z }]} pointerEvents="box-none">
-          {game.resolveFlight != null && (
-            <FlowerGardenVariantSelectionResolveFlight
-              phase={game.resolveFlightPhase}
-              form={game.resolveFlight.form}
-              translation={game.translation}
-              fromCenterX={game.resolveFlight.fromCenterX}
-              fromCenterY={game.resolveFlight.fromCenterY}
-              toCenterX={game.resolveFlight.toCenterX}
-              toCenterY={game.resolveFlight.toCenterY}
-              diameter={game.resolveFlight.diameter}
-              toSpawnX={game.resolveFlight.toSpawnX}
-              toSpawnY={game.resolveFlight.toSpawnY}
-              onResolveComplete={game.handleResolveComplete}
-              onExitComplete={game.handleExitComplete}
-            />
-          )}
         </View>
         <TransformationInstructionBar
           message={game.instruction}

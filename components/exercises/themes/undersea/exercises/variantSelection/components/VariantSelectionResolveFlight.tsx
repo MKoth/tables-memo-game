@@ -7,11 +7,13 @@ import {
   useDerivedValue,
   useSharedValue,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { runOnUI, scheduleOnRN } from 'react-native-worklets';
 import { useUnderseaThemeAssetsContext } from '../../../core/providers/UnderseaThemeAssetsProvider';
 import { useExerciseLayout } from '../../../../../core';
 import { useExerciseClockQuantized } from '../../../../../core';
+import { rollBodyTint, type TintSpawn } from '../../../carrier/wordSpriteVisualTokens';
 import { CellWordSprite } from '../../../carrier/WordSpriteTableLayer/components/CellWordSprite';
 import { CellLabel } from '../../../carrier/WordSpriteTableLayer/components/CellLabel';
 import type { CellConfig } from '../../../carrier/WordSpriteTableLayer/helpers/cellConfigBuilders';
@@ -40,11 +42,23 @@ export type VariantSelectionResolveFlightProps = {
   diameter: number;
   toSpawnX: number;
   toSpawnY: number;
+  /**
+   * Index of the replaced option within its round; when provided the flight
+   * copy inherits the option's body tint so the swap is seamless.
+   */
+  optionIndex?: number;
+  roundPos?: number;
+  /**
+   * Live-position bridge written by the option layer on solve; the flight
+   * starts from the option's actual render position so the swap is seamless.
+   */
+  resolveStartX?: SharedValue<number>;
+  resolveStartY?: SharedValue<number>;
   onResolveComplete?: () => void;
   onExitComplete?: () => void;
 };
 
-function toResolveCellConfig(form: string, bellSize: number): CellConfig {
+function toResolveCellConfig(form: string, bellSize: number, tint?: TintSpawn): CellConfig {
   return {
     key: 'resolve-flight',
     index: 0,
@@ -65,6 +79,7 @@ function toResolveCellConfig(form: string, bellSize: number): CellConfig {
     tintC: [0.4, 0.95, 1.35] as const,
     animatedTint: true,
     tintWaveSpeed: 0.35,
+    ...tint,
   };
 }
 
@@ -83,6 +98,10 @@ export function VariantSelectionResolveFlight({
   diameter,
   toSpawnX,
   toSpawnY,
+  optionIndex,
+  roundPos,
+  resolveStartX,
+  resolveStartY,
   onResolveComplete,
   onExitComplete,
 }: VariantSelectionResolveFlightProps) {
@@ -127,36 +146,41 @@ export function VariantSelectionResolveFlight({
     }
 
     if (phase === 'resolve') {
-      const angle = Math.atan2(
-        toCenterY - fromCenterY,
-        toCenterX - fromCenterX,
-      );
-      motionAngle.value = angle;
-      motionAmp.value = withTiming(TILT_AMP_MAX, { duration: 300 });
+      runOnUI(() => {
+        'worklet';
+        const startX = resolveStartX != null ? resolveStartX.value : fromCenterX;
+        const startY = resolveStartY != null ? resolveStartY.value : fromCenterY;
+        const angle = Math.atan2(
+          toCenterY - startY,
+          toCenterX - startX,
+        );
+        motionAngle.value = angle;
+        motionAmp.value = withTiming(TILT_AMP_MAX, { duration: 300 });
 
-      resolveX.value = fromCenterX;
-      resolveY.value = fromCenterY;
+        resolveX.value = startX;
+        resolveY.value = startY;
 
-      resolveX.value = withTiming(
-        toCenterX,
-        {
-          duration: ROUND_RESOLVE_FLY_DURATION_MS,
-          easing: Easing.out(Easing.cubic),
-        },
-        finished => {
-          'worklet';
-          if (finished) {
-            scheduleOnRN(fireResolveComplete);
-          }
-        },
-      );
-      resolveY.value = withTiming(
-        toCenterY,
-        {
-          duration: ROUND_RESOLVE_FLY_DURATION_MS,
-          easing: Easing.out(Easing.cubic),
-        },
-      );
+        resolveX.value = withTiming(
+          toCenterX,
+          {
+            duration: ROUND_RESOLVE_FLY_DURATION_MS,
+            easing: Easing.out(Easing.cubic),
+          },
+          finished => {
+            'worklet';
+            if (finished) {
+              scheduleOnRN(fireResolveComplete);
+            }
+          },
+        );
+        resolveY.value = withTiming(
+          toCenterY,
+          {
+            duration: ROUND_RESOLVE_FLY_DURATION_MS,
+            easing: Easing.out(Easing.cubic),
+          },
+        );
+      })();
     } else if (phase === 'hold') {
       motionAngle.value = withTiming(0, { duration: 200 });
       motionAmp.value = withTiming(0, { duration: 200 });
@@ -189,7 +213,7 @@ export function VariantSelectionResolveFlight({
         },
       );
     }
-  }, [phase, fromCenterX, fromCenterY, toCenterX, toCenterY, toSpawnX, toSpawnY, resolveX, resolveY]);
+  }, [phase, fromCenterX, fromCenterY, toCenterX, toCenterY, toSpawnX, toSpawnY, resolveX, resolveY, resolveStartX, resolveStartY, motionAngle, motionAmp, fireResolveComplete, fireExitComplete]);
 
   const handleTap = useCallback(() => {
     if (!translation) return;
@@ -211,7 +235,15 @@ export function VariantSelectionResolveFlight({
     },
   });
 
-  const cellConfig = useMemo(() => toResolveCellConfig(form, diameter), [form, diameter]);
+  const resolveTint = useMemo(() => {
+    if (optionIndex == null) return undefined;
+    return rollBodyTint(optionIndex, roundPos ?? 0);
+  }, [optionIndex, roundPos]);
+
+  const cellConfig = useMemo(
+    () => toResolveCellConfig(form, diameter, resolveTint),
+    [form, diameter, resolveTint],
+  );
 
   const fontFamily = Platform.select({ ios: 'Helvetica', default: 'sans-serif' });
   const bodyFont = useMemo(() => {

@@ -1,8 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector, useTapGesture } from 'react-native-gesture-handler';
-import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import {
+  Easing,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
+import { runOnUI, scheduleOnRN } from 'react-native-worklets';
 import type { ThemeResolveFlightProps } from '../../../../../themeContract';
 import {
   ROUND_RESOLVE_FLY_DURATION_MS,
@@ -11,9 +16,22 @@ import {
 } from '../../../../../variantSelection/domain/roundResolutionTiming';
 import { hashSeedString } from '../../../scenery/BushShaderLayer/helpers/seededRandom';
 import { TAP_MAX_DISTANCE_PX } from '../../../carrier/FlowerGardenWordSpriteTableLayer/config/flowerTableLayerConfig';
+import { LETTER_ORB_FLOWER_PRESET } from '../../../orb/orbAnimPresets';
 import { FlowerGardenBigWordOrb } from '../../sentenceTransformation/components/FlowerGardenBigWordOrb';
 
-export type FlowerGardenVariantSelectionResolveFlightProps = ThemeResolveFlightProps;
+export type FlowerGardenVariantSelectionResolveFlightProps = ThemeResolveFlightProps & {
+  /**
+   * Index of the replaced option within its round; when provided the flight
+   * copy inherits the option's visual seed so the swap is seamless.
+   */
+  optionIndex?: number;
+  /**
+   * Live-position bridge written by the option layer on solve; the flight
+   * starts from the option's actual render position so the swap is seamless.
+   */
+  resolveStartX?: SharedValue<number>;
+  resolveStartY?: SharedValue<number>;
+};
 
 export function FlowerGardenVariantSelectionResolveFlight({
   phase,
@@ -26,6 +44,9 @@ export function FlowerGardenVariantSelectionResolveFlight({
   diameter,
   toSpawnX,
   toSpawnY,
+  optionIndex,
+  resolveStartX,
+  resolveStartY,
   onResolveComplete,
   onExitComplete,
 }: FlowerGardenVariantSelectionResolveFlightProps) {
@@ -58,25 +79,30 @@ export function FlowerGardenVariantSelectionResolveFlight({
     }
 
     if (phase === 'resolve') {
-      resolveX.value = fromCenterX;
-      resolveY.value = fromCenterY;
-      resolveX.value = withTiming(
-        toCenterX,
-        {
+      runOnUI(() => {
+        'worklet';
+        const startX = resolveStartX != null ? resolveStartX.value : fromCenterX;
+        const startY = resolveStartY != null ? resolveStartY.value : fromCenterY;
+        resolveX.value = startX;
+        resolveY.value = startY;
+        resolveX.value = withTiming(
+          toCenterX,
+          {
+            duration: ROUND_RESOLVE_FLY_DURATION_MS,
+            easing: Easing.out(Easing.cubic),
+          },
+          finished => {
+            'worklet';
+            if (finished) {
+              scheduleOnRN(fireResolveComplete);
+            }
+          },
+        );
+        resolveY.value = withTiming(toCenterY, {
           duration: ROUND_RESOLVE_FLY_DURATION_MS,
           easing: Easing.out(Easing.cubic),
-        },
-        finished => {
-          'worklet';
-          if (finished) {
-            scheduleOnRN(fireResolveComplete);
-          }
-        },
-      );
-      resolveY.value = withTiming(toCenterY, {
-        duration: ROUND_RESOLVE_FLY_DURATION_MS,
-        easing: Easing.out(Easing.cubic),
-      });
+        });
+      })();
     } else if (phase === 'exit') {
       resolveX.value = withTiming(
         toSpawnX,
@@ -106,6 +132,8 @@ export function FlowerGardenVariantSelectionResolveFlight({
     toSpawnY,
     resolveX,
     resolveY,
+    resolveStartX,
+    resolveStartY,
     fireResolveComplete,
     fireExitComplete,
   ]);
@@ -141,8 +169,11 @@ export function FlowerGardenVariantSelectionResolveFlight({
 
   const displayWord = showTranslation && translation ? translation : form;
   const seed = useMemo(
-    () => hashSeedString(`flower-garden-variant-resolve-${form}`),
-    [form],
+    () =>
+      optionIndex != null
+        ? hashSeedString(`flower-garden-variant-option-${optionIndex}-${form}`)
+        : hashSeedString(`flower-garden-variant-resolve-${form}`),
+    [form, optionIndex],
   );
 
   const isHolding = phase === 'hold';
@@ -160,6 +191,7 @@ export function FlowerGardenVariantSelectionResolveFlight({
         overallOpacity={overallOpacity}
         word={displayWord}
         seed={seed}
+        preset={LETTER_ORB_FLOWER_PRESET}
       />
       {isHolding && translation && (
         <GestureDetector gesture={tapGesture}>

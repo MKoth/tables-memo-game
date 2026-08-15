@@ -4,7 +4,10 @@ import { Canvas, Glyphs, Group } from '@shopify/react-native-skia';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 import { useFlowerGardenAssetsContext } from '../../../core/providers/FlowerGardenAssetsProvider';
 import { OrbFlowerShader } from '../../../orb/OrbFlowerShader';
-import { ORB_FLOWER_PRESET } from '../../../orb/orbAnimPresets';
+import {
+  ORB_FLOWER_PRESET,
+  type OrbFlowerPreset,
+} from '../../../orb/orbAnimPresets';
 import {
   LABEL_FILL_COLOR,
   LABEL_REF_DIAMETER,
@@ -23,6 +26,8 @@ export type FlowerGardenBigWordOrbProps = {
   overallOpacity: SharedValue<number>;
   word: string;
   seed: number;
+  /** Orb look preset (defaults to the big-word look; pass the option-orb preset to mirror an option). */
+  preset?: OrbFlowerPreset;
 };
 
 export function FlowerGardenBigWordOrb({
@@ -32,6 +37,7 @@ export function FlowerGardenBigWordOrb({
   overallOpacity,
   word,
   seed,
+  preset = ORB_FLOWER_PRESET,
 }: FlowerGardenBigWordOrbProps) {
   const { images } = useFlowerGardenAssetsContext();
   const clock = useExerciseClock();
@@ -90,7 +96,7 @@ export function FlowerGardenBigWordOrb({
       <OrbFlowerShader
         anim={orbAnim}
         seed={seed}
-        preset={ORB_FLOWER_PRESET}
+        preset={preset}
         ringVariants={ringVariants}
         bedVariants={bedVariants}
       />
