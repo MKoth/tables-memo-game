@@ -17,6 +17,7 @@ import {
 import type { FlowerGardenBuzzSpecies } from '../core/assets/useFlowerGardenThemeSounds';
 import { isRoamerBuzzActive } from './core/roamerBuzz';
 import { pickRoamerDrawPass } from './core/pickRoamerDrawPass';
+import type { SpeciesWeights } from './core/speciesAllocator';
 
 export type RoamerLayerProps = {
   words: string[];
@@ -24,6 +25,8 @@ export type RoamerLayerProps = {
   sessionId?: string;
   sim?: RoamerSimulation;
   hiddenIndices?: number[];
+  /** Species mix for the roamer spawns (defaults to the shared species config). */
+  speciesWeights?: SpeciesWeights;
 };
 
 type RoamerLayerContentProps = {
@@ -163,12 +166,14 @@ function RoamerLayerWithSim({
   interactive,
   sessionId,
   hiddenIndices,
+  speciesWeights,
   images,
 }: {
   words: string[];
   interactive: boolean;
   sessionId: string;
   hiddenIndices: number[];
+  speciesWeights?: SpeciesWeights;
   images: RoamerLayerContentProps['images'];
 }) {
   const layout = useExerciseLayout();
@@ -181,6 +186,7 @@ function RoamerLayerWithSim({
     roamerRect,
     layoutKey,
     sessionId,
+    speciesWeights,
   });
 
   return (
@@ -199,6 +205,7 @@ export function RoamerLayer({
   sessionId = 'default',
   sim: externalSim,
   hiddenIndices = [],
+  speciesWeights,
 }: RoamerLayerProps) {
   const { images } = useFlowerGardenAssetsContext();
 
@@ -233,6 +240,7 @@ export function RoamerLayer({
       interactive={interactive}
       sessionId={sessionId}
       hiddenIndices={hiddenIndices}
+      speciesWeights={speciesWeights}
       images={images}
     />
   );

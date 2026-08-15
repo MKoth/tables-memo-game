@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Glyphs, Group, vec, type SkFont } from '@shopify/react-native-skia';
 import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
-import { ROSE_LABEL_STROKE_WIDTH, ROSE_LABEL_TILT_PX } from '../config/flowerTableLayerConfig';
+import { ROSE_LABEL_STROKE_WIDTH } from '../config/flowerTableLayerConfig';
 import { ROSE_LABEL_FLASH_FILL_COLOR, ROSE_LABEL_FLASH_STROKE_COLOR } from '../presets/roseLabelPalette';
 import type { FlowerCellConfig } from '../types';
 
@@ -13,8 +13,6 @@ export type FlowerRoseLabelProps = {
   layoutX: SharedValue<number[]>;
   layoutY: SharedValue<number[]>;
   layoutScale: SharedValue<number[]>;
-  motionAngle: SharedValue<number>;
-  motionAmp: SharedValue<number>;
   retainedLabelRotation: SharedValue<number>;
   tintFlashPreset: SharedValue<number[]>;
   tintFlashUntil: SharedValue<number[]>;
@@ -32,8 +30,6 @@ export function FlowerRoseLabel({
   layoutX,
   layoutY,
   layoutScale,
-  motionAngle,
-  motionAmp,
   retainedLabelRotation,
   tintFlashPreset,
   tintFlashUntil,
@@ -65,20 +61,10 @@ export function FlowerRoseLabel({
     const cx = layoutX.value[idx] ?? 0;
     const cy = layoutY.value[idx] ?? 0;
     const scale = layoutScale.value[idx] ?? 1;
-    const amp = motionAmp.value;
-    let tiltX = 0;
-    let tiltY = 0;
-    if (amp !== 0) {
-      const px = amp * config.bellSize * scale * ROSE_LABEL_TILT_PX;
-      tiltX = Math.cos(motionAngle.value) * px;
-      tiltY = Math.sin(motionAngle.value) * px;
-    }
-    const pivotX = cx + tiltX;
-    const pivotY = cy + tiltY;
-    // Glyphs are in local space centered at (0,0); translate to pivot then scale/rotate.
+    // Glyphs are in local space centered at (0,0); translate to the cell center then scale/rotate.
     return [
-      { translateX: pivotX },
-      { translateY: pivotY },
+      { translateX: cx },
+      { translateY: cy },
       { scale },
       { rotate: retainedLabelRotation.value },
     ];

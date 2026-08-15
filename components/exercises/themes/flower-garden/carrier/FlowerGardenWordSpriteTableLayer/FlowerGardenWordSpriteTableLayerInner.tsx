@@ -493,8 +493,6 @@ export function FlowerGardenWordSpriteTableLayerInner({
               layoutX={layoutX}
               layoutY={layoutY}
               layoutScale={layoutScale}
-              motionAngle={motionAngle}
-              motionAmp={motionAmp}
               retainedLabelRotation={retainedLabelRotation}
               tintFlashPreset={tintFlashPreset}
               tintFlashUntil={tintFlashUntil}

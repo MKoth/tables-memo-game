@@ -2,6 +2,7 @@ import { makeMutable, type SharedValue } from 'react-native-reanimated';
 import type { ZoneRect } from '../../../../core/layout/computeExerciseLayout';
 import { createRoamerRuntime } from './createRoamerRuntime';
 import { createRoamerSpawnsFromWords } from './createRoamerSpawns';
+import type { SpeciesWeights } from './speciesAllocator';
 import type { RoamerRuntimeEntry, SwimZone } from './types';
 
 export type PersistedRoamerSimBundle = {
@@ -26,6 +27,7 @@ export function buildRoamerSimBundle(
   rng: () => number,
   fieldFlowerAnchorsX: number[] = [],
   fieldFlowerAnchorsY: number[] = [],
+  speciesWeights?: SpeciesWeights,
 ): PersistedRoamerSimBundle {
   const swimZone: SwimZone = {
     x: roamerRect.x,
@@ -33,7 +35,7 @@ export function buildRoamerSimBundle(
     w: roamerRect.w,
     h: roamerRect.h,
   };
-  const spawns = createRoamerSpawnsFromWords(words, rng);
+  const spawns = createRoamerSpawnsFromWords(words, rng, speciesWeights);
   const runtimeEntries = spawns.map(spawn => ({
     spawn,
     runtime: createRoamerRuntime(spawn, swimZone),

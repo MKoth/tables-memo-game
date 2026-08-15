@@ -10,6 +10,7 @@ import {
 } from './roamerSimBundle';
 import { useRoamerSimFrameLoop } from './useRoamerSimFrameLoop';
 import type { RoamerRuntimeEntry, SwimZone } from './types';
+import type { SpeciesWeights } from './speciesAllocator';
 import { useFlowerGardenTableContext } from '../../scenery/flowerGardenTableContext';
 
 export type RoamerSimulation = {
@@ -37,6 +38,8 @@ export type UseRoamerSimulationParams = {
   orbCaptureCenterY?: number;
   orbCaptureRadius?: number;
   onRoamerEscaped?: (roamerIndex: number) => void;
+  /** Species mix for spawns (defaults to the shared species config). */
+  speciesWeights?: SpeciesWeights;
 };
 
 export function useRoamerSimulation({
@@ -51,6 +54,7 @@ export function useRoamerSimulation({
   orbCaptureCenterY = 0,
   orbCaptureRadius = 0,
   onRoamerEscaped,
+  speciesWeights,
 }: UseRoamerSimulationParams): RoamerSimulation {
   const capturedIdx = capturedRoamerIndex ?? useSharedValue(-1);
   const wordsKey = words.join('\0');
@@ -79,6 +83,7 @@ export function useRoamerSimulation({
       rng,
       fieldFlowerAnchorsX,
       fieldFlowerAnchorsY,
+      speciesWeights,
     );
   } else if (
     bundleRef.current.layoutKey !== layoutKey ||

@@ -3,6 +3,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import type { TableData } from '../../../../../data/tableData';
 import type { ZoneRect } from '../../../core';
 import type { FieldFlowerConfig } from './FieldFlowerShaderLayer/types';
+import type { EarthGrassBackgroundConfig } from '../shaders/earthGrassBackground.sksl';
 
 export type FlowerGardenTableContextValue = {
   table: TableData | null;
@@ -10,6 +11,10 @@ export type FlowerGardenTableContextValue = {
   flowerSwingBoosts?: SharedValue<number[]>;
   /** Replaces the petal scatter band zone (defaults to above the ground band). */
   groundScatterBandZone?: ZoneRect;
+  /** Replaces the earth-reveal mask config; `null` hides the earth entirely. */
+  earthMaskConfig?: EarthGrassBackgroundConfig | null;
+  /** Overrides the petal scatter count (defaults to the band default). */
+  petalCount?: number;
 };
 
 const FlowerGardenTableContext = createContext<FlowerGardenTableContextValue | null>(null);

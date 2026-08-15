@@ -54,10 +54,8 @@ export const FlowerGardenTransformationActorElement = memo(
       const oy = LABEL_REF_DIAMETER * 0.5;
       const scale = labelFixed ? 1 : d > 0 ? d / LABEL_REF_DIAMETER : 1;
       return [
-        { translateX: cx - d * 0.5 },
-        { translateY: cy - d * 0.5 },
-        { translateX: ox },
-        { translateY: oy },
+        { translateX: cx },
+        { translateY: cy },
         { scale },
         { translateX: -ox },
         { translateY: -oy },

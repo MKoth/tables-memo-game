@@ -16,4 +16,3 @@ export const WORD_SPRITE_CLOCK_FPS = 15;
 export const ROSE_LABEL_FONT_SIZE = 13;
 export const ROSE_HEADER_FONT_SIZE = 14;
 export const ROSE_LABEL_STROKE_WIDTH = 1.5;
-export const ROSE_LABEL_TILT_PX = 3;

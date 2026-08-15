@@ -25,6 +25,13 @@ const backgroundMaskConfig: EarthGrassBackgroundConfig = {
   noiseScale: 0.2,
 };
 
+const grassOnlyMaskConfig: EarthGrassBackgroundConfig = {
+  centerX: 0,
+  centerY: 0,
+  minDiameter: 0,
+  maxDiameter: 0,
+};
+
 function allImagesReady(
   ...sets: (readonly import('@shopify/react-native-skia').SkImage[] | null)[]
 ): boolean {
@@ -37,10 +44,12 @@ function allImagesReady(
 function FlowerGardenSceneryContent() {
   const { width, height } = useWindowDimensions();
   const { images } = useFlowerGardenAssetsContext();
-  const { table, fieldFlowerConfigs, flowerSwingBoosts, groundScatterBandZone } =
+  const { table, fieldFlowerConfigs, flowerSwingBoosts, groundScatterBandZone, earthMaskConfig, petalCount } =
     useFlowerGardenTableContext();
   const { wordSpriteBridge } = useExerciseRuntime();
   const bushConfigs = useBushConfigs(table);
+
+  const maskConfig = earthMaskConfig === null ? grassOnlyMaskConfig : (earthMaskConfig ?? backgroundMaskConfig);
 
   const roseBellSizes = useMemo<number[]>(
     () => wordSpriteBridge?.bodySizes ?? [],
@@ -68,6 +77,7 @@ function FlowerGardenSceneryContent() {
     kind: 'band',
     variantCount: petalImages?.length ?? 6,
     bandZone: groundScatterBandZone ?? null,
+    count: petalCount,
   });
 
   const groundDecorReady =
@@ -117,7 +127,7 @@ function FlowerGardenSceneryContent() {
           width={width}
           height={height}
           grassScale={1.2}
-          maskConfig={backgroundMaskConfig}
+          maskConfig={maskConfig}
         />
       )}
       {groundDecorReady && (

@@ -16,6 +16,8 @@ export type MotionPathPlannerInput = {
   screenHeight: number;
   spriteRect: ZoneRect;
   slotCenters: { x: number; y: number }[];
+  /** Restricts the spawn edges (defaults to the orientation's allowed edges). */
+  edges?: ('top' | 'left' | 'right' | 'bottom')[];
 };
 
 const SPAWN_MARGIN = 120;
@@ -73,7 +75,7 @@ export function planMotionPaths(input: MotionPathPlannerInput): MotionPath[] {
     return [];
   }
 
-  const edges = allowedEdges(orientation);
+  const edges = input.edges ?? allowedEdges(orientation);
   const edgeCount = edges.length;
 
   const counts: Record<string, number> = { top: 0, left: 0, right: 0, bottom: 0 };

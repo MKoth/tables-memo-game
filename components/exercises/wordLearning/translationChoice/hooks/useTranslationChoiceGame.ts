@@ -49,6 +49,8 @@ export type UseTranslationChoiceGameParams = {
   spriteRect: ZoneRect;
   playSuccess?: () => void;
   playWrong?: () => void;
+  /** Restricts the option spawn edges (defaults to the orientation's edges). */
+  optionSpawnEdges?: ('top' | 'left' | 'right' | 'bottom')[];
 };
 
 export function useTranslationChoiceGame({
@@ -60,6 +62,7 @@ export function useTranslationChoiceGame({
   spriteRect,
   playSuccess,
   playWrong,
+  optionSpawnEdges,
 }: UseTranslationChoiceGameParams): TranslationChoiceGame {
   const exercise = useMemo(() => createTranslationChoiceExercise(wordList), [wordList]);
   const [, bumpRender] = useReducer((value: number) => value + 1, 0);
@@ -129,8 +132,9 @@ export function useTranslationChoiceGame({
       screenHeight,
       spriteRect: roamerRect,
       slotCenters,
+      edges: optionSpawnEdges,
     });
-  }, [orientation, screenWidth, screenHeight, roamerRect, optionLayout.centers, optionLayout.rowY]);
+  }, [orientation, screenWidth, screenHeight, roamerRect, optionLayout.centers, optionLayout.rowY, optionSpawnEdges]);
 
   const englishLetters = useMemo<LetterOrbModel[]>(() => {
     if (currentRound == null) return [];

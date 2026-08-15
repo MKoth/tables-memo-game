@@ -5,7 +5,6 @@ import {
   Easing,
   runOnUI,
   useAnimatedReaction,
-  useDerivedValue,
   useSharedValue,
   withTiming,
   type SharedValue,
@@ -40,7 +39,6 @@ import {
   computeSentenceRowLayout,
   type SentenceSlotConfig,
 } from '../../../../../core/layout/exerciseLayout';
-import { TILT_AMP_MAX } from '../../../../undersea/carrier/WordSpriteTableLayer/config/wordSpriteTableLayerConfig';
 import { WORD_SPRITE_TINT_PRESET_INDEX } from '../../../../undersea/carrier/WordSpriteTableLayer/presets/wordSpriteTintPresets';
 import { triggerWordSpriteTintFlash } from '../../../../undersea/carrier/WordSpriteTableLayer/worklets/wordSpriteTableWorklets';
 import { findSentenceSlotAtTap } from '../../../../undersea/exercises/sentenceTransformation/components/WordSpriteSentenceRowLayer/sentenceRowWorklets';
@@ -105,9 +103,6 @@ type SlotRoseProps = {
   layoutScale: SharedValue<number[]>;
   layoutScaleMin: SharedValue<number[]>;
   layoutScaleMax: SharedValue<number[]>;
-  motionAngles: SharedValue<number[]>;
-  motionAmps: SharedValue<number[]>;
-  index: number;
   retainedLabelRotation: SharedValue<number>;
   tintFlashPreset: SharedValue<number[]>;
   tintFlashUntil: SharedValue<number[]>;
@@ -133,9 +128,6 @@ function SlotRose({
   layoutScale,
   layoutScaleMin,
   layoutScaleMax,
-  motionAngles,
-  motionAmps,
-  index,
   retainedLabelRotation,
   tintFlashPreset,
   tintFlashUntil,
@@ -150,9 +142,6 @@ function SlotRose({
   roseCenterImage,
   ringImages,
 }: SlotRoseProps) {
-  const slotMotionAngle = useDerivedValue(() => motionAngles.value[index] ?? 0);
-  const slotMotionAmp = useDerivedValue(() => motionAmps.value[index] ?? 0);
-
   if (roseBudImage == null || roseCenterImage == null || ringImages == null) {
     return null;
   }
@@ -183,8 +172,6 @@ function SlotRose({
         layoutX={layoutX}
         layoutY={layoutY}
         layoutScale={layoutScale}
-        motionAngle={slotMotionAngle}
-        motionAmp={slotMotionAmp}
         retainedLabelRotation={retainedLabelRotation}
         tintFlashPreset={tintFlashPreset}
         tintFlashUntil={tintFlashUntil}
@@ -289,10 +276,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
   const spawnYs = useSharedValue<number[]>([]);
   const centerXs = useSharedValue<number[]>([]);
   const centerYs = useSharedValue<number[]>([]);
-  const enterAngles = useSharedValue<number[]>([]);
-  const exitAngles = useSharedValue<number[]>([]);
-  const motionAngles = useSharedValue<number[]>([]);
-  const motionAmps = useSharedValue<number[]>([]);
   const swimProgress = useSharedValue(1);
   const openProgress = useSharedValue(1);
   const blankExitProgress = useSharedValue(0);
@@ -332,8 +315,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
       spawnYs.value = [];
       centerXs.value = [];
       centerYs.value = [];
-      enterAngles.value = [];
-      exitAngles.value = [];
       layoutX.value = [];
       layoutY.value = [];
       baseLayoutScale.value = [];
@@ -344,8 +325,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
     spawnYs.value = motionPaths.map(p => p.spawnY);
     centerXs.value = motionPaths.map(p => p.slotCenterX);
     centerYs.value = motionPaths.map(p => p.slotCenterY);
-    enterAngles.value = motionPaths.map(p => p.enterAngle);
-    exitAngles.value = motionPaths.map(p => p.exitAngle);
     layoutX.value = layout.xs;
     layoutY.value = layout.ys;
     baseLayoutScale.value = layout.scales;
@@ -356,8 +335,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
       blankExitProgress.value = 0;
       openProgress.value = 0;
       swimProgress.value = 0;
-      motionAngles.value = enterAngles.value;
-      motionAmps.value = new Array(count).fill(TILT_AMP_MAX);
       swimProgress.value = withTiming(
         1,
         {
@@ -367,7 +344,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
         finished => {
           'worklet';
           if (finished) {
-            motionAmps.value = new Array(motionAmps.value.length).fill(0);
             openProgress.value = withTiming(1, {
               duration: ROW_OPEN_DURATION_MS,
               easing: Easing.out(Easing.cubic),
@@ -388,10 +364,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
     spawnYs,
     centerXs,
     centerYs,
-    enterAngles,
-    exitAngles,
-    motionAngles,
-    motionAmps,
     baseLayoutScale,
     slotAnimScale,
     swimProgress,
@@ -457,22 +429,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
 
   useEffect(() => {
     if (roundPhase === 'exit') {
-      const count = layout.configs.length;
-      const amps = new Array(count).fill(0);
-      if (blankSlotIndex >= 0) {
-        motionAngles.value = motionAngles.value.map((_angle, i) =>
-          i === blankSlotIndex ? motionAngles.value[i] : exitAngles.value[i] ?? 0,
-        );
-        for (let i = 0; i < count; i++) {
-          amps[i] = i === blankSlotIndex ? motionAmps.value[i] : TILT_AMP_MAX;
-        }
-      } else {
-        motionAngles.value = exitAngles.value;
-        for (let i = 0; i < count; i++) {
-          amps[i] = TILT_AMP_MAX;
-        }
-      }
-      motionAmps.value = amps;
       openProgress.value = withTiming(0, {
         duration: ROW_CLOSE_DURATION_MS,
         easing: Easing.in(Easing.cubic),
@@ -486,7 +442,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
         swimFinished => {
           'worklet';
           if (swimFinished) {
-            motionAmps.value = new Array(motionAmps.value.length).fill(0);
             scheduleOnRN(fireRowExitComplete);
           }
         },
@@ -494,11 +449,7 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
     }
   }, [
     blankSlotIndex,
-    exitAngles,
     fireRowExitComplete,
-    layout.configs.length,
-    motionAmps,
-    motionAngles,
     openProgress,
     roundPhase,
     swimProgress,
@@ -512,21 +463,11 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
       duration: blankExitDurationMs,
       easing: Easing.in(Easing.cubic),
     });
-    const blankIdx = blankSlotIndex;
-    motionAngles.value = motionAngles.value.map((_angle, i) =>
-      i === blankIdx ? exitAngles.value[blankIdx] ?? 0 : 0,
-    );
-    motionAmps.value = motionAmps.value.map((_v, i) =>
-      i === blankIdx ? TILT_AMP_MAX : 0,
-    );
   }, [
     blankExiting,
     blankSlotIndex,
     blankExitProgress,
     blankExitDurationMs,
-    exitAngles,
-    motionAngles,
-    motionAmps,
   ]);
 
   useEffect(() => {
@@ -690,9 +631,6 @@ export function FlowerGardenWordSpriteSentenceRowLayer({
               layoutScale={layoutScale}
               layoutScaleMin={layoutScale}
               layoutScaleMax={layoutScale}
-              motionAngles={motionAngles}
-              motionAmps={motionAmps}
-              index={config.index}
               retainedLabelRotation={retainedLabelRotation}
               tintFlashPreset={tintFlashPreset}
               tintFlashUntil={tintFlashUntil}
