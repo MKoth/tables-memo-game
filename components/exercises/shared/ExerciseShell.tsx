@@ -23,6 +23,7 @@ function ExerciseShellContent({ children }: { children: ReactNode }) {
         backgroundImage={assets.backgroundImage}
         decorationImages={assets.decorationImages}
         accentImages={assets.accentImages}
+        scatterImages={assets.scatterImages}
       />
     );
   }

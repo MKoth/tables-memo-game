@@ -62,6 +62,7 @@ type FlowerGardenAssetsReady = {
 export function useFlowerGardenThemeAssets(): ThemeAssets {
   const [backgroundImage, setBackgroundImage] = useState<SkImage | null>(null);
   const [decorationImages, setDecorationImages] = useState<Record<string, SkImage> | null>(null);
+  const [scatterImages, setScatterImages] = useState<Record<string, SkImage[]> | null>(null);
   const [progress, setProgress] = useState(0);
   const [readyAssets, setReadyAssets] = useState<FlowerGardenAssetsReady | null>(
     null,
@@ -147,6 +148,9 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           leafImages,
           substrateImage,
           roseLeafAtlas,
+          cloverImages,
+          mossStoneImages,
+          petalImages,
         ] = await Promise.all([
           loadSingle(EARTH_SOURCE, 'earth'),
           loadSingle(GRASS_TILABLE_SOURCE, 'grass'),
@@ -155,6 +159,9 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           loadAll(LEAF_SOURCES, 'leaf'),
           loadSingle(ROSE_SUBSTRATE_SOURCE, 'substrate'),
           loadSingle(ROSE_LEAF_ATLAS_SOURCE, 'rose leaf atlas'),
+          loadAll(CLOVER_SOURCES, 'clover'),
+          loadAll(MOSS_STONE_SOURCES, 'moss stone'),
+          loadAll(PETAL_SOURCES, 'petal'),
         ]);
 
         if (cancelled) {
@@ -167,6 +174,11 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         if (grassImage != null) {
           setDecorationImages({ grass: grassImage });
         }
+        setScatterImages({
+          clovers: cloverImages.length > 0 ? cloverImages : [],
+          mossStones: mossStoneImages.length > 0 ? mossStoneImages : [],
+          petals: petalImages.length > 0 ? petalImages : [],
+        });
 
         const [
           roseBudImage,
@@ -207,9 +219,6 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
         }
 
         const [
-          petalImages,
-          cloverImages,
-          mossStoneImages,
           lycaenidaeBodyImage,
           lycaenidaeWingLeftImages,
           lycaenidaeWingRightImages,
@@ -225,9 +234,6 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
           orbBedSmallImages,
           flowerGardenSounds,
         ] = await Promise.all([
-          loadAll(PETAL_SOURCES, 'petal'),
-          loadAll(CLOVER_SOURCES, 'clover'),
-          loadAll(MOSS_STONE_SOURCES, 'moss stone'),
           loadSingle(LYCAENIDAE_BODY_SOURCE, 'lycaenidae body'),
           loadAll(LYCAENIDAE_LEFT_WING_SOURCES, 'lycaenidae left wing'),
           loadAll(LYCAENIDAE_RIGHT_WING_SOURCES, 'lycaenidae right wing'),
@@ -390,6 +396,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
       loadedCountRef.current = 0;
       setBackgroundImage(null);
       setDecorationImages(null);
+      setScatterImages(null);
       setProgress(0);
       setReadyAssets(null);
     };
@@ -409,6 +416,7 @@ export function useFlowerGardenThemeAssets(): ThemeAssets {
     backgroundImage,
     decorationImages,
     accentImages: null,
+    scatterImages,
     progress,
   } as ThemeAssets;
 }

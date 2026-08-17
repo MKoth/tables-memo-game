@@ -56,6 +56,7 @@ export type ThemeAssetsLoading = {
   backgroundImage: SkImage | null;
   decorationImages: Record<string, SkImage> | null;
   accentImages: Record<string, SkImage> | null;
+  scatterImages?: Record<string, SkImage[]> | null;
   progress: number;
 };
 
@@ -79,6 +80,7 @@ export type ThemeLoadingBackdropProps = {
   backgroundImage: import('@shopify/react-native-skia').SkImage | null;
   decorationImages: Record<string, import('@shopify/react-native-skia').SkImage> | null;
   accentImages: Record<string, import('@shopify/react-native-skia').SkImage> | null;
+  scatterImages?: Record<string, import('@shopify/react-native-skia').SkImage[]> | null;
 };
 
 export type ThemeTutorialStepCopy = {

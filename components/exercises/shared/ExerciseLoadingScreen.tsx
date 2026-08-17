@@ -22,9 +22,10 @@ type ExerciseLoadingScreenProps = {
   backgroundImage: SkImage | null;
   decorationImages: Record<string, SkImage> | null;
   accentImages: Record<string, SkImage> | null;
+  scatterImages?: Record<string, SkImage[]> | null;
 };
 
-export function ExerciseLoadingScreen({ progress, backgroundImage, decorationImages, accentImages }: ExerciseLoadingScreenProps) {
+export function ExerciseLoadingScreen({ progress, backgroundImage, decorationImages, accentImages, scatterImages }: ExerciseLoadingScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { roamerRect, screenHeight, orientation } = useExerciseLayout();
@@ -76,6 +77,7 @@ export function ExerciseLoadingScreen({ progress, backgroundImage, decorationIma
         backgroundImage={backgroundImage}
         decorationImages={decorationImages}
         accentImages={accentImages}
+        scatterImages={scatterImages}
       />
 
       <View
