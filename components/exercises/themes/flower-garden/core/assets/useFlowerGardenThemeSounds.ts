@@ -17,6 +17,8 @@ import {
   BEE_BUZZ_VOLUME,
   BUMBLEBEE_BUZZ_VOLUME,
   FLOWER_GARDEN_SOUND_ASSETS,
+  ORB_VOLUME,
+  PRIMARY_CLICK_VOLUME,
 } from './flowerGardenThemeSoundAssets';
 
 export type FlowerGardenBuzzSpecies = 'bee' | 'bumblebee';
@@ -57,9 +59,9 @@ export async function loadAllFlowerGardenThemeSounds(
   const [coreSounds, ambience, orbOpen, orbClose, primaryClick] = await Promise.all([
     loadCoreThemeSounds(tick),
     loadTracked(FLOWER_GARDEN_SOUND_ASSETS.ambience, AMBIENCE_VOLUME),
-    loadTracked(FLOWER_GARDEN_SOUND_ASSETS.orbOpen, DEFAULT_SFX_VOLUME),
-    loadTracked(FLOWER_GARDEN_SOUND_ASSETS.orbClose, DEFAULT_SFX_VOLUME),
-    loadTracked(FLOWER_GARDEN_SOUND_ASSETS.primaryClick, DEFAULT_SFX_VOLUME),
+    loadTracked(FLOWER_GARDEN_SOUND_ASSETS.orbOpen, ORB_VOLUME),
+    loadTracked(FLOWER_GARDEN_SOUND_ASSETS.orbClose, ORB_VOLUME),
+    loadTracked(FLOWER_GARDEN_SOUND_ASSETS.primaryClick, PRIMARY_CLICK_VOLUME),
   ]);
 
   ambience.setNumberOfLoops(-1);
@@ -169,13 +171,13 @@ export function createFlowerGardenSoundController(
       if (state.muted) {
         return;
       }
-      playOneShot(loaded.orbOpen);
+      playOneShot(loaded.orbOpen, ORB_VOLUME);
     },
     playOrbPop: () => {
       if (state.muted) {
         return;
       }
-      playOneShot(loaded.orbClose);
+      playOneShot(loaded.orbClose, ORB_VOLUME);
     },
     playSuccessClick: () => {
       if (state.muted) {
@@ -193,7 +195,7 @@ export function createFlowerGardenSoundController(
       if (state.muted) {
         return;
       }
-      playOneShot(loaded.primaryClick);
+      playOneShot(loaded.primaryClick, PRIMARY_CLICK_VOLUME);
     },
     playFanfare: () => {
       if (state.muted) {
