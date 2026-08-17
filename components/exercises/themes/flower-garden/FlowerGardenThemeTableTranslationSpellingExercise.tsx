@@ -71,15 +71,16 @@ function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps)
   const fieldFlowerConfigs = useFieldFlowerConfigs({
     lowerScreenFraction: 1,
     count: FIELD_FLOWER_COUNT,
-    ...(isLandscape ? { bandTopRatio: 0.1, bandHeightRatio: 0.8, bandLeftRatio: 0, bandWidthRatio: 0.5 } : {}),
   });
   const flowerSwingBoosts = useSharedValue<number[]>([]);
   const petalBandZone = useMemo<ZoneRect>(
-    () =>
-      isLandscape
-        ? { x: 0, y: screenHeight - screenHeight * PETAL_BAND_HEIGHT_RATIO, w: screenWidth * PETAL_BAND_HEIGHT_RATIO, h: screenHeight * PETAL_BAND_HEIGHT_RATIO }
-        : { x: 0, y: screenHeight * (1 - PETAL_BAND_HEIGHT_RATIO), w: screenWidth, h: screenHeight * PETAL_BAND_HEIGHT_RATIO },
-    [screenWidth, screenHeight, isLandscape],
+    () => ({
+      x: 0,
+      y: screenHeight * (1 - PETAL_BAND_HEIGHT_RATIO),
+      w: screenWidth,
+      h: screenHeight * PETAL_BAND_HEIGHT_RATIO,
+    }),
+    [screenWidth, screenHeight],
   );
 
   useEffect(() => {

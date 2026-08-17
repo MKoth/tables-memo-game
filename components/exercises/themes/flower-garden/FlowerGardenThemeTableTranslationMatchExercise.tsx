@@ -236,8 +236,6 @@ function useSyncedSessionController(
 
 function TranslationMatchContentWithSounds() {
   const { sounds } = useFlowerGardenAssetsContext();
-  const { orientation } = useExerciseLayout();
-  const isLandscape = orientation === 'landscapeLeft' || orientation === 'landscapeRight';
 
   const capturedEnglishSv = useSharedValue('');
   const matchedIndicesSv = useSharedValue<number[]>([]);
@@ -250,7 +248,6 @@ function TranslationMatchContentWithSounds() {
     count: 20,
     bandTopRatio: 0.25,
     bandHeightRatio: 0.5,
-    ...(isLandscape ? { bandLeftRatio: 0, bandWidthRatio: 0.5 } : {}),
   });
   const flowerSwingBoosts = useSharedValue<number[]>([]);
 
