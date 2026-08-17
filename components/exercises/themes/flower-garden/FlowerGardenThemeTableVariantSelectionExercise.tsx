@@ -94,7 +94,11 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
     [screenWidth, screenHeight, isLandscape],
   );
 
-  const fieldFlowerConfigs = useFieldFlowerConfigs();
+  const fieldFlowerConfigs = useFieldFlowerConfigs(
+    isLandscape
+      ? { bandTopRatio: 0.1, bandHeightRatio: 0.8, bandLeftRatio: 0, bandWidthRatio: 0.5 }
+      : {},
+  );
   const flowerSwingBoosts = useSharedValue<number[]>([]);
   const petalBandZone = useMemo<ZoneRect>(
     () =>
@@ -129,6 +133,9 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
     rowTapControllerRef.current?.handleTap(x, y);
   }, []);
 
+  const rowSizeScale = isLandscape ? 1.2 : ROW_SIZE_SCALE;
+  const rowLineHeightRatio = isLandscape ? 0.6 : ROW_LINE_HEIGHT_RATIO;
+
   const game = useVariantSelectionGame({
     table,
     orientation,
@@ -136,8 +143,8 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
     screenHeight,
     roamerRect: orbRect,
     spriteRect: rowRect,
-    rowSizeScale: ROW_SIZE_SCALE,
-    rowLineHeightRatio: ROW_LINE_HEIGHT_RATIO,
+    rowSizeScale,
+    rowLineHeightRatio,
     playSuccess: sounds.playSuccessClick,
     playWrong: sounds.playWrongClick,
   });
@@ -180,8 +187,8 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
             controllerRef={rowTapControllerRef}
             spriteRect={rowRect}
             roamerRect={orbRect}
-            sizeScale={ROW_SIZE_SCALE}
-            lineHeightRatio={ROW_LINE_HEIGHT_RATIO}
+            sizeScale={rowSizeScale}
+            lineHeightRatio={rowLineHeightRatio}
           />
         </View>
         <View style={[styles.fullLayer, { zIndex: OPTION_LAYER_Z }]} pointerEvents="box-none">
