@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import Orientation, {
   useDeviceOrientationChange,
   useOrientationChange,
@@ -24,6 +24,7 @@ function mapOrientation(type: string): ExerciseOrientation | null {
 
 export function useExerciseDeviceOrientation(): ExerciseOrientation | null {
   const [orientation, setOrientation] = useState<ExerciseOrientation | null>(null);
+  const didInitRef = useRef(false);
 
   const applyOrientation = useCallback((type: string) => {
     const mapped = mapOrientation(type);
@@ -34,10 +35,20 @@ export function useExerciseDeviceOrientation(): ExerciseOrientation | null {
 
   useLayoutEffect(() => {
     Orientation.lockToAllOrientationsButUpsideDown();
-  }, []);
+    Orientation.getOrientation(type => {
+      applyOrientation(type);
+      didInitRef.current = true;
+    });
+  }, [applyOrientation]);
 
-  useOrientationChange(applyOrientation);
-  useDeviceOrientationChange(applyOrientation);
+  useOrientationChange(type => {
+    if (!didInitRef.current) return;
+    applyOrientation(type);
+  });
+  useDeviceOrientationChange(type => {
+    if (!didInitRef.current) return;
+    applyOrientation(type);
+  });
 
   return orientation;
 }
