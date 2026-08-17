@@ -6,12 +6,10 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { spanishPresentTable2Plural } from '../../../../data/tableData';
 import {
   ExerciseClockProvider,
-  ExerciseLayoutProvider,
   ExerciseRuntimeProvider,
   WORD_TRANSFORMATION_STORE_CONFIG,
   useExerciseLayout,
   useExerciseStore,
-  type ExerciseZoneRatios,
   type ZoneRect,
 } from '../../core';
 import { useFlowerGardenAssetsContext } from './core/providers/FlowerGardenAssetsProvider';
@@ -34,12 +32,6 @@ import {
 } from './exercises/sentenceTransformation/components/FlowerGardenWordSpriteSentenceRowLayer';
 import { FlowerGardenOptionWordSpriteLayer } from './exercises/variantSelection/components/FlowerGardenOptionWordSpriteLayer';
 import { TAP_MAX_DISTANCE_PX } from './carrier/FlowerGardenWordSpriteTableLayer/config/flowerTableLayerConfig';
-
-const FULL_SCREEN_ZONE_RATIOS: ExerciseZoneRatios = {
-  roamerFraction: 1,
-  wordSpriteInsetRatio: 0,
-  wordSpriteHeightFraction: 1,
-};
 
 /** Roses sit in the upper half; the option word orbs take the lower half. */
 const ROW_ZONE_FRACTION = 0.5;
@@ -85,25 +77,31 @@ function VariantSelectionContent({ sounds }: VariantSelectionContentProps) {
   const soundEnabled = useExerciseStore(state => state.soundEnabled);
   const { orientation, screenWidth, screenHeight } = useExerciseLayout();
 
+  const isLandscape = orientation === 'landscapeLeft' || orientation === 'landscapeRight';
+
   const rowRect = useMemo<ZoneRect>(
-    () => ({ x: 0, y: 0, w: screenWidth, h: screenHeight * ROW_ZONE_FRACTION }),
-    [screenWidth, screenHeight],
+    () =>
+      isLandscape
+        ? { x: screenWidth * ROW_ZONE_FRACTION, y: 0, w: screenWidth * (1 - ROW_ZONE_FRACTION), h: screenHeight }
+        : { x: 0, y: 0, w: screenWidth, h: screenHeight * ROW_ZONE_FRACTION },
+    [screenWidth, screenHeight, isLandscape],
   );
   const orbRect = useMemo<ZoneRect>(
-    () => ({
-      x: 0,
-      y: screenHeight * ROW_ZONE_FRACTION,
-      w: screenWidth,
-      h: screenHeight * (1 - ROW_ZONE_FRACTION),
-    }),
-    [screenWidth, screenHeight],
+    () =>
+      isLandscape
+        ? { x: 0, y: 0, w: screenWidth * ROW_ZONE_FRACTION, h: screenHeight }
+        : { x: 0, y: screenHeight * ROW_ZONE_FRACTION, w: screenWidth, h: screenHeight * (1 - ROW_ZONE_FRACTION) },
+    [screenWidth, screenHeight, isLandscape],
   );
 
   const fieldFlowerConfigs = useFieldFlowerConfigs();
   const flowerSwingBoosts = useSharedValue<number[]>([]);
   const petalBandZone = useMemo<ZoneRect>(
-    () => ({ x: 0, y: 0, w: screenWidth, h: screenHeight * PETAL_BAND_HEIGHT_RATIO }),
-    [screenWidth, screenHeight],
+    () =>
+      isLandscape
+        ? { x: 0, y: 0, w: screenWidth * PETAL_BAND_HEIGHT_RATIO, h: screenHeight }
+        : { x: 0, y: 0, w: screenWidth, h: screenHeight * PETAL_BAND_HEIGHT_RATIO },
+    [screenWidth, screenHeight, isLandscape],
   );
 
   useEffect(() => {
@@ -228,9 +226,7 @@ function VariantSelectionContentWithSounds() {
 export function FlowerGardenThemeTableVariantSelectionExercise() {
   return (
     <ExerciseShell storeConfig={WORD_TRANSFORMATION_STORE_CONFIG}>
-      <ExerciseLayoutProvider zoneRatios={FULL_SCREEN_ZONE_RATIOS}>
-        <VariantSelectionContentWithSounds />
-      </ExerciseLayoutProvider>
+      <VariantSelectionContentWithSounds />
     </ExerciseShell>
   );
 }
