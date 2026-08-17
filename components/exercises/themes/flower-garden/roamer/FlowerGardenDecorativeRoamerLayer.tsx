@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { ThemeDecorativeRoamerLayerProps } from '../../../themeContract';
+import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
 import { RoamerLayer } from './RoamerLayer';
 import { ROAMER_BUTTERFLY_DECORATIVE_COUNT } from './butterfly/config/butterflySettings';
 import type { SpeciesWeights } from './core/speciesAllocator';
@@ -8,12 +9,15 @@ import type { SpeciesWeights } from './core/speciesAllocator';
 export type FlowerGardenDecorativeRoamerLayerProps = ThemeDecorativeRoamerLayerProps & {
   /** Species mix for the decorative roamers (defaults to the shared config). */
   speciesWeights?: SpeciesWeights;
+  /** Override the swim zone rect (defaults to the layout's roamerRect). */
+  roamerRect?: ZoneRect;
 };
 
 export function FlowerGardenDecorativeRoamerLayer({
   zIndex,
   roamerCount = ROAMER_BUTTERFLY_DECORATIVE_COUNT,
   speciesWeights,
+  roamerRect,
 }: FlowerGardenDecorativeRoamerLayerProps) {
   const words = useMemo(
     () => Array.from({ length: roamerCount }, (_, index) => `__decorative_${index}`),
@@ -30,6 +34,7 @@ export function FlowerGardenDecorativeRoamerLayer({
         interactive={false}
         sessionId={`decorative`}
         speciesWeights={speciesWeights}
+        roamerRect={roamerRect}
       />
     </View>
   );

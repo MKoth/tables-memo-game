@@ -32,6 +32,8 @@ const MATCH_ESCAPE_Z = 8;
 export type FlowerGardenMatchRoamerLayerProps = ThemeMatchRoamerLayerProps & {
   /** Position of the matched rose, read when the correct-match escape fires. */
   escapeWaypointSv?: SharedValue<{ x: number; y: number } | null>;
+  /** Override the swim zone rect (defaults to the layout's roamerRect). */
+  roamerRect?: import('../../../../../../core/layout/computeExerciseLayout').ZoneRect;
 };
 
 export function FlowerGardenMatchRoamerLayer({
@@ -43,9 +45,11 @@ export function FlowerGardenMatchRoamerLayer({
   interactive = true,
   keepOutDiskSv,
   escapeWaypointSv,
+  roamerRect: overrideRect,
 }: FlowerGardenMatchRoamerLayerProps) {
   const layout = useExerciseLayout();
-  const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
+  const { roamerRect: layoutRect, screenWidth, screenHeight, layoutKey } = layout;
+  const roamerRect = overrideRect ?? layoutRect;
   const { images } = useFlowerGardenAssetsContext();
   const idleClock = useExerciseClockQuantized(ORB_IDLE_CLOCK_FPS);
   const orbReady = images.orbRingImages != null && images.orbBedImages != null;

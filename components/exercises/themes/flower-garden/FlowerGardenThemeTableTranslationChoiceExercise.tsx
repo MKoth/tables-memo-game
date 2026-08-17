@@ -73,6 +73,10 @@ function TranslationChoiceContent({ sounds }: TranslationChoiceContentProps) {
   );
 
   const sizeScale = isLandscape ? 1.2 : SIZE_SCALE;
+  const fullScreenRect = useMemo<ZoneRect>(
+    () => ({ x: 0, y: 0, w: screenWidth, h: screenHeight }),
+    [screenWidth, screenHeight],
+  );
   const fieldFlowerConfigs = useFieldFlowerConfigs({
     lowerScreenFraction: 1,
     count: FIELD_FLOWER_COUNT,
@@ -142,6 +146,7 @@ function TranslationChoiceContent({ sounds }: TranslationChoiceContentProps) {
           <FlowerGardenDecorativeRoamerLayer
             roamerCount={DECORATIVE_ROAMER_COUNT}
             speciesWeights={DECORATIVE_ROAMER_SPECIES_WEIGHTS}
+            roamerRect={fullScreenRect}
           />
         </View>
         <View style={[styles.fullLayer, { zIndex: OPTION_LAYER_Z }]} pointerEvents="box-none">

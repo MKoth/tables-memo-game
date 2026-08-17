@@ -168,6 +168,11 @@ function TranslationMatchContent({
     sounds.setMuted(!soundEnabled);
   }, [sounds, soundEnabled]);
 
+  const fullScreenRect = useMemo(
+    () => ({ x: 0, y: 0, w: screenWidth, h: screenHeight }),
+    [screenWidth, screenHeight],
+  );
+
   return (
     <View style={styles.container}>
       <View style={[styles.fullLayer, { zIndex: SCENERY_Z }]} pointerEvents="none">
@@ -182,6 +187,7 @@ function TranslationMatchContent({
         interactive={false}
         keepOutDiskSv={keepOutDiskSv}
         escapeWaypointSv={roseEscapeWaypointSv}
+        roamerRect={fullScreenRect}
       />
       <FlowerGardenMatchWordSpriteLayer
         words={spanishWords}

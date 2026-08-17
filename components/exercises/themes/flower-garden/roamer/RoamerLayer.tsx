@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import { Canvas, Group, type SkImage } from '@shopify/react-native-skia';
 import { useAnimatedReaction, useDerivedValue, runOnJS } from 'react-native-reanimated';
 import { useExerciseLayout } from '../../../core';
+import type { ZoneRect } from '../../../core/layout/computeExerciseLayout';
 import { useFlowerGardenAssetsContext } from '../core/providers/FlowerGardenAssetsProvider';
 import type { FlowerGardenSoundController } from '../core/assets/useFlowerGardenThemeSounds';
 import { useRoamerSimulation, type RoamerSimulation } from './core/useRoamerSimulation';
@@ -27,6 +28,8 @@ export type RoamerLayerProps = {
   hiddenIndices?: number[];
   /** Species mix for the roamer spawns (defaults to the shared species config). */
   speciesWeights?: SpeciesWeights;
+  /** Override the swim zone rect (defaults to the layout's roamerRect). */
+  roamerRect?: ZoneRect;
 };
 
 type RoamerLayerContentProps = {
@@ -168,6 +171,7 @@ function RoamerLayerWithSim({
   hiddenIndices,
   speciesWeights,
   images,
+  roamerRect: overrideRect,
 }: {
   words: string[];
   interactive: boolean;
@@ -175,9 +179,11 @@ function RoamerLayerWithSim({
   hiddenIndices: number[];
   speciesWeights?: SpeciesWeights;
   images: RoamerLayerContentProps['images'];
+  roamerRect?: ZoneRect;
 }) {
   const layout = useExerciseLayout();
-  const { roamerRect, screenWidth, screenHeight, layoutKey } = layout;
+  const { roamerRect: layoutRect, screenWidth, screenHeight, layoutKey } = layout;
+  const roamerRect = overrideRect ?? layoutRect;
 
   const sim = useRoamerSimulation({
     words,
@@ -206,6 +212,7 @@ export function RoamerLayer({
   sim: externalSim,
   hiddenIndices = [],
   speciesWeights,
+  roamerRect,
 }: RoamerLayerProps) {
   const { images } = useFlowerGardenAssetsContext();
 
@@ -242,6 +249,7 @@ export function RoamerLayer({
       hiddenIndices={hiddenIndices}
       speciesWeights={speciesWeights}
       images={images}
+      roamerRect={roamerRect}
     />
   );
 }
