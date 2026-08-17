@@ -6,12 +6,10 @@ import { useSharedValue } from 'react-native-reanimated';
 import { allWordLists } from '../../../../data/wordsData';
 import {
   ExerciseClockProvider,
-  ExerciseLayoutProvider,
   ExerciseRuntimeProvider,
   WORD_LEARNING_STORE_CONFIG,
   useExerciseLayout,
   useExerciseStore,
-  type ExerciseZoneRatios,
 } from '../../core';
 import { useFlowerGardenAssetsContext } from './core/providers/FlowerGardenAssetsProvider';
 import type { FlowerGardenSoundController } from './core/assets/useFlowerGardenThemeSounds';
@@ -34,12 +32,6 @@ import {
   type FlowerGardenMatchRoamerTapData,
   type FlowerGardenMatchRoseTapData,
 } from './exercises/wordLearning/translationMatch/flowerGarden/useFlowerGardenCombinedMatchGestures';
-
-const FULL_SCREEN_ZONE_RATIOS: ExerciseZoneRatios = {
-  roamerFraction: 1,
-  wordSpriteInsetRatio: 0,
-  wordSpriteHeightFraction: 1,
-};
 
 const MATCH_ROSE_Z = 4;
 const SCENERY_Z = 1;
@@ -244,6 +236,8 @@ function useSyncedSessionController(
 
 function TranslationMatchContentWithSounds() {
   const { sounds } = useFlowerGardenAssetsContext();
+  const { orientation } = useExerciseLayout();
+  const isLandscape = orientation === 'landscapeLeft' || orientation === 'landscapeRight';
 
   const capturedEnglishSv = useSharedValue('');
   const matchedIndicesSv = useSharedValue<number[]>([]);
@@ -256,6 +250,7 @@ function TranslationMatchContentWithSounds() {
     count: 20,
     bandTopRatio: 0.25,
     bandHeightRatio: 0.5,
+    ...(isLandscape ? { bandLeftRatio: 0, bandWidthRatio: 0.5 } : {}),
   });
   const flowerSwingBoosts = useSharedValue<number[]>([]);
 
@@ -300,9 +295,7 @@ function TranslationMatchContentWithSounds() {
 export function FlowerGardenThemeTableTranslationMatchExercise() {
   return (
     <ExerciseShell storeConfig={WORD_LEARNING_STORE_CONFIG}>
-      <ExerciseLayoutProvider zoneRatios={FULL_SCREEN_ZONE_RATIOS}>
-        <TranslationMatchContentWithSounds />
-      </ExerciseLayoutProvider>
+      <TranslationMatchContentWithSounds />
     </ExerciseShell>
   );
 }

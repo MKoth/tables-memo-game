@@ -4,12 +4,10 @@ import { useSharedValue } from 'react-native-reanimated';
 import { animalsWordList } from '../../../../data/wordsData';
 import {
   ExerciseClockProvider,
-  ExerciseLayoutProvider,
   ExerciseRuntimeProvider,
   WORD_LEARNING_STORE_CONFIG,
   useExerciseLayout,
   useExerciseStore,
-  type ExerciseZoneRatios,
   type ZoneRect,
 } from '../../core';
 import { useFlowerGardenAssetsContext } from './core/providers/FlowerGardenAssetsProvider';
@@ -23,12 +21,6 @@ import { ExerciseCornerControls } from '../../ui';
 import { useTranslationSpellingGame } from '../../wordLearning/translationSpelling/hooks/useTranslationSpellingGame';
 import { useTranslationSpellingScenes } from './exercises/wordLearning/translationSpelling/components/useTranslationSpellingScenes';
 import { FlowerGardenTransformationActorsCanvas } from './wordTransformationScene/FlowerGardenTransformationActorsCanvas';
-
-const FULL_SCREEN_ZONE_RATIOS: ExerciseZoneRatios = {
-  roamerFraction: 1,
-  wordSpriteInsetRatio: 0,
-  wordSpriteHeightFraction: 1,
-};
 
 /** The word rows sit in the upper half; the letter pool takes the lower half. */
 const WORD_ZONE_FRACTION = 0.5;
@@ -59,34 +51,35 @@ type TranslationSpellingContentProps = {
 function TranslationSpellingContent({ sounds }: TranslationSpellingContentProps) {
   const soundEnabled = useExerciseStore(state => state.soundEnabled);
   const { orientation, screenWidth, screenHeight } = useExerciseLayout();
+  const isLandscape = orientation === 'landscapeLeft' || orientation === 'landscapeRight';
 
   const wordRect = useMemo<ZoneRect>(
-    () => ({ x: 0, y: 0, w: screenWidth, h: screenHeight * WORD_ZONE_FRACTION }),
-    [screenWidth, screenHeight],
+    () =>
+      isLandscape
+        ? { x: screenWidth * WORD_ZONE_FRACTION, y: 0, w: screenWidth * (1 - WORD_ZONE_FRACTION), h: screenHeight }
+        : { x: 0, y: 0, w: screenWidth, h: screenHeight * WORD_ZONE_FRACTION },
+    [screenWidth, screenHeight, isLandscape],
   );
   const orbRect = useMemo<ZoneRect>(
-    () => ({
-      x: 0,
-      y: screenHeight * WORD_ZONE_FRACTION,
-      w: screenWidth,
-      h: screenHeight * (1 - WORD_ZONE_FRACTION),
-    }),
-    [screenWidth, screenHeight],
+    () =>
+      isLandscape
+        ? { x: 0, y: 0, w: screenWidth * WORD_ZONE_FRACTION, h: screenHeight }
+        : { x: 0, y: screenHeight * WORD_ZONE_FRACTION, w: screenWidth, h: screenHeight * (1 - WORD_ZONE_FRACTION) },
+    [screenWidth, screenHeight, isLandscape],
   );
 
   const fieldFlowerConfigs = useFieldFlowerConfigs({
     lowerScreenFraction: 1,
     count: FIELD_FLOWER_COUNT,
+    ...(isLandscape ? { bandTopRatio: 0.1, bandHeightRatio: 0.8, bandLeftRatio: 0, bandWidthRatio: 0.5 } : {}),
   });
   const flowerSwingBoosts = useSharedValue<number[]>([]);
   const petalBandZone = useMemo<ZoneRect>(
-    () => ({
-      x: 0,
-      y: screenHeight * (1 - PETAL_BAND_HEIGHT_RATIO),
-      w: screenWidth,
-      h: screenHeight * PETAL_BAND_HEIGHT_RATIO,
-    }),
-    [screenWidth, screenHeight],
+    () =>
+      isLandscape
+        ? { x: 0, y: screenHeight - screenHeight * PETAL_BAND_HEIGHT_RATIO, w: screenWidth * PETAL_BAND_HEIGHT_RATIO, h: screenHeight * PETAL_BAND_HEIGHT_RATIO }
+        : { x: 0, y: screenHeight * (1 - PETAL_BAND_HEIGHT_RATIO), w: screenWidth, h: screenHeight * PETAL_BAND_HEIGHT_RATIO },
+    [screenWidth, screenHeight, isLandscape],
   );
 
   useEffect(() => {
@@ -205,9 +198,7 @@ function TranslationSpellingContentWithSounds() {
 export function FlowerGardenThemeTableTranslationSpellingExercise() {
   return (
     <ExerciseShell storeConfig={WORD_LEARNING_STORE_CONFIG}>
-      <ExerciseLayoutProvider zoneRatios={FULL_SCREEN_ZONE_RATIOS}>
-        <TranslationSpellingContentWithSounds />
-      </ExerciseLayoutProvider>
+      <TranslationSpellingContentWithSounds />
     </ExerciseShell>
   );
 }
