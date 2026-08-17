@@ -3,7 +3,7 @@ import type { ZoneRect } from '../../../../core/layout/computeExerciseLayout';
 import { createRoamerRuntime } from './createRoamerRuntime';
 import { createRoamerSpawnsFromWords } from './createRoamerSpawns';
 import type { SpeciesWeights } from './speciesAllocator';
-import type { RoamerRuntimeEntry, SwimZone } from './types';
+import { FlightState, type RoamerRuntimeEntry, type SwimZone } from './types';
 
 export type PersistedRoamerSimBundle = {
   wordsKey: string;
@@ -75,10 +75,32 @@ export function relayoutRoamerSimBundle(
   };
 
   const pos = bundle.sharedPositions.value.slice();
+  const margin = 20;
+  const zoneMinX = swimZone.x + margin;
+  const zoneMaxX = swimZone.x + swimZone.w - margin;
+  const zoneMinY = swimZone.y + margin;
+  const zoneMaxY = swimZone.y + swimZone.h - margin;
+
   for (let i = 0; i < bundle.runtimeEntries.length; i++) {
     const roamer = bundle.runtimeEntries[i]!.runtime;
-    pos[i * 2] = roamer.x.value;
-    pos[i * 2 + 1] = roamer.y.value;
+    const x = roamer.x.value;
+    const y = roamer.y.value;
+    const outside = x < zoneMinX || x > zoneMaxX || y < zoneMinY || y > zoneMaxY;
+
+    if (outside) {
+      const newX = zoneMinX + Math.random() * (zoneMaxX - zoneMinX);
+      const newY = zoneMinY + Math.random() * (zoneMaxY - zoneMinY);
+      roamer.x.value = newX;
+      roamer.y.value = newY;
+      roamer.state.value = FlightState.FLYING_CRUISE;
+      roamer.stateTimer.value = 2 + Math.random() * 3;
+      roamer.targetFlowerIndex.value = -1;
+      pos[i * 2] = newX;
+      pos[i * 2 + 1] = newY;
+    } else {
+      pos[i * 2] = x;
+      pos[i * 2 + 1] = y;
+    }
   }
 
   bundle.sharedPositions.value = pos;

@@ -22,12 +22,8 @@ function mapOrientation(type: string): ExerciseOrientation | null {
   }
 }
 
-function readInitialOrientation(): ExerciseOrientation {
-  return mapOrientation(Orientation.getInitialOrientation()) ?? 'portrait';
-}
-
-export function useExerciseDeviceOrientation(): ExerciseOrientation {
-  const [orientation, setOrientation] = useState<ExerciseOrientation>(readInitialOrientation);
+export function useExerciseDeviceOrientation(): ExerciseOrientation | null {
+  const [orientation, setOrientation] = useState<ExerciseOrientation | null>(null);
 
   const applyOrientation = useCallback((type: string) => {
     const mapped = mapOrientation(type);

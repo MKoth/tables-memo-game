@@ -65,6 +65,10 @@ export type UseFieldFlowerConfigsOptions = {
   bandTopRatio?: number;
   /** Height of the placement band as a fraction of screen height (replaces the lower band). */
   bandHeightRatio?: number;
+  /** Left of the placement band as a fraction of screen width (for landscape horizontal bands). */
+  bandLeftRatio?: number;
+  /** Width of the placement band as a fraction of screen width (for landscape horizontal bands). */
+  bandWidthRatio?: number;
 };
 
 export function useFieldFlowerConfigs(
@@ -132,6 +136,8 @@ export function useFieldFlowerConfigs(
       maxSwingSpeed,
       bandTopRatio: options.bandTopRatio,
       bandHeightRatio: options.bandHeightRatio,
+      bandLeftRatio: options.bandLeftRatio,
+      bandWidthRatio: options.bandWidthRatio,
     };
 
     return generateFieldFlowerConfigs(input);
@@ -165,5 +171,7 @@ export function useFieldFlowerConfigs(
     maxSwingSpeed,
     options.bandTopRatio,
     options.bandHeightRatio,
+    options.bandLeftRatio,
+    options.bandWidthRatio,
   ]);
 }

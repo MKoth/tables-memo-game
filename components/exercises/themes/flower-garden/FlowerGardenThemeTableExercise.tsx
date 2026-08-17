@@ -415,7 +415,13 @@ function FlowerGardenExerciseContent() {
   const soundEnabled = useExerciseStore((state) => state.soundEnabled);
   const tutorialActive = tutorialStep !== 'idle';
   const { sounds } = useFlowerGardenAssetsContext();
-  const fieldFlowerConfigs = useFieldFlowerConfigs();
+  const { orientation } = useExerciseLayout();
+  const isLandscape = orientation === 'landscapeLeft' || orientation === 'landscapeRight';
+  const fieldFlowerConfigs = useFieldFlowerConfigs(
+    isLandscape
+      ? { bandTopRatio: 0.1, bandHeightRatio: 0.8, bandLeftRatio: 0, bandWidthRatio: 0.5 }
+      : {},
+  );
   const flowerSwingBoosts = useSharedValue<number[]>([]);
   const [eliminatedRoamerIndices, setEliminatedRoamerIndices] = useState<number[]>([]);
 

@@ -42,6 +42,10 @@ export type GenerateFieldFlowerConfigsInput = {
   bandTopRatio?: number;
   /** Height of the placement band as a fraction of screen height (replaces the lower band). */
   bandHeightRatio?: number;
+  /** Left of the placement band as a fraction of screen width (for landscape horizontal bands). */
+  bandLeftRatio?: number;
+  /** Width of the placement band as a fraction of screen width (for landscape horizontal bands). */
+  bandWidthRatio?: number;
 };
 
 const LEAF_VARIANT_COUNT = 4;
@@ -83,15 +87,20 @@ function distributeFlowerTypes(count: number, rng: Rng): FieldFlowerType[] {
 
 export function resolveFieldFlowerBand(
   input: GenerateFieldFlowerConfigsInput,
-): { bandTop: number; bandBottom: number } {
-  const { screenHeight, lowerScreenFraction } = input;
+): { bandTop: number; bandBottom: number; bandLeft: number; bandRight: number } {
+  const { screenWidth, screenHeight, lowerScreenFraction } = input;
   const defaultTop = screenHeight * (1 - lowerScreenFraction);
   const bandTop = input.bandTopRatio != null ? input.bandTopRatio * screenHeight : defaultTop;
   const bandBottom =
     input.bandHeightRatio != null
       ? bandTop + input.bandHeightRatio * screenHeight
       : screenHeight;
-  return { bandTop, bandBottom };
+  const bandLeft = input.bandLeftRatio != null ? input.bandLeftRatio * screenWidth : 0;
+  const bandRight =
+    input.bandWidthRatio != null
+      ? bandLeft + input.bandWidthRatio * screenWidth
+      : screenWidth;
+  return { bandTop, bandBottom, bandLeft, bandRight };
 }
 
 export function validateFieldFlowerConfigs(
@@ -104,7 +113,7 @@ export function validateFieldFlowerConfigs(
     );
   }
 
-  const { bandTop, bandBottom } = resolveFieldFlowerBand(input);
+  const { bandTop, bandBottom, bandLeft, bandRight } = resolveFieldFlowerBand(input);
   const bandBottomInclusive = bandBottom - input.bottomPadding;
   for (const fc of configs) {
     if (fc.headerY < bandTop || fc.headerY > bandBottomInclusive) {
@@ -112,9 +121,9 @@ export function validateFieldFlowerConfigs(
         `validateFieldFlowerConfigs: flower ${fc.flowerId} headerY ${fc.headerY} outside band [${bandTop}, ${bandBottomInclusive}]`,
       );
     }
-    if (fc.headerX < 0 || fc.headerX > input.screenWidth) {
+    if (fc.headerX < bandLeft || fc.headerX > bandRight) {
       throw new Error(
-        `validateFieldFlowerConfigs: flower ${fc.flowerId} headerX ${fc.headerX} outside screen`,
+        `validateFieldFlowerConfigs: flower ${fc.flowerId} headerX ${fc.headerX} outside band [${bandLeft}, ${bandRight}]`,
       );
     }
     if (fc.leafCount < input.minLeaves || fc.leafCount > input.maxLeaves) {
@@ -146,7 +155,6 @@ export function generateFieldFlowerConfigs(
   input: GenerateFieldFlowerConfigsInput,
 ): FieldFlowerConfig[] {
   const {
-    screenWidth,
     rng,
     count,
     minLeaves,
@@ -179,9 +187,9 @@ export function generateFieldFlowerConfigs(
   const flowerTypes = distributeFlowerTypes(count, rng);
 
   const configs: FieldFlowerConfig[] = [];
-  const { bandTop, bandBottom } = resolveFieldFlowerBand(input);
-  const xMin = screenWidth * 0.1;
-  const xRange = screenWidth * 0.8;
+  const { bandTop, bandBottom, bandLeft, bandRight } = resolveFieldFlowerBand(input);
+  const xMin = bandLeft + (bandRight - bandLeft) * 0.1;
+  const xRange = (bandRight - bandLeft) * 0.8;
   const yMaxExtent = Math.max(0, bandBottom - bandTop - bottomPadding);
 
   function randomPosition(): { x: number; y: number } {

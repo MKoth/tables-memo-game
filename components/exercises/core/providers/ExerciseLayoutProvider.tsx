@@ -20,9 +20,16 @@ export function ExerciseLayoutProvider({
   const orientation = useExerciseDeviceOrientation();
 
   const layout = useMemo(
-    () => computeExerciseLayout(width, height, orientation, zoneRatios),
+    () =>
+      orientation != null
+        ? computeExerciseLayout(width, height, orientation, zoneRatios)
+        : null,
     [width, height, orientation, zoneRatios],
   );
+
+  if (layout == null) {
+    return null;
+  }
 
   return (
     <ExerciseLayoutContext.Provider value={layout}>
