@@ -46,9 +46,14 @@ function WordTransformationContent({ sounds }: WordTransformationContentProps) {
   const soundEnabled = useExerciseStore(state => state.soundEnabled);
 
   const { wordSpriteBridge } = useExerciseRuntime();
-  const { spriteRect, roamerRect } = useExerciseLayout();
+  const { spriteRect, roamerRect, orientation } = useExerciseLayout();
+  const isLandscape = orientation === 'landscapeLeft' || orientation === 'landscapeRight';
 
-  const fieldFlowerConfigs = useFieldFlowerConfigs();
+  const fieldFlowerConfigs = useFieldFlowerConfigs(
+    isLandscape
+      ? { bandTopRatio: 0.1, bandHeightRatio: 0.8, bandLeftRatio: 0, bandWidthRatio: 0.5 }
+      : {},
+  );
   const flowerSwingBoosts = useSharedValue<number[]>([]);
 
   useEffect(() => {
