@@ -24,8 +24,9 @@ import { FlowerGardenVariantSelectionExercise } from './components/exercises/Flo
 import { FlowerGardenTranslationChoiceExercise } from './components/exercises/FlowerGardenTranslationChoiceExercise';
 import { FlowerGardenTranslationSpellingExercise } from './components/exercises/FlowerGardenTranslationSpellingExercise';
 import { FlowerGardenTranslationMatchExercise } from './components/exercises/FlowerGardenTranslationMatchExercise';
+import { SwampTableExercise } from './components/exercises/SwampTableExercise';
 
-type ThemeKey = 'undersea' | 'flowerGarden';
+type ThemeKey = 'undersea' | 'flowerGarden' | 'swamp';
 
 type ExerciseKey =
   | 'table'
@@ -41,11 +42,13 @@ type ExerciseKey =
   | 'flowerGardenVariantSelection'
   | 'flowerGardenTranslationChoice'
   | 'flowerGardenTranslationSpelling'
-  | 'flowerGardenTranslationMatch';
+  | 'flowerGardenTranslationMatch'
+  | 'swampTable';
 
 const THEMES: { key: ThemeKey; label: string }[] = [
   { key: 'undersea', label: 'Undersea' },
   { key: 'flowerGarden', label: 'Flower Garden' },
+  { key: 'swamp', label: 'Swamp' },
 ];
 
 const EXERCISES: { key: ExerciseKey; theme: ThemeKey; label: string }[] = [
@@ -63,6 +66,7 @@ const EXERCISES: { key: ExerciseKey; theme: ThemeKey; label: string }[] = [
   { key: 'flowerGardenTranslationChoice', theme: 'flowerGarden', label: 'Translation Choice' },
   { key: 'flowerGardenTranslationSpelling', theme: 'flowerGarden', label: 'Translation Spelling' },
   { key: 'flowerGardenTranslationMatch', theme: 'flowerGarden', label: 'Translation Match' },
+  { key: 'swampTable', theme: 'swamp', label: 'Table (Conjugation)' },
 ];
 
 const EXERCISE_COMPONENTS: Record<ExerciseKey, React.ComponentType> = {
@@ -80,6 +84,7 @@ const EXERCISE_COMPONENTS: Record<ExerciseKey, React.ComponentType> = {
   flowerGardenTranslationChoice: FlowerGardenTranslationChoiceExercise,
   flowerGardenTranslationSpelling: FlowerGardenTranslationSpellingExercise,
   flowerGardenTranslationMatch: FlowerGardenTranslationMatchExercise,
+  swampTable: SwampTableExercise,
 };
 
 function ExerciseScreen({
