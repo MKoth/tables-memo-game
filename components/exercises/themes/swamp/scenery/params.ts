@@ -95,6 +95,13 @@ export const ALGAE_SCATTER_PARAMS = {
   minRotation: -0.9,
   /** Maximum rotation in radians. */
   maxRotation: 0.9,
+  /** Oval width as fraction of screen width (0-1). 0 = no oval. */
+  ovalWidth: 0.8,
+  /** Oval height as fraction of screen height (0-1). 0 = no oval. */
+  ovalHeight: 0.7,
+  /** Probability algae are placed inside the oval (0-1).
+   *  0 = all outside, 1 = all inside, 0.5 = equal probability. */
+  ovalInsideProbability: 0.008,
   /** Shadow X offset in pixels. */
   shadowOffsetX: -20,
   /** Shadow Y offset in pixels. */

@@ -15,6 +15,9 @@ export type GenerateScatterInput = {
   maxRotation: number;
   margin: number;
   minDistance: number;
+  ovalWidth: number;
+  ovalHeight: number;
+  ovalInsideProbability: number;
   tints: readonly ScatterTint[];
   tintStrength: number;
   minBrightness: number;
@@ -28,12 +31,73 @@ export type GenerateScatterInput = {
   shadowColor: ScatterTint;
 };
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 function randomFloatInRange(rng: Rng, min: number, max: number): number {
   return min + rng() * (max - min);
 }
 
 function randomIntInRange(rng: Rng, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
+}
+
+function isInsideOval(
+  x: number,
+  y: number,
+  centerX: number,
+  centerY: number,
+  semiAxisX: number,
+  semiAxisY: number,
+): boolean {
+  const dx = (x - centerX) / semiAxisX;
+  const dy = (y - centerY) / semiAxisY;
+  return dx * dx + dy * dy <= 1;
+}
+
+function randomInsideOval(
+  rng: Rng,
+  centerX: number,
+  centerY: number,
+  semiAxisX: number,
+  semiAxisY: number,
+  margin: number,
+  screenWidth: number,
+  screenHeight: number,
+): { x: number; y: number } {
+  const left = Math.max(centerX - semiAxisX, margin);
+  const right = Math.min(centerX + semiAxisX, screenWidth - margin);
+  const top = Math.max(centerY - semiAxisY, margin);
+  const bottom = Math.min(centerY + semiAxisY, screenHeight - margin);
+  for (let i = 0; i < 300; i++) {
+    const x = randomFloatInRange(rng, left, right);
+    const y = randomFloatInRange(rng, top, bottom);
+    if (isInsideOval(x, y, centerX, centerY, semiAxisX, semiAxisY)) {
+      return { x, y };
+    }
+  }
+  return { x: centerX, y: centerY };
+}
+
+function randomOutsideOval(
+  rng: Rng,
+  centerX: number,
+  centerY: number,
+  semiAxisX: number,
+  semiAxisY: number,
+  margin: number,
+  screenWidth: number,
+  screenHeight: number,
+): { x: number; y: number } {
+  for (let i = 0; i < 300; i++) {
+    const x = randomFloatInRange(rng, margin, screenWidth - margin);
+    const y = randomFloatInRange(rng, margin, screenHeight - margin);
+    if (!isInsideOval(x, y, centerX, centerY, semiAxisX, semiAxisY)) {
+      return { x, y };
+    }
+  }
+  return { x: margin, y: margin };
 }
 
 function tooClose(
@@ -109,9 +173,47 @@ function rejectSample(
   existing: readonly { x: number; y: number }[],
   input: GenerateScatterInput,
 ): { x: number; y: number } {
+  const ovalWidth = clamp(input.ovalWidth ?? 0, 0, 1);
+  const ovalHeight = clamp(input.ovalHeight ?? 0, 0, 1);
+  const ovalInsideProbability = clamp(input.ovalInsideProbability ?? 0.5, 0, 1);
+
+  const hasOval = ovalWidth > 0 && ovalHeight > 0;
+  const centerX = input.screenWidth / 2;
+  const centerY = input.screenHeight / 2;
+  const semiAxisX = (ovalWidth * input.screenWidth) / 2;
+  const semiAxisY = (ovalHeight * input.screenHeight) / 2;
+
   for (let attempt = 0; attempt < MAX_PLACEMENT_ATTEMPTS; attempt++) {
-    const x = randomFloatInRange(rng, input.margin, input.screenWidth - input.margin);
-    const y = randomFloatInRange(rng, input.margin, input.screenHeight - input.margin);
+    let x: number;
+    let y: number;
+
+    if (hasOval && rng() < ovalInsideProbability) {
+      ({ x, y } = randomInsideOval(
+        rng,
+        centerX,
+        centerY,
+        semiAxisX,
+        semiAxisY,
+        input.margin,
+        input.screenWidth,
+        input.screenHeight,
+      ));
+    } else if (hasOval) {
+      ({ x, y } = randomOutsideOval(
+        rng,
+        centerX,
+        centerY,
+        semiAxisX,
+        semiAxisY,
+        input.margin,
+        input.screenWidth,
+        input.screenHeight,
+      ));
+    } else {
+      x = randomFloatInRange(rng, input.margin, input.screenWidth - input.margin);
+      y = randomFloatInRange(rng, input.margin, input.screenHeight - input.margin);
+    }
+
     if (!tooClose(x, y, existing, input.minDistance)) {
       return { x, y };
     }
@@ -121,8 +223,36 @@ function rejectSample(
   let bestX = input.screenWidth / 2;
   let bestY = input.screenHeight / 2;
   for (let s = 0; s < 50; s++) {
-    const x = randomFloatInRange(rng, input.margin, input.screenWidth - input.margin);
-    const y = randomFloatInRange(rng, input.margin, input.screenHeight - input.margin);
+    let x: number;
+    let y: number;
+
+    if (hasOval && rng() < ovalInsideProbability) {
+      ({ x, y } = randomInsideOval(
+        rng,
+        centerX,
+        centerY,
+        semiAxisX,
+        semiAxisY,
+        input.margin,
+        input.screenWidth,
+        input.screenHeight,
+      ));
+    } else if (hasOval) {
+      ({ x, y } = randomOutsideOval(
+        rng,
+        centerX,
+        centerY,
+        semiAxisX,
+        semiAxisY,
+        input.margin,
+        input.screenWidth,
+        input.screenHeight,
+      ));
+    } else {
+      x = randomFloatInRange(rng, input.margin, input.screenWidth - input.margin);
+      y = randomFloatInRange(rng, input.margin, input.screenHeight - input.margin);
+    }
+
     let minD = Infinity;
     for (const other of existing) {
       const dx = other.x - x;

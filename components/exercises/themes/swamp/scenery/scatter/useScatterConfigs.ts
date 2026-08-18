@@ -13,6 +13,9 @@ export type UseScatterConfigsOptions = {
   maxRotation?: number;
   margin?: number;
   minDistance: number;
+  ovalWidth?: number;
+  ovalHeight?: number;
+  ovalInsideProbability?: number;
   tints?: readonly ScatterTint[];
   tintStrength?: number;
   minBrightness?: number;
@@ -49,6 +52,9 @@ export function useScatterConfigs(
       maxRotation: options.maxRotation ?? 0.35,
       margin: options.margin ?? 1,
       minDistance: options.minDistance,
+      ovalWidth: options.ovalWidth ?? 0,
+      ovalHeight: options.ovalHeight ?? 0,
+      ovalInsideProbability: options.ovalInsideProbability ?? 0.5,
       tints: options.tints ?? [],
       tintStrength: options.tintStrength ?? 0,
       minBrightness: options.minBrightness ?? 0.92,
@@ -74,6 +80,9 @@ export function useScatterConfigs(
     options.maxRotation,
     options.margin,
     options.minDistance,
+    options.ovalWidth,
+    options.ovalHeight,
+    options.ovalInsideProbability,
     options.tints,
     options.tintStrength,
     options.minBrightness,
