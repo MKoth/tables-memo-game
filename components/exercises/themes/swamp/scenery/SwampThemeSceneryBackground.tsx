@@ -63,6 +63,8 @@ function SwampDecorScatter({
       <AlgaeScatterLayer
         configs={algaeConfigs}
         images={algaeImagesArray}
+        screenWidth={width}
+        screenHeight={height}
         clock={clock}
       />
     </>

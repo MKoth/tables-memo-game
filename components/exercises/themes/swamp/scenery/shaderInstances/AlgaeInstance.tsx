@@ -13,6 +13,10 @@ import {
   ALGAE_DEFORM_SKSL,
   algaeDeformDefaults,
 } from '../../shaders/algaeDeform.sksl';
+import {
+  singleWaveDefaults,
+  waterWaveLayerMultiplier,
+} from '../../shaders/waterWaves';
 
 function compileAlgaeEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(ALGAE_DEFORM_SKSL);
@@ -23,6 +27,22 @@ function compileAlgaeEffect(): SkRuntimeEffect {
 }
 
 const algaeEffect = compileAlgaeEffect();
+
+const {
+  wobbleFreq: algaeWobbleFreq,
+  wobbleAmp: algaeWobbleAmp,
+  wobbleSpeed: algaeWobbleSpeed,
+} = algaeDeformDefaults;
+
+const {
+  waveSpeed: algaeWaveSpeed,
+  waveWidth: algaeWaveWidth,
+  waveStrength: algaeWaveStrengthBase,
+  waveDecay: algaeWaveDecay,
+  waveMaxRadius: algaeWaveMaxRadius,
+  waveDuration: algaeWaveDuration,
+} = singleWaveDefaults;
+const algaeWaveStrength = algaeWaveStrengthBase * waterWaveLayerMultiplier.algae;
 
 export type AlgaeInstanceProps = {
   image: SkImage;
@@ -41,6 +61,8 @@ export type AlgaeInstanceProps = {
   beamSpeed?: number;
   beamPhase?: number;
   beamTint?: readonly [number, number, number];
+  screenWidth?: number;
+  screenHeight?: number;
   clock: SharedValue<number>;
 };
 
@@ -61,31 +83,51 @@ export function AlgaeInstance({
   beamSpeed = algaeDeformDefaults.beamSpeed,
   beamPhase = algaeDeformDefaults.beamPhase,
   beamTint = algaeDeformDefaults.beamTint,
+  screenWidth = 0,
+  screenHeight = 0,
   clock,
 }: AlgaeInstanceProps) {
   const beamTintUniform = [...beamTint] as [number, number, number];
 
-  const uniforms = useDerivedValue(() => ({
-    iTime: clock.value / 1000,
-    algaeX: x,
-    algaeY: y,
-    algaeW: width,
-    algaeH: height,
-    currentAngle,
-    waveAmplitude,
-    waveFreq,
-    waveSpeed,
-    phase,
-    beamIntensity,
-    beamSharpness,
-    beamDistortion,
-    beamSpeed,
-    beamPhase,
-    beamTint: beamTintUniform,
-    renderMode: 0,
-    shadowColor: algaeDeformDefaults.shadowColor,
-    shadowOpacity: algaeDeformDefaults.shadowOpacity,
-  }));
+  const uniforms = useDerivedValue(() => {
+    'worklet';
+    const iTime = clock.value / 1000;
+    const cycle = iTime % (algaeWaveDuration / 1000);
+    const rawRadius = cycle * algaeWaveSpeed;
+    const waveActive = rawRadius <= algaeWaveMaxRadius ? 1 : 0;
+    const waveCenterX = screenWidth > 0 ? screenWidth * 0.5 : x + width * 0.5;
+    const waveCenterY = screenHeight > 0 ? screenHeight * 0.5 : y + height * 0.5;
+    return {
+      iTime,
+      algaeX: x,
+      algaeY: y,
+      algaeW: width,
+      algaeH: height,
+      currentAngle,
+      waveAmplitude,
+      waveFreq,
+      waveSpeed,
+      phase,
+      beamIntensity,
+      beamSharpness,
+      beamDistortion,
+      beamSpeed,
+      beamPhase,
+      beamTint: beamTintUniform,
+      renderMode: 0,
+      shadowColor: algaeDeformDefaults.shadowColor,
+      shadowOpacity: algaeDeformDefaults.shadowOpacity,
+      wobbleFreq: algaeWobbleFreq,
+      wobbleAmp: algaeWobbleAmp,
+      wobbleSpeed: algaeWobbleSpeed,
+      waveCenter: [waveCenterX, waveCenterY] as [number, number],
+      waveRadius: rawRadius,
+      waveStrength: algaeWaveStrength,
+      waveWidth: algaeWaveWidth,
+      waveDecay: algaeWaveDecay,
+      waveActive,
+    };
+  });
 
   return (
     <Rect x={x} y={y} width={width} height={height}>

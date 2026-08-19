@@ -22,6 +22,15 @@ uniform float3 beamTint;
 uniform float renderMode;
 uniform float3 shadowColor;
 uniform float shadowOpacity;
+uniform float wobbleFreq;
+uniform float wobbleAmp;
+uniform float wobbleSpeed;
+uniform float2 waveCenter;
+uniform float waveRadius;
+uniform float waveStrength;
+uniform float waveWidth;
+uniform float waveDecay;
+uniform float waveActive;
 uniform shader algaeTexture;
 
 half4 main(float2 fragCoord) {
@@ -40,7 +49,21 @@ half4 main(float2 fragCoord) {
   float dPerp = waveAmplitude * sin(wavePhase) * edgeFactor;
 
   vec2 dispPixels = dPerp * currentPerp * vec2(algaeW, algaeH);
-  vec2 sampleCoord = fragCoord - dispPixels;
+  float2 wobble;
+  wobble.x = sin(fragCoord.y * wobbleFreq + iTime * wobbleSpeed) * wobbleAmp;
+  wobble.y = cos(fragCoord.x * wobbleFreq * 0.8 + iTime * wobbleSpeed * 0.7) * wobbleAmp * 0.6;
+  float2 waveDisp = float2(0.0);
+  if (waveActive > 0.5) {
+    float2 toPix = fragCoord - waveCenter;
+    float dist = length(toPix);
+    float2 dir = dist > 0.001 ? normalize(toPix) : float2(0.0);
+    float edge = abs(dist - waveRadius);
+    float ring = exp(-edge*edge / (waveWidth*waveWidth));
+    float envelope = exp(-dist * waveDecay);
+    waveDisp = dir * ring * envelope * waveStrength;
+  }
+  float2 totalDisp = wobble + waveDisp;
+  vec2 sampleCoord = fragCoord - dispPixels + totalDisp;
 
   half4 color = algaeTexture.eval(sampleCoord);
 
@@ -96,4 +119,7 @@ export const algaeDeformDefaults = {
   renderMode: 0,
   shadowColor: [0.02, 0.06, 0.01] as const,
   shadowOpacity: 0.65,
+  wobbleFreq: 0.5,
+  wobbleAmp: 0.65,
+  wobbleSpeed: 10.0,
 } as const;

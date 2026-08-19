@@ -14,6 +14,10 @@ import {
   STONE_SKSL,
   stoneDefaults,
 } from '../../shaders/stone.sksl';
+import {
+  singleWaveDefaults,
+  waterWaveLayerMultiplier,
+} from '../../shaders/waterWaves';
 
 function compileStoneEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(STONE_SKSL);
@@ -70,6 +74,16 @@ const paddedVoronoiTintG = padTintChannel(voronoiTint, 1);
 const paddedVoronoiTintB = padTintChannel(voronoiTint, 2);
 const underwaterTintUniform = [...underwaterTint] as [number, number, number];
 
+const {
+  waveSpeed: stoneWaveSpeed,
+  waveWidth: stoneWaveWidth,
+  waveStrength: stoneWaveStrengthBase,
+  waveDecay: stoneWaveDecay,
+  waveMaxRadius: stoneWaveMaxRadius,
+  waveDuration: stoneWaveDuration,
+} = singleWaveDefaults;
+const stoneWaveStrength = stoneWaveStrengthBase * waterWaveLayerMultiplier.stone;
+
 export type StoneInstanceProps = {
   image: SkImage;
   x: number;
@@ -93,34 +107,47 @@ export function StoneInstance({
   shadowStrength: shadowStrengthProp = shadowStrength,
   clock,
 }: StoneInstanceProps) {
-  const uniforms = useDerivedValue(() => ({
-    iTime: clock.value / 1000,
-    iResolution: [screenWidth, screenHeight] as [number, number],
-    switchRate,
-    floorX: x,
-    floorY: y,
-    floorW: width,
-    floorH: height,
-    underwaterTint: underwaterTintUniform,
-    underwaterTintStrength,
-    underwaterDepthStrength,
-    voronoiCount,
-    voronoiScale: paddedVoronoiScale,
-    voronoiIntensity: paddedVoronoiIntensity,
-    voronoiSharpness: paddedVoronoiSharpness,
-    voronoiClusterAmp: paddedVoronoiClusterAmp,
-    voronoiClusterFreq: paddedVoronoiClusterFreq,
-    voronoiTintR: paddedVoronoiTintR,
-    voronoiTintG: paddedVoronoiTintG,
-    voronoiTintB: paddedVoronoiTintB,
-    shadowStrength: shadowStrengthProp,
-    shadowStart,
-    shadowEnd,
-    aspectRatio: width / height,
-    wobbleFreq,
-    wobbleAmp,
-    wobbleSpeed,
-  }));
+  const uniforms = useDerivedValue(() => {
+    'worklet';
+    const iTime = clock.value / 1000;
+    const cycle = iTime % (stoneWaveDuration / 1000);
+    const rawRadius = cycle * stoneWaveSpeed;
+    const waveActive = rawRadius <= stoneWaveMaxRadius ? 1 : 0;
+    return {
+      iTime,
+      iResolution: [screenWidth, screenHeight] as [number, number],
+      switchRate,
+      floorX: x,
+      floorY: y,
+      floorW: width,
+      floorH: height,
+      underwaterTint: underwaterTintUniform,
+      underwaterTintStrength,
+      underwaterDepthStrength,
+      voronoiCount,
+      voronoiScale: paddedVoronoiScale,
+      voronoiIntensity: paddedVoronoiIntensity,
+      voronoiSharpness: paddedVoronoiSharpness,
+      voronoiClusterAmp: paddedVoronoiClusterAmp,
+      voronoiClusterFreq: paddedVoronoiClusterFreq,
+      voronoiTintR: paddedVoronoiTintR,
+      voronoiTintG: paddedVoronoiTintG,
+      voronoiTintB: paddedVoronoiTintB,
+      shadowStrength: shadowStrengthProp,
+      shadowStart,
+      shadowEnd,
+      aspectRatio: width / height,
+      wobbleFreq,
+      wobbleAmp,
+      wobbleSpeed,
+      waveCenter: [screenWidth * 0.5, screenHeight * 0.5] as [number, number],
+      waveRadius: rawRadius,
+      waveStrength: stoneWaveStrength,
+      waveWidth: stoneWaveWidth,
+      waveDecay: stoneWaveDecay,
+      waveActive,
+    };
+  });
 
   return (
     <Rect x={x} y={y} width={width} height={height}>

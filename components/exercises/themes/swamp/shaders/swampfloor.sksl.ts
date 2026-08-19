@@ -32,6 +32,12 @@ uniform float floorScale;
 uniform float wobbleFreq;
 uniform float wobbleAmp;
 uniform float wobbleSpeed;
+uniform float2 waveCenter;
+uniform float waveRadius;
+uniform float waveStrength;
+uniform float waveWidth;
+uniform float waveDecay;
+uniform float waveActive;
 uniform shader floorTexture;
 
 vec2 hash2(vec2 p) {
@@ -119,7 +125,18 @@ half4 main(float2 fragCoord) {
   float2 wobble;
   wobble.x = sin(fragCoord.y * wobbleFreq + iTime * wobbleSpeed) * wobbleAmp;
   wobble.y = cos(fragCoord.x * wobbleFreq * 0.8 + iTime * wobbleSpeed * 0.7) * wobbleAmp * 0.6;
-  float2 sampleCoord = fragCoord + wobble;
+  float2 waveDisp = float2(0.0);
+  if (waveActive > 0.5) {
+    float2 toPix = fragCoord - waveCenter;
+    float dist = length(toPix);
+    float2 dir = dist > 0.001 ? normalize(toPix) : float2(0.0);
+    float edge = abs(dist - waveRadius);
+    float ring = exp(-edge*edge / (waveWidth*waveWidth));
+    float envelope = exp(-dist * waveDecay);
+    waveDisp = dir * ring * envelope * waveStrength;
+  }
+  float2 total = wobble + waveDisp;
+  float2 sampleCoord = fragCoord + total;
   float2 tileCoord = sampleCoord * (floorScale / iResolution.x);
   half4 color = floorTexture.eval(tileCoord * iResolution.x);
   if (color.a < 0.01) { return color; }

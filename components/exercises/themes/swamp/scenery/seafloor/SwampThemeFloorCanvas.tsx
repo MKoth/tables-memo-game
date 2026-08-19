@@ -15,6 +15,10 @@ import {
   SWAMPFLOOR_SKSL,
   swampfloorDefaults,
 } from '../../shaders/swampfloor.sksl';
+import {
+  singleWaveDefaults,
+  waterWaveLayerMultiplier,
+} from '../../shaders/waterWaves';
 
 const BACKGROUND_RES = 0.85;
 const DEG_TO_RAD = Math.PI / 180;
@@ -65,6 +69,16 @@ const paddedVoronoiTintG = padTintChannel(voronoiTint, 1);
 const paddedVoronoiTintB = padTintChannel(voronoiTint, 2);
 const underwaterTintUniform = [...underwaterTint] as [number, number, number];
 
+const {
+  waveSpeed: floorWaveSpeed,
+  waveWidth: floorWaveWidth,
+  waveStrength: floorWaveStrengthBase,
+  waveDecay: floorWaveDecay,
+  waveMaxRadius: floorWaveMaxRadius,
+  waveDuration: floorWaveDuration,
+} = singleWaveDefaults;
+const floorWaveStrength = floorWaveStrengthBase * waterWaveLayerMultiplier.floor;
+
 function compileSwampFloorEffect() {
   const effect = Skia.RuntimeEffect.Make(SWAMPFLOOR_SKSL);
   if (!effect) {
@@ -93,35 +107,48 @@ export function SwampThemeFloorCanvas({
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
   const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
 
-  const uniforms = useDerivedValue(() => ({
-    iTime: clock.value / 1000,
-    iResolution: [bgWidth, bgHeight] as [number, number],
-    switchRate,
-    floorX: 0,
-    floorY: 0,
-    floorW: bgWidth,
-    floorH: bgHeight,
-    underwaterTint: underwaterTintUniform,
-    underwaterTintStrength,
-    underwaterDepthStrength,
-    voronoiCount,
-    voronoiScale: paddedVoronoiScale,
-    voronoiIntensity: paddedVoronoiIntensity,
-    voronoiSharpness: paddedVoronoiSharpness,
-    voronoiClusterAmp: paddedVoronoiClusterAmp,
-    voronoiClusterFreq: paddedVoronoiClusterFreq,
-    voronoiTintR: paddedVoronoiTintR,
-    voronoiTintG: paddedVoronoiTintG,
-    voronoiTintB: paddedVoronoiTintB,
-    shadowStrength,
-    shadowStart,
-    shadowEnd,
-    aspectRatio: bgWidth / bgHeight,
-    floorScale,
-    wobbleFreq,
-    wobbleAmp,
-    wobbleSpeed,
-  }));
+  const uniforms = useDerivedValue(() => {
+    'worklet';
+    const iTime = clock.value / 1000;
+    const cycle = iTime % (floorWaveDuration / 1000);
+    const rawRadius = cycle * floorWaveSpeed;
+    const waveActive = rawRadius <= floorWaveMaxRadius ? 1 : 0;
+    return {
+      iTime,
+      iResolution: [bgWidth, bgHeight] as [number, number],
+      switchRate,
+      floorX: 0,
+      floorY: 0,
+      floorW: bgWidth,
+      floorH: bgHeight,
+      underwaterTint: underwaterTintUniform,
+      underwaterTintStrength,
+      underwaterDepthStrength,
+      voronoiCount,
+      voronoiScale: paddedVoronoiScale,
+      voronoiIntensity: paddedVoronoiIntensity,
+      voronoiSharpness: paddedVoronoiSharpness,
+      voronoiClusterAmp: paddedVoronoiClusterAmp,
+      voronoiClusterFreq: paddedVoronoiClusterFreq,
+      voronoiTintR: paddedVoronoiTintR,
+      voronoiTintG: paddedVoronoiTintG,
+      voronoiTintB: paddedVoronoiTintB,
+      shadowStrength,
+      shadowStart,
+      shadowEnd,
+      aspectRatio: bgWidth / bgHeight,
+      floorScale,
+      wobbleFreq,
+      wobbleAmp,
+      wobbleSpeed,
+      waveCenter: [bgWidth * 0.5, bgHeight * 0.5] as [number, number],
+      waveRadius: rawRadius,
+      waveStrength: floorWaveStrength,
+      waveWidth: floorWaveWidth,
+      waveDecay: floorWaveDecay,
+      waveActive,
+    };
+  });
 
   if (width === 0 || height === 0) {
     return null;

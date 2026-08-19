@@ -85,7 +85,15 @@ export function AlgaeShadowInstance({
     renderMode: 1,
     shadowColor: shadowColorUniform,
     shadowOpacity,
-    shadowProj: [0, 0] as [number, number],
+    wobbleFreq: algaeDeformDefaults.wobbleFreq,
+    wobbleAmp: algaeDeformDefaults.wobbleAmp,
+    wobbleSpeed: algaeDeformDefaults.wobbleSpeed,
+    waveCenter: [0, 0] as [number, number],
+    waveRadius: 0,
+    waveStrength: 0,
+    waveWidth: 12,
+    waveDecay: 0.0015,
+    waveActive: 0,
   }));
 
   return (

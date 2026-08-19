@@ -9,10 +9,18 @@ import { AlgaeShadowInstance } from './AlgaeShadowInstance';
 type AlgaeScatterLayerProps = {
   configs: readonly ScatterConfig[];
   images: readonly import('@shopify/react-native-skia').SkImage[];
+  screenWidth?: number;
+  screenHeight?: number;
   clock: SharedValue<number>;
 };
 
-function AlgaeScatterLayerImpl({ configs, images, clock }: AlgaeScatterLayerProps) {
+function AlgaeScatterLayerImpl({
+  configs,
+  images,
+  screenWidth,
+  screenHeight,
+  clock,
+}: AlgaeScatterLayerProps) {
   if (configs.length === 0 || images.length === 0) {
     return null;
   }
@@ -58,6 +66,8 @@ function AlgaeScatterLayerImpl({ configs, images, clock }: AlgaeScatterLayerProp
               y={config.y - config.size * 0.5}
               width={config.size}
               height={config.size}
+              screenWidth={screenWidth}
+              screenHeight={screenHeight}
               clock={clock}
             />
           );
