@@ -29,6 +29,9 @@ uniform float shadowStart;
 uniform float shadowEnd;
 uniform float aspectRatio;
 uniform float floorScale;
+uniform float wobbleFreq;
+uniform float wobbleAmp;
+uniform float wobbleSpeed;
 uniform shader floorTexture;
 
 vec2 hash2(vec2 p) {
@@ -113,7 +116,11 @@ float staticCaustics(vec2 coord, float variant, float sharpness,
 }
 
 half4 main(float2 fragCoord) {
-  float2 tileCoord = fragCoord * (floorScale / iResolution.x);
+  float2 wobble;
+  wobble.x = sin(fragCoord.y * wobbleFreq + iTime * wobbleSpeed) * wobbleAmp;
+  wobble.y = cos(fragCoord.x * wobbleFreq * 0.8 + iTime * wobbleSpeed * 0.7) * wobbleAmp * 0.6;
+  float2 sampleCoord = fragCoord + wobble;
+  float2 tileCoord = sampleCoord * (floorScale / iResolution.x);
   half4 color = floorTexture.eval(tileCoord * iResolution.x);
   if (color.a < 0.01) { return color; }
 
@@ -182,4 +189,7 @@ export const swampfloorDefaults = {
   aspectRatio: 20.0,
   /** Texture tiling scale — higher = more tiles across the floor. */
   floorScale: 2.4,
+  wobbleFreq: 0.9,
+  wobbleAmp: 0.4,
+  wobbleSpeed: 20.0,
 } as const;

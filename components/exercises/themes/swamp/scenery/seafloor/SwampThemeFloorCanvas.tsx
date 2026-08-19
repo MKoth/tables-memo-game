@@ -35,6 +35,9 @@ const {
   shadowStart,
   shadowEnd,
   floorScale,
+  wobbleFreq,
+  wobbleAmp,
+  wobbleSpeed,
 } = swampfloorDefaults;
 
 function padArray(arr: readonly number[], fill = 0): number[] {
@@ -76,19 +79,22 @@ type SwampThemeFloorCanvasProps = {
   image: SkImage;
   width: number;
   height: number;
+  clock?: import('react-native-reanimated').SharedValue<number>;
 };
 
 export function SwampThemeFloorCanvas({
   image,
   width,
   height,
+  clock: clockProp,
 }: SwampThemeFloorCanvasProps) {
-  const clock = useExerciseClock();
+  const fallbackClock = useExerciseClock();
+  const clock = clockProp ?? fallbackClock;
   const bgWidth = Math.max(1, Math.round(width * BACKGROUND_RES));
   const bgHeight = Math.max(1, Math.round(height * BACKGROUND_RES));
 
   const uniforms = useDerivedValue(() => ({
-    iTime: clock.value / 1500,
+    iTime: clock.value / 1000,
     iResolution: [bgWidth, bgHeight] as [number, number],
     switchRate,
     floorX: 0,
@@ -112,6 +118,9 @@ export function SwampThemeFloorCanvas({
     shadowEnd,
     aspectRatio: bgWidth / bgHeight,
     floorScale,
+    wobbleFreq,
+    wobbleAmp,
+    wobbleSpeed,
   }));
 
   if (width === 0 || height === 0) {

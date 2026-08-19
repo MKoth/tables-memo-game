@@ -55,6 +55,9 @@ const {
   shadowStrength,
   shadowStart,
   shadowEnd,
+  wobbleFreq,
+  wobbleAmp,
+  wobbleSpeed,
 } = stoneDefaults;
 
 const paddedVoronoiScale = padArray(voronoiScale);
@@ -114,6 +117,9 @@ export function StoneInstance({
     shadowStart,
     shadowEnd,
     aspectRatio: width / height,
+    wobbleFreq,
+    wobbleAmp,
+    wobbleSpeed,
   }));
 
   return (

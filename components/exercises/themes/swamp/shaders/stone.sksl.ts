@@ -28,6 +28,9 @@ uniform float shadowStrength;
 uniform float shadowStart;
 uniform float shadowEnd;
 uniform float aspectRatio;
+uniform float wobbleFreq;
+uniform float wobbleAmp;
+uniform float wobbleSpeed;
 uniform shader stoneTexture;
 
 vec2 hash2(vec2 p) {
@@ -112,7 +115,11 @@ float staticCaustics(vec2 coord, float variant, float sharpness,
 }
 
 half4 main(float2 fragCoord) {
-  half4 color = stoneTexture.eval(fragCoord);
+  float2 wobble;
+  wobble.x = sin(fragCoord.y * wobbleFreq + iTime * wobbleSpeed) * wobbleAmp;
+  wobble.y = cos(fragCoord.x * wobbleFreq * 0.8 + iTime * wobbleSpeed * 0.7) * wobbleAmp * 0.6;
+  float2 sampleCoord = fragCoord + wobble;
+  half4 color = stoneTexture.eval(sampleCoord);
   if (color.a < 0.01) { return color; }
 
   float depth = 1.0 - fragCoord.y / iResolution.y;
@@ -178,4 +185,7 @@ export const stoneDefaults = {
   shadowEnd: 1.0,
   /** Width/height ratio of the sprite — compensates for non-square images. */
   aspectRatio: 1.29,
+  wobbleFreq: 0.5,
+  wobbleAmp: 0.5,
+  wobbleSpeed: 10.0,
 } as const;

@@ -83,9 +83,9 @@ half4 main(float2 fragCoord) {
 
 export const algaeDeformDefaults = {
   currentAngle: 3.14,
-  waveAmplitude: 0.06,
+  waveAmplitude: 0.015,
   waveFreq: 10,
-  waveSpeed: 3.0,
+  waveSpeed: 5.0,
   phase: 0,
   beamIntensity: 0.13,
   beamSharpness: 10,

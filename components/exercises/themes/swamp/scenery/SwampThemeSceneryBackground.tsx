@@ -82,7 +82,7 @@ export function SwampThemeSceneryBackground({
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <SwampThemeFloorCanvas image={seafloorImage} width={width} height={height} />
+      <SwampThemeFloorCanvas image={seafloorImage} width={width} height={height} clock={clock} />
       {showForeground && (
         <SwampDecorScatter
           stoneImages={stoneImages}
