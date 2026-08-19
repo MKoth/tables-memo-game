@@ -289,3 +289,13 @@ _Avoid_: accent-insensitive, normalized comparison
 **Word prompt row**:
 The English word displayed as letter bubbles in the Roamer zone for word-learning exercises. In translation spelling, the Spanish word being constructed appears directly below it in the same zone, both centered vertically. The shuffled letter pool sits in the WordSprite zone below.
 _Avoid_: prompt display, English row, source word
+
+### Swamp theme terms
+
+**Water surface**:
+Per-participant distortion in the swamp theme that makes floor, stones and algae appear underwater. Implemented as base wobble (sin/cos offset) + tint inside each participant shader (`swampfloor.sksl.ts`, `stone.sksl.ts`, `algaeDeform.sksl.ts`) plus lens distortion from wave particles. No `makeImageSnapshot`; each shader samples its own texture at `fragCoord + wobble + waveDisp`.
+_Avoid_: underwater shader, water shader
+
+**Water wave**:
+An invisible distortion-field particle that expands from a center point and lenses pixels near its ring. State is `{x, y, birthTime, radius, strength, width, decay}` where `radius = (iTime - birthTime) * waveSpeed` and `influence = exp(-(dist-radius)^2/width^2) * exp(-dist*decay)`. Multiple waves are delivered as fixed uniform array `MAX_WAVES=8` and evaluated per pixel with spatial culling in each participant shader.
+_Avoid_: ripple source, wave origin, disturbance point
