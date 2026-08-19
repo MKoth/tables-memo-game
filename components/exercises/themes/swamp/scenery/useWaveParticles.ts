@@ -1,30 +1,20 @@
 import { useRef } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 import { makeMutable, useFrameCallback } from 'react-native-reanimated';
-import {
-  type WaterWave,
-  MAX_WAVES,
-  singleWaveDefaults,
-} from '../shaders/waterWaves';
+import { MAX_WAVES } from '../shaders/waterWaves';
 
 export const waveManagerDefaults = {
-  generationInterval: 1800,
-  minPerCycle: 1,
-  maxPerCycle: 2,
   waveSpeed: 80,
   waveWidth: 12,
-  waveStrength: 4.0,
-  waveDecay: 0.0015,
+  waveStrength: 15.0,
+  waveDecay: 0.03,
   maxRadius: 280,
-  duration: 4000,
+  duration: 1500,
   maxWaves: MAX_WAVES,
 } as const;
 
 export type WaveParticleConfig = {
   maxWaves: number;
-  generationInterval: number;
-  minPerCycle: number;
-  maxPerCycle: number;
   waveSpeed: number;
   waveWidth: number;
   waveStrength: number;
@@ -35,12 +25,22 @@ export type WaveParticleConfig = {
   clock: SharedValue<number>;
 };
 
+type WaveSlot = {
+  x: number;
+  y: number;
+  birthTime: number;
+};
+
+function randomX(w: number): number {
+  return Math.random() * w;
+}
+function randomY(h: number): number {
+  return Math.random() * h;
+}
+
 export function useWaveParticles(config: WaveParticleConfig) {
   const {
     maxWaves,
-    generationInterval,
-    minPerCycle,
-    maxPerCycle,
     waveSpeed,
     waveWidth,
     waveStrength,
@@ -51,68 +51,52 @@ export function useWaveParticles(config: WaveParticleConfig) {
     clock,
   } = config;
 
-  const wavesRef = useRef<WaterWave[]>([]);
-  const lastSpawnRef = useRef(0);
+  const durationSec = duration / 1000;
+
+  const initialSlots: WaveSlot[] = [];
+  for (let i = 0; i < maxWaves; i++) {
+    initialSlots.push({
+      x: randomX(screenBounds.width),
+      y: randomY(screenBounds.height),
+      birthTime: -Math.random() * durationSec,
+    });
+  }
+  const slotsRef = useRef<WaveSlot[]>(initialSlots);
 
   const waveCenters = useRef(makeMutable<number[]>(Array(maxWaves * 2).fill(0))).current;
   const waveRadii = useRef(makeMutable<number[]>(Array(maxWaves).fill(0))).current;
-  const waveStrengths = useRef(makeMutable<number[]>(Array(maxWaves).fill(0))).current;
+  const waveStrengths = useRef(makeMutable<number[]>(Array(maxWaves).fill(waveStrength))).current;
   const waveWidths = useRef(makeMutable<number[]>(Array(maxWaves).fill(waveWidth))).current;
-  const waveCount = useRef(makeMutable(0)).current;
+  const waveCount = useRef(makeMutable(maxWaves)).current;
 
   useFrameCallback(() => {
     'worklet';
     const now = clock.value / 1000;
-    const elapsed = now - lastSpawnRef.current;
-
-    if (elapsed >= generationInterval / 1000) {
-      lastSpawnRef.current = now;
-      const count =
-        minPerCycle + Math.floor(Math.random() * (maxPerCycle - minPerCycle + 1));
-      for (let i = 0; i < count; i++) {
-        if (wavesRef.current.length >= maxWaves) {
-          wavesRef.current.shift();
-        }
-        wavesRef.current.push({
-          x: Math.random() * screenBounds.width,
-          y: Math.random() * screenBounds.height,
-          birthTime: now,
-          duration,
-          maxRadius,
-          strength: waveStrength,
-          width: waveWidth,
-        });
-      }
-    }
-
-    wavesRef.current = wavesRef.current.filter(w => {
-      const ageMs = (now - w.birthTime) * 1000;
-      const radius = Math.max(0, (now - w.birthTime) * waveSpeed);
-      return ageMs <= w.duration && radius <= w.maxRadius;
-    });
-
-    const count = Math.min(wavesRef.current.length, maxWaves);
+    const slots = slotsRef.current;
     const centers = waveCenters.value;
     const radii = waveRadii.value;
     const strengths = waveStrengths.value;
     const widths = waveWidths.value;
+
     for (let i = 0; i < maxWaves; i++) {
-      if (i < count) {
-        const w = wavesRef.current[i]!;
-        centers[i * 2] = w.x;
-        centers[i * 2 + 1] = w.y;
-        radii[i] = Math.max(0, (now - w.birthTime) * waveSpeed);
-        strengths[i] = w.strength;
-        widths[i] = w.width;
-      } else {
-        centers[i * 2] = 0;
-        centers[i * 2 + 1] = 0;
-        radii[i] = 0;
-        strengths[i] = 0;
-        widths[i] = 0;
+      const slot = slots[i]!;
+      const age = now - slot.birthTime;
+
+      if (age >= durationSec || age < 0) {
+        slot.x = randomX(screenBounds.width);
+        slot.y = randomY(screenBounds.height);
+        slot.birthTime = now;
       }
+
+      const r = Math.max(0, (now - slot.birthTime) * waveSpeed);
+      centers[i * 2] = slot.x;
+      centers[i * 2 + 1] = slot.y;
+      radii[i] = r;
+      strengths[i] = waveStrength;
+      widths[i] = waveWidth;
     }
-    waveCount.value = count;
+
+    waveCount.value = maxWaves;
   });
 
   return {
