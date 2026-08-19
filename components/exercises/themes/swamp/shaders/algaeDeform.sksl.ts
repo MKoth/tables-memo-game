@@ -2,7 +2,7 @@
  * Algae UV displacement with traveling wave and light beam overlay.
  * renderMode 0 = normal algae, renderMode 1 = shadow pass (dark tinted silhouette).
  */
-import { MAX_WAVES } from './waterWaves';
+import { MAX_WAVES_PER_SPRITE } from './waterWaves';
 
 export const ALGAE_DEFORM_SKSL = `
 uniform float iTime;
@@ -27,10 +27,10 @@ uniform float shadowOpacity;
 uniform float wobbleFreq;
 uniform float wobbleAmp;
 uniform float wobbleSpeed;
-uniform float2 waveCenters[${MAX_WAVES}];
-uniform float waveRadii[${MAX_WAVES}];
-uniform float waveStrengths[${MAX_WAVES}];
-uniform float waveWidths[${MAX_WAVES}];
+uniform float2 waveCenters[${MAX_WAVES_PER_SPRITE}];
+uniform float waveRadii[${MAX_WAVES_PER_SPRITE}];
+uniform float waveStrengths[${MAX_WAVES_PER_SPRITE}];
+uniform float waveWidths[${MAX_WAVES_PER_SPRITE}];
 uniform float waveCount;
 uniform float waveDecay;
 uniform shader algaeTexture;
@@ -55,7 +55,7 @@ half4 main(float2 fragCoord) {
   wobble.x = sin(fragCoord.y * wobbleFreq + iTime * wobbleSpeed) * wobbleAmp;
   wobble.y = cos(fragCoord.x * wobbleFreq * 0.8 + iTime * wobbleSpeed * 0.7) * wobbleAmp * 0.6;
   float2 waveDisp = float2(0.0);
-  for (int i=0; i<${MAX_WAVES}; i++) {
+  for (int i=0; i<${MAX_WAVES_PER_SPRITE}; i++) {
     if (float(i) >= waveCount) break;
     float2 center = waveCenters[i];
     float radius = waveRadii[i];

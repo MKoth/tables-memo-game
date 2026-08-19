@@ -12,6 +12,12 @@ type AlgaeScatterLayerProps = {
   screenWidth?: number;
   screenHeight?: number;
   clock: SharedValue<number>;
+  waveCenters: SharedValue<number[]>;
+  waveRadii: SharedValue<number[]>;
+  waveStrengths: SharedValue<number[]>;
+  waveWidths: SharedValue<number[]>;
+  waveCount: SharedValue<number>;
+  waveDecay: number;
 };
 
 function AlgaeScatterLayerImpl({
@@ -20,6 +26,12 @@ function AlgaeScatterLayerImpl({
   screenWidth,
   screenHeight,
   clock,
+  waveCenters,
+  waveRadii,
+  waveStrengths,
+  waveWidths,
+  waveCount,
+  waveDecay,
 }: AlgaeScatterLayerProps) {
   if (configs.length === 0 || images.length === 0) {
     return null;
@@ -69,6 +81,12 @@ function AlgaeScatterLayerImpl({
               screenWidth={screenWidth}
               screenHeight={screenHeight}
               clock={clock}
+              waveCenters={waveCenters}
+              waveRadii={waveRadii}
+              waveStrengths={waveStrengths}
+              waveWidths={waveWidths}
+              waveCount={waveCount}
+              waveDecay={waveDecay}
             />
           );
         })}

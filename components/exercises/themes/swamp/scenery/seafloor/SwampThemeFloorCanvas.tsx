@@ -8,6 +8,7 @@ import {
   Skia,
   type SkImage,
 } from '@shopify/react-native-skia';
+import type { SharedValue } from 'react-native-reanimated';
 import { useDerivedValue } from 'react-native-reanimated';
 import { useExerciseClock } from '../../../../core';
 import {
@@ -15,7 +16,6 @@ import {
   SWAMPFLOOR_SKSL,
   swampfloorDefaults,
 } from '../../shaders/swampfloor.sksl';
-import { MAX_WAVES, singleWaveDefaults } from '../../shaders/waterWaves';
 
 const BACKGROUND_RES = 0.85;
 const DEG_TO_RAD = Math.PI / 180;
@@ -66,17 +66,6 @@ const paddedVoronoiTintG = padTintChannel(voronoiTint, 1);
 const paddedVoronoiTintB = padTintChannel(voronoiTint, 2);
 const underwaterTintUniform = [...underwaterTint] as [number, number, number];
 
-const {
-  waveSpeed: floorWaveSpeed,
-  waveWidth: floorWaveWidth,
-  waveStrength: floorWaveStrengthBase,
-  waveDecay: floorWaveDecay,
-  waveDuration: floorWaveDuration,
-} = singleWaveDefaults;
-
-const DEMO_WAVE_COUNT = 16;
-const DEMO_WAVE_STAGGER_SEC = 0.95;
-
 function compileSwampFloorEffect() {
   const effect = Skia.RuntimeEffect.Make(SWAMPFLOOR_SKSL);
   if (!effect) {
@@ -92,6 +81,12 @@ type SwampThemeFloorCanvasProps = {
   width: number;
   height: number;
   clock?: import('react-native-reanimated').SharedValue<number>;
+  waveCenters: SharedValue<number[]>;
+  waveRadii: SharedValue<number[]>;
+  waveStrengths: SharedValue<number[]>;
+  waveWidths: SharedValue<number[]>;
+  waveCount: SharedValue<number>;
+  waveDecay: number;
 };
 
 export function SwampThemeFloorCanvas({
@@ -99,6 +94,12 @@ export function SwampThemeFloorCanvas({
   width,
   height,
   clock: clockProp,
+  waveCenters: allWaveCenters,
+  waveRadii: allWaveRadii,
+  waveStrengths: allWaveStrengths,
+  waveWidths: allWaveWidths,
+  waveCount: allWaveCount,
+  waveDecay: floorWaveDecay,
 }: SwampThemeFloorCanvasProps) {
   const fallbackClock = useExerciseClock();
   const clock = clockProp ?? fallbackClock;
@@ -108,24 +109,8 @@ export function SwampThemeFloorCanvas({
   const uniforms = useDerivedValue(() => {
     'worklet';
     const iTime = clock.value / 1000;
-    const waveCount = Math.max(0, Math.min(DEMO_WAVE_COUNT, MAX_WAVES));
-    const waveCenters: number[] = Array(MAX_WAVES * 2).fill(0);
-    const waveRadii: number[] = Array(MAX_WAVES).fill(0);
-    const waveStrengths: number[] = Array(MAX_WAVES).fill(0);
-    const waveWidths: number[] = Array(MAX_WAVES).fill(0);
-    const durationSec = floorWaveDuration / 1000;
-    const stagger = waveCount > 1 ? durationSec / waveCount : 0.95;
-    for (let w = 0; w < waveCount; w++) {
-      const cx = bgWidth * (0.15 + ((w * 0.37) % 0.7));
-      const cy = bgHeight * (0.2 + ((w * 0.53) % 0.6));
-      waveCenters[w * 2] = cx;
-      waveCenters[w * 2 + 1] = cy;
-      const offsetTime = iTime + w * stagger;
-      const cyc = offsetTime % durationSec;
-      waveRadii[w] = cyc * floorWaveSpeed;
-      waveStrengths[w] = floorWaveStrengthBase;
-      waveWidths[w] = floorWaveWidth;
-    }
+    const waveCount = Math.min(allWaveCount.value, MAX_SWAMPFLOOR_VORONOI_LAYERS);
+
     return {
       iTime,
       iResolution: [bgWidth, bgHeight] as [number, number],
@@ -154,11 +139,11 @@ export function SwampThemeFloorCanvas({
       wobbleFreq,
       wobbleAmp,
       wobbleSpeed,
-      waveCenters,
-      waveRadii,
-      waveStrengths,
-      waveWidths,
-      waveCount,
+      waveCenters: allWaveCenters.value,
+      waveRadii: allWaveRadii.value,
+      waveStrengths: allWaveStrengths.value,
+      waveWidths: allWaveWidths.value,
+      waveCount: allWaveCount.value,
       waveDecay: floorWaveDecay,
     };
   });

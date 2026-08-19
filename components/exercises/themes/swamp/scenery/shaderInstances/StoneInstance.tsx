@@ -14,7 +14,10 @@ import {
   STONE_SKSL,
   stoneDefaults,
 } from '../../shaders/stone.sksl';
-import { MAX_WAVES, singleWaveDefaults } from '../../shaders/waterWaves';
+import {
+  MAX_WAVES,
+  MAX_WAVES_PER_SPRITE,
+} from '../../shaders/waterWaves';
 
 function compileStoneEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(STONE_SKSL);
@@ -71,23 +74,6 @@ const paddedVoronoiTintG = padTintChannel(voronoiTint, 1);
 const paddedVoronoiTintB = padTintChannel(voronoiTint, 2);
 const underwaterTintUniform = [...underwaterTint] as [number, number, number];
 
-const {
-  waveSpeed: stoneWaveSpeed,
-  waveWidth: stoneWaveWidth,
-  waveStrength: stoneWaveStrengthBase,
-  waveDecay: stoneWaveDecay,
-  waveDuration: stoneWaveDuration,
-} = singleWaveDefaults;
-
-// Tweakable: number of simultaneous waves to display (1..MAX_WAVES). Change to
-// experiment with 1 vs 4 vs 8 vs 32 overlapping lenses.
-// Limit is MAX_WAVES in waterWaves.ts — bump that first if you want >8.
-// Set to 0 to disable wave lens entirely.
-const DEMO_WAVE_COUNT = 4;
-// Stagger was fixed 0.95s, which aliases when waveCount >> duration/stagger.
-// Now distributed evenly: stagger = duration / waveCount
-const DEMO_WAVE_STAGGER_SEC = 0.95;
-
 export type StoneInstanceProps = {
   image: SkImage;
   x: number;
@@ -98,6 +84,12 @@ export type StoneInstanceProps = {
   screenHeight: number;
   shadowStrength?: number;
   clock: SharedValue<number>;
+  waveCenters: SharedValue<number[]>;
+  waveRadii: SharedValue<number[]>;
+  waveStrengths: SharedValue<number[]>;
+  waveWidths: SharedValue<number[]>;
+  waveCount: SharedValue<number>;
+  waveDecay: number;
 };
 
 export function StoneInstance({
@@ -110,28 +102,49 @@ export function StoneInstance({
   screenHeight,
   shadowStrength: shadowStrengthProp = shadowStrength,
   clock,
+  waveCenters: allWaveCenters,
+  waveRadii: allWaveRadii,
+  waveStrengths: allWaveStrengths,
+  waveWidths: allWaveWidths,
+  waveCount: allWaveCount,
+  waveDecay: stoneWaveDecay,
 }: StoneInstanceProps) {
   const uniforms = useDerivedValue(() => {
     'worklet';
     const iTime = clock.value / 1000;
-    const waveCount = Math.max(0, Math.min(DEMO_WAVE_COUNT, MAX_WAVES));
-    const waveCenters: number[] = Array(MAX_WAVES * 2).fill(0);
-    const waveRadii: number[] = Array(MAX_WAVES).fill(0);
-    const waveStrengths: number[] = Array(MAX_WAVES).fill(0);
-    const waveWidths: number[] = Array(MAX_WAVES).fill(0);
-    const durationSec = stoneWaveDuration / 1000;
-    const stagger = waveCount > 1 ? durationSec / waveCount : DEMO_WAVE_STAGGER_SEC;
-    for (let w = 0; w < waveCount; w++) {
-      const cx = screenWidth * (0.15 + ((w * 0.37) % 0.7));
-      const cy = screenHeight * (0.2 + ((w * 0.53) % 0.6));
-      waveCenters[w * 2] = cx;
-      waveCenters[w * 2 + 1] = cy;
-      const offsetTime = iTime + w * stagger;
-      const cyc = offsetTime % durationSec;
-      waveRadii[w] = cyc * stoneWaveSpeed;
-      waveStrengths[w] = stoneWaveStrengthBase;
-      waveWidths[w] = stoneWaveWidth;
+    const spriteX = x + width * 0.5;
+    const spriteY = y + height * 0.5;
+    const totalWaves = Math.min(allWaveCount.value, MAX_WAVES);
+    const centers = allWaveCenters.value;
+    const radii = allWaveRadii.value;
+    const strengths = allWaveStrengths.value;
+    const widths = allWaveWidths.value;
+
+    const scored: { idx: number; distSq: number }[] = [];
+    for (let i = 0; i < totalWaves; i++) {
+      const cx = centers[i * 2];
+      const cy = centers[i * 2 + 1];
+      const dx = cx - spriteX;
+      const dy = cy - spriteY;
+      scored.push({ idx: i, distSq: dx * dx + dy * dy });
     }
+    scored.sort((a, b) => a.distSq - b.distSq);
+    const closest = scored.slice(0, MAX_WAVES_PER_SPRITE);
+
+    const waveCentersArr: number[] = Array(MAX_WAVES_PER_SPRITE * 2).fill(0);
+    const waveRadiiArr: number[] = Array(MAX_WAVES_PER_SPRITE).fill(0);
+    const waveStrengthsArr: number[] = Array(MAX_WAVES_PER_SPRITE).fill(0);
+    const waveWidthsArr: number[] = Array(MAX_WAVES_PER_SPRITE).fill(0);
+
+    for (let i = 0; i < closest.length; i++) {
+      const src = closest[i]!.idx;
+      waveCentersArr[i * 2] = centers[src * 2];
+      waveCentersArr[i * 2 + 1] = centers[src * 2 + 1];
+      waveRadiiArr[i] = radii[src];
+      waveStrengthsArr[i] = strengths[src];
+      waveWidthsArr[i] = widths[src];
+    }
+
     return {
       iTime,
       iResolution: [screenWidth, screenHeight] as [number, number],
@@ -159,11 +172,11 @@ export function StoneInstance({
       wobbleFreq,
       wobbleAmp,
       wobbleSpeed,
-      waveCenters,
-      waveRadii,
-      waveStrengths,
-      waveWidths,
-      waveCount,
+      waveCenters: waveCentersArr,
+      waveRadii: waveRadiiArr,
+      waveStrengths: waveStrengthsArr,
+      waveWidths: waveWidthsArr,
+      waveCount: closest.length,
       waveDecay: stoneWaveDecay,
     };
   });

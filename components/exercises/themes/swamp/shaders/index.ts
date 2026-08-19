@@ -11,6 +11,7 @@ export {
 export { ALGAE_DEFORM_SKSL, algaeDeformDefaults } from './algaeDeform.sksl';
 export {
   MAX_WAVES,
+  MAX_WAVES_PER_SPRITE,
   multiWaveDefaults,
   singleWaveDefaults,
   waterWaveLayerMultiplier,
@@ -20,12 +21,10 @@ export {
   computeWaveUniforms,
   computeLoopedWaveRadius,
   computeMultiWaveUniforms,
+  getClosestWaves,
   padFloatArray,
   padVec2Array,
   type WaterWave,
   type MultiWaveUniforms,
+  type ClosestWaveUniforms,
 } from './waterWaves';
-export {
-  WATER_WAVES_UNIFORMS_SKSK,
-  WATER_WAVE_LOOP_SKSK,
-} from './waterWaves.sksl';

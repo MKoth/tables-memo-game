@@ -7,6 +7,8 @@ import { SwampThemeFloorCanvas } from './seafloor/SwampThemeFloorCanvas';
 import { useScatterConfigs } from './scatter/useScatterConfigs';
 import { AlgaeScatterLayer, StoneScatterLayer } from './shaderInstances';
 import { STONE_SCATTER_PARAMS, ALGAE_SCATTER_PARAMS } from './params';
+import { useWaveParticles, waveManagerDefaults } from './useWaveParticles';
+import { MAX_WAVES } from '../shaders/waterWaves';
 
 const LOADING_DIM_OVERLAY = 'rgba(20, 30, 15, 0.28)';
 
@@ -26,12 +28,24 @@ function SwampDecorScatter({
   width,
   height,
   clock,
+  waveCenters,
+  waveRadii,
+  waveStrengths,
+  waveWidths,
+  waveCount,
+  waveDecay,
 }: {
   stoneImages: SwampThemeImages['stones'];
   algaeImages: SwampThemeImages['algae'];
   width: number;
   height: number;
   clock: SharedValue<number>;
+  waveCenters: SharedValue<number[]>;
+  waveRadii: SharedValue<number[]>;
+  waveStrengths: SharedValue<number[]>;
+  waveWidths: SharedValue<number[]>;
+  waveCount: SharedValue<number>;
+  waveDecay: number;
 }) {
   const stoneVariants = Object.keys(stoneImages).length;
   const algaeVariants = Object.keys(algaeImages).length;
@@ -59,6 +73,12 @@ function SwampDecorScatter({
         screenWidth={width}
         screenHeight={height}
         clock={clock}
+        waveCenters={waveCenters}
+        waveRadii={waveRadii}
+        waveStrengths={waveStrengths}
+        waveWidths={waveWidths}
+        waveCount={waveCount}
+        waveDecay={waveDecay}
       />
       <AlgaeScatterLayer
         configs={algaeConfigs}
@@ -66,6 +86,12 @@ function SwampDecorScatter({
         screenWidth={width}
         screenHeight={height}
         clock={clock}
+        waveCenters={waveCenters}
+        waveRadii={waveRadii}
+        waveStrengths={waveStrengths}
+        waveWidths={waveWidths}
+        waveCount={waveCount}
+        waveDecay={waveDecay}
       />
     </>
   );
@@ -82,9 +108,34 @@ export function SwampThemeSceneryBackground({
 }: SwampThemeSceneryBackgroundProps) {
   const showForeground = stoneImages != null && algaeImages != null;
 
+  const {
+    waveCenters,
+    waveRadii,
+    waveStrengths,
+    waveWidths,
+    waveCount,
+    waveDecay,
+  } = useWaveParticles({
+    ...waveManagerDefaults,
+    maxWaves: MAX_WAVES,
+    screenBounds: { width, height },
+    clock,
+  });
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <SwampThemeFloorCanvas image={seafloorImage} width={width} height={height} clock={clock} />
+      <SwampThemeFloorCanvas
+        image={seafloorImage}
+        width={width}
+        height={height}
+        clock={clock}
+        waveCenters={waveCenters}
+        waveRadii={waveRadii}
+        waveStrengths={waveStrengths}
+        waveWidths={waveWidths}
+        waveCount={waveCount}
+        waveDecay={waveDecay}
+      />
       {showForeground && (
         <SwampDecorScatter
           stoneImages={stoneImages}
@@ -92,6 +143,12 @@ export function SwampThemeSceneryBackground({
           width={width}
           height={height}
           clock={clock}
+          waveCenters={waveCenters}
+          waveRadii={waveRadii}
+          waveStrengths={waveStrengths}
+          waveWidths={waveWidths}
+          waveCount={waveCount}
+          waveDecay={waveDecay}
         />
       )}
       {dimOverlay && (

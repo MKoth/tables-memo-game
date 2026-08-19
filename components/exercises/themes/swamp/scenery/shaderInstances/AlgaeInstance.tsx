@@ -13,7 +13,10 @@ import {
   ALGAE_DEFORM_SKSL,
   algaeDeformDefaults,
 } from '../../shaders/algaeDeform.sksl';
-import { MAX_WAVES, singleWaveDefaults } from '../../shaders/waterWaves';
+import {
+  MAX_WAVES,
+  MAX_WAVES_PER_SPRITE,
+} from '../../shaders/waterWaves';
 
 function compileAlgaeEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(ALGAE_DEFORM_SKSL);
@@ -30,17 +33,6 @@ const {
   wobbleAmp: algaeWobbleAmp,
   wobbleSpeed: algaeWobbleSpeed,
 } = algaeDeformDefaults;
-
-const {
-  waveSpeed: algaeWaveSpeed,
-  waveWidth: algaeWaveWidth,
-  waveStrength: algaeWaveStrengthBase,
-  waveDecay: algaeWaveDecay,
-  waveDuration: algaeWaveDuration,
-} = singleWaveDefaults;
-
-const DEMO_WAVE_COUNT = 4;
-const DEMO_WAVE_STAGGER_SEC = 0.95;
 
 export type AlgaeInstanceProps = {
   image: SkImage;
@@ -62,6 +54,12 @@ export type AlgaeInstanceProps = {
   screenWidth?: number;
   screenHeight?: number;
   clock: SharedValue<number>;
+  waveCenters: SharedValue<number[]>;
+  waveRadii: SharedValue<number[]>;
+  waveStrengths: SharedValue<number[]>;
+  waveWidths: SharedValue<number[]>;
+  waveCount: SharedValue<number>;
+  waveDecay: number;
 };
 
 export function AlgaeInstance({
@@ -84,30 +82,51 @@ export function AlgaeInstance({
   screenWidth = 0,
   screenHeight = 0,
   clock,
+  waveCenters: allWaveCenters,
+  waveRadii: allWaveRadii,
+  waveStrengths: allWaveStrengths,
+  waveWidths: allWaveWidths,
+  waveCount: allWaveCount,
+  waveDecay: algaeWaveDecay,
 }: AlgaeInstanceProps) {
   const beamTintUniform = [...beamTint] as [number, number, number];
 
   const uniforms = useDerivedValue(() => {
     'worklet';
     const iTime = clock.value / 1000;
-    const waveCount = Math.max(0, Math.min(DEMO_WAVE_COUNT, MAX_WAVES));
-    const waveCenters: number[] = Array(MAX_WAVES * 2).fill(0);
-    const waveRadii: number[] = Array(MAX_WAVES).fill(0);
-    const waveStrengths: number[] = Array(MAX_WAVES).fill(0);
-    const waveWidths: number[] = Array(MAX_WAVES).fill(0);
-    const durationSec = algaeWaveDuration / 1000;
-    const stagger = waveCount > 1 ? durationSec / waveCount : 0.95;
-    for (let w = 0; w < waveCount; w++) {
-      const cx = screenWidth > 0 ? screenWidth * (0.15 + ((w * 0.37) % 0.7)) : x + width * 0.5;
-      const cy = screenHeight > 0 ? screenHeight * (0.2 + ((w * 0.53) % 0.6)) : y + height * 0.5;
-      waveCenters[w * 2] = cx;
-      waveCenters[w * 2 + 1] = cy;
-      const offsetTime = iTime + w * stagger;
-      const cyc = offsetTime % durationSec;
-      waveRadii[w] = cyc * algaeWaveSpeed;
-      waveStrengths[w] = algaeWaveStrengthBase;
-      waveWidths[w] = algaeWaveWidth;
+    const spriteX = x + width * 0.5;
+    const spriteY = y + height * 0.5;
+    const totalWaves = Math.min(allWaveCount.value, MAX_WAVES);
+    const centers = allWaveCenters.value;
+    const radii = allWaveRadii.value;
+    const strengths = allWaveStrengths.value;
+    const widths = allWaveWidths.value;
+
+    const scored: { idx: number; distSq: number }[] = [];
+    for (let i = 0; i < totalWaves; i++) {
+      const cx = centers[i * 2];
+      const cy = centers[i * 2 + 1];
+      const dx = cx - spriteX;
+      const dy = cy - spriteY;
+      scored.push({ idx: i, distSq: dx * dx + dy * dy });
     }
+    scored.sort((a, b) => a.distSq - b.distSq);
+    const closest = scored.slice(0, MAX_WAVES_PER_SPRITE);
+
+    const waveCentersArr: number[] = Array(MAX_WAVES_PER_SPRITE * 2).fill(0);
+    const waveRadiiArr: number[] = Array(MAX_WAVES_PER_SPRITE).fill(0);
+    const waveStrengthsArr: number[] = Array(MAX_WAVES_PER_SPRITE).fill(0);
+    const waveWidthsArr: number[] = Array(MAX_WAVES_PER_SPRITE).fill(0);
+
+    for (let i = 0; i < closest.length; i++) {
+      const src = closest[i]!.idx;
+      waveCentersArr[i * 2] = centers[src * 2];
+      waveCentersArr[i * 2 + 1] = centers[src * 2 + 1];
+      waveRadiiArr[i] = radii[src];
+      waveStrengthsArr[i] = strengths[src];
+      waveWidthsArr[i] = widths[src];
+    }
+
     return {
       iTime,
       algaeX: x,
@@ -131,11 +150,11 @@ export function AlgaeInstance({
       wobbleFreq: algaeWobbleFreq,
       wobbleAmp: algaeWobbleAmp,
       wobbleSpeed: algaeWobbleSpeed,
-      waveCenters,
-      waveRadii,
-      waveStrengths,
-      waveWidths,
-      waveCount,
+      waveCenters: waveCentersArr,
+      waveRadii: waveRadiiArr,
+      waveStrengths: waveStrengthsArr,
+      waveWidths: waveWidthsArr,
+      waveCount: closest.length,
       waveDecay: algaeWaveDecay,
     };
   });

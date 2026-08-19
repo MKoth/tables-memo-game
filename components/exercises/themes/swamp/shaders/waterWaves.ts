@@ -9,6 +9,7 @@ export type WaterWave = {
 };
 
 export const MAX_WAVES = 16;
+export const MAX_WAVES_PER_SPRITE = 2;
 
 export const singleWaveDefaults = {
   waveSpeed: 80.0,
@@ -136,6 +137,51 @@ export function padVec2Array(
     }
   }
   return flat;
+}
+
+export type ClosestWaveUniforms = {
+  waveCenters: number[];
+  waveRadii: number[];
+  waveStrengths: number[];
+  waveWidths: number[];
+  waveCount: number;
+  waveDecay: number;
+};
+
+export function getClosestWaves(
+  waves: readonly WaterWave[],
+  targetX: number,
+  targetY: number,
+  count: number,
+  iTimeSec: number,
+  waveSpeed: number,
+  waveDecay: number,
+): ClosestWaveUniforms {
+  const scored = waves.map(w => {
+    const dx = w.x - targetX;
+    const dy = w.y - targetY;
+    return { wave: w, distSq: dx * dx + dy * dy };
+  });
+  scored.sort((a, b) => a.distSq - b.distSq);
+  const closest = scored.slice(0, count);
+  const centers: number[] = [];
+  const radii: number[] = [];
+  const strengths: number[] = [];
+  const widths: number[] = [];
+  for (const { wave } of closest) {
+    centers.push(wave.x, wave.y);
+    radii.push(computeWaveRadius(iTimeSec, wave.birthTime, waveSpeed));
+    strengths.push(wave.strength);
+    widths.push(wave.width);
+  }
+  return {
+    waveCenters: padVec2Array(centers, count),
+    waveRadii: padFloatArray(radii, count, 0),
+    waveStrengths: padFloatArray(strengths, count, 0),
+    waveWidths: padFloatArray(widths, count, 12),
+    waveCount: closest.length,
+    waveDecay,
+  };
 }
 
 export function computeMultiWaveUniforms(

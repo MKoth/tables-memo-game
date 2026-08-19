@@ -2,7 +2,9 @@ import {
   computeLoopedWaveRadius,
   computeWaveRadius,
   computeWaveUniforms,
+  getClosestWaves,
   isWaveActive,
+  MAX_WAVES_PER_SPRITE,
   singleWaveDefaults,
   waterWaveLayerMultiplier,
   type WaterWave,
@@ -93,6 +95,47 @@ describe('waterWaves', () => {
       expect(waterWaveLayerMultiplier.floor).toBe(0.6);
       expect(waterWaveLayerMultiplier.stone).toBe(1.0);
       expect(waterWaveLayerMultiplier.algae).toBe(1.3);
+    });
+    it('MAX_WAVES_PER_SPRITE is 2', () => {
+      expect(MAX_WAVES_PER_SPRITE).toBe(2);
+    });
+  });
+
+  describe('getClosestWaves', () => {
+    const waves: WaterWave[] = [
+      { x: 10, y: 10, birthTime: 1.0, duration: 4000, maxRadius: 300, strength: 4.0, width: 12.0 },
+      { x: 500, y: 500, birthTime: 1.0, duration: 4000, maxRadius: 300, strength: 3.0, width: 10.0 },
+      { x: 20, y: 20, birthTime: 1.0, duration: 4000, maxRadius: 300, strength: 5.0, width: 14.0 },
+      { x: 800, y: 800, birthTime: 1.0, duration: 4000, maxRadius: 300, strength: 2.0, width: 8.0 },
+    ];
+
+    it('returns closest N waves sorted by distance', () => {
+      const result = getClosestWaves(waves, 15, 15, 2, 2.0, 80, 0.0015);
+      expect(result.waveCount).toBe(2);
+      expect(result.waveCenters[0]).toBe(10);
+      expect(result.waveCenters[1]).toBe(10);
+      expect(result.waveCenters[2]).toBe(20);
+      expect(result.waveCenters[3]).toBe(20);
+    });
+
+    it('pads output arrays to count', () => {
+      const result = getClosestWaves(waves, 15, 15, 4, 2.0, 80, 0.0015);
+      expect(result.waveCount).toBe(4);
+      expect(result.waveRadii).toHaveLength(4);
+      expect(result.waveStrengths).toHaveLength(4);
+      expect(result.waveWidths).toHaveLength(4);
+      expect(result.waveCenters).toHaveLength(8);
+    });
+
+    it('returns fewer waves when fewer exist', () => {
+      const single = [waves[0]!];
+      const result = getClosestWaves(single, 15, 15, 2, 2.0, 80, 0.0015);
+      expect(result.waveCount).toBe(1);
+    });
+
+    it('passes through waveDecay', () => {
+      const result = getClosestWaves(waves, 15, 15, 2, 2.0, 80, 0.005);
+      expect(result.waveDecay).toBe(0.005);
     });
   });
 });
