@@ -31,13 +31,6 @@ type WaveSlot = {
   birthTime: number;
 };
 
-function randomX(w: number): number {
-  return Math.random() * w;
-}
-function randomY(h: number): number {
-  return Math.random() * h;
-}
-
 export function useWaveParticles(config: WaveParticleConfig) {
   const {
     maxWaves,
@@ -56,8 +49,8 @@ export function useWaveParticles(config: WaveParticleConfig) {
   const initialSlots: WaveSlot[] = [];
   for (let i = 0; i < maxWaves; i++) {
     initialSlots.push({
-      x: randomX(screenBounds.width),
-      y: randomY(screenBounds.height),
+      x: Math.random() * screenBounds.width,
+      y: Math.random() * screenBounds.height,
       birthTime: -Math.random() * durationSec,
     });
   }
@@ -83,8 +76,8 @@ export function useWaveParticles(config: WaveParticleConfig) {
       const age = now - slot.birthTime;
 
       if (age >= durationSec || age < 0) {
-        slot.x = randomX(screenBounds.width);
-        slot.y = randomY(screenBounds.height);
+        slot.x = Math.random() * screenBounds.width;
+        slot.y = Math.random() * screenBounds.height;
         slot.birthTime = now;
       }
 
