@@ -4,12 +4,12 @@ import { makeMutable, useFrameCallback } from 'react-native-reanimated';
 import { MAX_WAVES } from '../shaders/waterWaves';
 
 export const waveManagerDefaults = {
-  waveSpeed: 80,
+  waveSpeed: 120,
   waveWidth: 12,
-  waveStrength: 15.0,
-  waveDecay: 0.03,
+  waveStrength: 12.0,
+  waveDecay: 0.025,
   maxRadius: 280,
-  duration: 1500,
+  duration: 1000,
   maxWaves: MAX_WAVES,
 } as const;
 

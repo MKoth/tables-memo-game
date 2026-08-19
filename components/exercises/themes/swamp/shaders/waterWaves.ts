@@ -8,7 +8,7 @@ export type WaterWave = {
   width: number;
 };
 
-export const MAX_WAVES = 16;
+export const MAX_WAVES = 19;
 export const MAX_WAVES_PER_SPRITE = 2;
 
 export const singleWaveDefaults = {
@@ -21,7 +21,7 @@ export const singleWaveDefaults = {
 } as const;
 
 export const multiWaveDefaults = {
-  maxWaves: 16,
+  maxWaves: 19,
 } as const;
 
 export const waterWaveLayerMultiplier = {
