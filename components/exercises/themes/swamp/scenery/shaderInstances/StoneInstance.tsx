@@ -14,10 +14,7 @@ import {
   STONE_SKSL,
   stoneDefaults,
 } from '../../shaders/stone.sksl';
-import {
-  singleWaveDefaults,
-  waterWaveLayerMultiplier,
-} from '../../shaders/waterWaves';
+import { MAX_WAVES, singleWaveDefaults } from '../../shaders/waterWaves';
 
 function compileStoneEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(STONE_SKSL);
@@ -79,10 +76,17 @@ const {
   waveWidth: stoneWaveWidth,
   waveStrength: stoneWaveStrengthBase,
   waveDecay: stoneWaveDecay,
-  waveMaxRadius: stoneWaveMaxRadius,
   waveDuration: stoneWaveDuration,
 } = singleWaveDefaults;
-const stoneWaveStrength = stoneWaveStrengthBase * waterWaveLayerMultiplier.stone;
+
+// Tweakable: number of simultaneous waves to display (1..MAX_WAVES). Change to
+// experiment with 1 vs 4 vs 8 vs 32 overlapping lenses.
+// Limit is MAX_WAVES in waterWaves.ts — bump that first if you want >8.
+// Set to 0 to disable wave lens entirely.
+const DEMO_WAVE_COUNT = 4;
+// Stagger was fixed 0.95s, which aliases when waveCount >> duration/stagger.
+// Now distributed evenly: stagger = duration / waveCount
+const DEMO_WAVE_STAGGER_SEC = 0.95;
 
 export type StoneInstanceProps = {
   image: SkImage;
@@ -110,9 +114,24 @@ export function StoneInstance({
   const uniforms = useDerivedValue(() => {
     'worklet';
     const iTime = clock.value / 1000;
-    const cycle = iTime % (stoneWaveDuration / 1000);
-    const rawRadius = cycle * stoneWaveSpeed;
-    const waveActive = rawRadius <= stoneWaveMaxRadius ? 1 : 0;
+    const waveCount = Math.max(0, Math.min(DEMO_WAVE_COUNT, MAX_WAVES));
+    const waveCenters: number[] = Array(MAX_WAVES * 2).fill(0);
+    const waveRadii: number[] = Array(MAX_WAVES).fill(0);
+    const waveStrengths: number[] = Array(MAX_WAVES).fill(0);
+    const waveWidths: number[] = Array(MAX_WAVES).fill(0);
+    const durationSec = stoneWaveDuration / 1000;
+    const stagger = waveCount > 1 ? durationSec / waveCount : DEMO_WAVE_STAGGER_SEC;
+    for (let w = 0; w < waveCount; w++) {
+      const cx = screenWidth * (0.15 + ((w * 0.37) % 0.7));
+      const cy = screenHeight * (0.2 + ((w * 0.53) % 0.6));
+      waveCenters[w * 2] = cx;
+      waveCenters[w * 2 + 1] = cy;
+      const offsetTime = iTime + w * stagger;
+      const cyc = offsetTime % durationSec;
+      waveRadii[w] = cyc * stoneWaveSpeed;
+      waveStrengths[w] = stoneWaveStrengthBase;
+      waveWidths[w] = stoneWaveWidth;
+    }
     return {
       iTime,
       iResolution: [screenWidth, screenHeight] as [number, number],
@@ -140,12 +159,12 @@ export function StoneInstance({
       wobbleFreq,
       wobbleAmp,
       wobbleSpeed,
-      waveCenter: [screenWidth * 0.5, screenHeight * 0.5] as [number, number],
-      waveRadius: rawRadius,
-      waveStrength: stoneWaveStrength,
-      waveWidth: stoneWaveWidth,
+      waveCenters,
+      waveRadii,
+      waveStrengths,
+      waveWidths,
+      waveCount,
       waveDecay: stoneWaveDecay,
-      waveActive,
     };
   });
 

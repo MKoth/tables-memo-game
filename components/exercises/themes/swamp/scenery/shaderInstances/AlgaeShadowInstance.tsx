@@ -13,6 +13,7 @@ import {
   ALGAE_DEFORM_SKSL,
   algaeDeformDefaults,
 } from '../../shaders/algaeDeform.sksl';
+import { MAX_WAVES } from '../../shaders/waterWaves';
 
 function compileAlgaeEffect(): SkRuntimeEffect {
   const effect = Skia.RuntimeEffect.Make(ALGAE_DEFORM_SKSL);
@@ -88,12 +89,12 @@ export function AlgaeShadowInstance({
     wobbleFreq: algaeDeformDefaults.wobbleFreq,
     wobbleAmp: algaeDeformDefaults.wobbleAmp,
     wobbleSpeed: algaeDeformDefaults.wobbleSpeed,
-    waveCenter: [0, 0] as [number, number],
-    waveRadius: 0,
-    waveStrength: 0,
-    waveWidth: 12,
+    waveCenters: Array(MAX_WAVES * 2).fill(0),
+    waveRadii: Array(MAX_WAVES).fill(0),
+    waveStrengths: Array(MAX_WAVES).fill(0),
+    waveWidths: Array(MAX_WAVES).fill(0),
+    waveCount: 0,
     waveDecay: 0.0015,
-    waveActive: 0,
   }));
 
   return (

@@ -2,6 +2,8 @@
  * Swamp floor sprites: murky tint + quantized static voronoi caustics.
  * Cells are static per variant; floor(iTime * switchRate) snaps between hash-seeded patterns.
  */
+import { MAX_WAVES } from './waterWaves';
+
 export const MAX_SWAMPFLOOR_VORONOI_LAYERS = 4;
 
 export const SWAMPFLOOR_SKSL = `
@@ -32,12 +34,12 @@ uniform float floorScale;
 uniform float wobbleFreq;
 uniform float wobbleAmp;
 uniform float wobbleSpeed;
-uniform float2 waveCenter;
-uniform float waveRadius;
-uniform float waveStrength;
-uniform float waveWidth;
+uniform float2 waveCenters[${MAX_WAVES}];
+uniform float waveRadii[${MAX_WAVES}];
+uniform float waveStrengths[${MAX_WAVES}];
+uniform float waveWidths[${MAX_WAVES}];
+uniform float waveCount;
 uniform float waveDecay;
-uniform float waveActive;
 uniform shader floorTexture;
 
 vec2 hash2(vec2 p) {
@@ -126,15 +128,23 @@ half4 main(float2 fragCoord) {
   wobble.x = sin(fragCoord.y * wobbleFreq + iTime * wobbleSpeed) * wobbleAmp;
   wobble.y = cos(fragCoord.x * wobbleFreq * 0.8 + iTime * wobbleSpeed * 0.7) * wobbleAmp * 0.6;
   float2 waveDisp = float2(0.0);
-  if (waveActive > 0.5) {
-    float2 toPix = fragCoord - waveCenter;
+  for (int i=0; i<${MAX_WAVES}; i++) {
+    if (float(i) >= waveCount) break;
+    float2 center = waveCenters[i];
+    float radius = waveRadii[i];
+    float strength = waveStrengths[i];
+    float width = waveWidths[i];
+    float2 toPix = fragCoord - center;
     float dist = length(toPix);
+    if (dist > radius + width*4.0 + 60.0) continue;
     float2 dir = dist > 0.001 ? normalize(toPix) : float2(0.0);
-    float edge = abs(dist - waveRadius);
-    float ring = exp(-edge*edge / (waveWidth*waveWidth));
+    float edge = abs(dist - radius);
+    float ww = max(width, 0.001);
+    float ring = exp(-edge*edge / (ww*ww));
     float envelope = exp(-dist * waveDecay);
-    waveDisp = dir * ring * envelope * waveStrength;
+    waveDisp += dir * ring * envelope * strength;
   }
+  waveDisp *= 0.6;
   float2 total = wobble + waveDisp;
   float2 sampleCoord = fragCoord + total;
   float2 tileCoord = sampleCoord * (floorScale / iResolution.x);
