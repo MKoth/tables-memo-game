@@ -8,6 +8,8 @@ import { useScatterConfigs } from './scatter/useScatterConfigs';
 import { AlgaeScatterLayer, StoneScatterLayer } from './shaderInstances';
 import { STONE_SCATTER_PARAMS, ALGAE_SCATTER_PARAMS } from './params';
 import { useWaveParticles, waveManagerDefaults } from './useWaveParticles';
+import { useWaveIntensityTimeline } from './useWaveIntensityTimeline';
+import { WAVE_INTENSITY_TIMELINE } from '../config/waveTimeline';
 import { MAX_WAVES } from '../shaders/waterWaves';
 
 const LOADING_DIM_OVERLAY = 'rgba(20, 30, 15, 0.28)';
@@ -108,6 +110,11 @@ export function SwampThemeSceneryBackground({
 }: SwampThemeSceneryBackgroundProps) {
   const showForeground = stoneImages != null && algaeImages != null;
 
+  const targetWaveCount = useWaveIntensityTimeline(
+    clock,
+    WAVE_INTENSITY_TIMELINE,
+  );
+
   const {
     waveCenters,
     waveRadii,
@@ -118,6 +125,7 @@ export function SwampThemeSceneryBackground({
   } = useWaveParticles({
     ...waveManagerDefaults,
     maxWaves: MAX_WAVES,
+    targetWaveCount: targetWaveCount,
     screenBounds: { width, height },
     clock,
   });
