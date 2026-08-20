@@ -19,6 +19,7 @@ function SwampThemeSceneryComponent() {
         seafloorImage={images.seafloor}
         stoneImages={images.stones}
         algaeImages={images.algae}
+        dropImages={images.drops}
         width={width}
         height={height}
         clock={clock}

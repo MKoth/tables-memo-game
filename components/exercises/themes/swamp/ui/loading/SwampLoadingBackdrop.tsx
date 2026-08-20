@@ -14,12 +14,14 @@ function SceneryBackdrop({
   backgroundImage,
   decorationImages,
   accentImages,
+  dropImages,
   width,
   height,
 }: {
   backgroundImage: SkImage;
   decorationImages: SwampThemeImages['stones'] | null;
   accentImages: SwampThemeImages['algae'] | null;
+  dropImages: SwampThemeImages['drops'] | null;
   width: number;
   height: number;
 }) {
@@ -30,6 +32,7 @@ function SceneryBackdrop({
       seafloorImage={backgroundImage}
       stoneImages={decorationImages}
       algaeImages={accentImages}
+      dropImages={dropImages}
       width={width}
       height={height}
       clock={clock}
@@ -44,6 +47,7 @@ type SwampLoadingBackdropProps = {
   backgroundImage: SkImage | null;
   decorationImages: Record<string, SkImage> | null;
   accentImages: Record<string, SkImage> | null;
+  dropImages?: Record<string, SkImage> | null;
 };
 
 export function SwampLoadingBackdrop({
@@ -52,6 +56,7 @@ export function SwampLoadingBackdrop({
   backgroundImage,
   decorationImages,
   accentImages,
+  dropImages,
 }: SwampLoadingBackdropProps) {
   return (
     <View style={styles.container}>
@@ -61,6 +66,7 @@ export function SwampLoadingBackdrop({
             backgroundImage={backgroundImage}
             decorationImages={decorationImages as SwampThemeImages['stones'] | null}
             accentImages={accentImages as SwampThemeImages['algae'] | null}
+            dropImages={dropImages as SwampThemeImages['drops'] | null}
             width={width}
             height={height}
           />

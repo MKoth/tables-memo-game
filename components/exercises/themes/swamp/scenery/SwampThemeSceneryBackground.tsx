@@ -7,10 +7,9 @@ import { SwampThemeFloorCanvas } from './seafloor/SwampThemeFloorCanvas';
 import { useScatterConfigs } from './scatter/useScatterConfigs';
 import { AlgaeScatterLayer, StoneScatterLayer } from './shaderInstances';
 import { STONE_SCATTER_PARAMS, ALGAE_SCATTER_PARAMS } from './params';
-import { useWaveParticles, waveManagerDefaults } from './useWaveParticles';
-import { useWaveIntensityTimeline } from './useWaveIntensityTimeline';
-import { WAVE_INTENSITY_TIMELINE } from '../config/waveTimeline';
-import { MAX_WAVES } from '../shaders/waterWaves';
+import { useDropParticles } from './useDropParticles';
+import { DropLayer } from './DropLayer';
+
 
 const LOADING_DIM_OVERLAY = 'rgba(20, 30, 15, 0.28)';
 
@@ -18,6 +17,7 @@ type SwampThemeSceneryBackgroundProps = {
   seafloorImage: SkImage;
   stoneImages: SwampThemeImages['stones'] | null;
   algaeImages: SwampThemeImages['algae'] | null;
+  dropImages: SwampThemeImages['drops'] | null;
   width: number;
   height: number;
   clock: SharedValue<number>;
@@ -103,6 +103,7 @@ export function SwampThemeSceneryBackground({
   seafloorImage,
   stoneImages,
   algaeImages,
+  dropImages,
   width,
   height,
   clock,
@@ -110,25 +111,13 @@ export function SwampThemeSceneryBackground({
 }: SwampThemeSceneryBackgroundProps) {
   const showForeground = stoneImages != null && algaeImages != null;
 
-  const targetWaveCount = useWaveIntensityTimeline(
-    clock,
-    WAVE_INTENSITY_TIMELINE,
-  );
-
-  const {
-    waveCenters,
-    waveRadii,
-    waveStrengths,
-    waveWidths,
-    waveCount,
-    waveDecay,
-  } = useWaveParticles({
-    ...waveManagerDefaults,
-    maxWaves: MAX_WAVES,
-    targetWaveCount: targetWaveCount,
+  const { dropFlat, waveCenters, waveRadii, waveStrengths, waveWidths, waveCount, waveDecay } = useDropParticles({
     screenBounds: { width, height },
     clock,
   });
+
+  const showDrops = dropImages != null && Object.keys(dropImages).length > 0;
+  const dropImagesArray = showDrops ? Object.values(dropImages!) : [];
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -157,6 +146,15 @@ export function SwampThemeSceneryBackground({
           waveWidths={waveWidths}
           waveCount={waveCount}
           waveDecay={waveDecay}
+        />
+      )}
+      {showDrops && (
+        <DropLayer
+          dropImages={dropImagesArray}
+          width={width}
+          height={height}
+          clock={clock}
+          dropFlat={dropFlat}
         />
       )}
       {dimOverlay && (

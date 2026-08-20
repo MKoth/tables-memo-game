@@ -9,6 +9,7 @@ export {
   MAX_STONE_VORONOI_LAYERS,
 } from './stone.sksl';
 export { ALGAE_DEFORM_SKSL, algaeDeformDefaults } from './algaeDeform.sksl';
+export { DROP_SHEET_SKSL, dropSheetEffect } from './dropSheet.sksl';
 export {
   MAX_WAVES,
   MAX_WAVES_PER_SPRITE,

@@ -16,20 +16,24 @@ export function useWaveIntensityTimeline(
   timeline: WaveIntensityTimeline,
 ): Mutable<number> {
   const stepCount = timeline.length;
-  const maxTotalMs = timeline.reduce((sum, s) => sum + s.durationMaxMs, 0);
   const resolvedRef = useRef(
     makeMutable(timeline.map(s => s.durationMinMs)),
   );
   const totalRef = useRef(
     makeMutable(timeline.reduce((sum, s) => sum + s.durationMinMs, 0)),
   );
+  const cycleStartRef = useRef(makeMutable(0));
   const waveCountRef = useRef(makeMutable(timeline[0]!.waveCount));
 
   useFrameCallback(() => {
     'worklet';
     const elapsed = clock.value;
+    const cycleStart = cycleStartRef.current.value;
+    const total = totalRef.current.value;
 
-    if (elapsed >= totalRef.current.value) {
+    if (elapsed >= cycleStart + total) {
+      cycleStartRef.current.value = elapsed;
+
       let newTotal = 0;
       for (let i = 0; i < stepCount; i++) {
         const step = timeline[i]!;
@@ -44,7 +48,7 @@ export function useWaveIntensityTimeline(
       totalRef.current.value = newTotal;
     }
 
-    const t = elapsed % totalRef.current.value;
+    const t = elapsed - cycleStartRef.current.value;
     let acc = 0;
     let count = timeline[0]!.waveCount;
     for (let i = 0; i < stepCount; i++) {

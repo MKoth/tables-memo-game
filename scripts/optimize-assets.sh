@@ -10,6 +10,9 @@
 #        Pipeline: resize → add transparent padding → blur
 #        The padding gives the blur room to fade to nothing at the edges instead
 #        of clipping hard against transparent pixels.
+#   Swamp
+#     Rain drops downscaled to ≤80px wide (they display at 20-60px on screen)
+#     with Gaussian blur baked in for soft edges.
 #   Flower garden (roses)
 #     The rose-bud shader samples bud/center/petals at 15-85 px on screen
 #     (config.bellSize * scale); the calyx shader at bellSize * 1.2 (~100 px);
@@ -116,6 +119,14 @@ for name in seafloor.png seafloor2.png seafloor3.png; do
     "$f"
   after=$(bytes "$f")
   printf "  %-20s %6dK → %6dK  (σ=%s)\n" "$name" $((before/1024)) $((after/1024)) "$sigma"
+done
+
+echo ""
+echo ""
+echo "=== Swamp rain drops (resize ≤80px wide, +${PADDING}px padding, bake σ=${BLUR_SIGMA}px blur) ==="
+SWAMP_DROPS_DIR="$ASSETS_DIR/images/swamp_theme/drops"
+for i in 1 2 3; do
+  process "$SWAMP_DROPS_DIR/drop${i}.png" 80
 done
 
 echo ""

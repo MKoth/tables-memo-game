@@ -14,6 +14,11 @@ export const SWAMP_IMAGE_ASSETS = {
     9: require('../../../../../../assets/images/swamp_theme/stones/swamp_stone9.png'),
     10: require('../../../../../../assets/images/swamp_theme/stones/swamp_stone10.png'),
   },
+  drops: {
+    1: require('../../../../../../assets/images/swamp_theme/drops/drop1.png'),
+    2: require('../../../../../../assets/images/swamp_theme/drops/drop2.png'),
+    3: require('../../../../../../assets/images/swamp_theme/drops/drop3.png'),
+  },
   algae: {
     1: require('../../../../../../assets/images/swamp_theme/algae/algae1.png'),
     2: require('../../../../../../assets/images/swamp_theme/algae/algae2.png'),
@@ -41,11 +46,13 @@ export const SWAMP_IMAGE_ASSETS = {
 
 export type StoneVariant = keyof typeof SWAMP_IMAGE_ASSETS.stones;
 export type AlgaeVariant = keyof typeof SWAMP_IMAGE_ASSETS.algae;
+export type DropVariant = keyof typeof SWAMP_IMAGE_ASSETS.drops;
 
 export type SwampThemeImages = {
   seafloor: SkImage;
   stones: Record<StoneVariant, SkImage>;
   algae: Record<AlgaeVariant, SkImage>;
+  drops: Record<DropVariant, SkImage>;
 };
 
 export const SWAMP_PRIORITY_IMAGE_SOURCE = SWAMP_IMAGE_ASSETS.seafloor;
@@ -87,9 +94,16 @@ export const SWAMP_ALGAE_SOURCES: Array<[AlgaeVariant, number]> = [
   [21, SWAMP_IMAGE_ASSETS.algae[21]],
 ];
 
+export const SWAMP_DROP_SOURCES: Array<[DropVariant, number]> = [
+  [1, SWAMP_IMAGE_ASSETS.drops[1]],
+  [2, SWAMP_IMAGE_ASSETS.drops[2]],
+  [3, SWAMP_IMAGE_ASSETS.drops[3]],
+];
+
 export const SWAMP_IMAGE_COUNT =
   1 +
   SWAMP_STONE_SOURCES.length +
-  SWAMP_ALGAE_SOURCES.length;
+  SWAMP_ALGAE_SOURCES.length +
+  SWAMP_DROP_SOURCES.length;
 
 export const SWAMP_PRELOAD_TOTAL = SWAMP_IMAGE_COUNT;
